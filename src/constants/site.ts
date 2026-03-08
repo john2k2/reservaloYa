@@ -1,0 +1,150 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  BellRing,
+  CalendarClock,
+  Clock3,
+  ClipboardList,
+  LayoutDashboard,
+  MessageCircle,
+  Scissors,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
+
+export const productName = "ReservaYa";
+export const demoBusinessSlug = "demo-barberia";
+export const demoBusinessOptions = [
+  {
+    slug: "demo-barberia",
+    label: "Demo Barberia",
+    category: "Barberia y peluqueria",
+    description: "Flujo agil para cortes, barba y servicios rapidos con turnos cortos.",
+  },
+  {
+    slug: "demo-estetica",
+    label: "Demo Estetica",
+    category: "Estetica y skincare",
+    description: "Demo pensada para faciales, lifting y sesiones con mayor tiempo de cabina.",
+  },
+] as const;
+
+export const landingProblems = [
+  "Turnos tomados por mensaje a cualquier hora.",
+  "Horarios pisados o mal anotados.",
+  "Tiempo perdido respondiendo lo mismo.",
+  "Clientes que faltan sin recordatorio previo.",
+];
+
+export const landingFeatures: Array<{
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}> = [
+  {
+    title: "Reserva publica en minutos",
+    description:
+      "Cada negocio tiene una pagina simple para que sus clientes reserven sin escribir primero.",
+    icon: CalendarClock,
+  },
+  {
+    title: "Recordatorios y seguimiento",
+    description:
+      "La base ya esta lista para confirmaciones por email y seguimiento operativo sin caos manual.",
+    icon: BellRing,
+  },
+  {
+    title: "Operacion simple para negocios chicos",
+    description:
+      "Servicios, disponibilidad, clientes y turnos pensados para barberias y estetica chica.",
+    icon: Scissors,
+  },
+  {
+    title: "Arquitectura segura desde el inicio",
+    description:
+      "Multi-tenant con `business_id`, validaciones en servidor y aislamiento preparado para RLS.",
+    icon: ShieldCheck,
+  },
+];
+
+export const landingSteps = [
+  {
+    title: "Mostrar la demo",
+    description:
+      "Entramos a la pagina del negocio, elegimos servicio y reservamos un turno real de ejemplo.",
+  },
+  {
+    title: "Probar el panel",
+    description:
+      "El dueño ve el turno en el dashboard, bloquea horarios y revisa sus clientes.",
+  },
+  {
+    title: "Instalar y cobrar",
+    description:
+      "Se personaliza rapido para el cliente, se cobra setup y queda una mensualidad liviana.",
+  },
+];
+
+export const adminNavigation: Array<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}> = [
+  {
+    href: "/admin/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/bookings",
+    label: "Turnos",
+    icon: ClipboardList,
+  },
+  {
+    href: "/admin/services",
+    label: "Servicios",
+    icon: Scissors,
+  },
+  {
+    href: "/admin/availability",
+    label: "Disponibilidad",
+    icon: Clock3,
+  },
+  {
+    href: "/admin/customers",
+    label: "Clientes",
+    icon: Users,
+  },
+  {
+    href: "/admin/onboarding",
+    label: "Onboarding",
+    icon: Sparkles,
+  },
+  {
+    href: "/admin/settings",
+    label: "Ajustes",
+    icon: Settings2,
+  },
+];
+
+export const dashboardHighlights = [
+  {
+    label: "Turnos hoy",
+    value: "12",
+    hint: "3 pendientes de confirmar",
+    icon: CalendarClock,
+  },
+  {
+    label: "Clientes activos",
+    value: "87",
+    hint: "14 nuevos este mes",
+    icon: Users,
+  },
+  {
+    label: "Consultas por WhatsApp",
+    value: "31",
+    hint: "Objetivo: bajarlas con auto-reserva",
+    icon: MessageCircle,
+  },
+];

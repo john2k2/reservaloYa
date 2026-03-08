@@ -1,0 +1,246 @@
+{
+  "businesses": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "Demo Barberia",
+      "slug": "demo-barberia",
+      "phone": "+54 11 5555 0199",
+      "email": "hola@reservaya.app",
+      "address": "Av. del Libertador 214, Palermo",
+      "timezone": "America/Argentina/Buenos_Aires",
+      "active": true,
+      "createdAt": "2026-03-01T10:00:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-1111-1111-1111-111111111111",
+      "name": "Demo Estetica Aura",
+      "slug": "demo-estetica",
+      "phone": "+54 11 5555 0288",
+      "email": "hola@aura-estetica.demo",
+      "address": "Honduras 4821, Palermo",
+      "timezone": "America/Argentina/Buenos_Aires",
+      "active": true,
+      "createdAt": "2026-03-01T10:00:00.000Z"
+    }
+  ],
+  "services": [
+    {
+      "id": "22222222-2222-2222-2222-222222222221",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "name": "Corte clasico",
+      "description": "Corte con terminacion prolija para uso diario.",
+      "durationMinutes": 45,
+      "price": 12000,
+      "active": true,
+      "createdAt": "2026-03-01T10:05:00.000Z"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "name": "Corte + barba",
+      "description": "Servicio completo con perfilado y terminacion.",
+      "durationMinutes": 60,
+      "price": 18000,
+      "active": true,
+      "createdAt": "2026-03-01T10:06:00.000Z"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222223",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "name": "Perfilado premium",
+      "description": "Repaso rapido para mantener prolijo el look.",
+      "durationMinutes": 30,
+      "price": 8000,
+      "active": true,
+      "createdAt": "2026-03-01T10:07:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-2222-2222-2222-222222222221",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "name": "Limpieza facial profunda",
+      "description": "Sesion completa con extracciones suaves, mascara calmante y cierre hidratante.",
+      "durationMinutes": 75,
+      "price": 28000,
+      "active": true,
+      "createdAt": "2026-03-01T10:08:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-2222-2222-2222-222222222222",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "name": "Dermaplaning glow",
+      "description": "Exfoliacion precisa para mejorar textura, luminosidad y absorcion de activos.",
+      "durationMinutes": 60,
+      "price": 24000,
+      "active": true,
+      "createdAt": "2026-03-01T10:09:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-2222-2222-2222-222222222223",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "name": "Lifting de pestanas",
+      "description": "Curvatura y definicion natural con acabado prolijo para varias semanas.",
+      "durationMinutes": 50,
+      "price": 22000,
+      "active": true,
+      "createdAt": "2026-03-01T10:10:00.000Z"
+    }
+  ],
+  "availabilityRules": [
+    {
+      "id": "55555555-5555-5555-5555-555555555551",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "dayOfWeek": 1,
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "active": true
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555552",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "dayOfWeek": 3,
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "active": true
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555553",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "dayOfWeek": 5,
+      "startTime": "10:00",
+      "endTime": "20:00",
+      "active": true
+    },
+    {
+      "id": "aaaaaaaa-5555-5555-5555-555555555551",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "dayOfWeek": 2,
+      "startTime": "10:00",
+      "endTime": "19:00",
+      "active": true
+    },
+    {
+      "id": "aaaaaaaa-5555-5555-5555-555555555552",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "dayOfWeek": 4,
+      "startTime": "11:00",
+      "endTime": "20:00",
+      "active": true
+    },
+    {
+      "id": "aaaaaaaa-5555-5555-5555-555555555553",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "dayOfWeek": 6,
+      "startTime": "10:00",
+      "endTime": "16:00",
+      "active": true
+    }
+  ],
+  "blockedSlots": [
+    {
+      "id": "66666666-6666-6666-6666-666666666661",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "blockedDate": "2026-03-13",
+      "startTime": "13:00",
+      "endTime": "14:00",
+      "reason": "Almuerzo"
+    },
+    {
+      "id": "aaaaaaaa-6666-6666-6666-666666666661",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "blockedDate": "2026-03-13",
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "reason": "Capacitacion interna"
+    }
+  ],
+  "customers": [
+    {
+      "id": "44444444-4444-4444-4444-444444444441",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "fullName": "Luca Sosa",
+      "phone": "+54 11 4444 1000",
+      "email": "luca@example.com",
+      "notes": "Prefiere turno temprano.",
+      "createdAt": "2026-03-02T10:00:00.000Z"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444442",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "fullName": "Mara Diaz",
+      "phone": "+54 11 4444 2000",
+      "email": "mara@example.com",
+      "notes": "Cliente recurrente.",
+      "createdAt": "2026-03-02T10:05:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-4444-4444-4444-444444444441",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "fullName": "Camila Duarte",
+      "phone": "+54 11 4333 2200",
+      "email": "camila@example.com",
+      "notes": "Prefiere sesiones despues de las 18 hs.",
+      "createdAt": "2026-03-02T11:00:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-4444-4444-4444-444444444442",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "fullName": "Agustina Rey",
+      "phone": "+54 11 4333 2210",
+      "email": "agus@example.com",
+      "notes": "Consulta seguido por lifting y skincare.",
+      "createdAt": "2026-03-02T11:10:00.000Z"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "77777777-7777-7777-7777-777777777771",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "customerId": "44444444-4444-4444-4444-444444444441",
+      "serviceId": "22222222-2222-2222-2222-222222222222",
+      "bookingDate": "2026-03-13",
+      "startTime": "10:00",
+      "endTime": "11:00",
+      "status": "confirmed",
+      "notes": "Reserva generada para demo comercial.",
+      "createdAt": "2026-03-03T10:00:00.000Z"
+    },
+    {
+      "id": "77777777-7777-7777-7777-777777777772",
+      "businessId": "11111111-1111-1111-1111-111111111111",
+      "customerId": "44444444-4444-4444-4444-444444444442",
+      "serviceId": "22222222-2222-2222-2222-222222222223",
+      "bookingDate": "2026-03-13",
+      "startTime": "16:45",
+      "endTime": "17:15",
+      "status": "pending",
+      "notes": "Esperando confirmacion.",
+      "createdAt": "2026-03-03T10:10:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-7777-7777-7777-777777777771",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "customerId": "aaaaaaaa-4444-4444-4444-444444444441",
+      "serviceId": "aaaaaaaa-2222-2222-2222-222222222221",
+      "bookingDate": "2026-03-13",
+      "startTime": "11:00",
+      "endTime": "12:15",
+      "status": "confirmed",
+      "notes": "Primera visita por limpieza facial.",
+      "createdAt": "2026-03-03T11:00:00.000Z"
+    },
+    {
+      "id": "aaaaaaaa-7777-7777-7777-777777777772",
+      "businessId": "aaaaaaaa-1111-1111-1111-111111111111",
+      "customerId": "aaaaaaaa-4444-4444-4444-444444444442",
+      "serviceId": "aaaaaaaa-2222-2222-2222-222222222223",
+      "bookingDate": "2026-03-13",
+      "startTime": "17:30",
+      "endTime": "18:20",
+      "status": "pending",
+      "notes": "Confirma por WhatsApp durante la tarde.",
+      "createdAt": "2026-03-03T11:20:00.000Z"
+    }
+  ],
+  "analyticsEvents": [],
+  "communicationEvents": []
+}
