@@ -17,31 +17,16 @@ import {
   Scissors,
 } from "lucide-react";
 
-// WhatsApp Icon Component
-function WhatsAppIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-    </svg>
-  );
-}
-
-// TikTok Icon Component
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-    </svg>
-  );
-}
-
+import { WhatsAppIcon, TikTokIcon } from "@/components/icons";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { GalleryLightbox } from "@/components/public/gallery-lightbox";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { formatShortDateLabel, formatTimeLabel } from "@/lib/bookings/format";
 import { cn } from "@/lib/utils";
-import { getPublicBusinessPageData } from "@/server/queries/public";
+import { getPublicBookingFlowData, getPublicBusinessPageData } from "@/server/queries/public";
+import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 
 const demoServices = [
   {
@@ -103,6 +88,15 @@ function buildWebsiteHref(value?: string) {
   return `https://${value}`;
 }
 
+function buildWhatsAppHref(phone?: string, businessName?: string) {
+  const normalizedPhone = (phone ?? "5491155550199").replace(/\D/g, "");
+  const message = businessName
+    ? `Hola ${businessName}, quiero reservar un turno.`
+    : "Hola, quiero reservar un turno.";
+
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
 function buildBookingHref(input: {
   slug: string;
   serviceId?: string;
@@ -119,6 +113,71 @@ function buildBookingHref(input: {
   return query ? `/${input.slug}/reservar?${query}` : `/${input.slug}/reservar`;
 }
 
+function getStartingPriceLabel(
+  services: Array<{
+    priceLabel?: string;
+    price?: number | null;
+  }>
+) {
+  const pricedServices = services.filter(
+    (service): service is { price: number; priceLabel: string } =>
+      typeof service.price === "number" && Boolean(service.priceLabel)
+  );
+
+  if (pricedServices.length === 0) {
+    return "Consulta personalizada";
+  }
+
+  const cheapestService = pricedServices.reduce((currentCheapest, service) =>
+    service.price < currentCheapest.price ? service : currentCheapest
+  );
+
+  return `Desde ${cheapestService.priceLabel}`;
+}
+
+function getFirstActiveDayLabel(
+  weeklyHours: Array<{
+    dayLabel: string;
+    hoursLabel: string;
+  }>
+) {
+  return (
+    weeklyHours.find((slot) => !slot.hoursLabel.toLocaleLowerCase("es-AR").includes("cerrado")) ??
+    weeklyHours[0] ??
+    null
+  );
+}
+
+function getShortAddressLabel(address?: string | null) {
+  if (!address) {
+    return "Ubicación a confirmar";
+  }
+
+  const [firstSegment] = address.split(",");
+  return firstSegment?.trim() || address;
+}
+
+function getNextAvailableSlotLabel(input?: {
+  bookingDate?: string;
+  dateOptions?: string[];
+  slots?: string[];
+} | null) {
+  const firstDate = input?.bookingDate ?? input?.dateOptions?.[0];
+  const firstSlot = input?.slots?.[0];
+
+  if (!firstDate || !firstSlot) {
+    return {
+      title: "Agenda activa",
+      detail: "Mira horarios disponibles",
+    };
+  }
+
+  return {
+    title: formatShortDateLabel(firstDate),
+    detail: formatTimeLabel(firstSlot),
+  };
+}
+
 export default async function BusinessPage({ params, searchParams }: BusinessPageProps) {
   const { slug } = await params;
   const tracking = await searchParams;
@@ -131,11 +190,28 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   const services = (pageData.services.length > 0 ? pageData.services : demoServices).map(
     (service, index) => ({
       ...service,
-      popular: index === 0,
+      popular: Boolean("featured" in service ? service.featured : false) || index === 0,
+      featureBadge:
+        "featured" in service && service.featured
+          ? service.featuredLabel || "Destacado"
+          : index === 0
+            ? "Más elegido"
+            : "",
     })
   );
+  const bookingFlowPreview = services[0]
+    ? await getPublicBookingFlowData({
+        slug,
+        serviceId: services[0].id,
+      })
+    : null;
+  const startingPriceLabel = getStartingPriceLabel(services);
+  const firstActiveDay = getFirstActiveDayLabel(pageData.weeklyHours);
+  const highlightedTestimonial = pageData.profile.testimonials[0] ?? null;
+  const shortAddressLabel = getShortAddressLabel(pageData.business.address);
+  const nextAvailableSlot = getNextAvailableSlotLabel(bookingFlowPreview);
 
-  const whatsappHref = `https://wa.me/${(pageData.business.phone ?? "5491155550199").replace(/\D/g, "")}`;
+  const whatsappHref = buildWhatsAppHref(pageData.business.phone, pageData.business.name);
   const instagramHref = buildInstagramHref(pageData.profile.instagram);
   const facebookHref = buildFacebookHref(pageData.profile.facebook);
   const tiktokHref = buildTikTokHref(pageData.profile.tiktok);
@@ -159,7 +235,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
       .join("");
   
   const heroStyle = {
-    background: `radial-gradient(circle at top, ${pageData.profile.accentSoft} 0%, ${pageData.profile.surfaceTint} 48%, #ffffff 100%)`,
+    background: `radial-gradient(circle at top, ${pageData.profile.accentSoft} 0%, ${pageData.profile.surfaceTint} 48%, transparent 100%)`,
   } satisfies CSSProperties;
   
   const logoStyle = pageData.profile.logoUrl
@@ -182,23 +258,25 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   });
 
   return (
-    <main
-      id="main-content"
-      className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
-    >
-      {/* Sticky Header - Client Component */}
-      <StickyHeader
-        businessSlug={slug}
-        logoLabel={logoLabel}
-        logoUrl={pageData.profile.logoUrl}
-        businessName={pageData.business.name}
-        bookingHref={bookingHref}
-        whatsappHref={whatsappHref}
-        accent={pageData.profile.accent}
-      />
+    <PublicBusinessPageWrapper profile={pageData.profile}>
+      <main
+        id="main-content"
+        className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+      >
+        {/* Sticky Header - Client Component */}
+        <StickyHeader
+          businessSlug={slug}
+          logoLabel={logoLabel}
+          logoUrl={pageData.profile.logoUrl ?? undefined}
+          businessName={pageData.business.name}
+          bookingHref={bookingHref}
+          whatsappHref={whatsappHref}
+          accent={pageData.profile.accent}
+          enableDarkMode={pageData.profile.enableDarkMode}
+        />
 
       {/* Hero Section */}
-      <section className="px-6 pb-20 pt-8" style={heroStyle}>
+      <section className="px-4 pb-14 pt-4 sm:px-6 sm:pb-20 sm:pt-8" style={heroStyle}>
         <div className="mx-auto max-w-6xl">
           {/* Header */}
           <div className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -317,9 +395,20 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           </div>
 
           {/* Hero Content */}
-          <div className="grid gap-10 py-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div className="grid gap-8 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-10 lg:py-10">
             {/* Left Column */}
             <div>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-sm">
+                  <Star className="size-3.5 fill-current" style={{ color: pageData.profile.accent }} />
+                  Turnos online claros
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+                  <Clock3 className="size-3.5" style={{ color: pageData.profile.accent }} />
+                  Reserva en menos de 1 minuto
+                </div>
+              </div>
+
               <p className="text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
                 {pageData.profile.eyebrow}
               </p>
@@ -338,7 +427,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                   pagePath={`/${slug}`}
                   className={cn(
                     buttonVariants({ variant: "default", size: "lg" }),
-                    "h-14 rounded-full px-10 text-base font-semibold shadow-lg transition-transform hover:scale-[1.02]"
+                    "h-14 w-full rounded-full px-10 text-base font-semibold shadow-lg transition-transform hover:scale-[1.02] sm:w-auto"
                   )}
                   style={{ backgroundColor: pageData.profile.accent, borderColor: pageData.profile.accent }}
                 >
@@ -351,12 +440,59 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                   rel="noopener noreferrer"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "lg" }),
-                    "h-14 rounded-full px-10 text-base"
+                    "h-14 w-full rounded-full px-10 text-base transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-95 sm:w-auto"
                   )}
                 >
                   <WhatsAppIcon className="mr-2 size-5" />
                   {pageData.profile.secondaryCta}
                 </a>
+              </div>
+
+              <div className="-mx-1 mt-6 flex gap-3 overflow-x-auto px-1 pb-1 sm:hidden">
+                <div className="min-w-[13rem] snap-start rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <Calendar className="size-3.5" style={{ color: pageData.profile.accent }} />
+                    Próximo turno
+                  </div>
+                  <p className="mt-3 text-lg font-bold text-foreground">{nextAvailableSlot.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{nextAvailableSlot.detail}</p>
+                </div>
+                <div className="min-w-[13rem] snap-start rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <Scissors className="size-3.5" style={{ color: pageData.profile.accent }} />
+                    Servicios activos
+                  </div>
+                  <p className="mt-3 text-lg font-bold text-foreground">{services.length} opciones</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Con precio y duracion visibles</p>
+                </div>
+                <div className="min-w-[13rem] snap-start rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <Clock className="size-3.5" style={{ color: pageData.profile.accent }} />
+                    Agenda visible
+                  </div>
+                  <p className="mt-3 text-lg font-bold text-foreground">
+                    {firstActiveDay ? firstActiveDay.dayLabel : "Agenda activa"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {firstActiveDay ? firstActiveDay.hoursLabel : "Horarios listos para reservar"}
+                  </p>
+                </div>
+                <div className="min-w-[13rem] snap-start rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <MapPin className="size-3.5" style={{ color: pageData.profile.accent }} />
+                    Ubicación
+                  </div>
+                  <p className="mt-3 text-lg font-bold text-foreground">{shortAddressLabel}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Con acceso rapido al mapa</p>
+                </div>
+                <div className="min-w-[13rem] snap-start rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <Star className="size-3.5 fill-current" style={{ color: pageData.profile.accent }} />
+                    Valor claro
+                  </div>
+                  <p className="mt-3 text-lg font-bold text-foreground">{startingPriceLabel}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Sin sorpresas al reservar</p>
+                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -369,6 +505,48 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     {point}
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-8 hidden gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Próximo turno
+                  </p>
+                  <p className="mt-3 text-lg font-bold text-foreground">{nextAvailableSlot.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{nextAvailableSlot.detail}</p>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Valor claro
+                  </p>
+                  <p className="mt-3 text-lg font-bold text-foreground">{startingPriceLabel}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Precios visibles antes de reservar</p>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Oferta real
+                  </p>
+                  <p className="mt-3 text-lg font-bold text-foreground">{services.length} servicios activos</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Opciones claras con duración definida</p>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Próximo ritmo
+                  </p>
+                  <p className="mt-3 text-lg font-bold text-foreground">
+                    {firstActiveDay ? firstActiveDay.dayLabel : "Agenda activa"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {firstActiveDay ? firstActiveDay.hoursLabel : "Consulta horarios visibles"}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Ubicación
+                  </p>
+                  <p className="mt-3 text-lg font-bold text-foreground">{shortAddressLabel}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Con acceso rapido al mapa</p>
+                </div>
               </div>
             </div>
 
@@ -402,6 +580,21 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                   </p>
                 </div>
               </div>
+
+              {highlightedTestimonial ? (
+                <div className="mt-4 rounded-2xl border border-border/60 bg-background p-5">
+                  <div className="flex items-center gap-2">
+                    <Quote aria-hidden="true" className="size-4" style={{ color: pageData.profile.accent }} />
+                    <p className="text-sm font-medium text-muted-foreground">Lo primero que perciben</p>
+                  </div>
+                  <p className="mt-3 text-base font-semibold leading-7 text-foreground">
+                    “{highlightedTestimonial.quote}”
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {highlightedTestimonial.author} · {highlightedTestimonial.detail}
+                  </p>
+                </div>
+              ) : null}
 
               {/* Location */}
               <div className="mt-6 rounded-2xl border border-border/60 bg-background p-5">
@@ -543,7 +736,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     style={{ backgroundColor: pageData.profile.accent }}
                   >
                     <Star className="size-3 fill-current" />
-                    Más elegido
+                    {service.featureBadge}
                   </div>
                 )}
                 
@@ -604,15 +797,34 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             Lo que dicen nuestros clientes
           </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            La confianza no sale de promesas vacías. Sale de una experiencia clara, rápida y fácil de repetir.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+              <Star className="size-4 fill-current" style={{ color: pageData.profile.accent }} />
+              Experiencia entendible desde el primer vistazo
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+              <ShieldCheck className="size-4" style={{ color: pageData.profile.accent }} />
+              Reprogramación simple sin llamadas cruzadas
+            </div>
+          </div>
         </div>
         
         <div className="grid gap-6 lg:grid-cols-2">
           {pageData.profile.testimonials.map((testimonial) => (
             <article
               key={testimonial.author}
-              className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm"
+              className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg"
             >
-              <Quote aria-hidden="true" className="size-8" style={{ color: pageData.profile.accent }} />
+              <div className="flex items-center justify-between gap-4">
+                <Quote aria-hidden="true" className="size-8" style={{ color: pageData.profile.accent }} />
+                <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
+                  <Star className="size-3 fill-current" style={{ color: pageData.profile.accent }} />
+                  Confianza real
+                </div>
+              </div>
               <p className="mt-5 text-lg leading-8 text-card-foreground">{testimonial.quote}</p>
               <div className="mt-6 flex items-center gap-4">
                 {testimonial.avatar ? (
@@ -896,11 +1108,12 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         </div>
       </footer>
 
-      <PublicAnalyticsTracker
-        businessSlug={slug}
-        eventName="public_page_view"
-        pagePath={`/${slug}`}
-      />
-    </main>
+        <PublicAnalyticsTracker
+          businessSlug={slug}
+          eventName="public_page_view"
+          pagePath={`/${slug}`}
+        />
+      </main>
+    </PublicBusinessPageWrapper>
   );
 }

@@ -10,6 +10,20 @@ type SendPublicAnalyticsEventInput = {
 };
 
 export function sendPublicAnalyticsEvent(input: SendPublicAnalyticsEventInput) {
+  const dedupeKey = `analytics:${input.businessSlug}:${input.eventName}:${input.pagePath}`;
+
+  try {
+    if (window.sessionStorage.getItem(dedupeKey)) {
+      return;
+    }
+
+    if (input.eventName !== "booking_cta_clicked") {
+      window.sessionStorage.setItem(dedupeKey, "1");
+    }
+  } catch {
+    // Ignore storage errors and continue sending the event.
+  }
+
   const params = new URLSearchParams(window.location.search);
   const payload = {
     businessSlug: input.businessSlug,

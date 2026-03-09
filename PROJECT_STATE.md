@@ -10,12 +10,12 @@ Producto-servicio para vender turnos online a negocios chicos que hoy operan por
 
 ## Decision tecnica principal
 
-Arquitectura multi-tenant sobre un solo proyecto de Supabase usando `business_id` y RLS, con modo local persistente para demo comercial.
+Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persistente como fallback para demo comercial.
 
 ## Estado actual
 
 - Landing comercial funcional
-- Flujo publico de reserva funcionando en modo local
+- Flujo publico de reserva funcionando en modo local y PocketBase
 - Selector visible de fecha en el flujo publico
 - Confirmacion con link a calendario y gestion del turno
 - Reprogramacion y cancelacion desde link para cliente
@@ -27,15 +27,18 @@ Arquitectura multi-tenant sobre un solo proyecto de Supabase usando `business_id
 - Branding profundo editable por negocio (logo, hero, galeria, mapa y redes)
 - Subida local de logo/hero sin depender de URL
 - Paleta visual guiada por presets en onboarding para evitar inputs tecnicos
-- Settings ya no duplica branding y queda orientado a ajustes operativos
+- `settings` ya no duplica branding y redirige al editor unico
 - Analytics basico del embudo web en modo local
-- Dashboard admin con datos reales del store local
-- Vistas admin de turnos, clientes, servicios, disponibilidad y ajustes con datos demo
+- Dashboard admin con datos reales desde store local o PocketBase
+- Vistas admin de turnos, clientes, servicios y disponibilidad ya leen datos reales
+- Auth admin, reservas, analytics y recordatorios conectados a PocketBase cuando el backend esta configurado
+- PocketBase bootstrapeable con Docker y colecciones base ya definidas
+- Correccion aplicada al esquema base de PocketBase para evitar fallos de update en colecciones demo
 - Responsive audit completo aplicado con estandar mobile-first y targets tactiles >= 44px
 - Demo publica de barberia lista
 - Demo publica de estetica lista
 - Store local multi-negocio funcionando
-- `npm run lint` y `npm run build` pasando
+- `npm run lint`, `npm run build` y `npm run test -- --run` pasando
 
 ## Ya validado
 
@@ -48,6 +51,7 @@ Arquitectura multi-tenant sobre un solo proyecto de Supabase usando `business_id
 - Editar branding profundo en settings y ver el cambio reflejado en la pagina publica
 - Detectar recordatorios pendientes en una ventana de 24 hs y procesarlos en demo
 - Navegar el panel admin completo sin errores de compilacion
+- Validar login y flujos base contra PocketBase en `localhost:3000`
 - Mostrar dos verticales demo distintas sin tocar backend remoto
 - Navegar mobile y desktop sin overflow horizontal ni elementos fuera de viewport
 
@@ -74,16 +78,37 @@ Arquitectura multi-tenant sobre un solo proyecto de Supabase usando `business_id
 
 - Paso posterior para pulir copy, redes y assets propios
 
+## Lo que falta dentro del admin
+
+### 1. Turnos
+
+- Confirmar / cancelar / completar desde el panel
+- Filtros y acciones utiles para operacion real
+
+### 2. Servicios
+
+- Crear
+- Editar
+- Desactivar
+
+### 3. Disponibilidad
+
+- Alta y edicion de reglas
+- Bloqueo de franjas
+- Eliminacion o desactivacion
+
 ## Riesgo principal ahora
 
-Que la demo se vea bien, pero que todavia falte el paso operativo que convierte una demo en producto usable por un negocio real.
+Que la demo se vea bien, pero que todavia falte el admin operativo que convierte una demo en producto usable por un negocio real.
 
 ## Prioridad recomendada
 
-1. Ajustes finos de errores y disponibilidad
-2. Seguimiento post-turno
-3. SEO/meta por negocio publico
-4. Ajustes finos de produccion
+1. CRUD de servicios
+2. Gestion de disponibilidad y bloqueos
+3. Acciones operativas sobre turnos
+4. Seguimiento post-turno
+5. SEO/meta por negocio publico
+6. Backups, monitoreo y despliegue productivo de PocketBase
 
 ## Regla operativa
 
@@ -92,3 +117,4 @@ Cada proximo cambio debe empujar una de estas metas:
 - demo mas convincente
 - producto mas vendible
 - flujo de reserva mas real
+- admin mas operable

@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   MessageCircle,
   Scissors,
-  Settings2,
   ShieldCheck,
   Sparkles,
   Users,
@@ -77,7 +76,7 @@ export const landingSteps = [
   {
     title: "Probar el panel",
     description:
-      "El dueño ve el turno en el dashboard, bloquea horarios y revisa sus clientes.",
+      "El dueno ve el turno en el dashboard, bloquea horarios y revisa sus clientes.",
   },
   {
     title: "Instalar y cobrar",
@@ -118,13 +117,8 @@ export const adminNavigation: Array<{
   },
   {
     href: "/admin/onboarding",
-    label: "Onboarding",
+    label: "Pagina",
     icon: Sparkles,
-  },
-  {
-    href: "/admin/settings",
-    label: "Ajustes",
-    icon: Settings2,
   },
 ];
 

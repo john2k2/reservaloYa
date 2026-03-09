@@ -1,0 +1,15 @@
+export { LandingHeader, HeroSection } from "./header";
+export { DemoSelector } from "./demo-selector";
+export { SocialProof } from "./social-proof";
+export { HowItWorksSection } from "./how-it-works";
+export { BeforeAfterSection } from "./before-after";
+export { TimeCalculatorSection } from "./time-calculator";
+export { TargetAudienceSection } from "./target-audience";
+export { FeaturesSection } from "./features";
+export { TestimonialsSection } from "./testimonials";
+export { PricingSection } from "./pricing";
+export { FAQSection } from "./faq";
+export { CTASection } from "./cta-section";
+export { Footer } from "./footer";
+export { AnimatedSection } from "./animated-section";
+export { AnimatedCounter } from "./animated-counter";

@@ -10,8 +10,7 @@ El objetivo no es construir un SaaS gigante primero. El objetivo es cerrar el pr
 - TypeScript
 - Tailwind CSS v4
 - shadcn/ui
-- Supabase
-- PocketBase (opcion local/self-hosted)
+- PocketBase
 - Resend
 - Vercel
 
@@ -23,9 +22,11 @@ El objetivo no es construir un SaaS gigante primero. El objetivo es cerrar el pr
 - Rutas publicas y admin del MVP ya creadas
 - Helpers base para dominio y validacion agregados
 - Modo local funcional con persistencia en archivo JSON
-- Reserva publica local ya impacta en el dashboard
-- Integracion con Supabase preparada para activarse cuando haya proyecto
+- Reserva publica y panel admin conectados a PocketBase cuando se configura el backend
 - Base local para levantar PocketBase con Docker
+- Script de bootstrap para crear colecciones y seed demo en PocketBase
+- Editor real de pagina publica ya operativo
+- Admin todavia incompleto en servicios, disponibilidad y acciones sobre turnos
 
 ## Puesta en marcha
 
@@ -43,11 +44,21 @@ cp .env.example .env.local
 
 Claves necesarias:
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` para procesos server-only futuros
+- `NEXT_PUBLIC_POCKETBASE_URL`
+- `POCKETBASE_ADMIN_EMAIL`
+- `POCKETBASE_ADMIN_PASSWORD`
 
-Si no completas estas variables, la app corre en modo local automaticamente.
+Opcionales recomendadas:
+
+- `POCKETBASE_DEMO_OWNER_EMAIL`
+- `POCKETBASE_DEMO_OWNER_PASSWORD`
+- `POCKETBASE_DEMO_OWNER_BUSINESS_SLUG`
+- `BOOKING_LINK_SECRET`
+- `BOOKING_JOBS_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+
+Si no completas las variables de PocketBase, la app corre en modo demo/local automaticamente.
 
 3. Levantar el proyecto:
 
@@ -59,7 +70,7 @@ npm run dev
 
 ## PocketBase local con Docker
 
-Si queres dejar de depender del store JSON y probar un backend local autocontenido:
+Si queres correr el proyecto sobre PocketBase local:
 
 1. Levantar PocketBase:
 
@@ -67,15 +78,23 @@ Si queres dejar de depender del store JSON y probar un backend local autoconteni
 npm run pb:up
 ```
 
-2. Abrir el admin en `http://127.0.0.1:8090/_/`
+2. Crear un superuser en PocketBase desde `http://127.0.0.1:8090/_/`
 
-3. Ver logs si hace falta:
+3. Completar `.env.local` con `NEXT_PUBLIC_POCKETBASE_URL`, `POCKETBASE_ADMIN_EMAIL` y `POCKETBASE_ADMIN_PASSWORD`
+
+4. Bootstrapear colecciones y seed demo:
+
+```bash
+npm run pb:bootstrap
+```
+
+5. Ver logs si hace falta:
 
 ```bash
 npm run pb:logs
 ```
 
-4. Apagar el contenedor:
+6. Apagar el contenedor:
 
 ```bash
 npm run pb:down
@@ -86,11 +105,11 @@ Notas:
 - La base usa la release oficial `v0.36.6` de PocketBase dentro de Docker.
 - Los datos quedan persistidos en `pocketbase/pb_data`.
 - Las carpetas `pocketbase/pb_migrations`, `pocketbase/pb_hooks` y `pocketbase/pb_public` ya quedaron preparadas.
-- La app todavia no consume PocketBase; esto deja lista la infraestructura local para la siguiente integracion.
+- La app ya consume PocketBase para auth admin, reservas, analytics y recordatorios cuando el backend esta configurado.
 
 ## Modo local
 
-Sin Supabase configurado, `ReservaYa` funciona con un store local en archivo:
+Sin PocketBase configurado, `ReservaYa` funciona con un store local en archivo:
 
 - seed base: `data/local-store.seed.json`
 - runtime local: `data/local-store.json`
@@ -123,11 +142,11 @@ npm run demo:reset
 
 ## Prioridad inmediata
 
-1. Vender y probar la demo local con negocios reales
-2. Crear proyecto Supabase cuando el servicio quede validado o necesitemos deploy serio
-3. Aplicar migracion y seed ya preparadas
-4. Activar auth admin real
-5. Enviar email de confirmacion con Resend
+1. Cerrar CRUD de servicios
+2. Cerrar gestion de disponibilidad y bloqueos
+3. Cerrar acciones operativas de turnos
+4. Activar email y jobs con secretos productivos
+5. Cerrar observabilidad y backups
 
 Ver tambien:
 

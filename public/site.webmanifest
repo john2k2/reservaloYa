@@ -1,0 +1,41 @@
+{
+  "name": "ReservaYa - Turnos online para negocios",
+  "short_name": "ReservaYa",
+  "description": "Sistema de turnos online para barberias, peluquerias y centros de estetica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#fafafa",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [
+    {
+      "src": "/preview-desktop-view.png",
+      "sizes": "1200x900",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/preview-mobile-view.png",
+      "sizes": "900x1200",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

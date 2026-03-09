@@ -42,13 +42,14 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Sistema de radios estandarizado: 3 valores */
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.5);
+  --radius-xl: calc(var(--radius) * 2);
+  --radius-2xl: calc(var(--radius) * 2.5);
+  --radius-3xl: calc(var(--radius) * 3);
+  --radius-4xl: calc(var(--radius) * 3.5);
 }
 
 :root {
@@ -75,10 +76,9 @@
   --chart-3: #71717a;
   --chart-4: #a1a1aa;
   --chart-5: #d4d4d8;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
   --sidebar: #fafafa;
-  /* Minimalist sidebar */
   --sidebar-foreground: #111111;
   --sidebar-primary: #111111;
   --sidebar-primary-foreground: #ffffff;
@@ -86,6 +86,12 @@
   --sidebar-accent-foreground: #111111;
   --sidebar-border: #e4e4e7;
   --sidebar-ring: #111111;
+
+  /* Safe areas para dispositivos con notch */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
 }
 
 .dark {
@@ -119,8 +125,47 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  /* 
+   * CORRECCIÓN: Border solo en elementos que lo necesitan
+   * En lugar de aplicar a todos los elementos (*), aplicamos solo a:
+   * - Elementos con borde por defecto
+   * - Elementos interactivos
+   */
+  *,
+  *::before,
+  *::after {
+    border-color: transparent;
+  }
+
+  /* Aplicar border-color solo a elementos con borde visible */
+  [class*="border"],
+  hr,
+  fieldset,
+  table,
+  th,
+  td {
+    border-color: var(--border);
+  }
+
+  /* Focus visible - Mantener accesibilidad */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* 
+   * REDUCED MOTION: Respetar preferencias del usuario
+   * Si el usuario prefiere reducir movimiento, desactivamos transiciones y animaciones
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   html {
@@ -129,6 +174,7 @@
 
   body {
     min-height: 100vh;
+    min-height: 100dvh; /* Soporte para viewport dinámico en móvil */
     background: var(--background);
     @apply text-foreground;
     line-height: 1.5;
@@ -138,6 +184,18 @@
     text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(17, 17, 17, 0.12);
     touch-action: manipulation;
+    /* SAFE AREAS: Padding para dispositivos con notch */
+    padding-top: var(--safe-area-inset-top);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+  }
+
+  /* Transición suave solo para cambio de tema (respetando prefers-reduced-motion) */
+  @media (prefers-reduced-motion: no-preference) {
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
   }
 
   html,
@@ -156,17 +214,76 @@
     background: rgba(17, 17, 17, 0.18);
     color: var(--foreground);
   }
+
+  .dark ::selection {
+    background: rgba(250, 250, 250, 0.18);
+  }
 }
 
 @layer components {
+  /* 
+   * SISTEMA DE CARDS ESTANDARIZADO
+   * Uso: className="card card-hover" o className="card card-lg"
+   */
+  .card {
+    @apply rounded-xl border border-border/60 bg-card text-card-foreground shadow-sm;
+  }
 
-  /* Ultra-clean components replacing the old colorful gradients */
+  .card-lg {
+    @apply rounded-2xl;
+  }
+
+  .card-sm {
+    @apply rounded-lg;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 ease-out cursor-pointer;
+    @apply hover:shadow-md hover:border-foreground/20 hover:scale-[1.01];
+    @apply active:scale-[0.98];
+  }
+
+  /* 
+   * SISTEMA DE HOVERS ESTANDARIZADO
+   * Uso: className="hover-card", "hover-button", "hover-link"
+   */
+  .hover-card {
+    @apply transition-all duration-300 ease-out cursor-pointer;
+    @apply hover:shadow-md hover:border-foreground/20 hover:scale-[1.01];
+    @apply active:scale-[0.98];
+  }
+
+  .hover-button {
+    @apply transition-all duration-200 ease-out;
+    @apply hover:scale-105;
+    @apply active:scale-95;
+  }
+
+  .hover-button-sm {
+    @apply transition-all duration-200 ease-out;
+    @apply hover:scale-[1.02];
+    @apply active:scale-[0.98];
+  }
+
+  .hover-link {
+    @apply transition-colors duration-200;
+    @apply hover:text-foreground;
+  }
+
+  .hover-icon {
+    @apply transition-transform duration-200 ease-out;
+    @apply hover:scale-110;
+  }
+
+  /* 
+   * PANELES Y COMPONENTES LEGACY
+   * Mantenidos para compatibilidad - migrar a sistema de cards
+   */
   .brand-panel,
   .dark-brand-panel,
   .editorial-panel {
     background: var(--card);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-    /* Soft, elegant shadow */
     border: 1px solid var(--border);
   }
 
@@ -199,13 +316,99 @@
     border-right: 1px solid var(--sidebar-border);
   }
 
+  /* 
+   * FORMULARIOS CON ACCESIBILIDAD MEJORADA
+   * - Estados de error visibles
+   - Soporte para aria-invalid
+   */
   .field-input,
   .minimalist-input {
     @apply w-full rounded-none border-0 border-b border-border/70 bg-transparent px-0 py-3 text-base font-normal text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-foreground focus-visible:outline-none md:text-sm;
   }
 
+  .field-input[aria-invalid="true"],
+  .minimalist-input[aria-invalid="true"] {
+    @apply border-destructive;
+  }
+
   .metric-number {
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+  }
+
+  /* 
+   * UTILIDADES DE ACCESIBILIDAD
+   */
+  .sr-only-focusable {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-foreground focus:px-4 focus:py-4 focus:text-background;
+  }
+
+  /* 
+   * SAFE AREA UTILITIES
+   * Para layouts full-bleed que necesitan respetar notch
+   */
+  .safe-area-inset {
+    padding-top: var(--safe-area-inset-top);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+  }
+
+  .safe-area-x {
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+
+  .safe-area-y {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+
+  .safe-area-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+}
+
+@layer utilities {
+  /* 
+   * ANIMACIONES QUE RESPETAN PREFERS-REDUCED-MOTION
+   */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-slide-up {
+      animation: none;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

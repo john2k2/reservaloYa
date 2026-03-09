@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-import { createBookingManageToken, getPublicAppUrl } from "@/server/public-booking-links";
+import { buildAbsoluteManageBookingUrl } from "@/server/public-booking-links";
 
 type BookingEmailInput = {
   bookingId: string;
@@ -66,8 +66,7 @@ async function sendBookingEmail(input: {
     };
   }
 
-  const manageToken = createBookingManageToken(input.businessSlug, input.bookingId);
-  const manageUrl = `${getPublicAppUrl()}/${input.businessSlug}/mi-turno?booking=${input.bookingId}&token=${manageToken}`;
+  const manageUrl = buildAbsoluteManageBookingUrl(input.businessSlug, input.bookingId);
 
   try {
     await resend.emails.send({
@@ -81,7 +80,7 @@ async function sendBookingEmail(input: {
         `${input.confirmation.serviceName} - ${input.confirmation.bookingDate} a las ${input.confirmation.startTime}`,
         `${input.confirmation.businessName} - ${input.confirmation.businessAddress}`,
         "",
-        `Gestionar turno: ${manageUrl}`,
+        manageUrl ? `Gestionar turno: ${manageUrl}` : "Gestion del turno disponible pronto.",
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
@@ -93,14 +92,18 @@ async function sendBookingEmail(input: {
             ${input.confirmation.businessName}<br />
             ${input.confirmation.businessAddress}
           </p>
-          <p>
+          ${
+            manageUrl
+              ? `<p>
             <a
               href="${manageUrl}"
               style="display:inline-block;padding:10px 16px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px"
             >
               Ver, reprogramar o cancelar
             </a>
-          </p>
+          </p>`
+              : ""
+          }
         </div>
       `,
     });

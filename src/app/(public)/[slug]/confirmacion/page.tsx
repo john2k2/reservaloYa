@@ -10,7 +10,7 @@ import {
 } from "@/lib/bookings/format";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
-import { createBookingManageToken } from "@/server/public-booking-links";
+import { buildManageBookingHref } from "@/server/public-booking-links";
 import { getBookingConfirmationData } from "@/server/queries/public";
 
 type ConfirmationPageProps = {
@@ -75,12 +75,7 @@ export default async function ConfirmationPage({
     durationMinutes: confirmation.durationMinutes,
     timezone: confirmation.businessTimezone,
   });
-  const manageHref = query.booking
-    ? `/${slug}/mi-turno?booking=${query.booking}&token=${createBookingManageToken(
-        slug,
-        query.booking
-      )}`
-    : null;
+  const manageHref = query.booking ? buildManageBookingHref(slug, query.booking) : null;
 
   return (
     <main
@@ -169,12 +164,6 @@ export default async function ConfirmationPage({
           </Link>
         </div>
 
-        <Link
-          href="/admin/dashboard"
-          className="mt-12 text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          (Demo) Ir al panel admin
-        </Link>
       </div>
     </main>
   );

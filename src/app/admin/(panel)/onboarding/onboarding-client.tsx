@@ -33,55 +33,55 @@ import EditBusinessPage from "./edit-business-page";
 // Validaciones
 const validations = {
   name: (value: string) => {
-    if (value.length < 3) return "MÃ­nimo 3 caracteres";
-    if (value.length > 120) return "MÃ¡ximo 120 caracteres";
+    if (value.length < 3) return "Mínimo 3 caracteres";
+    if (value.length > 120) return "Máximo 120 caracteres";
     return null;
   },
   slug: (value: string) => {
     if (!value) return null;
-    if (!/^[a-z0-9-]+$/.test(value)) return "Solo letras minÃºsculas, nÃºmeros y guiones";
-    if (value.length < 2) return "MÃ­nimo 2 caracteres";
-    if (value.length > 120) return "MÃ¡ximo 120 caracteres";
+    if (!/^[a-z0-9-]+$/.test(value)) return "Solo letras minúsculas, números y guiones";
+    if (value.length < 2) return "Mínimo 2 caracteres";
+    if (value.length > 120) return "Máximo 120 caracteres";
     return null;
   },
   phone: (value: string) => {
-    if (value.length < 6) return "MÃ­nimo 6 caracteres";
-    if (value.length > 40) return "MÃ¡ximo 40 caracteres";
+    if (value.length < 6) return "Mínimo 6 caracteres";
+    if (value.length > 40) return "Máximo 40 caracteres";
     return null;
   },
   email: (value: string) => {
     if (!value) return null;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Email invÃ¡lido";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Email inválido";
     return null;
   },
   address: (value: string) => {
-    if (value.length < 4) return "MÃ­nimo 4 caracteres";
-    if (value.length > 160) return "MÃ¡ximo 160 caracteres";
+    if (value.length < 4) return "Mínimo 4 caracteres";
+    if (value.length > 160) return "Máximo 160 caracteres";
     return null;
   },
   badge: (value: string) => {
-    if (value.length < 3) return "MÃ­nimo 3 caracteres";
-    if (value.length > 80) return "MÃ¡ximo 80 caracteres";
+    if (value.length < 3) return "Mínimo 3 caracteres";
+    if (value.length > 80) return "Máximo 80 caracteres";
     return null;
   },
   eyebrow: (value: string) => {
-    if (value.length < 3) return "MÃ­nimo 3 caracteres";
-    if (value.length > 120) return "MÃ¡ximo 120 caracteres";
+    if (value.length < 3) return "Mínimo 3 caracteres";
+    if (value.length > 120) return "Máximo 120 caracteres";
     return null;
   },
   headline: (value: string) => {
-    if (value.length < 12) return "MÃ­nimo 12 caracteres";
-    if (value.length > 160) return "MÃ¡ximo 160 caracteres";
+    if (value.length < 12) return "Mínimo 12 caracteres";
+    if (value.length > 160) return "Máximo 160 caracteres";
     return null;
   },
   description: (value: string) => {
-    if (value.length < 20) return "MÃ­nimo 20 caracteres";
-    if (value.length > 320) return "MÃ¡ximo 320 caracteres";
+    if (value.length < 20) return "Mínimo 20 caracteres";
+    if (value.length > 320) return "Máximo 320 caracteres";
     return null;
   },
   cta: (value: string) => {
-    if (value.length < 2) return "MÃ­nimo 2 caracteres";
-    if (value.length > 40) return "MÃ¡ximo 40 caracteres";
+    if (value.length < 2) return "Mínimo 2 caracteres";
+    if (value.length > 40) return "Máximo 40 caracteres";
     return null;
   },
 };
@@ -89,6 +89,7 @@ const validations = {
 type GalleryImageInput = {
   file: File | null;
   alt: string;
+  cleared: boolean;
 };
 
 const galleryImageHints = [
@@ -126,8 +127,18 @@ interface OnboardingPageClientProps {
       website?: string;
       mapQuery?: string;
       gallery?: { url: string; alt: string }[] | null;
-      logoUrl?: string;
-      heroImageUrl?: string;
+      logoUrl?: string | null;
+      heroImageUrl?: string | null;
+      enableDarkMode?: boolean;
+      darkModeColors?: {
+        accent: string;
+        accentSoft: string;
+        surfaceTint: string;
+        background: string;
+        foreground: string;
+        card: string;
+        cardForeground: string;
+      };
     };
   };
   searchParams: {
@@ -151,12 +162,12 @@ export default function OnboardingPageClient({
   const createdBusiness = onboardingData.businesses.find((b) => b.slug === created);
   const activeBusinessSlug = onboardingData.activeBusinessSlug ?? settingsData.businessSlug;
 
-  // Detectar si hay negocios existentes para modo ediciÃ³n
+  // Detectar si hay negocios existentes para modo edición
   const hasExistingBusiness = onboardingData.businesses.length > 0;
 
   // Estado del paso actual
   const [currentStep, setCurrentStep] = useState(0);
-  // Inicializar pasos completados: si hay negocio existente, todos los pasos estÃ¡n completos
+  // Inicializar pasos completados: si hay negocio existente, todos los pasos están completos
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
     if (hasExistingBusiness) {
       return new Set([0, 1, 2, 3]);
@@ -204,13 +215,18 @@ export default function OnboardingPageClient({
   const [step3Data, setStep3Data] = useState<{
     logo: File | null;
     hero: File | null;
+    logoCleared: boolean;
+    heroCleared: boolean;
     gallery: GalleryImageInput[];
   }>({
     logo: null,
     hero: null,
+    logoCleared: false,
+    heroCleared: false,
     gallery: galleryImageHints.map((_, index) => ({
       file: null,
       alt: settingsData.profile.gallery?.[index]?.alt ?? "",
+      cleared: false,
     })),
   });
 
@@ -240,7 +256,7 @@ export default function OnboardingPageClient({
     {
       id: "business",
       label: "Negocio",
-      description: "Datos bÃ¡sicos",
+      description: "Datos básicos",
       status: completedSteps.has(0) ? "completed" : currentStep === 0 ? "current" : "pending",
     },
     {
@@ -252,18 +268,18 @@ export default function OnboardingPageClient({
     {
       id: "images",
       label: "Fotos",
-      description: "GalerÃ­a e imÃ¡genes",
+      description: "Galería e imágenes",
       status: completedSteps.has(2) ? "completed" : currentStep === 2 ? "current" : "pending",
     },
     {
       id: "public",
-      label: "PÃºblico",
+      label: "Público",
       description: "Redes y contacto",
       status: completedSteps.has(3) ? "completed" : currentStep === 3 ? "current" : "pending",
     },
   ];
 
-  // Handlers de navegaciÃ³n
+  // Handlers de navegación
   const goToStep = useCallback((step: number) => {
     if (step >= 0 && step <= 3) {
       setCurrentStep(step);
@@ -283,7 +299,7 @@ export default function OnboardingPageClient({
     }
   }, [currentStep]);
 
-  // ValidaciÃ³n de paso actual
+  // Validación de paso actual
   const isStepValid = useCallback(() => {
     switch (currentStep) {
       case 0:
@@ -307,9 +323,9 @@ export default function OnboardingPageClient({
           !validations.cta(step2Data.secondaryCta)
         );
       case 2:
-        return true; // Las imÃ¡genes son opcionales
+        return true; // Las imágenes son opcionales
       case 3:
-        return true; // Los datos pÃºblicos son opcionales
+        return true; // Los datos públicos son opcionales
       default:
         return false;
     }
@@ -373,9 +389,12 @@ export default function OnboardingPageClient({
 
     if (step3Data.logo) formData.append("logoFile", step3Data.logo);
     if (step3Data.hero) formData.append("heroFile", step3Data.hero);
+    formData.append("clearLogoFile", String(step3Data.logoCleared));
+    formData.append("clearHeroFile", String(step3Data.heroCleared));
     step3Data.gallery.forEach((item, i) => {
       if (item.file) formData.append(`galleryFile${i + 1}`, item.file);
       formData.append(`galleryAlt${i + 1}`, item.alt.trim());
+      formData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
     });
 
     try {
@@ -387,7 +406,7 @@ export default function OnboardingPageClient({
 
   // Guardar todo - actualiza datos del negocio y branding
   const handleSaveAll = useCallback(async () => {
-    // Validar explÃ­citamente los datos del paso 1 (datos del negocio)
+    // Validar explícitamente los datos del paso 1 (datos del negocio)
     const isStep1Valid = 
       step1Data.name.length >= 3 &&
       step1Data.phone.length >= 6 &&
@@ -399,7 +418,7 @@ export default function OnboardingPageClient({
       (!step1Data.email || !validations.email(step1Data.email));
 
     if (!isStep1Valid) {
-      // Si el paso 1 no es vÃ¡lido, navegar al paso 1 para mostrar errores
+      // Si el paso 1 no es válido, navegar al paso 1 para mostrar errores
       setCurrentStep(0);
       return;
     }
@@ -407,7 +426,7 @@ export default function OnboardingPageClient({
     setIsSubmitting(true);
     
     try {
-      // Primero actualizar datos bÃ¡sicos del negocio
+      // Primero actualizar datos básicos del negocio
       const step1FormData = new FormData();
       step1FormData.append("businessSlug", activeBusinessSlug);
       step1FormData.append("name", step1Data.name);
@@ -417,7 +436,7 @@ export default function OnboardingPageClient({
       
       await updateOnboardedBusinessAction(step1FormData);
       
-      // Luego actualizar branding (colores, textos, imÃ¡genes, redes)
+      // Luego actualizar branding (colores, textos, imágenes, redes)
       const brandingFormData = new FormData();
       brandingFormData.append("businessSlug", activeBusinessSlug);
       brandingFormData.append("palette", step2Data.palette);
@@ -438,9 +457,12 @@ export default function OnboardingPageClient({
 
       if (step3Data.logo) brandingFormData.append("logoFile", step3Data.logo);
       if (step3Data.hero) brandingFormData.append("heroFile", step3Data.hero);
+      brandingFormData.append("clearLogoFile", String(step3Data.logoCleared));
+      brandingFormData.append("clearHeroFile", String(step3Data.heroCleared));
       step3Data.gallery.forEach((item, i) => {
         if (item.file) brandingFormData.append(`galleryFile${i + 1}`, item.file);
         brandingFormData.append(`galleryAlt${i + 1}`, item.alt.trim());
+        brandingFormData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
       });
 
       await saveOnboardingBrandingAction(brandingFormData);
@@ -448,21 +470,6 @@ export default function OnboardingPageClient({
       setIsSubmitting(false);
     }
   }, [activeBusinessSlug, step1Data, step2Data, step3Data, step4Data]);
-
-  // Si no estÃ¡ en demo mode
-  if (!onboardingData.demoMode) {
-    return (
-      <div className="flex flex-col items-center space-y-8">
-        <section className="w-full rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Onboarding</h2>
-          <p className="mt-3 max-w-2xl text-base text-muted-foreground">
-            El onboarding automÃ¡tico para negocios reales queda para la etapa final. En esta
-            versiÃ³n solo estÃ¡ habilitado el flujo local de demo.
-          </p>
-        </section>
-      </div>
-    );
-  }
 
   // Si hay negocio existente, mostrar el editor simple en lugar del wizard
   if (hasExistingBusiness && activeBusiness) {
@@ -475,7 +482,7 @@ export default function OnboardingPageClient({
   }
 
   return (
-    <div className="flex flex-col items-center space-y-8 pb-10">
+    <div className="flex min-h-full flex-col items-center space-y-8 pb-10 bg-background">
       {/* Header */}
       <section className="w-full rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
         <div className="max-w-4xl">
@@ -486,12 +493,12 @@ export default function OnboardingPageClient({
                 Onboarding guiado
               </div>
               <h2 className="mt-5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {hasExistingBusiness ? "EditÃ¡ tu pÃ¡gina" : "Configura tu pÃ¡gina paso a paso"}
+                {hasExistingBusiness ? "Editá tu página" : "Configura tu página paso a paso"}
               </h2>
               <p className="mt-3 max-w-3xl text-base text-muted-foreground">
                 {hasExistingBusiness 
-                  ? "ModificÃ¡ los datos, colores, textos o imÃ¡genes. GuardÃ¡ todos los cambios cuando termines."
-                  : "Completa los 4 pasos para dejar tu pÃ¡gina pÃºblica lista. Puedes volver atrÃ¡s y editar en cualquier momento."}
+                  ? "Modificá los datos, colores, textos o imágenes. Guardá todos los cambios cuando termines."
+                  : "Completa los 4 pasos para dejar tu página pública lista. Puedes volver atrás y editar en cualquier momento."}
               </p>
             </div>
             {hasExistingBusiness && (
@@ -531,18 +538,18 @@ export default function OnboardingPageClient({
         </div>
       </section>
 
-      {/* Mensajes de Ã©xito/error */}
+      {/* Mensajes de éxito/error */}
       {createdBusiness && (
-        <section className="w-full rounded-3xl border border-green-200 bg-green-50 p-6 shadow-sm">
+        <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-green-600" />
+              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <p className="text-base font-semibold text-foreground">
-                  Â¡Negocio &quot;{createdBusiness.name}&quot; creado!
+                  ¡Negocio &quot;{createdBusiness.name}&quot; creado!
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  ContinÃºa configurando el estilo visual y las fotos de tu pÃ¡gina.
+                  Continúa configurando el estilo visual y las fotos de tu página.
                 </p>
               </div>
             </div>
@@ -551,7 +558,7 @@ export default function OnboardingPageClient({
                 href={`/${createdBusiness.slug}`}
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
               >
-                Ver pÃ¡gina
+                Ver página
                 <ExternalLink aria-hidden="true" className="size-4" />
               </Link>
               <button
@@ -567,16 +574,16 @@ export default function OnboardingPageClient({
       )}
 
       {businessUpdated && (
-        <section className="w-full rounded-3xl border border-green-200 bg-green-50 p-6 shadow-sm">
+        <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-green-600" />
+              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <p className="text-base font-semibold text-foreground">
-                  Â¡Negocio &quot;{businessUpdated}&quot; actualizado!
+                  ¡Negocio &quot;{businessUpdated}&quot; actualizado!
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Los cambios ya estÃ¡n aplicados en tu pÃ¡gina pÃºblica.
+                  Los cambios ya están aplicados en tu página pública.
                 </p>
               </div>
             </div>
@@ -586,7 +593,7 @@ export default function OnboardingPageClient({
                 target="_blank"
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
               >
-                Ver pÃ¡gina
+                Ver página
                 <ExternalLink aria-hidden="true" className="size-4" />
               </Link>
             </div>
@@ -603,16 +610,16 @@ export default function OnboardingPageClient({
       )}
 
       {brandingSaved && (
-        <section className="w-full rounded-3xl border border-green-200 bg-green-50 p-6 shadow-sm">
+        <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-green-600" />
+              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <p className="text-base font-semibold text-foreground">
                   {brandingSaved}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Los cambios ya estÃ¡n aplicados en tu pÃ¡gina pÃºblica.
+                  Los cambios ya están aplicados en tu página pública.
                 </p>
               </div>
             </div>
@@ -622,7 +629,7 @@ export default function OnboardingPageClient({
                 target="_blank"
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
               >
-                Ver pÃ¡gina
+                Ver página
                 <ExternalLink aria-hidden="true" className="size-4" />
               </Link>
             </div>
@@ -647,8 +654,8 @@ export default function OnboardingPageClient({
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {hasExistingBusiness 
-                      ? "ModificÃ¡ los datos bÃ¡sicos de tu negocio. Los cambios se aplican inmediatamente."
-                      : "CompletÃ¡ los datos bÃ¡sicos para crear tu pÃ¡gina. El link pÃºblico es cÃ³mo tus clientes accederÃ¡n."}
+                      ? "Modificá los datos básicos de tu negocio. Los cambios se aplican inmediatamente."
+                      : "Completá los datos básicos para crear tu página. El link público es cómo tus clientes accederán."}
                   </p>
                 </div>
               </div>
@@ -665,7 +672,7 @@ export default function OnboardingPageClient({
                     value: t.slug,
                     label: `${t.label} - ${t.category}`,
                   }))}
-                  hint="ElegÃ­ el tipo que mÃ¡s se parezca a tu negocio"
+                  hint="Elegí el tipo que más se parezca a tu negocio"
                 />
 
                 <FormField
@@ -676,13 +683,13 @@ export default function OnboardingPageClient({
                   value={step1Data.name}
                   onChange={(value) => setStep1Data((d) => ({ ...d, name: value }))}
                   validate={validations.name}
-                  hint="Este nombre aparecerÃ¡ en el tÃ­tulo de tu pÃ¡gina"
+                  hint="Este nombre aparecerá en el título de tu página"
                 />
 
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     id="slug"
-                    label="Link pÃºblico"
+                    label="Link público"
                     placeholder="Ej: aura-studio"
                     value={step1Data.slug}
                     onChange={(value) =>
@@ -701,7 +708,7 @@ export default function OnboardingPageClient({
                     value={step1Data.phone}
                     onChange={(value) => setStep1Data((d) => ({ ...d, phone: value }))}
                     validate={validations.phone}
-                    hint="Con cÃ³digo de paÃ­s para WhatsApp"
+                    hint="Con código de país para WhatsApp"
                   />
                 </div>
 
@@ -719,13 +726,13 @@ export default function OnboardingPageClient({
 
                   <FormField
                     id="address"
-                    label="DirecciÃ³n"
+                    label="Dirección"
                     placeholder="Ej: Honduras 4821, Palermo"
                     required
                     value={step1Data.address}
                     onChange={(value) => setStep1Data((d) => ({ ...d, address: value }))}
                     validate={validations.address}
-                    hint="DirecciÃ³n completa de tu local"
+                    hint="Dirección completa de tu local"
                   />
                 </div>
               </div>
@@ -773,7 +780,7 @@ export default function OnboardingPageClient({
                     Paso 2: Estilo visual
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    ElegÃ­ una paleta de colores y personalizÃ¡ los textos de tu pÃ¡gina.
+                    Elegí una paleta de colores y personalizá los textos de tu página.
                   </p>
                 </div>
               </div>
@@ -837,19 +844,19 @@ export default function OnboardingPageClient({
 
                 {/* Textos */}
                 <section className="space-y-6">
-                  <h4 className="text-sm font-medium text-foreground">Textos de la pÃ¡gina</h4>
+                  <h4 className="text-sm font-medium text-foreground">Textos de la página</h4>
 
                   <div className="grid gap-6 sm:grid-cols-2">
                     <FormField
                       id="badge"
                       label="Franja superior"
-                      placeholder="Ej: EstÃ©tica y skincare"
+                      placeholder="Ej: Estética y skincare"
                       required
                       value={step2Data.badge}
                       onChange={(value) => setStep2Data((d) => ({ ...d, badge: value }))}
                       validate={validations.badge}
                       maxLength={80}
-                      hint="Aparece como etiqueta arriba del tÃ­tulo"
+                      hint="Aparece como etiqueta arriba del título"
                     />
 
                     <FormField
@@ -861,56 +868,56 @@ export default function OnboardingPageClient({
                       onChange={(value) => setStep2Data((d) => ({ ...d, eyebrow: value }))}
                       validate={validations.eyebrow}
                       maxLength={120}
-                      hint="SubtÃ­tulo debajo de la franja"
+                      hint="Subtítulo debajo de la franja"
                     />
                   </div>
 
                   <FormField
                     id="headline"
-                    label="TÃ­tulo principal"
+                    label="Título principal"
                     required
                     value={step2Data.headline}
                     onChange={(value) => setStep2Data((d) => ({ ...d, headline: value }))}
                     validate={validations.headline}
                     maxLength={160}
-                    hint="El tÃ­tulo mÃ¡s importante de tu pÃ¡gina"
+                    hint="El título más importante de tu página"
                   />
 
                   <FormField
                     id="description"
-                    label="DescripciÃ³n"
+                    label="Descripción"
                     type="textarea"
                     required
                     value={step2Data.description}
                     onChange={(value) => setStep2Data((d) => ({ ...d, description: value }))}
                     validate={validations.description}
                     maxLength={320}
-                    hint="Una breve descripciÃ³n de tu negocio"
+                    hint="Una breve descripción de tu negocio"
                   />
 
                   <div className="grid gap-6 sm:grid-cols-2">
                     <FormField
                       id="primaryCta"
-                      label="BotÃ³n principal"
+                      label="Botón principal"
                       placeholder="Ej: Reservar turno"
                       required
                       value={step2Data.primaryCta}
                       onChange={(value) => setStep2Data((d) => ({ ...d, primaryCta: value }))}
                       validate={validations.cta}
                       maxLength={40}
-                      hint="Texto del botÃ³n principal"
+                      hint="Texto del botón principal"
                     />
 
                     <FormField
                       id="secondaryCta"
-                      label="BotÃ³n secundario"
+                      label="Botón secundario"
                       placeholder="Ej: Ver servicios"
                       required
                       value={step2Data.secondaryCta}
                       onChange={(value) => setStep2Data((d) => ({ ...d, secondaryCta: value }))}
                       validate={validations.cta}
                       maxLength={40}
-                      hint="Texto del botÃ³n secundario"
+                      hint="Texto del botón secundario"
                     />
                   </div>
                 </section>
@@ -922,7 +929,7 @@ export default function OnboardingPageClient({
                   className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
                 >
                   <ChevronLeft className="size-4 mr-1" />
-                  AtrÃ¡s
+                  Atrás
                 </button>
                 {hasExistingBusiness ? (
                   <button
@@ -967,7 +974,7 @@ export default function OnboardingPageClient({
                     Paso 3: Fotos del negocio
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    SubÃ­ imÃ¡genes para personalizar tu pÃ¡gina. Si no subÃ­s nada, usamos imÃ¡genes
+                    Subí imágenes para personalizar tu página. Si no subís nada, usamos imágenes
                     demo.
                   </p>
                 </div>
@@ -979,16 +986,20 @@ export default function OnboardingPageClient({
                   <ImageUpload
                     id="logoFile"
                     label="Logo del negocio"
-                    hint="Cuadrado o rectangular, se mostrarÃ¡ en el header"
+                    hint="Cuadrado o rectangular, se mostrará en el header"
                     preview={
                       step3Data.logo
                         ? URL.createObjectURL(step3Data.logo)
-                        : settingsData.profile.logoUrl
+                        : step3Data.logoCleared
+                          ? null
+                          : settingsData.profile.logoUrl
                     }
                     onChange={(file) =>
-                      setStep3Data((d) => ({ ...d, logo: file }))
+                      setStep3Data((d) => ({ ...d, logo: file, logoCleared: false }))
                     }
-                    onClear={() => setStep3Data((d) => ({ ...d, logo: null }))}
+                    onClear={() =>
+                      setStep3Data((d) => ({ ...d, logo: null, logoCleared: true }))
+                    }
                   />
 
                   <ImageUpload
@@ -998,18 +1009,22 @@ export default function OnboardingPageClient({
                     preview={
                       step3Data.hero
                         ? URL.createObjectURL(step3Data.hero)
-                        : settingsData.profile.heroImageUrl
+                        : step3Data.heroCleared
+                          ? null
+                          : settingsData.profile.heroImageUrl
                     }
                     onChange={(file) =>
-                      setStep3Data((d) => ({ ...d, hero: file }))
+                      setStep3Data((d) => ({ ...d, hero: file, heroCleared: false }))
                     }
-                    onClear={() => setStep3Data((d) => ({ ...d, hero: null }))}
+                    onClear={() =>
+                      setStep3Data((d) => ({ ...d, hero: null, heroCleared: true }))
+                    }
                   />
                 </div>
 
-                {/* GalerÃ­a */}
+                {/* Galería */}
                 <div>
-                  <h4 className="text-sm font-medium text-foreground mb-4">GalerÃ­a (opcional)</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-4">Galería (opcional)</h4>
                   <div className="grid gap-4 sm:grid-cols-3">
                     {galleryImageHints.map((hint, index) => (
                         <ImageUpload
@@ -1020,7 +1035,9 @@ export default function OnboardingPageClient({
                           preview={
                             step3Data.gallery[index]?.file
                               ? URL.createObjectURL(step3Data.gallery[index].file!)
-                              : settingsData.profile.gallery?.[index]?.url
+                              : step3Data.gallery[index]?.cleared
+                                ? null
+                                : settingsData.profile.gallery?.[index]?.url
                           }
                           descriptionValue={step3Data.gallery[index]?.alt ?? ""}
                           descriptionPlaceholder={`Ej: ${hint}`}
@@ -1036,7 +1053,7 @@ export default function OnboardingPageClient({
                             setStep3Data((d) => ({
                               ...d,
                               gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, file } : item
+                                i === index ? { ...item, file, cleared: false } : item
                               ),
                             }))
                           }
@@ -1044,7 +1061,7 @@ export default function OnboardingPageClient({
                             setStep3Data((d) => ({
                               ...d,
                               gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, file: null } : item
+                                i === index ? { ...item, file: null, cleared: true } : item
                               ),
                             }))
                           }
@@ -1060,7 +1077,7 @@ export default function OnboardingPageClient({
                   className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
                 >
                   <ChevronLeft className="size-4 mr-1" />
-                  AtrÃ¡s
+                  Atrás
                 </button>
                 {hasExistingBusiness ? (
                   <button
@@ -1088,7 +1105,7 @@ export default function OnboardingPageClient({
             </article>
           )}
 
-          {/* PASO 4: Datos PÃºblicos */}
+          {/* PASO 4: Datos Públicos */}
           {currentStep === 3 && (
             <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
               <div className="flex items-start gap-3 mb-8">
@@ -1097,10 +1114,10 @@ export default function OnboardingPageClient({
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-card-foreground">
-                    Paso 4: Datos pÃºblicos
+                    Paso 4: Datos públicos
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    AgregÃ¡ tus redes sociales y la direcciÃ³n para el mapa.
+                    Agregá tus redes sociales y la dirección para el mapa.
                   </p>
                 </div>
               </div>
@@ -1143,26 +1160,26 @@ export default function OnboardingPageClient({
                     placeholder="https://..."
                     value={step4Data.website}
                     onChange={(value) => setStep4Data((d) => ({ ...d, website: value }))}
-                    hint="Si tenÃ©s otro sitio web"
+                    hint="Si tenés otro sitio web"
                   />
                 </div>
 
                 <FormField
                   id="mapQuery"
-                  label="DirecciÃ³n para el mapa"
+                  label="Dirección para el mapa"
                   placeholder="Ej: Honduras 4821, Palermo, Buenos Aires"
                   value={step4Data.mapQuery}
                   onChange={(value) => setStep4Data((d) => ({ ...d, mapQuery: value }))}
-                  hint="Esta direcciÃ³n se usa para mostrar el mapa en tu pÃ¡gina"
+                  hint="Esta dirección se usa para mostrar el mapa en tu página"
                 />
               </div>
 
               <div className="mt-8 pt-6 border-t border-border/60">
                 <div className="rounded-2xl bg-secondary/30 p-5 mb-6">
-                  <h4 className="font-medium text-foreground mb-2">Â¿QuÃ© sigue?</h4>
+                  <h4 className="font-medium text-foreground mb-2">¿Qué sigue?</h4>
                   <p className="text-sm text-muted-foreground">
-                    Al guardar, tu pÃ¡gina quedarÃ¡ lista con todos los cambios. PodÃ©s seguir editando
-                    despuÃ©s desde el panel de configuraciÃ³n.
+                    Al guardar, tu página quedará lista con todos los cambios. Podés seguir editando
+                    después desde el panel de configuración.
                   </p>
                 </div>
 
@@ -1172,7 +1189,7 @@ export default function OnboardingPageClient({
                     className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
                   >
                     <ChevronLeft className="size-4 mr-1" />
-                    AtrÃ¡s
+                    Atrás
                   </button>
                   <button
                     onClick={hasExistingBusiness ? handleSaveAll : handleBrandingSubmit}

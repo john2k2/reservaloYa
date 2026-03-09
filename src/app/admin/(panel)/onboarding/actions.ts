@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getBrandingPalette } from "@/constants/branding-palettes";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { saveBrandingImageUpload } from "@/server/branding-upload";
 import { setLocalActiveBusinessSlug } from "@/server/local-admin-context";
 import {
@@ -14,6 +14,13 @@ import {
   updateLocalBusiness,
   updateLocalBusinessBranding,
 } from "@/server/local-store";
+import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
+import {
+  createPocketBaseBusinessFromTemplate,
+  getPocketBaseAdminSettingsData,
+  updatePocketBaseBusiness,
+  updatePocketBaseBusinessBranding,
+} from "@/server/pocketbase-store";
 
 const onboardingSchema = z.object({
   templateSlug: z.string().min(1),
@@ -38,6 +45,16 @@ const onboardingBrandingSchema = z.object({
   customAccent: z.string().optional(),
   customAccentSoft: z.string().optional(),
   customSurfaceTint: z.string().optional(),
+  enableDarkMode: z.boolean().optional(),
+  darkModeColors: z.object({
+    accent: z.string(),
+    accentSoft: z.string(),
+    surfaceTint: z.string(),
+    background: z.string(),
+    foreground: z.string(),
+    card: z.string(),
+    cardForeground: z.string(),
+  }).optional(),
   instagram: z.string().max(80).optional(),
   facebook: z.string().max(120).optional(),
   tiktok: z.string().max(120).optional(),
@@ -69,10 +86,6 @@ type SaveOnboardingBrandingResult = {
 };
 
 async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboardedBusinessResult> {
-  if (isSupabaseConfigured()) {
-    throw new Error("El onboarding local solo esta disponible en modo demo por ahora.");
-  }
-
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -83,13 +96,30 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
     throw new Error("Completa los datos requeridos del negocio.");
   }
 
-  await updateLocalBusiness({
-    businessSlug,
-    name,
-    phone,
-    email,
-    address,
-  });
+  if (isPocketBaseConfigured()) {
+    const user = await getAuthenticatedPocketBaseUser();
+    const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+
+    if (!businessId) {
+      throw new Error("No encontramos el negocio activo.");
+    }
+
+    await updatePocketBaseBusiness({
+      businessId: String(businessId),
+      name,
+      phone,
+      email,
+      address,
+    });
+  } else {
+    await updateLocalBusiness({
+      businessSlug,
+      name,
+      phone,
+      email,
+      address,
+    });
+  }
 
   revalidatePath("/admin/onboarding");
   revalidatePath(`/${businessSlug}`);
@@ -101,10 +131,6 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
 }
 
 async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardingBrandingResult> {
-  if (isSupabaseConfigured()) {
-    throw new Error("La version productiva del onboarding se conecta al cerrar el bloque live.");
-  }
-
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
 
   if (!businessSlug) {
@@ -140,6 +166,11 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
   const galleryDescriptions = Array.from({ length: 3 }, (_, index) =>
     String(formData.get(`galleryAlt${index + 1}`) ?? "").trim()
   );
+  const clearLogo = String(formData.get("clearLogoFile") ?? "") === "true";
+  const clearHero = String(formData.get("clearHeroFile") ?? "") === "true";
+  const clearGallery = Array.from({ length: 3 }, (_, index) =>
+    String(formData.get(`clearGalleryFile${index + 1}`) ?? "") === "true"
+  );
 
   const raw = {
     businessSlug,
@@ -153,6 +184,15 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     customAccent: String(formData.get("customAccent") ?? "").trim(),
     customAccentSoft: String(formData.get("customAccentSoft") ?? "").trim(),
     customSurfaceTint: String(formData.get("customSurfaceTint") ?? "").trim(),
+    enableDarkMode: String(formData.get("enableDarkMode") ?? "") === "true",
+    darkModeColors: (() => {
+      const raw = String(formData.get("darkModeColors") ?? "").trim();
+      try {
+        return raw ? JSON.parse(raw) : undefined;
+      } catch {
+        return undefined;
+      }
+    })(),
     instagram: String(formData.get("instagram") ?? "").trim(),
     facebook: String(formData.get("facebook") ?? "").trim(),
     tiktok: String(formData.get("tiktok") ?? "").trim(),
@@ -166,7 +206,18 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     throw new Error("Revisa colores, textos e imagenes antes de guardar identidad.");
   }
 
-  const settings = await getLocalAdminSettingsData(parsed.data.businessSlug);
+  const settings = isPocketBaseConfigured()
+    ? await (async () => {
+        const user = await getAuthenticatedPocketBaseUser();
+        const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+
+        if (!businessId) {
+          throw new Error("No encontramos el negocio activo.");
+        }
+
+        return getPocketBaseAdminSettingsData(String(businessId));
+      })()
+    : await getLocalAdminSettingsData(parsed.data.businessSlug);
   const profile = settings.profile;
   const palette =
     parsed.data.palette === "custom"
@@ -178,7 +229,9 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
       : getBrandingPalette(parsed.data.palette);
   const nextGallery = Array.from({ length: 3 }, (_, index) => {
     const existingItem = profile.gallery?.[index] ?? null;
-    const url = uploadedGalleryUrls[index] || existingItem?.url || null;
+    const url = clearGallery[index]
+      ? null
+      : uploadedGalleryUrls[index] || existingItem?.url || null;
 
     if (!url) {
       return null;
@@ -200,32 +253,76 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     } => Boolean(item)
   );
 
-  await updateLocalBusinessBranding({
-    businessSlug: parsed.data.businessSlug,
-    badge: parsed.data.badge,
-    eyebrow: parsed.data.eyebrow,
-    headline: parsed.data.headline,
-    description: parsed.data.description,
-    primaryCta: parsed.data.primaryCta,
-    secondaryCta: parsed.data.secondaryCta,
-    instagram: parsed.data.instagram ?? profile.instagram ?? "",
-    facebook: parsed.data.facebook || profile.facebook,
-    tiktok: parsed.data.tiktok || profile.tiktok,
-    accent: palette.accent,
-    accentSoft: palette.accentSoft,
-    surfaceTint: palette.surfaceTint,
-    trustPoints: profile.trustPoints,
-    benefits: profile.benefits,
-    policies: profile.policies,
-    website: parsed.data.website || profile.website,
-    logoLabel: profile.logoLabel,
-    logoUrl: uploadedLogoUrl || profile.logoUrl,
-    heroImageUrl: uploadedHeroUrl || profile.heroImageUrl,
-    heroImageAlt: profile.heroImageAlt,
-    gallery: nextGallery.length > 0 ? nextGallery : profile.gallery,
-    mapQuery: parsed.data.mapQuery || profile.mapQuery || settings.address,
-    mapEmbedUrl: profile.mapEmbedUrl,
-  });
+  if (isPocketBaseConfigured()) {
+    const user = await getAuthenticatedPocketBaseUser();
+    const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+
+    if (!businessId) {
+      throw new Error("No encontramos el negocio activo.");
+    }
+
+    await updatePocketBaseBusinessBranding({
+      businessId: String(businessId),
+      updates: {
+        badge: parsed.data.badge,
+        eyebrow: parsed.data.eyebrow,
+        headline: parsed.data.headline,
+        description: parsed.data.description,
+        primaryCta: parsed.data.primaryCta,
+        secondaryCta: parsed.data.secondaryCta,
+        instagram: parsed.data.instagram ?? profile.instagram ?? "",
+        facebook: parsed.data.facebook || profile.facebook,
+        tiktok: parsed.data.tiktok || profile.tiktok,
+        accent: palette.accent,
+        accentSoft: palette.accentSoft,
+        surfaceTint: palette.surfaceTint,
+        trustPoints: profile.trustPoints,
+        benefits: profile.benefits,
+        policies: profile.policies,
+        website: parsed.data.website || profile.website,
+        logoLabel: profile.logoLabel,
+        logoUrl: clearLogo ? null : uploadedLogoUrl || profile.logoUrl,
+        heroImageUrl: clearHero ? null : uploadedHeroUrl || profile.heroImageUrl,
+        heroImageAlt: profile.heroImageAlt,
+        gallery:
+          nextGallery.length > 0 ? nextGallery : clearGallery.some(Boolean) ? null : profile.gallery,
+        mapQuery: parsed.data.mapQuery || profile.mapQuery || settings.address,
+        mapEmbedUrl: profile.mapEmbedUrl,
+        enableDarkMode: parsed.data.enableDarkMode ?? false,
+        darkModeColors: parsed.data.darkModeColors,
+      },
+    });
+  } else {
+    await updateLocalBusinessBranding({
+      businessSlug: parsed.data.businessSlug,
+      badge: parsed.data.badge,
+      eyebrow: parsed.data.eyebrow,
+      headline: parsed.data.headline,
+      description: parsed.data.description,
+      primaryCta: parsed.data.primaryCta,
+      secondaryCta: parsed.data.secondaryCta,
+      instagram: parsed.data.instagram ?? profile.instagram ?? "",
+      facebook: parsed.data.facebook || profile.facebook,
+      tiktok: parsed.data.tiktok || profile.tiktok,
+      accent: palette.accent,
+      accentSoft: palette.accentSoft,
+      surfaceTint: palette.surfaceTint,
+      trustPoints: profile.trustPoints,
+      benefits: profile.benefits,
+      policies: profile.policies,
+      website: parsed.data.website || profile.website,
+      logoLabel: profile.logoLabel,
+      logoUrl: clearLogo ? null : uploadedLogoUrl || profile.logoUrl,
+      heroImageUrl: clearHero ? null : uploadedHeroUrl || profile.heroImageUrl,
+      heroImageAlt: profile.heroImageAlt,
+      gallery:
+        nextGallery.length > 0 ? nextGallery : clearGallery.some(Boolean) ? null : profile.gallery,
+      mapQuery: parsed.data.mapQuery || profile.mapQuery || settings.address,
+      mapEmbedUrl: profile.mapEmbedUrl,
+      enableDarkMode: parsed.data.enableDarkMode ?? false,
+      darkModeColors: parsed.data.darkModeColors,
+    });
+  }
 
   revalidatePath("/admin/onboarding");
   revalidatePath(`/${businessSlug}`);
@@ -237,14 +334,6 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
 }
 
 export async function createOnboardedBusinessAction(formData: FormData) {
-  if (isSupabaseConfigured()) {
-    redirect(
-      `/admin/onboarding?error=${encodeURIComponent(
-        "El onboarding local solo esta disponible en modo demo por ahora."
-      )}`
-    );
-  }
-
   const raw = {
     templateSlug: String(formData.get("templateSlug") ?? ""),
     name: String(formData.get("name") ?? "").trim(),
@@ -267,11 +356,17 @@ export async function createOnboardedBusinessAction(formData: FormData) {
   let businessSlug: string;
 
   try {
-    businessSlug = await createLocalBusinessFromTemplate({
-      ...parsed.data,
-      slug: parsed.data.slug ?? "",
-      email: parsed.data.email ?? "",
-    });
+    businessSlug = isPocketBaseConfigured()
+      ? await createPocketBaseBusinessFromTemplate({
+          ...parsed.data,
+          slug: parsed.data.slug ?? "",
+          email: parsed.data.email ?? "",
+        })
+      : await createLocalBusinessFromTemplate({
+          ...parsed.data,
+          slug: parsed.data.slug ?? "",
+          email: parsed.data.email ?? "",
+        });
   } catch (error) {
     redirect(
       `/admin/onboarding?error=${encodeURIComponent(

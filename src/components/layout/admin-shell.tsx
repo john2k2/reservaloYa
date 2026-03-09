@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Eye, LogOut } from "lucide-react";
+import { ExternalLink, LogOut, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 
 import { adminNavigation, demoBusinessSlug, productName } from "@/constants/site";
-import { cn, humanizeSlug } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -14,6 +16,45 @@ interface AdminShellProps {
   userEmail: string;
   profileName: string;
   demoMode: boolean;
+}
+
+function ThemeToggle() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleToggle = () => {
+    const current = resolvedTheme || theme;
+    const next = current === "dark" ? "light" : "dark";
+    setTheme(next);
+  };
+
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground"
+      >
+        <Sun className="size-4" />
+        <span>Tema</span>
+      </button>
+    );
+  }
+
+  const isDark = resolvedTheme === "dark";
+  return (
+    <button
+      type="button"
+      onClick={handleToggle}
+      className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-all hover:bg-secondary hover:text-foreground active:scale-[0.98]"
+    >
+      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>
+    </button>
+  );
 }
 
 export function AdminShell({
@@ -28,21 +69,21 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
-      <aside className="hidden w-64 flex-col border-r border-border/60 bg-secondary/20 lg:flex">
-        <div className="px-6 py-8">
-          <Link href="/" className="inline-flex h-11 items-center text-xl font-bold tracking-tight">
+      {/* Sidebar Desktop */}
+      <aside className="hidden w-56 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
+        <div className="px-4 py-6">
+          <Link href="/" className="inline-flex items-center text-lg font-bold tracking-tight">
             {productName}
           </Link>
-          <div className="mt-6 flex flex-col gap-1">
-            <span className="mr-auto rounded-md bg-secondary px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {demoMode ? "Demo Mode" : "Modo real"}
+          <div className="mt-4">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {demoMode ? "Modo demo" : "Panel"}
             </span>
-            <span className="mt-2 pr-4 text-sm font-medium">{businessName}</span>
-            <span className="text-xs text-muted-foreground">{humanizeSlug(businessSlug)}</span>
+            <p className="mt-1 text-sm font-medium leading-tight">{businessName}</p>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
+        <nav className="flex-1 space-y-0.5 px-2">
           {adminNavigation.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -52,7 +93,7 @@ export function AdminShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
                   active
                     ? "bg-foreground text-background"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -65,28 +106,28 @@ export function AdminShell({
           })}
         </nav>
 
-        <div className="border-t border-border/60 p-4">
-          <div className="rounded-md bg-secondary/50 p-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Usuario
-            </p>
+        <div className="border-t border-border/60 p-3 space-y-1">
+          <div className="rounded-lg bg-secondary/40 p-3 mb-2">
             <p className="truncate text-sm font-medium">{profileName}</p>
             <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-
-            <Link
-              href={`/${businessSlug || demoBusinessSlug}`}
-              className="mt-4 inline-flex h-11 items-center gap-2 px-2 text-sm font-medium transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              <Eye aria-hidden="true" className="size-3.5" />
-              Ver página pública
-            </Link>
           </div>
 
+          <ThemeToggle />
+
+          <Link
+            href={`/${businessSlug || demoBusinessSlug}`}
+            target="_blank"
+            className="flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <ExternalLink className="size-4" />
+            Ver página pública
+          </Link>
+
           {!demoMode && (
-            <form action="/auth/signout" method="post" className="mt-2">
+            <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="flex w-full h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 <LogOut aria-hidden="true" className="size-4" />
                 Cerrar sesión
@@ -96,24 +137,29 @@ export function AdminShell({
         </div>
       </aside>
 
+      {/* Main Content */}
       <div className="flex h-screen flex-1 flex-col overflow-hidden">
-        <header className="border-b border-border/60 bg-background px-4 sm:px-8">
-          <div className="flex h-16 items-center justify-between gap-4">
+        {/* Header Mobile */}
+        <header className="border-b border-border/60 bg-background px-4 lg:px-6">
+          <div className="flex h-14 items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {demoMode ? "Vista demo" : "Panel de control"}
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {demoMode ? "Demo" : "Admin"}
               </p>
-              <h1 className="truncate text-sm font-semibold sm:text-base">{businessName}</h1>
+              <h1 className="truncate text-sm font-semibold">{businessName}</h1>
             </div>
             <Link
               href={`/${businessSlug || demoBusinessSlug}`}
-              className="inline-flex h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 lg:hidden"
+              target="_blank"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground xl:hidden"
             >
-              Ver sitio
+              <ExternalLink className="size-3.5" />
+              <span className="hidden sm:inline">Ver página</span>
             </Link>
           </div>
 
-          <nav className="flex flex-wrap gap-2 pb-4 lg:hidden">
+          {/* Navigation Mobile */}
+          <nav className="flex gap-1 overflow-x-auto pb-3 xl:hidden scrollbar-hide">
             {adminNavigation.map((item) => {
               const active = pathname === item.href;
 
@@ -122,7 +168,7 @@ export function AdminShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "inline-flex h-11 items-center whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    "inline-flex h-8 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors whitespace-nowrap",
                     active
                       ? "border-foreground bg-foreground text-background"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -135,8 +181,9 @@ export function AdminShell({
           </nav>
         </header>
 
-        <main id="main-content" className="flex-1 overflow-y-auto bg-background p-4 sm:p-8">
-          <div className="mx-auto max-w-5xl">{children}</div>
+        {/* Page Content */}
+        <main id="main-content" className="flex-1 overflow-y-auto bg-background p-4 lg:p-6 xl:p-8">
+          <div className="mx-auto max-w-7xl 2xl:max-w-[1600px]">{children}</div>
         </main>
       </div>
     </div>

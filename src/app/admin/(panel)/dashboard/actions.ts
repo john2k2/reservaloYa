@@ -2,23 +2,28 @@
 
 import { redirect } from "next/navigation";
 
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
 import { runLocalBookingReminderSweep } from "@/server/local-store";
+import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
+import { runPocketBaseBookingReminderSweep } from "@/server/pocketbase-store";
 
 export async function runLocalReminderSweepAction() {
-  if (isSupabaseConfigured()) {
-    redirect(
-      `/admin/dashboard?error=${encodeURIComponent(
-        "Los recordatorios automaticos en produccion se activaran cuando conectemos el proveedor real."
-      )}`
-    );
-  }
+  const result = isPocketBaseConfigured()
+    ? await (async () => {
+        const user = await getAuthenticatedPocketBaseUser();
+        const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
 
-  const businessSlug = await getLocalActiveBusinessSlug();
-  const result = await runLocalBookingReminderSweep({
-    businessSlug: businessSlug ?? undefined,
-  });
+        return runPocketBaseBookingReminderSweep({
+          businessId: businessId ? String(businessId) : undefined,
+        });
+      })()
+    : await (async () => {
+        const businessSlug = await getLocalActiveBusinessSlug();
+        return runLocalBookingReminderSweep({
+          businessSlug: businessSlug ?? undefined,
+        });
+      })();
 
   const message =
     result.sent > 0

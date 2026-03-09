@@ -5,22 +5,27 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "demo:reset": "node scripts/reset-local-demo.mjs",
     "pb:up": "docker compose up -d pocketbase",
     "pb:down": "docker compose down",
-    "pb:logs": "docker compose logs -f pocketbase"
+    "pb:logs": "docker compose logs -f pocketbase",
+    "pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
-    "@supabase/ssr": "^0.9.0",
-    "@supabase/supabase-js": "^2.98.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
+    "next-themes": "^0.4.6",
+    "pocketbase": "^0.26.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.9.3",
@@ -30,13 +35,21 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "jsdom": "^28.1.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }

@@ -10,6 +10,7 @@ import {
 import { dashboardHighlights, demoBusinessOptions } from "@/constants/site";
 import { demoBusiness, demoPresets } from "@/constants/demo";
 import {
+  addMinutes,
   buildBookingDateOptions,
   findNextBookingDate,
   getDayOfWeek,
@@ -54,7 +55,9 @@ type LocalService = {
   name: string;
   description: string;
   durationMinutes: number;
-  price: number;
+  price: number | null;
+  featured?: boolean;
+  featuredLabel?: string;
   active: boolean;
   createdAt: string;
 };
@@ -173,6 +176,74 @@ type UpdateLocalBusinessInput = {
   address: string;
 };
 
+type UpsertLocalServiceInput = {
+  businessSlug: string;
+  serviceId?: string;
+  name: string;
+  description: string;
+  durationMinutes: number;
+  price: number | null;
+  featured: boolean;
+  featuredLabel: string;
+};
+
+type DeactivateLocalServiceInput = {
+  businessSlug: string;
+  serviceId: string;
+};
+
+type UpsertLocalAvailabilityRuleInput = {
+  businessSlug: string;
+  ruleId?: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  active: boolean;
+};
+
+type UpsertLocalAvailabilityRulesInput = {
+  businessSlug: string;
+  rules: Array<{
+    ruleId?: string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    active: boolean;
+  }>;
+};
+
+type CreateLocalBlockedSlotInput = {
+  businessSlug: string;
+  blockedDate: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+};
+
+type CreateLocalBlockedSlotsInput = {
+  businessSlug: string;
+  slots: Array<{
+    blockedDate: string;
+    startTime: string;
+    endTime: string;
+    reason: string;
+  }>;
+};
+
+type RemoveLocalBlockedSlotInput = {
+  businessSlug: string;
+  blockedSlotId: string;
+};
+
+type UpdateLocalAdminBookingInput = {
+  businessSlug: string;
+  bookingId: string;
+  bookingDate: string;
+  startTime: string;
+  status: LocalBookingStatus;
+  notes: string;
+};
+
 type UpdateLocalBusinessBrandingInput = {
   businessSlug: string;
   badge: string;
@@ -192,15 +263,25 @@ type UpdateLocalBusinessBrandingInput = {
   tiktok?: string;
   website?: string;
   logoLabel?: string;
-  logoUrl?: string;
-  heroImageUrl?: string;
+  logoUrl?: string | null;
+  heroImageUrl?: string | null;
   heroImageAlt?: string;
   gallery?: Array<{
     url: string;
     alt: string;
-  }>;
+  }> | null;
   mapQuery?: string;
   mapEmbedUrl?: string;
+  enableDarkMode?: boolean;
+  darkModeColors?: {
+    accent: string;
+    accentSoft: string;
+    surfaceTint: string;
+    background: string;
+    foreground: string;
+    card: string;
+    cardForeground: string;
+  };
 };
 
 const dataDir = path.join(process.cwd(), "data");
@@ -415,6 +496,27 @@ function getAdminBusiness(store: LocalStore, businessSlug?: string | null) {
 
 function getBusinessServices(store: LocalStore, businessId: string) {
   return store.services.filter((service) => service.businessId === businessId && service.active);
+}
+
+function countFeaturedServices(
+  services: LocalService[],
+  excludedServiceId?: string
+) {
+  return services.filter(
+    (service) => service.id !== excludedServiceId && service.featured
+  ).length;
+}
+
+function normalizeServiceName(name: string) {
+  return name.trim().toLocaleLowerCase("es-AR");
+}
+
+function buildBlockedSlotKey(input: {
+  blockedDate: string;
+  startTime: string;
+  endTime: string;
+}) {
+  return `${input.blockedDate}::${input.startTime}::${input.endTime}`;
 }
 
 function getBusinessCustomers(store: LocalStore, businessId: string) {
@@ -693,10 +795,22 @@ export async function getLocalPublicBusinessPageData(slug: string) {
     business,
     profile,
     weeklyHours,
-    services: getBusinessServices(store, business.id).map((service) => ({
-      ...service,
-      priceLabel: formatMoney(service.price),
-    })),
+    services: getBusinessServices(store, business.id)
+      .slice()
+      .sort((a, b) => {
+        const featuredDelta = Number(Boolean(b.featured)) - Number(Boolean(a.featured));
+        if (featuredDelta !== 0) {
+          return featuredDelta;
+        }
+
+        return a.name.localeCompare(b.name);
+      })
+      .map((service) => ({
+        ...service,
+        featured: Boolean(service.featured),
+        featuredLabel: service.featuredLabel ?? "",
+        priceLabel: formatMoney(service.price),
+      })),
     source: "local" as const,
   };
 }
@@ -1017,6 +1131,318 @@ export async function updateLocalBusiness(input: UpdateLocalBusinessInput) {
   });
 }
 
+export async function upsertLocalService(input: UpsertLocalServiceInput) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio para guardar el servicio.");
+    }
+
+    const duplicateService = store.services.find(
+      (service) =>
+        service.businessId === business.id &&
+        service.active &&
+        service.id !== input.serviceId &&
+        normalizeServiceName(service.name) === normalizeServiceName(input.name)
+    );
+
+    if (duplicateService) {
+      throw new Error("Ya existe un servicio activo con ese nombre.");
+    }
+
+    const businessServices = getBusinessServices(store, business.id);
+
+    if (input.featured && countFeaturedServices(businessServices, input.serviceId) >= 3) {
+      throw new Error("Puedes destacar hasta 3 servicios activos.");
+    }
+
+    if (input.serviceId) {
+      const service = store.services.find(
+        (candidate) =>
+          candidate.id === input.serviceId && candidate.businessId === business.id && candidate.active
+      );
+
+      if (!service) {
+        throw new Error("No encontramos el servicio a editar.");
+      }
+
+      service.name = input.name;
+      service.description = input.description;
+      service.durationMinutes = input.durationMinutes;
+      service.price = input.price;
+      service.featured = input.featured;
+      service.featuredLabel = input.featured ? input.featuredLabel : "";
+
+      return service.id;
+    }
+
+    store.services.push({
+      id: randomUUID(),
+      businessId: business.id,
+      name: input.name,
+      description: input.description,
+      durationMinutes: input.durationMinutes,
+      price: input.price,
+      featured: input.featured,
+      featuredLabel: input.featured ? input.featuredLabel : "",
+      active: true,
+      createdAt: new Date().toISOString(),
+    });
+
+    return business.slug;
+  });
+}
+
+export async function deactivateLocalService(input: DeactivateLocalServiceInput) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio para desactivar el servicio.");
+    }
+
+    const service = store.services.find(
+      (candidate) =>
+        candidate.id === input.serviceId && candidate.businessId === business.id && candidate.active
+    );
+
+    if (!service) {
+      throw new Error("No encontramos el servicio a desactivar.");
+    }
+
+    service.active = false;
+
+    return service.id;
+  });
+}
+
+export async function upsertLocalAvailabilityRule(input: UpsertLocalAvailabilityRuleInput) {
+  return upsertLocalAvailabilityRules({
+    businessSlug: input.businessSlug,
+    rules: [
+      {
+        ruleId: input.ruleId,
+        dayOfWeek: input.dayOfWeek,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        active: input.active,
+      },
+    ],
+  });
+}
+
+export async function upsertLocalAvailabilityRules(input: UpsertLocalAvailabilityRulesInput) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio para guardar la disponibilidad.");
+    }
+
+    for (const ruleInput of input.rules) {
+      const existingRule = ruleInput.ruleId
+        ? store.availabilityRules.find(
+            (rule) => rule.id === ruleInput.ruleId && rule.businessId === business.id
+          )
+        : store.availabilityRules.find(
+            (rule) => rule.businessId === business.id && rule.dayOfWeek === ruleInput.dayOfWeek
+          );
+
+      if (!ruleInput.active && !existingRule) {
+        continue;
+      }
+
+      if (existingRule) {
+        existingRule.startTime = ruleInput.startTime;
+        existingRule.endTime = ruleInput.endTime;
+        existingRule.active = ruleInput.active;
+        continue;
+      }
+
+      store.availabilityRules.push({
+        id: randomUUID(),
+        businessId: business.id,
+        dayOfWeek: ruleInput.dayOfWeek,
+        startTime: ruleInput.startTime,
+        endTime: ruleInput.endTime,
+        active: ruleInput.active,
+      });
+    }
+
+    return input.rules.length;
+  });
+}
+
+export async function createLocalBlockedSlot(input: CreateLocalBlockedSlotInput) {
+  const result = await createLocalBlockedSlots({
+    businessSlug: input.businessSlug,
+    slots: [
+      {
+        blockedDate: input.blockedDate,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        reason: input.reason,
+      },
+    ],
+  });
+
+  if (result.createdCount === 0) {
+    throw new Error("Ese bloqueo ya existe.");
+  }
+
+  return input.businessSlug;
+}
+
+export async function createLocalBlockedSlots(input: CreateLocalBlockedSlotsInput) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio para bloquear agenda.");
+    }
+
+    const existingKeys = new Set(
+      store.blockedSlots
+        .filter((slot) => slot.businessId === business.id)
+        .map((slot) => buildBlockedSlotKey(slot))
+    );
+    const submittedKeys = new Set<string>();
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const slot of input.slots) {
+      const key = buildBlockedSlotKey(slot);
+
+      if (existingKeys.has(key) || submittedKeys.has(key)) {
+        skippedCount += 1;
+        continue;
+      }
+
+      submittedKeys.add(key);
+      existingKeys.add(key);
+      createdCount += 1;
+      store.blockedSlots.push({
+        id: randomUUID(),
+        businessId: business.id,
+        blockedDate: slot.blockedDate,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        reason: slot.reason,
+      });
+    }
+
+    return {
+      createdCount,
+      skippedCount,
+    };
+  });
+}
+
+export async function removeLocalBlockedSlot(input: RemoveLocalBlockedSlotInput) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio para quitar el bloqueo.");
+    }
+
+    const slotIndex = store.blockedSlots.findIndex(
+      (slot) => slot.id === input.blockedSlotId && slot.businessId === business.id
+    );
+
+    if (slotIndex < 0) {
+      throw new Error("No encontramos el bloqueo a eliminar.");
+    }
+
+    store.blockedSlots.splice(slotIndex, 1);
+
+    return input.blockedSlotId;
+  });
+}
+
+export async function updateLocalAdminBooking(input: UpdateLocalAdminBookingInput) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio para actualizar el turno.");
+    }
+
+    const booking = store.bookings.find(
+      (candidate) => candidate.id === input.bookingId && candidate.businessId === business.id
+    );
+
+    if (!booking) {
+      throw new Error("No encontramos el turno a actualizar.");
+    }
+
+    const service = store.services.find(
+      (candidate) => candidate.id === booking.serviceId && candidate.businessId === business.id
+    );
+
+    if (!service) {
+      throw new Error("No encontramos el servicio del turno.");
+    }
+
+    const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
+    const startMinutes = toMinutes(input.startTime);
+    const endTime = addMinutes(input.startTime, service.durationMinutes);
+    const endMinutes = toMinutes(endTime);
+    const activeRules = store.availabilityRules.filter(
+      (rule) =>
+        rule.businessId === business.id &&
+        rule.active &&
+        rule.dayOfWeek === selectedDayOfWeek
+    );
+    const fitsWithinAvailability = activeRules.some(
+      (rule) =>
+        startMinutes >= toMinutes(rule.startTime) && endMinutes <= toMinutes(rule.endTime)
+    );
+
+    if (!fitsWithinAvailability) {
+      throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
+    }
+
+    const blockedConflict = store.blockedSlots.some(
+      (slot) =>
+        slot.businessId === business.id &&
+        slot.blockedDate === input.bookingDate &&
+        overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+    );
+
+    if (blockedConflict) {
+      throw new Error("Ese horario esta bloqueado.");
+    }
+
+    const bookingConflict = store.bookings.some(
+      (candidate) =>
+        candidate.id !== booking.id &&
+        candidate.businessId === business.id &&
+        candidate.bookingDate === input.bookingDate &&
+        (candidate.status === "pending" || candidate.status === "confirmed") &&
+        overlaps(
+          startMinutes,
+          endMinutes,
+          toMinutes(candidate.startTime),
+          toMinutes(candidate.endTime)
+        )
+    );
+
+    if (bookingConflict) {
+      throw new Error("Ese horario ya no esta disponible.");
+    }
+
+    booking.bookingDate = input.bookingDate;
+    booking.startTime = input.startTime;
+    booking.endTime = endTime;
+    booking.status = input.status;
+    booking.notes = input.notes;
+
+    return booking.id;
+  });
+}
+
 export async function updateLocalBusinessBranding(input: UpdateLocalBusinessBrandingInput) {
   return mutateStore((store) => {
     const business = getBusinessBySlug(store, input.businessSlug);
@@ -1043,12 +1469,15 @@ export async function updateLocalBusinessBranding(input: UpdateLocalBusinessBran
       tiktok: input.tiktok || undefined,
       website: input.website || undefined,
       logoLabel: input.logoLabel || undefined,
-      logoUrl: input.logoUrl || undefined,
-      heroImageUrl: input.heroImageUrl || undefined,
+      logoUrl: input.logoUrl === null ? null : input.logoUrl || undefined,
+      heroImageUrl: input.heroImageUrl === null ? null : input.heroImageUrl || undefined,
       heroImageAlt: input.heroImageAlt || undefined,
-      gallery: input.gallery?.length ? input.gallery : undefined,
+      gallery:
+        input.gallery === null ? null : input.gallery?.length ? input.gallery : undefined,
       mapQuery: input.mapQuery || undefined,
       mapEmbedUrl: input.mapEmbedUrl || undefined,
+      enableDarkMode: input.enableDarkMode ?? false,
+      darkModeColors: input.darkModeColors,
     };
 
     return business.slug;
@@ -1365,9 +1794,17 @@ export async function getLocalAdminDashboardData(activeBusinessSlug?: string | n
   };
 }
 
-export async function getLocalAdminBookingsData(activeBusinessSlug?: string | null) {
+export async function getLocalAdminBookingsData(
+  activeBusinessSlug?: string | null,
+  filters?: {
+    status?: string;
+    date?: string;
+    q?: string;
+  }
+) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
+  const query = filters?.q?.trim().toLocaleLowerCase("es-AR") ?? "";
 
   return getBusinessBookings(store, business.id)
     .slice()
@@ -1383,18 +1820,52 @@ export async function getLocalAdminBookingsData(activeBusinessSlug?: string | nu
         serviceName: service?.name ?? "Servicio",
         bookingDate: booking.bookingDate,
         startTime: booking.startTime,
-        status: formatBookingStatus(booking.status),
+        status: booking.status,
+        statusLabel: formatBookingStatus(booking.status),
         notes: booking.notes,
       };
+    })
+    .filter((booking) => {
+      if (filters?.status && booking.status !== filters.status) {
+        return false;
+      }
+
+      if (filters?.date && booking.bookingDate !== filters.date) {
+        return false;
+      }
+
+      if (
+        query &&
+        !`${booking.customerName} ${booking.phone} ${booking.serviceName}`
+          .toLocaleLowerCase("es-AR")
+          .includes(query)
+      ) {
+        return false;
+      }
+
+      return true;
     });
 }
 
-export async function getLocalAdminCustomersData(activeBusinessSlug?: string | null) {
+export async function getLocalAdminCustomersData(
+  activeBusinessSlug?: string | null,
+  query?: string
+) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
+  const search = query?.trim().toLocaleLowerCase("es-AR") ?? "";
 
   return getBusinessCustomers(store, business.id)
     .slice()
+    .filter((customer) => {
+      if (!search) {
+        return true;
+      }
+
+      return [customer.fullName, customer.phone, customer.email]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase("es-AR").includes(search));
+    })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map((customer) => {
       const customerBookings = store.bookings.filter((booking) => booking.customerId === customer.id);
@@ -1418,13 +1889,26 @@ export async function getLocalAdminServicesData(activeBusinessSlug?: string | nu
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return getBusinessServices(store, business.id).map((service) => ({
-    id: service.id,
-    name: service.name,
-    description: service.description,
-    durationMinutes: service.durationMinutes,
-    priceLabel: formatMoney(service.price),
-  }));
+  return getBusinessServices(store, business.id)
+    .slice()
+    .sort((a, b) => {
+      const featuredDelta = Number(Boolean(b.featured)) - Number(Boolean(a.featured));
+      if (featuredDelta !== 0) {
+        return featuredDelta;
+      }
+
+      return a.name.localeCompare(b.name);
+    })
+    .map((service) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      durationMinutes: service.durationMinutes,
+      price: service.price,
+      featured: Boolean(service.featured),
+      featuredLabel: service.featuredLabel ?? "",
+      priceLabel: formatMoney(service.price),
+    }));
 }
 
 export async function getLocalAdminAvailabilityData(activeBusinessSlug?: string | null) {

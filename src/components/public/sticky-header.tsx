@@ -13,6 +13,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 import { buttonVariants } from "@/components/ui/button-variants";
 import { PublicTrackedLink } from "./public-tracked-link";
+import { PublicBusinessThemeToggle } from "@/components/public-business-theme-toggle";
 import { cn } from "@/lib/utils";
 
 export function StickyHeader({
@@ -23,14 +24,16 @@ export function StickyHeader({
   bookingHref,
   whatsappHref,
   accent,
+  enableDarkMode = false,
 }: {
   businessSlug: string;
   logoLabel: string;
-  logoUrl?: string;
+  logoUrl?: string | null;
   businessName: string;
   bookingHref: string;
   whatsappHref: string;
   accent: string;
+  enableDarkMode?: boolean;
 }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -46,7 +49,7 @@ export function StickyHeader({
   if (!isVisible) return null;
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
+    <header className="fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
       <div className="mx-auto flex max-w-6xl items-center justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -62,6 +65,7 @@ export function StickyHeader({
         </div>
         
         <div className="flex items-center gap-2">
+          <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
           <a
             href={whatsappHref}
             target="_blank"

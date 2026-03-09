@@ -23,6 +23,7 @@ import { FormField } from "./components/form-field";
 import { PaletteSelector } from "./components/palette-selector";
 import { ImageUpload } from "./components/image-upload";
 import { LivePreview } from "./components/live-preview";
+import { ColorPicker } from "@/components/admin/color-picker";
 
 interface EditBusinessPageProps {
   business: {
@@ -52,8 +53,18 @@ interface EditBusinessPageProps {
       website?: string;
       mapQuery?: string;
       gallery?: { url: string; alt: string }[] | null;
-      logoUrl?: string;
-      heroImageUrl?: string;
+      logoUrl?: string | null;
+      heroImageUrl?: string | null;
+      enableDarkMode?: boolean;
+      darkModeColors?: {
+        accent: string;
+        accentSoft: string;
+        surfaceTint: string;
+        background: string;
+        foreground: string;
+        card: string;
+        cardForeground: string;
+      };
     };
   };
 }
@@ -110,6 +121,7 @@ const validations = {
 type GalleryImageInput = {
   file: File | null;
   alt: string;
+  cleared: boolean;
 };
 
 const galleryImageHints = [
@@ -152,19 +164,34 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
     description: settingsData.profile.description,
     primaryCta: settingsData.profile.primaryCta,
     secondaryCta: settingsData.profile.secondaryCta,
+    enableDarkMode: settingsData.profile.enableDarkMode ?? false,
+    darkModeColors: settingsData.profile.darkModeColors ?? {
+      accent: settingsData.profile.accent,
+      accentSoft: "#27272a",
+      surfaceTint: "#18181b",
+      background: "#111111",
+      foreground: "#fafafa",
+      card: "#1a1a1a",
+      cardForeground: "#fafafa",
+    },
   });
 
   // Imágenes (Paso 3)
   const [imageData, setImageData] = useState<{
     logo: File | null;
     hero: File | null;
+    logoCleared: boolean;
+    heroCleared: boolean;
     gallery: GalleryImageInput[];
   }>({
     logo: null,
     hero: null,
+    logoCleared: false,
+    heroCleared: false,
     gallery: galleryImageHints.map((_, index) => ({
       file: null,
       alt: settingsData.profile.gallery?.[index]?.alt ?? "",
+      cleared: false,
     })),
   });
 
@@ -206,6 +233,8 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
       brandingFormData.append("description", styleData.description);
       brandingFormData.append("primaryCta", styleData.primaryCta);
       brandingFormData.append("secondaryCta", styleData.secondaryCta);
+      brandingFormData.append("enableDarkMode", String(styleData.enableDarkMode));
+      brandingFormData.append("darkModeColors", JSON.stringify(styleData.darkModeColors));
       brandingFormData.append("instagram", publicData.instagram);
       brandingFormData.append("facebook", publicData.facebook);
       brandingFormData.append("tiktok", publicData.tiktok);
@@ -214,9 +243,12 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
 
       if (imageData.logo) brandingFormData.append("logoFile", imageData.logo);
       if (imageData.hero) brandingFormData.append("heroFile", imageData.hero);
+      brandingFormData.append("clearLogoFile", String(imageData.logoCleared));
+      brandingFormData.append("clearHeroFile", String(imageData.heroCleared));
       imageData.gallery.forEach((item, i) => {
         if (item.file) brandingFormData.append(`galleryFile${i + 1}`, item.file);
         brandingFormData.append(`galleryAlt${i + 1}`, item.alt.trim());
+        brandingFormData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
       });
 
       await saveOnboardingBrandingInlineAction(brandingFormData);
@@ -244,7 +276,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
   ];
 
   return (
-    <div className="flex flex-col items-center space-y-8 pb-10">
+    <div className="flex min-h-full flex-col items-center space-y-8 pb-10 bg-background">
       {/* Header */}
       <section className="w-full rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
@@ -296,17 +328,17 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
 
         {/* Mensaje de éxito */}
         {successMessage && (
-          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-4">
+          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 dark:border-emerald-400/20 dark:bg-emerald-400/10">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-green-600" />
-              <p className="text-sm font-medium text-green-800">{successMessage}</p>
+              <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">{successMessage}</p>
             </div>
           </div>
         )}
 
         {errorMessage && (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-800">{errorMessage}</p>
+          <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 dark:border-red-400/20 dark:bg-red-400/10">
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">{errorMessage}</p>
           </div>
         )}
 
@@ -430,39 +462,102 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
                         Colores personalizados
                       </p>
                       <div className="grid gap-4 sm:grid-cols-3">
-                        <label className="space-y-2">
-                          <span className="text-sm text-muted-foreground">Principal</span>
-                          <input
-                            type="color"
-                            value={styleData.customAccent}
-                            onChange={(e) =>
-                              setStyleData((d) => ({ ...d, customAccent: e.target.value }))
-                            }
-                            className="h-11 w-full rounded-md border border-border/70 bg-background p-1"
-                          />
-                        </label>
-                        <label className="space-y-2">
-                          <span className="text-sm text-muted-foreground">Suave</span>
-                          <input
-                            type="color"
-                            value={styleData.customAccentSoft}
-                            onChange={(e) =>
-                              setStyleData((d) => ({ ...d, customAccentSoft: e.target.value }))
-                            }
-                            className="h-11 w-full rounded-md border border-border/70 bg-background p-1"
-                          />
-                        </label>
-                        <label className="space-y-2">
-                          <span className="text-sm text-muted-foreground">Fondo</span>
-                          <input
-                            type="color"
-                            value={styleData.customSurfaceTint}
-                            onChange={(e) =>
-                              setStyleData((d) => ({ ...d, customSurfaceTint: e.target.value }))
-                            }
-                            className="h-11 w-full rounded-md border border-border/70 bg-background p-1"
-                          />
-                        </label>
+                        <ColorPicker
+                          label="Principal"
+                          value={styleData.customAccent}
+                          onChange={(value) =>
+                            setStyleData((d) => ({ ...d, customAccent: value }))
+                          }
+                        />
+                        <ColorPicker
+                          label="Suave"
+                          value={styleData.customAccentSoft}
+                          onChange={(value) =>
+                            setStyleData((d) => ({ ...d, customAccentSoft: value }))
+                          }
+                        />
+                        <ColorPicker
+                          label="Fondo"
+                          value={styleData.customSurfaceTint}
+                          onChange={(value) =>
+                            setStyleData((d) => ({ ...d, customSurfaceTint: value }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Dark Mode Configuration */}
+                <section className="rounded-2xl border border-border/60 bg-background p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground">Modo oscuro</h4>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Permitir a los visitantes cambiar entre modo claro y oscuro
+                      </p>
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center">
+                      <input
+                        type="checkbox"
+                        checked={styleData.enableDarkMode}
+                        onChange={(e) =>
+                          setStyleData((d) => ({ ...d, enableDarkMode: e.target.checked }))
+                        }
+                        className="peer sr-only"
+                      />
+                      <div className="relative h-7 w-12 rounded-full border-2 border-border bg-secondary transition-all peer-checked:border-foreground peer-checked:bg-foreground">
+                        <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-background shadow-sm transition-transform peer-checked:translate-x-5" />
+                      </div>
+                    </label>
+                  </div>
+
+                  {styleData.enableDarkMode && (
+                    <div className="mt-5 space-y-4 border-t border-border/40 pt-5">
+                      <p className="text-xs text-muted-foreground">
+                        Personaliza los colores para el modo oscuro
+                      </p>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <ColorPicker
+                          label="Principal"
+                          value={styleData.darkModeColors.accent}
+                          onChange={(value) =>
+                            setStyleData((d) => ({
+                              ...d,
+                              darkModeColors: { ...d.darkModeColors, accent: value },
+                            }))
+                          }
+                        />
+                        <ColorPicker
+                          label="Fondo"
+                          value={styleData.darkModeColors.background}
+                          onChange={(value) =>
+                            setStyleData((d) => ({
+                              ...d,
+                              darkModeColors: { ...d.darkModeColors, background: value },
+                            }))
+                          }
+                        />
+                        <ColorPicker
+                          label="Texto"
+                          value={styleData.darkModeColors.foreground}
+                          onChange={(value) =>
+                            setStyleData((d) => ({
+                              ...d,
+                              darkModeColors: { ...d.darkModeColors, foreground: value },
+                            }))
+                          }
+                        />
+                        <ColorPicker
+                          label="Tarjetas"
+                          value={styleData.darkModeColors.card}
+                          onChange={(value) =>
+                            setStyleData((d) => ({
+                              ...d,
+                              darkModeColors: { ...d.darkModeColors, card: value },
+                            }))
+                          }
+                        />
                       </div>
                     </div>
                   )}
@@ -574,10 +669,16 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
                     preview={
                       imageData.logo
                         ? URL.createObjectURL(imageData.logo)
-                        : settingsData.profile.logoUrl
+                        : imageData.logoCleared
+                          ? null
+                          : settingsData.profile.logoUrl
                     }
-                    onChange={(file) => setImageData((d) => ({ ...d, logo: file }))}
-                    onClear={() => setImageData((d) => ({ ...d, logo: null }))}
+                    onChange={(file) =>
+                      setImageData((d) => ({ ...d, logo: file, logoCleared: false }))
+                    }
+                    onClear={() =>
+                      setImageData((d) => ({ ...d, logo: null, logoCleared: true }))
+                    }
                   />
 
                   <ImageUpload
@@ -587,10 +688,16 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
                     preview={
                       imageData.hero
                         ? URL.createObjectURL(imageData.hero)
-                        : settingsData.profile.heroImageUrl
+                        : imageData.heroCleared
+                          ? null
+                          : settingsData.profile.heroImageUrl
                     }
-                    onChange={(file) => setImageData((d) => ({ ...d, hero: file }))}
-                    onClear={() => setImageData((d) => ({ ...d, hero: null }))}
+                    onChange={(file) =>
+                      setImageData((d) => ({ ...d, hero: file, heroCleared: false }))
+                    }
+                    onClear={() =>
+                      setImageData((d) => ({ ...d, hero: null, heroCleared: true }))
+                    }
                   />
                 </div>
 
@@ -606,7 +713,9 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
                           preview={
                             imageData.gallery[index]?.file
                               ? URL.createObjectURL(imageData.gallery[index].file!)
-                              : settingsData.profile.gallery?.[index]?.url
+                              : imageData.gallery[index]?.cleared
+                                ? null
+                                : settingsData.profile.gallery?.[index]?.url
                           }
                           descriptionValue={imageData.gallery[index]?.alt ?? ""}
                           descriptionPlaceholder={`Ej: ${hint}`}
@@ -622,7 +731,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
                             setImageData((d) => ({
                               ...d,
                               gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, file } : item
+                                i === index ? { ...item, file, cleared: false } : item
                               ),
                             }))
                           }
@@ -630,7 +739,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
                             setImageData((d) => ({
                               ...d,
                               gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, file: null } : item
+                                i === index ? { ...item, file: null, cleared: true } : item
                               ),
                             }))
                           }

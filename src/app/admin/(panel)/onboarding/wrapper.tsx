@@ -48,6 +48,8 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
           gallery: settingsData.profile.gallery,
           logoUrl: settingsData.profile.logoUrl,
           heroImageUrl: settingsData.profile.heroImageUrl,
+          enableDarkMode: settingsData.profile.enableDarkMode,
+          darkModeColors: settingsData.profile.darkModeColors,
         },
       }}
       searchParams={{

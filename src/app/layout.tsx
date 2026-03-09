@@ -1,7 +1,10 @@
-import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
 
 import "./globals.css";
+import { defaultMetadata, defaultViewport } from "@/lib/seo/metadata";
+import { OrganizationJsonLd, WebSiteJsonLd } from "@/lib/seo/json-ld";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,36 +21,51 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "ReservaYa | Turnos online para negocios chicos",
-    template: "%s | ReservaYa",
-  },
-  description:
-    "ReservaYa ordena turnos para barberias, peluquerias y centros de estetica con una demo simple, clara y vendible.",
-};
-
-export const viewport: Viewport = {
-  themeColor: "#fafafa",
-};
+export const metadata = defaultMetadata;
+export const viewport = defaultViewport;
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const theme = localStorage.getItem('theme') || 'light';
+                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                const resolvedTheme = theme === 'system' ? systemTheme : theme;
+                if (resolvedTheme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
+      </head>
       <body
         className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} antialiased font-sans bg-background text-foreground`}
       >
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background"
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange={false}
         >
-          Saltar al contenido
-        </a>
-        {children}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background"
+          >
+            Saltar al contenido
+          </a>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

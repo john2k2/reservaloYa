@@ -7,11 +7,13 @@ import {
   Percent,
   Pointer,
   Send,
+  TrendingUp,
 } from "lucide-react";
 
 import { runLocalReminderSweepAction } from "@/app/admin/(panel)/dashboard/actions";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
 import { getAdminDashboardData } from "@/server/queries/admin";
 
@@ -29,77 +31,51 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const errorMessage = params.error ?? "";
 
   return (
-    <div className="flex flex-col items-center space-y-8 pb-10">
-      <section className="w-full">
-        <div className="grid gap-6 xl:grid-cols-2">
-          <div className="flex flex-col justify-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Panel de {dashboardData.businessName}
-            </h2>
-            <p className="mt-2 text-base text-muted-foreground">
-              {dashboardData.demoMode
-                ? "Modo demo activo. Puedes revisar turnos, servicios, clientes, embudo web y seguimiento basico."
-                : "Resumen operativo del negocio con foco en agenda, clientes y seguimiento."}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-border/60 bg-secondary/10 p-6 shadow-sm">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Accesos utiles
-            </h3>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Link
-                href="/admin/bookings"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-              >
-                Ver turnos
-              </Link>
-              <Link
-                href="/admin/customers"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-              >
-                Ver clientes
-              </Link>
-              <Link
-                href="/admin/availability"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-              >
-                Disponibilidad
-              </Link>
-              <Link
-                href="/admin/onboarding"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-              >
-                Onboarding
-              </Link>
-              <Link
-                href={`/${dashboardData.businessSlug}`}
-                className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11 gap-2")}
-              >
-                Ver sitio
-                <ExternalLink aria-hidden="true" className="size-4" />
-              </Link>
-            </div>
-          </div>
+    <div className="flex flex-col gap-6 pb-10">
+      {/* Header con acciones rápidas */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Panel de {dashboardData.businessName}
+          </h1>
+          <p className="mt-2 max-w-2xl text-base text-muted-foreground">
+            {dashboardData.demoMode
+              ? "Modo demo activo. Revisá turnos, servicios, clientes y análisis."
+              : "Todo lo que necesitás saber de tu negocio, en un solo lugar."}
+          </p>
         </div>
-      </section>
-
-      {(reminderMessage || errorMessage) && (
-        <section className="w-full">
-          <div
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/${dashboardData.businessSlug}`}
+            target="_blank"
             className={cn(
-              "rounded-xl border px-4 py-3 text-sm",
-              errorMessage
-                ? "border-destructive/20 bg-destructive/10 text-destructive"
-                : "border-border/60 bg-card text-card-foreground"
+              buttonVariants({ variant: "default", size: "lg" }),
+              "h-11 gap-2"
             )}
           >
-            {errorMessage || reminderMessage}
-          </div>
-        </section>
+            Ver página pública
+            <ExternalLink aria-hidden="true" className="size-4" />
+          </Link>
+        </div>
+      </header>
+
+      {/* Alertas */}
+      {(reminderMessage || errorMessage) && (
+        <div
+          className={cn(
+            "rounded-xl border px-4 py-3 text-sm",
+            errorMessage
+              ? "border-destructive/20 bg-destructive/10 text-destructive"
+              : "border-border/60 bg-card text-card-foreground"
+          )}
+          role="alert"
+        >
+          {errorMessage || reminderMessage}
+        </div>
       )}
 
-      <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Métricas principales */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {dashboardData.metrics.map((item) => (
           <MetricCard
             key={item.label}
@@ -111,215 +87,296 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         ))}
       </section>
 
-      {dashboardData.analytics && (
-        <section className="grid w-full gap-4 lg:grid-cols-4">
-          <article className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Visitas
-              </h3>
-              <BarChart3 aria-hidden="true" className="size-4 text-muted-foreground" />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-card-foreground">
-              {dashboardData.analytics.visits}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Fuente principal: {dashboardData.analytics.topSource}
-            </p>
-          </article>
-
-          <article className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Clics en reservar
-              </h3>
-              <Pointer aria-hidden="true" className="size-4 text-muted-foreground" />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-card-foreground">
-              {dashboardData.analytics.ctaClicks}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {dashboardData.analytics.clickThroughRate}% de las visitas tocaron un CTA
-            </p>
-          </article>
-
-          <article className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Flujo de reserva
-              </h3>
-              <BarChart3 aria-hidden="true" className="size-4 text-muted-foreground" />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-card-foreground">
-              {dashboardData.analytics.bookingIntents}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {dashboardData.analytics.bookingIntentRate}% de las visitas entraron al flujo
-            </p>
-          </article>
-
-          <article className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Conversion
-              </h3>
-              <Percent aria-hidden="true" className="size-4 text-muted-foreground" />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-card-foreground">
-              {dashboardData.analytics.conversionRate}%
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {dashboardData.analytics.bookingsCreated} reservas creadas desde la web
-            </p>
-          </article>
-        </section>
-      )}
-
-      <section className="grid w-full gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <article className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-lg font-semibold tracking-tight text-foreground">
-              Proximos turnos
-            </h3>
-            <CalendarClock aria-hidden="true" className="size-5 text-muted-foreground" />
-          </div>
-
-          <div className="space-y-4">
-            {dashboardData.bookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="flex items-center justify-between rounded-lg border border-border/40 p-4 transition-colors hover:bg-secondary/20"
+      {/* Layout de 3 columnas para pantallas grandes */}
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_0.9fr] xl:grid-cols-[1.3fr_1fr_0.8fr]">
+        {/* Columna 1: Turnos + Analytics */}
+        <div className="space-y-6">
+          {/* Próximos turnos */}
+          <article className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                Próximos turnos
+              </h2>
+              <Link
+                href="/admin/bookings"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                <div className="min-w-0">
-                  <p className="text-base font-medium text-foreground">{booking.name}</p>
-                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock3 aria-hidden="true" className="size-3.5" />
-                    <span>
-                      {booking.time} - {booking.service}
+                Ver todos →
+              </Link>
+            </div>
+
+            {dashboardData.bookings.length > 0 ? (
+              <div className="space-y-3">
+                {dashboardData.bookings.slice(0, 5).map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="flex items-center justify-between rounded-lg border border-border/40 p-3 transition-colors hover:bg-secondary/20"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground">{booking.name}</p>
+                      <div className="mt-0.5 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock3 aria-hidden="true" className="size-3.5" />
+                        <span className="truncate">
+                          {booking.time} - {booking.service}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
+                        booking.status === "Confirmado"
+                          ? "bg-emerald-500/15 text-emerald-700"
+                          : booking.status === "Pendiente"
+                          ? "bg-amber-500/15 text-amber-700"
+                          : "bg-secondary text-foreground"
+                      )}
+                    >
+                      {booking.status}
                     </span>
                   </div>
-                </div>
-                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-foreground">
-                  {booking.status}
-                </span>
+                ))}
               </div>
-            ))}
-          </div>
-        </article>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
+                <p className="text-sm text-muted-foreground">No hay turnos próximos</p>
+                <Link
+                  href="/admin/bookings"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "mt-3"
+                  )}
+                >
+                  Gestionar turnos
+                </Link>
+              </div>
+            )}
+          </article>
 
+          {/* Analytics compacto */}
+          {dashboardData.analytics && (
+            <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
+                Análisis de visitas
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg bg-secondary/30 p-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <BarChart3 className="size-4" />
+                    Visitas
+                  </div>
+                  <p className="mt-2 text-2xl font-bold">{dashboardData.analytics.visits}</p>
+                </div>
+                <div className="rounded-lg bg-secondary/30 p-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Pointer className="size-4" />
+                    Clics
+                  </div>
+                  <p className="mt-2 text-2xl font-bold">{dashboardData.analytics.ctaClicks}</p>
+                </div>
+                <div className="rounded-lg bg-secondary/30 p-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <TrendingUp className="size-4" />
+                    Inicios
+                  </div>
+                  <p className="mt-2 text-2xl font-bold">
+                    {dashboardData.analytics.bookingIntents}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-secondary/30 p-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Percent className="size-4" />
+                    Conversión
+                  </div>
+                  <p className="mt-2 text-2xl font-bold">
+                    {dashboardData.analytics.conversionRate}%
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Fuente principal: {dashboardData.analytics.topSource}
+              </p>
+            </article>
+          )}
+        </div>
+
+        {/* Columna 2: Recordatorios + Canales */}
         <div className="space-y-6">
-          <article className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
+          {/* Recordatorios */}
+          <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                <h2 className="text-lg font-semibold tracking-tight text-foreground">
                   Recordatorios
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Ventana activa: proximas {dashboardData.reminders?.reminderWindowHours ?? 24} hs
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Ventana: {dashboardData.reminders?.reminderWindowHours ?? 24} hs
                 </p>
               </div>
               <Send aria-hidden="true" className="size-5 text-muted-foreground" />
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg border border-border/50 px-3 py-4">
-                <p className="text-2xl font-semibold text-foreground">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+                <p className="text-xl font-semibold text-foreground">
                   {dashboardData.reminders?.pending ?? 0}
                 </p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                   listos
                 </p>
               </div>
-              <div className="rounded-lg border border-border/50 px-3 py-4">
-                <p className="text-2xl font-semibold text-foreground">
+              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+                <p className="text-xl font-semibold text-foreground">
                   {dashboardData.reminders?.missingEmail ?? 0}
                 </p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                   sin email
                 </p>
               </div>
-              <div className="rounded-lg border border-border/50 px-3 py-4">
-                <p className="text-2xl font-semibold text-foreground">
+              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+                <p className="text-xl font-semibold text-foreground">
                   {dashboardData.reminders?.sentRecently ?? 0}
                 </p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                   enviados
                 </p>
               </div>
             </div>
 
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-3 text-xs text-muted-foreground">
               {dashboardData.reminders?.providerReady
-                ? "El proveedor de email esta listo para enviar recordatorios."
-                : "El flujo ya esta preparado. Solo falta RESEND_API_KEY para enviar en serio."}
+                ? "✓ Proveedor de email listo"
+                : "Configurá RESEND_API_KEY para enviar recordatorios."}
             </p>
 
-            {dashboardData.reminders?.nextBookingAt && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Proximo turno a recordar: {dashboardData.reminders.nextBookingAt}
-              </p>
-            )}
-
-            {dashboardData.demoMode && (
-              <form action={runLocalReminderSweepAction} className="mt-5">
-                <button
-                  type="submit"
-                  className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11 w-full")}
+            {(dashboardData.demoMode || dashboardData.reminders) && (
+              <form action={runLocalReminderSweepAction} className="mt-4">
+                <LoadingButton
+                  pendingLabel="Procesando..."
+                  className="h-10 w-full text-sm"
                 >
-                  Procesar recordatorios demo
-                </button>
+                  {dashboardData.demoMode
+                    ? "Procesar recordatorios demo"
+                    : "Procesar recordatorios"}
+                </LoadingButton>
               </form>
             )}
           </article>
 
-          <article className="rounded-xl border border-border/60 bg-foreground p-6 text-background shadow-sm">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider opacity-70">
-              Senales
-            </h3>
-            <div className="space-y-4">
-              {(dashboardData.notifications ?? []).map((item) => (
-                <div
-                  key={item}
-                  className="rounded-md bg-background/10 px-4 py-3 text-sm font-medium"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-            <h3 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
-              Canales
-            </h3>
+          {/* Canales */}
+          <article className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
+              Origen de clientes
+            </h2>
             {dashboardData.analytics?.channels?.length ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {dashboardData.analytics.channels.map((channel) => (
                   <div
                     key={channel.source}
-                    className="rounded-lg border border-border/50 px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2"
                   >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="font-medium text-foreground">{channel.source}</p>
-                      <span className="text-sm font-semibold text-muted-foreground">
-                        {channel.conversionRate}% conv.
-                      </span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{channel.source}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {channel.visits} visitas
+                      </p>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {channel.visits} visitas, {channel.ctaClicks} clics,{" "}
-                      {channel.bookingsCreated} reservas
-                    </p>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {channel.conversionRate}%
+                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Aun no hay canales con datos suficientes para comparar.
-              </p>
+              <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Cuando tengas visitas, verás de dónde vienen tus clientes.
+                </p>
+              </div>
             )}
           </article>
         </div>
-      </section>
+
+        {/* Columna 3: Alertas + Accesos */}
+        <div className="space-y-6">
+          {/* Alertas */}
+          {dashboardData.notifications && dashboardData.notifications.length > 0 && (
+            <article className="rounded-xl border border-border/60 bg-foreground p-5 text-background shadow-sm">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider opacity-70">
+                Alertas importantes
+              </h2>
+              <div className="space-y-2">
+                {dashboardData.notifications.map((item, index) => (
+                  <div
+                    key={index}
+                    className="rounded-md bg-background/10 px-3 py-2.5 text-sm"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {/* Accesos rápidos */}
+          <article className="rounded-xl border border-border/60 bg-secondary/10 p-5 shadow-sm">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Accesos rápidos
+            </h2>
+            <div className="grid grid-cols-1 gap-2">
+              <Link
+                href="/admin/bookings"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-10 w-full justify-start gap-2 text-sm"
+                )}
+              >
+                <CalendarClock className="size-4" />
+                Ver turnos
+              </Link>
+              <Link
+                href="/admin/customers"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-10 w-full justify-start gap-2 text-sm"
+                )}
+              >
+                <TrendingUp className="size-4" />
+                Ver clientes
+              </Link>
+              <Link
+                href="/admin/services"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-10 w-full justify-start gap-2 text-sm"
+                )}
+              >
+                <Send className="size-4" />
+                Servicios
+              </Link>
+              <Link
+                href="/admin/onboarding"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-10 w-full justify-start gap-2 text-sm"
+                )}
+              >
+                <ExternalLink className="size-4" />
+                Personalizar sitio
+              </Link>
+            </div>
+          </article>
+
+          {/* Próximo recordatorio */}
+          {dashboardData.reminders?.nextBookingAt && (
+            <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
+              <p className="text-xs text-muted-foreground">Próximo turno a recordar</p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                {dashboardData.reminders.nextBookingAt}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

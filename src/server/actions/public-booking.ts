@@ -2,10 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { addMinutes } from "@/lib/bookings/format";
-import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/server";
+import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
@@ -14,16 +11,12 @@ import {
   createLocalPublicBooking,
 } from "@/server/local-store";
 import { isValidBookingManageToken } from "@/server/public-booking-links";
+import {
+  cancelPocketBasePublicBooking,
+  createPocketBasePublicBooking,
+  reschedulePocketBasePublicBooking,
+} from "@/server/pocketbase-store";
 import { getBookingConfirmationData } from "@/server/queries/public";
-
-function toMinutes(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function overlaps(startA: number, endA: number, startB: number, endB: number) {
-  return startA < endB && startB < endA;
-}
 
 function buildBookingPageHref(input: {
   businessSlug: string;
@@ -124,36 +117,7 @@ async function sendConfirmationEmailIfPossible(input: {
   });
 }
 
-async function createLivePublicBooking(input: {
-  businessSlug: string;
-  serviceId: string;
-  bookingDate: string;
-  startTime: string;
-  fullName: string;
-  phone: string;
-  email?: string;
-  notes?: string;
-}) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_public_booking", {
-    p_business_slug: input.businessSlug,
-    p_service_id: input.serviceId,
-    p_booking_date: input.bookingDate,
-    p_start_time: input.startTime,
-    p_full_name: input.fullName,
-    p_phone: input.phone,
-    p_email: input.email || null,
-    p_notes: input.notes || null,
-  });
-
-  if (error || !data) {
-    throw new Error(error?.message ?? "No se pudo crear la reserva.");
-  }
-
-  return String(data);
-}
-
-async function rescheduleLivePublicBooking(input: {
+async function reschedulePocketBaseBooking(input: {
   businessSlug: string;
   serviceId: string;
   bookingDate: string;
@@ -165,10 +129,6 @@ async function rescheduleLivePublicBooking(input: {
   rescheduleBookingId: string;
   manageToken: string;
 }) {
-  if (!isSupabaseAdminConfigured()) {
-    throw new Error("La reprogramacion publica necesita acceso admin a Supabase.");
-  }
-
   if (
     !isValidBookingManageToken({
       slug: input.businessSlug,
@@ -179,105 +139,7 @@ async function rescheduleLivePublicBooking(input: {
     throw new Error("Link de gestion invalido.");
   }
 
-  const supabase = createAdminClient();
-  const { data: booking } = await supabase
-    .from("bookings")
-    .select("id, business_id, customer_id, status")
-    .eq("id", input.rescheduleBookingId)
-    .maybeSingle();
-
-  if (!booking) {
-    throw new Error("No encontramos el turno para reprogramar.");
-  }
-
-  const { data: business } = await supabase
-    .from("businesses")
-    .select("id, slug")
-    .eq("id", booking.business_id)
-    .maybeSingle();
-
-  if (!business || business.slug !== input.businessSlug) {
-    throw new Error("Link de gestion invalido.");
-  }
-
-  if (!["pending", "confirmed"].includes(booking.status)) {
-    throw new Error("Este turno ya no se puede reprogramar.");
-  }
-
-  const { data: service } = await supabase
-    .from("services")
-    .select("id, duration_minutes")
-    .eq("id", input.serviceId)
-    .eq("business_id", booking.business_id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!service) {
-    throw new Error("Servicio no encontrado.");
-  }
-
-  const endTime = addMinutes(input.startTime, service.duration_minutes);
-  const startMinutes = toMinutes(input.startTime);
-  const endMinutes = toMinutes(endTime);
-
-  const [{ data: blockedSlots }, { data: bookings }] = await Promise.all([
-    supabase
-      .from("blocked_slots")
-      .select("start_time, end_time")
-      .eq("business_id", booking.business_id)
-      .eq("blocked_date", input.bookingDate),
-    supabase
-      .from("bookings")
-      .select("id, start_time, end_time")
-      .eq("business_id", booking.business_id)
-      .eq("booking_date", input.bookingDate)
-      .in("status", ["pending", "confirmed"])
-      .neq("id", input.rescheduleBookingId),
-  ]);
-
-  const blockedConflict = (blockedSlots ?? []).some((slot) =>
-    overlaps(startMinutes, endMinutes, toMinutes(slot.start_time), toMinutes(slot.end_time))
-  );
-
-  if (blockedConflict) {
-    throw new Error("Ese horario esta bloqueado.");
-  }
-
-  const bookingConflict = (bookings ?? []).some((candidate) =>
-    overlaps(startMinutes, endMinutes, toMinutes(candidate.start_time), toMinutes(candidate.end_time))
-  );
-
-  if (bookingConflict) {
-    throw new Error("Ese horario ya no esta disponible.");
-  }
-
-  await supabase
-    .from("customers")
-    .update({
-      full_name: input.fullName,
-      phone: input.phone,
-      email: input.email || null,
-      notes: input.notes || null,
-    })
-    .eq("id", booking.customer_id);
-
-  const { error: updateError } = await supabase
-    .from("bookings")
-    .update({
-      service_id: service.id,
-      booking_date: input.bookingDate,
-      start_time: input.startTime,
-      end_time: endTime,
-      status: "pending",
-      notes: input.notes || null,
-    })
-    .eq("id", input.rescheduleBookingId);
-
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
-
-  return input.rescheduleBookingId;
+  return reschedulePocketBasePublicBooking(input);
 }
 
 export async function createPublicBookingAction(formData: FormData) {
@@ -339,7 +201,7 @@ export async function createPublicBookingAction(formData: FormData) {
   let bookingId: string;
 
   try {
-    if (!isSupabaseConfigured()) {
+    if (!isPocketBaseConfigured()) {
       bookingId = await createLocalPublicBooking(parsed.data);
       if (!parsed.data.rescheduleBookingId) {
         await trackAnalyticsEvent({
@@ -352,13 +214,13 @@ export async function createPublicBookingAction(formData: FormData) {
         });
       }
     } else if (parsed.data.rescheduleBookingId) {
-      bookingId = await rescheduleLivePublicBooking({
+      bookingId = await reschedulePocketBaseBooking({
         ...parsed.data,
         rescheduleBookingId: parsed.data.rescheduleBookingId,
         manageToken: parsed.data.manageToken ?? "",
       });
     } else {
-      bookingId = await createLivePublicBooking(parsed.data);
+      bookingId = await createPocketBasePublicBooking(parsed.data);
       await trackAnalyticsEvent({
         businessSlug: parsed.data.businessSlug,
         eventName: "booking_created",
@@ -406,42 +268,10 @@ export async function cancelPublicBookingAction(formData: FormData) {
   }
 
   try {
-    if (!isSupabaseConfigured()) {
+    if (!isPocketBaseConfigured()) {
       await cancelLocalPublicBooking({ businessSlug, bookingId });
     } else {
-      if (!isSupabaseAdminConfigured()) {
-        throw new Error("La cancelacion publica necesita acceso admin a Supabase.");
-      }
-
-      const supabase = createAdminClient();
-      const { data: booking } = await supabase
-        .from("bookings")
-        .select("id, business_id")
-        .eq("id", bookingId)
-        .maybeSingle();
-
-      if (!booking) {
-        throw new Error("No encontramos ese turno.");
-      }
-
-      const { data: business } = await supabase
-        .from("businesses")
-        .select("slug")
-        .eq("id", booking.business_id)
-        .maybeSingle();
-
-      if (!business || business.slug !== businessSlug) {
-        throw new Error("Link de gestion invalido.");
-      }
-
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", bookingId);
-
-      if (error) {
-        throw new Error(error.message);
-      }
+      await cancelPocketBasePublicBooking({ businessSlug, bookingId });
     }
   } catch (error) {
     redirect(
