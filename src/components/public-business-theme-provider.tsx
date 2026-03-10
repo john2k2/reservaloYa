@@ -18,23 +18,24 @@ export function PublicBusinessThemeProvider({
   enableDarkMode,
   darkModeColors,
 }: PublicBusinessThemeProviderProps) {
-  const [isDark, setIsDark] = useState(false);
+  const [storedDarkPreference] = useState(() => {
+    if (typeof window === "undefined" || !enableDarkMode) {
+      return false;
+    }
 
-  // Al montar, leer la preferencia guardada para esta página pública.
-  // Si el negocio no tiene dark mode, forzar siempre claro.
-  useEffect(() => {
-    if (!enableDarkMode) {
-      setIsDark(false);
-      return;
-    }
     const saved = localStorage.getItem(PUBLIC_THEME_KEY);
+
     if (saved === "dark") {
-      setIsDark(true);
-    } else if (!saved) {
-      // Si no hay preferencia guardada, usar la preferencia del sistema
-      setIsDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      return true;
     }
-  }, [enableDarkMode]);
+
+    if (saved === "light") {
+      return false;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+  const isDark = enableDarkMode && storedDarkPreference;
 
   // Aplicar/quitar la clase "dark" en <html> sin tocar el localStorage del admin.
   // Al desmontar, restaurar la clase según el tema del admin (key "theme").

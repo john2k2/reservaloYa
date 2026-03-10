@@ -26,7 +26,11 @@ El objetivo no es construir un SaaS gigante primero. El objetivo es cerrar el pr
 - Base local para levantar PocketBase con Docker
 - Script de bootstrap para crear colecciones y seed demo en PocketBase
 - Editor real de pagina publica ya operativo
-- Admin todavia incompleto en servicios, disponibilidad y acciones sobre turnos
+- CRUD de servicios operativo
+- Gestion de disponibilidad y bloqueos operativa
+- Edicion operativa de turnos desde admin disponible
+- Confirmaciones por email y recordatorios preparados para produccion
+- Recordatorios por WhatsApp preparados para integracion con Twilio
 
 ## Puesta en marcha
 
@@ -50,13 +54,21 @@ Claves necesarias:
 
 Opcionales recomendadas:
 
+- `POCKETBASE_PUBLIC_AUTH_EMAIL`
+- `POCKETBASE_PUBLIC_AUTH_PASSWORD`
+
 - `POCKETBASE_DEMO_OWNER_EMAIL`
 - `POCKETBASE_DEMO_OWNER_PASSWORD`
 - `POCKETBASE_DEMO_OWNER_BUSINESS_SLUG`
 - `BOOKING_LINK_SECRET`
 - `BOOKING_JOBS_SECRET`
+- `CRON_SECRET`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_WHATSAPP_FROM`
+- `TWILIO_WHATSAPP_TEMPLATE_SID`
 
 Si no completas las variables de PocketBase, la app corre en modo demo/local automaticamente.
 
@@ -106,6 +118,8 @@ Notas:
 - Los datos quedan persistidos en `pocketbase/pb_data`.
 - Las carpetas `pocketbase/pb_migrations`, `pocketbase/pb_hooks` y `pocketbase/pb_public` ya quedaron preparadas.
 - La app ya consume PocketBase para auth admin, reservas, analytics y recordatorios cuando el backend esta configurado.
+- Para flujos publicos en modo least-privilege se puede configurar `POCKETBASE_PUBLIC_AUTH_EMAIL` y `POCKETBASE_PUBLIC_AUTH_PASSWORD` con un usuario no admin.
+- TODO: ajustar rules de colecciones en PocketBase para que este usuario publico solo pueda leer/escribir datos permitidos por negocio.
 
 ## Modo local
 
@@ -142,10 +156,10 @@ npm run demo:reset
 
 ## Prioridad inmediata
 
-1. Cerrar CRUD de servicios
-2. Cerrar gestion de disponibilidad y bloqueos
-3. Cerrar acciones operativas de turnos
-4. Activar email y jobs con secretos productivos
+1. Desplegar una URL publica estable
+2. Activar email, cron y WhatsApp con credenciales productivas
+3. Validar el flujo end-to-end de reserva, confirmacion y gestion del turno
+4. Pulir la demo publica para el lanzamiento en LinkedIn
 5. Cerrar observabilidad y backups
 
 Ver tambien:

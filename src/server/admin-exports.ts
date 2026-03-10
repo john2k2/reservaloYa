@@ -1,11 +1,12 @@
 export function escapeCsvValue(value: string | number | null | undefined) {
   const normalized = String(value ?? "");
+  const sanitized = /^[=+\-@\t\r]/.test(normalized) ? `'${normalized}` : normalized;
 
-  if (/[",\n]/.test(normalized)) {
-    return `"${normalized.replace(/"/g, '""')}"`;
+  if (/[",\n\r]/.test(sanitized)) {
+    return `"${sanitized.replace(/"/g, '""')}"`;
   }
 
-  return normalized;
+  return sanitized;
 }
 
 export function buildCsv(headers: string[], rows: Array<Array<string | number | null | undefined>>) {

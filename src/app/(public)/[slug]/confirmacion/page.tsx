@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Calendar, Check, Settings2 } from "lucide-react";
+import { notFound } from "next/navigation";
 
 import {
   addMinutes,
@@ -63,6 +64,10 @@ export default async function ConfirmationPage({
     slug,
     bookingId: query.booking,
   });
+
+  if (!confirmation) {
+    notFound();
+  }
 
   const formattedDate = formatDateLabel(confirmation.bookingDate);
   const formattedTime = formatTimeLabel(confirmation.startTime);

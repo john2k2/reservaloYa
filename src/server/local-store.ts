@@ -17,7 +17,13 @@ import {
 } from "@/lib/bookings/format";
 import { buildWeeklySchedule } from "@/lib/bookings/schedule";
 import { slugify } from "@/lib/utils";
-import { sendBookingReminderEmail } from "@/server/booking-notifications";
+import { withBookingDateLock } from "@/server/booking-slot-lock";
+import {
+  getAvailableReminderChannels,
+  hasReminderProviderConfigured,
+  sendBookingReminderEmail,
+  sendBookingReminderWhatsApp,
+} from "@/server/booking-notifications";
 
 export type LocalBookingStatus =
   | "pending"
@@ -120,7 +126,7 @@ type LocalCommunicationEvent = {
   businessId: string;
   bookingId: string;
   customerId: string;
-  channel: "email";
+  channel: "email" | "whatsapp";
   kind: LocalCommunicationKind;
   status: LocalCommunicationStatus;
   recipient: string;
@@ -639,8 +645,20 @@ function buildLocalReminderSummary(
   reminderWindowHours = 24
 ) {
   const candidates = findReminderCandidatesForBusiness(store, businessId, now, reminderWindowHours);
-  const readyCandidates = candidates.filter((candidate) => Boolean(candidate.customer?.email));
-  const missingEmailCandidates = candidates.filter((candidate) => !candidate.customer?.email);
+  const readyCandidates = candidates.filter(
+    (candidate) =>
+      getAvailableReminderChannels({
+        customerEmail: candidate.customer?.email,
+        customerPhone: candidate.customer?.phone,
+      }).length > 0
+  );
+  const missingEmailCandidates = candidates.filter(
+    (candidate) =>
+      getAvailableReminderChannels({
+        customerEmail: candidate.customer?.email,
+        customerPhone: candidate.customer?.phone,
+      }).length === 0
+  );
   const sentInWindow = getBusinessCommunicationEvents(store, businessId).filter((event) => {
     if (event.kind !== "reminder" || event.status !== "sent") {
       return false;
@@ -654,7 +672,7 @@ function buildLocalReminderSummary(
     pending: readyCandidates.length,
     missingEmail: missingEmailCandidates.length,
     sentRecently: sentInWindow.length,
-    providerReady: Boolean(process.env.RESEND_API_KEY),
+    providerReady: hasReminderProviderConfigured(),
     nextBookingAt:
       readyCandidates[0] != null
         ? `${readyCandidates[0].booking.bookingDate} ${readyCandidates[0].booking.startTime}`
@@ -834,7 +852,8 @@ export async function getLocalPublicBookingFlowData({
   const selectedService =
     pageData.services.find((service) => service.id === serviceId) ?? pageData.services[0] ?? null;
   const activeDays = getBusinessActiveDays(store, pageData.business.id);
-  const selectedDate = bookingDate ?? findNextBookingDate("2026-03-13", activeDays);
+  const selectedDate =
+    bookingDate ?? findNextBookingDate(new Date().toISOString().slice(0, 10), activeDays);
   const dateOptions = buildBookingDateOptions(selectedDate, activeDays);
 
   if (!selectedService) {
@@ -875,113 +894,125 @@ export async function getLocalPublicBookingFlowData({
 }
 
 export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
-  return mutateStore((store) => {
-    const business = getBusinessBySlug(store, input.businessSlug);
-
-    if (!business) {
-      throw new Error("Business not found");
-    }
-
-    const service = store.services.find(
-      (candidate) =>
-        candidate.businessId === business.id &&
-        candidate.id === input.serviceId &&
-        candidate.active
-    );
-
-    if (!service) {
-      throw new Error("Service not found");
-    }
-
-    const startMinutes = toMinutes(input.startTime);
-    const endMinutes = startMinutes + service.durationMinutes;
-    const endTime = fromMinutes(endMinutes);
-
-    const blockedConflict = store.blockedSlots.some(
-      (slot) =>
-        slot.businessId === business.id &&
-        slot.blockedDate === input.bookingDate &&
-        overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-    );
-
-    if (blockedConflict) {
-      throw new Error("Ese horario esta bloqueado.");
-    }
-
-    const bookingConflict = store.bookings.some(
-      (booking) =>
-        booking.id !== input.rescheduleBookingId &&
-        booking.businessId === business.id &&
-        booking.bookingDate === input.bookingDate &&
-        (booking.status === "pending" || booking.status === "confirmed") &&
-        overlaps(startMinutes, endMinutes, toMinutes(booking.startTime), toMinutes(booking.endTime))
-    );
-
-    if (bookingConflict) {
-      throw new Error("Ese horario ya no esta disponible.");
-    }
-
-    let customer = store.customers.find(
-      (candidate) => candidate.businessId === business.id && candidate.phone === input.phone
-    );
-
-    if (!customer) {
-      customer = {
-        id: randomUUID(),
-        businessId: business.id,
-        fullName: input.fullName,
-        phone: input.phone,
-        email: input.email ?? "",
-        notes: input.notes ?? "",
-        createdAt: new Date().toISOString(),
-      };
-      store.customers.push(customer);
-    } else {
-      customer.fullName = input.fullName;
-      customer.email = input.email ?? customer.email;
-      customer.notes = input.notes ?? customer.notes;
-    }
-
-    const existingBooking = input.rescheduleBookingId
-      ? store.bookings.find(
-          (candidate) =>
-            candidate.id === input.rescheduleBookingId && candidate.businessId === business.id
-        )
-      : null;
-
-    if (input.rescheduleBookingId && !existingBooking) {
-      throw new Error("No encontramos el turno para reprogramar.");
-    }
-
-    if (existingBooking) {
-      existingBooking.customerId = customer.id;
-      existingBooking.serviceId = service.id;
-      existingBooking.bookingDate = input.bookingDate;
-      existingBooking.startTime = input.startTime;
-      existingBooking.endTime = endTime;
-      existingBooking.status = "pending";
-      existingBooking.notes = input.notes ?? "";
-
-      return existingBooking.id;
-    }
-
-    const booking: LocalBooking = {
-      id: randomUUID(),
-      businessId: business.id,
-      customerId: customer.id,
-      serviceId: service.id,
+  return withBookingDateLock(
+    {
+      businessKey: input.businessSlug,
       bookingDate: input.bookingDate,
-      startTime: input.startTime,
-      endTime,
-      status: "pending",
-      notes: input.notes ?? "",
-      createdAt: new Date().toISOString(),
-    };
+    },
+    () =>
+      mutateStore((store) => {
+        const business = getBusinessBySlug(store, input.businessSlug);
 
-    store.bookings.unshift(booking);
+        if (!business) {
+          throw new Error("Business not found");
+        }
 
-    return booking.id;
-  });
+        const service = store.services.find(
+          (candidate) =>
+            candidate.businessId === business.id &&
+            candidate.id === input.serviceId &&
+            candidate.active
+        );
+
+        if (!service) {
+          throw new Error("Service not found");
+        }
+
+        const startMinutes = toMinutes(input.startTime);
+        const endMinutes = startMinutes + service.durationMinutes;
+        const endTime = fromMinutes(endMinutes);
+
+        const blockedConflict = store.blockedSlots.some(
+          (slot) =>
+            slot.businessId === business.id &&
+            slot.blockedDate === input.bookingDate &&
+            overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+        );
+
+        if (blockedConflict) {
+          throw new Error("Ese horario esta bloqueado.");
+        }
+
+        const bookingConflict = store.bookings.some(
+          (booking) =>
+            booking.id !== input.rescheduleBookingId &&
+            booking.businessId === business.id &&
+            booking.bookingDate === input.bookingDate &&
+            (booking.status === "pending" || booking.status === "confirmed") &&
+            overlaps(
+              startMinutes,
+              endMinutes,
+              toMinutes(booking.startTime),
+              toMinutes(booking.endTime)
+            )
+        );
+
+        if (bookingConflict) {
+          throw new Error("Ese horario ya no esta disponible.");
+        }
+
+        let customer = store.customers.find(
+          (candidate) => candidate.businessId === business.id && candidate.phone === input.phone
+        );
+
+        if (!customer) {
+          customer = {
+            id: randomUUID(),
+            businessId: business.id,
+            fullName: input.fullName,
+            phone: input.phone,
+            email: input.email ?? "",
+            notes: input.notes ?? "",
+            createdAt: new Date().toISOString(),
+          };
+          store.customers.push(customer);
+        } else {
+          customer.fullName = input.fullName;
+          customer.email = input.email ?? customer.email;
+          customer.notes = input.notes ?? customer.notes;
+        }
+
+        const existingBooking = input.rescheduleBookingId
+          ? store.bookings.find(
+              (candidate) =>
+                candidate.id === input.rescheduleBookingId && candidate.businessId === business.id
+            )
+          : null;
+
+        if (input.rescheduleBookingId && !existingBooking) {
+          throw new Error("No encontramos el turno para reprogramar.");
+        }
+
+        if (existingBooking) {
+          existingBooking.customerId = customer.id;
+          existingBooking.serviceId = service.id;
+          existingBooking.bookingDate = input.bookingDate;
+          existingBooking.startTime = input.startTime;
+          existingBooking.endTime = endTime;
+          existingBooking.status = "pending";
+          existingBooking.notes = input.notes ?? "";
+
+          return existingBooking.id;
+        }
+
+        const booking: LocalBooking = {
+          id: randomUUID(),
+          businessId: business.id,
+          customerId: customer.id,
+          serviceId: service.id,
+          bookingDate: input.bookingDate,
+          startTime: input.startTime,
+          endTime,
+          status: "pending",
+          notes: input.notes ?? "",
+          createdAt: new Date().toISOString(),
+        };
+
+        store.bookings.unshift(booking);
+
+        return booking.id;
+      })
+  );
 }
 
 export async function getLocalBookingConfirmationData(bookingId?: string) {
@@ -993,7 +1024,7 @@ export async function getLocalBookingConfirmationData(bookingId?: string) {
       businessName: fallbackBusiness.name,
       businessAddress: fallbackBusiness.address,
       businessTimezone: fallbackBusiness.timezone,
-      bookingDate: "2026-03-13",
+      bookingDate: new Date().toISOString().slice(0, 10),
       startTime: "16:45",
       serviceName: "Corte + barba",
       durationMinutes: 60,
@@ -1008,7 +1039,7 @@ export async function getLocalBookingConfirmationData(bookingId?: string) {
       businessName: fallbackBusiness.name,
       businessAddress: fallbackBusiness.address,
       businessTimezone: fallbackBusiness.timezone,
-      bookingDate: "2026-03-13",
+      bookingDate: new Date().toISOString().slice(0, 10),
       startTime: "16:45",
       serviceName: "Corte + barba",
       durationMinutes: 60,
@@ -1516,13 +1547,14 @@ export async function trackLocalAnalyticsEvent(input: {
 
 async function recordLocalCommunicationEvent(
   store: LocalStore,
-  input: {
-    businessId: string;
-    bookingId: string;
-    customerId: string;
-    kind: LocalCommunicationKind;
-    status: LocalCommunicationStatus;
-    recipient: string;
+    input: {
+      businessId: string;
+      bookingId: string;
+      customerId: string;
+      channel: "email" | "whatsapp";
+      kind: LocalCommunicationKind;
+      status: LocalCommunicationStatus;
+      recipient: string;
     subject: string;
     note: string;
   }
@@ -1532,7 +1564,7 @@ async function recordLocalCommunicationEvent(
     businessId: input.businessId,
     bookingId: input.bookingId,
     customerId: input.customerId,
-    channel: "email",
+    channel: input.channel,
     kind: input.kind,
     status: input.status,
     recipient: input.recipient,
@@ -1574,9 +1606,12 @@ export async function runLocalBookingReminderSweep(input?: {
       );
 
       for (const candidate of candidates) {
-        const recipient = candidate.customer?.email?.trim() ?? "";
+        const channels = getAvailableReminderChannels({
+          customerEmail: candidate.customer?.email,
+          customerPhone: candidate.customer?.phone,
+        });
 
-        if (!recipient) {
+        if (channels.length === 0) {
           summary.missingEmail += 1;
           continue;
         }
@@ -1587,43 +1622,60 @@ export async function runLocalBookingReminderSweep(input?: {
           continue;
         }
 
-        const result = await sendBookingReminderEmail({
-          bookingId: candidate.booking.id,
-          businessSlug: business.slug,
-          customerName: candidate.customer?.fullName ?? "",
-          customerEmail: recipient,
-          confirmation: {
-            businessName: business.name,
-            businessAddress: business.address,
-            businessTimezone: business.timezone,
-            bookingDate: candidate.booking.bookingDate,
-            startTime: candidate.booking.startTime,
-            serviceName: candidate.service?.name ?? "Servicio",
-            durationMinutes: candidate.service?.durationMinutes ?? 60,
-          },
-        });
+        const confirmation = {
+          businessName: business.name,
+          businessAddress: business.address,
+          businessTimezone: business.timezone,
+          bookingDate: candidate.booking.bookingDate,
+          startTime: candidate.booking.startTime,
+          serviceName: candidate.service?.name ?? "Servicio",
+          durationMinutes: candidate.service?.durationMinutes ?? 60,
+        };
 
-        if (result.status === "skipped") {
-          summary.readyWithoutProvider += 1;
-          continue;
+        for (const channel of channels) {
+          const result =
+            channel === "email"
+              ? await sendBookingReminderEmail({
+                  bookingId: candidate.booking.id,
+                  businessSlug: business.slug,
+                  customerName: candidate.customer?.fullName ?? "",
+                  customerEmail: candidate.customer?.email?.trim() ?? "",
+                  confirmation,
+                })
+              : await sendBookingReminderWhatsApp({
+                  bookingId: candidate.booking.id,
+                  businessSlug: business.slug,
+                  customerName: candidate.customer?.fullName ?? "",
+                  customerPhone: candidate.customer?.phone?.trim() ?? "",
+                  confirmation,
+                });
+
+          if (result.status === "skipped") {
+            summary.readyWithoutProvider += 1;
+            continue;
+          }
+
+          if (result.status === "sent") {
+            summary.sent += 1;
+          } else {
+            summary.failed += 1;
+          }
+
+          await recordLocalCommunicationEvent(store, {
+            businessId: business.id,
+            bookingId: candidate.booking.id,
+            customerId: candidate.customer?.id ?? candidate.booking.customerId,
+            channel,
+            kind: "reminder",
+            status: result.status,
+            recipient:
+              channel === "email"
+                ? candidate.customer?.email?.trim() ?? ""
+                : candidate.customer?.phone?.trim() ?? "",
+            subject: result.subject,
+            note: result.reason ?? "",
+          });
         }
-
-        if (result.status === "sent") {
-          summary.sent += 1;
-        } else {
-          summary.failed += 1;
-        }
-
-        await recordLocalCommunicationEvent(store, {
-          businessId: business.id,
-          bookingId: candidate.booking.id,
-          customerId: candidate.customer?.id ?? candidate.booking.customerId,
-          kind: "reminder",
-          status: result.status,
-          recipient,
-          subject: result.subject,
-          note: result.reason ?? "",
-        });
       }
     }
 
@@ -1740,11 +1792,11 @@ export async function getLocalAdminDashboardData(activeBusinessSlug?: string | n
     pendingBookings > 0
       ? `${pendingBookings} turnos pendientes de confirmar`
       : "Sin turnos pendientes de confirmar",
-    reminders.pending > 0
-      ? reminders.providerReady
-        ? `${reminders.pending} recordatorios listos para enviar`
-        : `${reminders.pending} recordatorios listos cuando actives Resend`
-      : "Sin recordatorios pendientes en las proximas 24 hs",
+      reminders.pending > 0
+        ? reminders.providerReady
+          ? `${reminders.pending} recordatorios listos para enviar`
+          : `${reminders.pending} recordatorios listos cuando actives email o WhatsApp`
+        : "Sin recordatorios pendientes en las proximas 24 hs",
     analytics.bookingsCreated > 0
       ? `${analytics.bookingsCreated} reservas llegaron desde la web`
       : "Todavia no se registran reservas web",

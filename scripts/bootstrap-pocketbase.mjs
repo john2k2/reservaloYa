@@ -78,6 +78,14 @@ function selectField(name, values, options = {}) {
   });
 }
 
+function buildActiveBusinessRule() {
+  return "@request.auth.id != '' && active = true";
+}
+
+function buildActiveRelatedBusinessRule() {
+  return "@request.auth.id != '' && business.active = true";
+}
+
 function repairBaseCollectionTimestamps() {
   const dbPath = path.join(rootDir, "pocketbase", "pb_data", "data.db");
   const db = new DatabaseSync(dbPath);
@@ -90,6 +98,7 @@ function repairBaseCollectionTimestamps() {
     "bookings",
     "analytics_events",
     "communication_events",
+    "rate_limit_events",
   ];
 
   try {
@@ -156,6 +165,8 @@ async function buildCollections(pb) {
   const businesses = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "businesses",
+    listRule: buildActiveBusinessRule(),
+    viewRule: buildActiveBusinessRule(),
     fields: [
       textField("name", { required: true }),
       textField("slug", { required: true }),
@@ -181,7 +192,7 @@ async function buildCollections(pb) {
     name: "users",
     fields: [
       relationField("business", idByName.businesses, { required: true }),
-      selectField("role", ["owner", "admin", "staff"]),
+      selectField("role", ["owner", "admin", "staff", "public_app"]),
       boolField("active"),
     ],
   };
@@ -189,6 +200,8 @@ async function buildCollections(pb) {
   const services = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "services",
+    listRule: `${buildActiveRelatedBusinessRule()} && active = true`,
+    viewRule: `${buildActiveRelatedBusinessRule()} && active = true`,
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("name", { required: true }),
@@ -204,6 +217,8 @@ async function buildCollections(pb) {
   const availabilityRules = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "availability_rules",
+    listRule: `${buildActiveRelatedBusinessRule()} && active = true`,
+    viewRule: `${buildActiveRelatedBusinessRule()} && active = true`,
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       numberField("dayOfWeek", { required: true, min: 0, max: 6 }),
@@ -216,6 +231,8 @@ async function buildCollections(pb) {
   const blockedSlots = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "blocked_slots",
+    listRule: buildActiveRelatedBusinessRule(),
+    viewRule: buildActiveRelatedBusinessRule(),
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("blockedDate", { required: true }),
@@ -266,6 +283,16 @@ async function buildCollections(pb) {
     ],
   };
 
+  const rateLimitEvents = {
+    ...withExistingId(structuredClone(scaffolds.base)),
+    name: "rate_limit_events",
+    fields: [
+      textField("bucket", { required: true }),
+      textField("identifierHash", { required: true }),
+      textField("expiresAt", { required: true }),
+    ],
+  };
+
   const communicationEvents = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "communication_events",
@@ -273,7 +300,7 @@ async function buildCollections(pb) {
       relationField("business", idByName.businesses, { required: true }),
       relationField("booking", idByName.bookings, { required: true }),
       relationField("customer", idByName.customers, { required: true }),
-      selectField("channel", ["email"]),
+      selectField("channel", ["email", "whatsapp"]),
       selectField("kind", ["confirmation", "reminder"]),
       selectField("status", ["sent", "failed"]),
       textField("recipient"),
@@ -291,6 +318,7 @@ async function buildCollections(pb) {
       blockedSlots,
       customers,
       analyticsEvents,
+      rateLimitEvents,
     ],
     false
   );
@@ -497,6 +525,37 @@ async function seedDemoOwner(pb) {
   );
 }
 
+async function seedPublicAppUser(pb) {
+  const email = process.env.POCKETBASE_PUBLIC_AUTH_EMAIL;
+  const password = process.env.POCKETBASE_PUBLIC_AUTH_PASSWORD;
+  const businessSlug =
+    process.env.POCKETBASE_DEMO_OWNER_BUSINESS_SLUG ?? "demo-barberia";
+
+  if (!email || !password) {
+    return;
+  }
+
+  const business = await pb
+    .collection("businesses")
+    .getFirstListItem(pb.filter("slug = {:slug}", { slug: businessSlug }));
+
+  await upsertByFilter(
+    pb,
+    "users",
+    pb.filter("email = {:email}", { email }),
+    {
+      email,
+      password,
+      passwordConfirm: password,
+      name: "ReservaYa Public App",
+      business: business.id,
+      role: "public_app",
+      active: true,
+      verified: true,
+    }
+  );
+}
+
 async function main() {
   await loadEnvFile();
 
@@ -517,6 +576,7 @@ async function main() {
   repairBaseCollectionTimestamps();
   await seedData(pb);
   await seedDemoOwner(pb);
+  await seedPublicAppUser(pb);
 
   console.log("PocketBase listo con colecciones y seed demo.");
 }

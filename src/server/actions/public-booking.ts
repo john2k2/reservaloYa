@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { publicBookingSchema } from "@/lib/validations/booking";
@@ -17,6 +18,32 @@ import {
   reschedulePocketBasePublicBooking,
 } from "@/server/pocketbase-store";
 import { getBookingConfirmationData } from "@/server/queries/public";
+import {
+  RateLimitError,
+  assertRateLimit,
+  getRateLimitIdentifier,
+} from "@/server/rate-limit";
+
+const PUBLIC_BOOKING_LIMIT_MAX = 8;
+const PUBLIC_BOOKING_LIMIT_WINDOW_MS = 60_000;
+
+async function enforcePublicBookingRateLimit(input: {
+  businessSlug: string;
+  phone: string;
+  bookingDate: string;
+  startTime: string;
+}) {
+  const requestHeaders = await headers();
+  const clientId = getRateLimitIdentifier(requestHeaders, "public-booking");
+
+  await assertRateLimit({
+    bucket: "public-booking",
+    identifier: `${input.businessSlug}:${clientId}:${input.phone}:${input.bookingDate}:${input.startTime}`,
+    max: PUBLIC_BOOKING_LIMIT_MAX,
+    windowMs: PUBLIC_BOOKING_LIMIT_WINDOW_MS,
+    message: "Demasiados intentos de reserva. Intenta nuevamente en unos segundos.",
+  });
+}
 
 function buildBookingPageHref(input: {
   businessSlug: string;
@@ -201,6 +228,13 @@ export async function createPublicBookingAction(formData: FormData) {
   let bookingId: string;
 
   try {
+    await enforcePublicBookingRateLimit({
+      businessSlug: parsed.data.businessSlug,
+      phone: parsed.data.phone,
+      bookingDate: parsed.data.bookingDate,
+      startTime: parsed.data.startTime,
+    });
+
     if (!isPocketBaseConfigured()) {
       bookingId = await createLocalPublicBooking(parsed.data);
       if (!parsed.data.rescheduleBookingId) {
@@ -231,6 +265,13 @@ export async function createPublicBookingAction(formData: FormData) {
       });
     }
   } catch (error) {
+    const errorMessage =
+      error instanceof RateLimitError
+        ? `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
+        : error instanceof Error
+          ? error.message
+          : "No se pudo crear la reserva.";
+
     redirect(
       buildBookingPageHref({
         businessSlug: parsed.data.businessSlug,
@@ -241,8 +282,7 @@ export async function createPublicBookingAction(formData: FormData) {
         source: raw.source,
         medium: raw.medium,
         campaign: raw.campaign,
-        error:
-          error instanceof Error ? error.message : "No se pudo crear la reserva.",
+        error: errorMessage,
       })
     );
   }

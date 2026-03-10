@@ -25,6 +25,77 @@ type BookingEmailResult = {
   reason?: string;
 };
 
+type BookingWhatsAppResult = BookingEmailResult;
+
+type ReminderChannel = "email" | "whatsapp";
+
+type ReminderRecipientInput = {
+  customerEmail?: string;
+  customerPhone?: string;
+};
+
+function getTwilioWhatsAppConfig() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_WHATSAPP_FROM;
+  const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID;
+
+  if (!accountSid || !authToken || !fromNumber || !templateSid) {
+    return null;
+  }
+
+  return {
+    accountSid,
+    authToken,
+    fromNumber,
+    templateSid,
+  };
+}
+
+function normalizePhoneForWhatsApp(phone?: string) {
+  const raw = String(phone ?? "").trim();
+
+  if (!raw) {
+    return null;
+  }
+
+  const normalized = raw.replace(/[^\d+]/g, "");
+  const compact =
+    normalized.startsWith("+") ? `+${normalized.slice(1).replace(/\+/g, "")}` : normalized;
+
+  if (!compact.startsWith("+") || compact.length < 8) {
+    return null;
+  }
+
+  return `whatsapp:${compact}`;
+}
+
+export function isEmailProviderReady() {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
+export function isWhatsAppProviderReady() {
+  return Boolean(getTwilioWhatsAppConfig());
+}
+
+export function hasReminderProviderConfigured() {
+  return isEmailProviderReady() || isWhatsAppProviderReady();
+}
+
+export function getAvailableReminderChannels(input: ReminderRecipientInput): ReminderChannel[] {
+  const channels: ReminderChannel[] = [];
+
+  if (input.customerEmail && isEmailProviderReady()) {
+    channels.push("email");
+  }
+
+  if (normalizePhoneForWhatsApp(input.customerPhone) && isWhatsAppProviderReady()) {
+    channels.push("whatsapp");
+  }
+
+  return channels;
+}
+
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
 
@@ -152,4 +223,81 @@ export async function sendBookingReminderEmail(input: BookingEmailInput) {
     bookingId: input.bookingId,
     confirmation: input.confirmation,
   });
+}
+
+export async function sendBookingReminderWhatsApp(
+  input: BookingEmailInput & { customerPhone?: string }
+): Promise<BookingWhatsAppResult> {
+  const subject = `${input.confirmation.businessName}: recordatorio de tu turno por WhatsApp`;
+  const recipient = normalizePhoneForWhatsApp(input.customerPhone);
+
+  if (!recipient) {
+    return {
+      status: "skipped",
+      subject,
+      reason: "missing_or_invalid_customer_phone",
+    };
+  }
+
+  const twilio = getTwilioWhatsAppConfig();
+
+  if (!twilio) {
+    return {
+      status: "skipped",
+      subject,
+      reason: "missing_twilio_whatsapp_config",
+    };
+  }
+
+  const manageUrl = buildAbsoluteManageBookingUrl(input.businessSlug, input.bookingId);
+  const body = new URLSearchParams({
+    From: twilio.fromNumber,
+    To: recipient,
+    ContentSid: twilio.templateSid,
+    ContentVariables: JSON.stringify({
+      "1": input.customerName || "cliente",
+      "2": input.confirmation.businessName,
+      "3": input.confirmation.serviceName,
+      "4": input.confirmation.bookingDate,
+      "5": input.confirmation.startTime,
+      "6": manageUrl ?? "",
+    }),
+  });
+
+  try {
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${twilio.accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${twilio.accountSid}:${twilio.authToken}`).toString("base64")}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      return {
+        status: "failed",
+        subject,
+        reason: errorText || `twilio_http_${response.status}`,
+      };
+    }
+
+    return {
+      status: "sent",
+      subject,
+    };
+  } catch (error) {
+    console.error("Failed to send booking WhatsApp reminder", error);
+
+    return {
+      status: "failed",
+      subject,
+      reason: error instanceof Error ? error.message : "unknown_error",
+    };
+  }
 }

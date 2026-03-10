@@ -2,7 +2,7 @@
 
 ## Bloque actual
 
-Cerrar los pendientes funcionales del admin para que la demo pase a ser un producto que un negocio pueda usar en serio.
+Llevar el MVP desde "demo convincente" a "beta publicable" con despliegue, automatizaciones reales y validacion final.
 
 ## Ultimo avance (2026-03-08)
 
@@ -17,12 +17,12 @@ Cerrar los pendientes funcionales del admin para que la demo pase a ser un produ
 
 ## Siguientes tareas
 
-1. Implementar CRUD real de servicios
-2. Implementar gestion real de disponibilidad
-3. Implementar acciones operativas sobre turnos
+1. Seguir separando la pagina publica principal y onboarding en componentes mas chicos
+2. Seguir separando operaciones publicas de bajo privilegio frente a mutaciones sensibles
+3. Validar de punta a punta servicios, disponibilidad y turnos
 4. Mejorar manejo de errores y estados sin disponibilidad
 5. Activar envio real de email con credenciales de Resend
-6. Conectar el job real de recordatorios a ejecucion automatica
+6. Configurar `CRON_SECRET` y cron productivo para recordatorios
 
 ## Criterio de cierre de la siguiente iteracion
 
@@ -32,7 +32,9 @@ Un negocio debe poder:
 - definir horarios base
 - bloquear franjas especiales
 - revisar y mover estados de turnos
-- seguir teniendo operativo el flujo publico de reserva
+- servir lecturas publicas sin depender del superuser
+- recibir confirmaciones y recordatorios reales
+- usar una URL publica estable para mostrar la demo
 
 ## Recordatorio
 

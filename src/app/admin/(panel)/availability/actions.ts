@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { addDays, getDayOfWeek } from "@/lib/bookings/format";
@@ -183,9 +182,7 @@ export async function saveAvailabilityRulesAction(formData: FormData) {
     const savedDay = targetRules[0]?.dayOfWeek ?? 0;
     redirect(`/admin/availability?savedDay=${encodeURIComponent(dayLabels[savedDay] ?? "dia")}`);
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     redirect(
       `/admin/availability?error=${encodeURIComponent(
@@ -283,9 +280,7 @@ export async function createBlockedSlotAction(formData: FormData) {
 
     redirect(`/admin/availability?blockedMessage=${encodeURIComponent(blockedMessage)}`);
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     redirect(
       `/admin/availability?error=${encodeURIComponent(
@@ -322,9 +317,7 @@ export async function removeBlockedSlotAction(formData: FormData) {
 
     redirect(`/admin/availability?unblocked=${encodeURIComponent(blockedDate)}`);
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     redirect(
       `/admin/availability?error=${encodeURIComponent(

@@ -229,7 +229,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   {dashboardData.reminders?.missingEmail ?? 0}
                 </p>
                 <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  sin email
+                  sin canal
                 </p>
               </div>
               <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
@@ -244,8 +244,8 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
             <p className="mt-3 text-xs text-muted-foreground">
               {dashboardData.reminders?.providerReady
-                ? "✓ Proveedor de email listo"
-                : "Configurá RESEND_API_KEY para enviar recordatorios."}
+                ? "✓ Canal de recordatorios listo"
+                : "Configurá Resend o Twilio WhatsApp para enviar recordatorios."}
             </p>
 
             {(dashboardData.demoMode || dashboardData.reminders) && (

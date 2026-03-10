@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
@@ -142,9 +141,7 @@ export async function updateBookingAction(formData: FormData) {
       })
     );
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     redirect(
       buildBookingsRedirectPath({

@@ -1,10 +1,10 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ExternalLink, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
 
 import { adminNavigation, demoBusinessSlug, productName } from "@/constants/site";
 import { cn } from "@/lib/utils";
@@ -20,9 +20,9 @@ interface AdminShellProps {
 
 function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -32,24 +32,13 @@ function ThemeToggle() {
     setTheme(next);
   };
 
-  if (!mounted) {
-    return (
-      <button
-        type="button"
-        className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground"
-      >
-        <Sun className="size-4" />
-        <span>Tema</span>
-      </button>
-    );
-  }
-
-  const isDark = resolvedTheme === "dark";
+  const isDark = mounted && (resolvedTheme ?? theme) === "dark";
   return (
     <button
       type="button"
       onClick={handleToggle}
       className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-all hover:bg-secondary hover:text-foreground active:scale-[0.98]"
+      aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
       <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>

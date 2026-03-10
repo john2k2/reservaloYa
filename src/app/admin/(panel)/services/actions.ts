@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
@@ -125,9 +124,7 @@ export async function saveServiceAction(formData: FormData) {
 
     redirect(`/admin/services?saved=${encodeURIComponent(parsed.data.name)}`);
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     redirect(
       `/admin/services?error=${encodeURIComponent(
@@ -164,9 +161,7 @@ export async function deactivateServiceAction(formData: FormData) {
 
     redirect(`/admin/services?archived=${encodeURIComponent(serviceName)}`);
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     redirect(
       `/admin/services?error=${encodeURIComponent(

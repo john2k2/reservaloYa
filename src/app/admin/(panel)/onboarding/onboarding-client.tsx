@@ -4,17 +4,11 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
-  ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Sparkles,
-  Store,
-  Palette,
-  ImagePlus,
-  Globe,
 } from "lucide-react";
 
-import { brandingPalettes, getPaletteIdFromColors } from "@/constants/branding-palettes";
+import { getPaletteIdFromColors } from "@/constants/branding-palettes";
 import {
   activateLocalBusinessAction,
   createOnboardedBusinessAction,
@@ -23,10 +17,12 @@ import {
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
+import { BrandingStep } from "./components/branding-step";
+import { BusinessStep } from "./components/business-step";
 import { OnboardingStepper, type OnboardingStep } from "./components/onboarding-stepper";
-import { FormField } from "./components/form-field";
-import { ImageUpload } from "./components/image-upload";
-import { PaletteSelector } from "./components/palette-selector";
+import { ImagesStep } from "./components/images-step";
+import { OnboardingStatusBanner } from "./components/onboarding-status-banner";
+import { PublicStep } from "./components/public-step";
 import { LivePreview } from "./components/live-preview";
 import EditBusinessPage from "./edit-business-page";
 
@@ -540,65 +536,25 @@ export default function OnboardingPageClient({
 
       {/* Mensajes de éxito/error */}
       {createdBusiness && (
-        <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
-              <div>
-                <p className="text-base font-semibold text-foreground">
-                  ¡Negocio &quot;{createdBusiness.name}&quot; creado!
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Continúa configurando el estilo visual y las fotos de tu página.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`/${createdBusiness.slug}`}
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
-              >
-                Ver página
-                <ExternalLink aria-hidden="true" className="size-4" />
-              </Link>
-              <button
-                onClick={goNext}
-                className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11")}
-              >
-                Continuar
-                <ChevronRight className="size-4 ml-1" />
-              </button>
-            </div>
-          </div>
-        </section>
+        <OnboardingStatusBanner
+          title={`¡Negocio "${createdBusiness.name}" creado!`}
+          description="Continua configurando el estilo visual y las fotos de tu pagina."
+          href={`/${createdBusiness.slug}`}
+          secondaryAction={
+            <button onClick={goNext} className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11")}>
+              Continuar
+              <ChevronRight className="ml-1 size-4" />
+            </button>
+          }
+        />
       )}
 
       {businessUpdated && (
-        <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
-              <div>
-                <p className="text-base font-semibold text-foreground">
-                  ¡Negocio &quot;{businessUpdated}&quot; actualizado!
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Los cambios ya están aplicados en tu página pública.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`/${activeBusinessSlug}`}
-                target="_blank"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
-              >
-                Ver página
-                <ExternalLink aria-hidden="true" className="size-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
+        <OnboardingStatusBanner
+          title={`¡Negocio "${businessUpdated}" actualizado!`}
+          description="Los cambios ya estan aplicados en tu pagina publica."
+          href={`/${activeBusinessSlug}`}
+        />
       )}
 
       {error && (
@@ -610,31 +566,11 @@ export default function OnboardingPageClient({
       )}
 
       {brandingSaved && (
-        <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
-              <div>
-                <p className="text-base font-semibold text-foreground">
-                  {brandingSaved}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Los cambios ya están aplicados en tu página pública.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`/${activeBusinessSlug}`}
-                target="_blank"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
-              >
-                Ver página
-                <ExternalLink aria-hidden="true" className="size-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
+        <OnboardingStatusBanner
+          title={brandingSaved}
+          description="Los cambios ya estan aplicados en tu pagina publica."
+          href={`/${activeBusinessSlug}`}
+        />
       )}
 
       {/* Contenido principal: Formulario + Preview */}
@@ -643,569 +579,59 @@ export default function OnboardingPageClient({
         <div className="space-y-6">
           {/* PASO 1: Negocio */}
           {currentStep === 0 && (
-            <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
-              <div className="flex items-start gap-3 mb-8">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/30">
-                  <Store aria-hidden="true" className="size-5 text-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-card-foreground">
-                    {hasExistingBusiness ? "Paso 1: Editar datos del negocio" : "Paso 1: Datos del negocio"}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {hasExistingBusiness 
-                      ? "Modificá los datos básicos de tu negocio. Los cambios se aplican inmediatamente."
-                      : "Completá los datos básicos para crear tu página. El link público es cómo tus clientes accederán."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <FormField
-                  id="templateSlug"
-                  label="Tipo de negocio"
-                  type="select"
-                  required
-                  value={step1Data.templateSlug}
-                  onChange={(value) => setStep1Data((d) => ({ ...d, templateSlug: value }))}
-                  options={onboardingData.templates.map((t) => ({
-                    value: t.slug,
-                    label: `${t.label} - ${t.category}`,
-                  }))}
-                  hint="Elegí el tipo que más se parezca a tu negocio"
-                />
-
-                <FormField
-                  id="name"
-                  label="Nombre del negocio"
-                  placeholder="Ej: Aura Studio Palermo"
-                  required
-                  value={step1Data.name}
-                  onChange={(value) => setStep1Data((d) => ({ ...d, name: value }))}
-                  validate={validations.name}
-                  hint="Este nombre aparecerá en el título de tu página"
-                />
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    id="slug"
-                    label="Link público"
-                    placeholder="Ej: aura-studio"
-                    value={step1Data.slug}
-                    onChange={(value) =>
-                      setStep1Data((d) => ({ ...d, slug: value.toLowerCase().replace(/\s+/g, "-") }))
-                    }
-                    validate={validations.slug}
-                    hint="reservaya.com/tu-link"
-                  />
-
-                  <FormField
-                    id="phone"
-                    label="WhatsApp"
-                    type="tel"
-                    placeholder="Ej: +54 11 5555 0000"
-                    required
-                    value={step1Data.phone}
-                    onChange={(value) => setStep1Data((d) => ({ ...d, phone: value }))}
-                    validate={validations.phone}
-                    hint="Con código de país para WhatsApp"
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    id="email"
-                    label="Email"
-                    type="email"
-                    placeholder="Ej: hola@negocio.com"
-                    value={step1Data.email}
-                    onChange={(value) => setStep1Data((d) => ({ ...d, email: value }))}
-                    validate={validations.email}
-                    hint="Para recibir notificaciones de turnos"
-                  />
-
-                  <FormField
-                    id="address"
-                    label="Dirección"
-                    placeholder="Ej: Honduras 4821, Palermo"
-                    required
-                    value={step1Data.address}
-                    onChange={(value) => setStep1Data((d) => ({ ...d, address: value }))}
-                    validate={validations.address}
-                    hint="Dirección completa de tu local"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-8 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Paso 1 de 4
-                </span>
-                <div className="flex gap-3">
-                  {hasExistingBusiness && (
-                    <button
-                      onClick={goNext}
-                      className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-                    >
-                      Siguiente paso
-                      <ChevronRight className="size-4 ml-1" />
-                    </button>
-                  )}
-                  <button
-                    onClick={handleStep1Submit}
-                    disabled={!isStepValid() || isSubmitting}
-                    className={cn(
-                      buttonVariants({ variant: "default", size: "lg" }),
-                      "h-11",
-                      (!isStepValid() || isSubmitting) && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {isSubmitting ? (hasExistingBusiness ? "Guardando..." : "Creando...") : (hasExistingBusiness ? "Guardar cambios" : "Crear negocio")}
-                    <ChevronRight className="size-4 ml-1" />
-                  </button>
-                </div>
-              </div>
-            </article>
+            <BusinessStep
+              hasExistingBusiness={hasExistingBusiness}
+              step1Data={step1Data}
+              setStep1Data={setStep1Data}
+              templates={onboardingData.templates}
+              validations={validations}
+              isSubmitting={isSubmitting}
+              isStepValid={isStepValid()}
+              onNext={goNext}
+              onSubmit={handleStep1Submit}
+            />
           )}
 
           {/* PASO 2: Estilo Visual */}
           {currentStep === 1 && (
-            <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
-              <div className="flex items-start gap-3 mb-8">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/30">
-                  <Palette aria-hidden="true" className="size-5 text-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-card-foreground">
-                    Paso 2: Estilo visual
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Elegí una paleta de colores y personalizá los textos de tu página.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                {/* Paletas */}
-                <section>
-                  <h4 className="text-sm font-medium text-foreground mb-4">
-                    Paleta de colores
-                  </h4>
-                  <PaletteSelector
-                    palettes={brandingPalettes}
-                    selectedId={step2Data.palette}
-                    onSelect={(id) => setStep2Data((d) => ({ ...d, palette: id }))}
-                  />
-
-                  {/* Colores personalizados */}
-                  {step2Data.palette === "custom" && (
-                    <div className="mt-6 rounded-2xl border border-border/60 bg-background p-5">
-                      <p className="text-sm font-medium text-foreground mb-4">
-                        Colores personalizados
-                      </p>
-                      <div className="grid gap-4 sm:grid-cols-3">
-                        <label className="space-y-2">
-                          <span className="text-sm text-muted-foreground">Principal</span>
-                          <input
-                            type="color"
-                            value={step2Data.customAccent}
-                            onChange={(e) =>
-                              setStep2Data((d) => ({ ...d, customAccent: e.target.value }))
-                            }
-                            className="h-11 w-full rounded-md border border-border/70 bg-background p-1"
-                          />
-                        </label>
-                        <label className="space-y-2">
-                          <span className="text-sm text-muted-foreground">Suave</span>
-                          <input
-                            type="color"
-                            value={step2Data.customAccentSoft}
-                            onChange={(e) =>
-                              setStep2Data((d) => ({ ...d, customAccentSoft: e.target.value }))
-                            }
-                            className="h-11 w-full rounded-md border border-border/70 bg-background p-1"
-                          />
-                        </label>
-                        <label className="space-y-2">
-                          <span className="text-sm text-muted-foreground">Fondo</span>
-                          <input
-                            type="color"
-                            value={step2Data.customSurfaceTint}
-                            onChange={(e) =>
-                              setStep2Data((d) => ({ ...d, customSurfaceTint: e.target.value }))
-                            }
-                            className="h-11 w-full rounded-md border border-border/70 bg-background p-1"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-                {/* Textos */}
-                <section className="space-y-6">
-                  <h4 className="text-sm font-medium text-foreground">Textos de la página</h4>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <FormField
-                      id="badge"
-                      label="Franja superior"
-                      placeholder="Ej: Estética y skincare"
-                      required
-                      value={step2Data.badge}
-                      onChange={(value) => setStep2Data((d) => ({ ...d, badge: value }))}
-                      validate={validations.badge}
-                      maxLength={80}
-                      hint="Aparece como etiqueta arriba del título"
-                    />
-
-                    <FormField
-                      id="eyebrow"
-                      label="Bajada corta"
-                      placeholder="Ej: Turnos online sin mensajes cruzados"
-                      required
-                      value={step2Data.eyebrow}
-                      onChange={(value) => setStep2Data((d) => ({ ...d, eyebrow: value }))}
-                      validate={validations.eyebrow}
-                      maxLength={120}
-                      hint="Subtítulo debajo de la franja"
-                    />
-                  </div>
-
-                  <FormField
-                    id="headline"
-                    label="Título principal"
-                    required
-                    value={step2Data.headline}
-                    onChange={(value) => setStep2Data((d) => ({ ...d, headline: value }))}
-                    validate={validations.headline}
-                    maxLength={160}
-                    hint="El título más importante de tu página"
-                  />
-
-                  <FormField
-                    id="description"
-                    label="Descripción"
-                    type="textarea"
-                    required
-                    value={step2Data.description}
-                    onChange={(value) => setStep2Data((d) => ({ ...d, description: value }))}
-                    validate={validations.description}
-                    maxLength={320}
-                    hint="Una breve descripción de tu negocio"
-                  />
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <FormField
-                      id="primaryCta"
-                      label="Botón principal"
-                      placeholder="Ej: Reservar turno"
-                      required
-                      value={step2Data.primaryCta}
-                      onChange={(value) => setStep2Data((d) => ({ ...d, primaryCta: value }))}
-                      validate={validations.cta}
-                      maxLength={40}
-                      hint="Texto del botón principal"
-                    />
-
-                    <FormField
-                      id="secondaryCta"
-                      label="Botón secundario"
-                      placeholder="Ej: Ver servicios"
-                      required
-                      value={step2Data.secondaryCta}
-                      onChange={(value) => setStep2Data((d) => ({ ...d, secondaryCta: value }))}
-                      validate={validations.cta}
-                      maxLength={40}
-                      hint="Texto del botón secundario"
-                    />
-                  </div>
-                </section>
-              </div>
-
-              <div className="mt-8 flex items-center justify-between">
-                <button
-                  onClick={goBack}
-                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-                >
-                  <ChevronLeft className="size-4 mr-1" />
-                  Atrás
-                </button>
-                {hasExistingBusiness ? (
-                  <button
-                    onClick={handleSaveAll}
-                    disabled={isSubmitting}
-                    className={cn(
-                      buttonVariants({ variant: "default", size: "lg" }),
-                      "h-11",
-                      isSubmitting && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {isSubmitting ? "Guardando..." : "Guardar todo"}
-                    <CheckCircle2 className="size-4 ml-1.5" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={goNext}
-                    disabled={!isStepValid()}
-                    className={cn(
-                      buttonVariants({ variant: "default", size: "lg" }),
-                      "h-11",
-                      !isStepValid() && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    Continuar
-                    <ChevronRight className="size-4 ml-1" />
-                  </button>
-                )}
-              </div>
-            </article>
+            <BrandingStep
+              step2Data={step2Data}
+              setStep2Data={setStep2Data}
+              validations={validations}
+              hasExistingBusiness={hasExistingBusiness}
+              isSubmitting={isSubmitting}
+              isStepValid={isStepValid()}
+              onBack={goBack}
+              onNext={goNext}
+              onSaveAll={handleSaveAll}
+            />
           )}
 
           {/* PASO 3: Fotos */}
           {currentStep === 2 && (
-            <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
-              <div className="flex items-start gap-3 mb-8">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/30">
-                  <ImagePlus aria-hidden="true" className="size-5 text-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-card-foreground">
-                    Paso 3: Fotos del negocio
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Subí imágenes para personalizar tu página. Si no subís nada, usamos imágenes
-                    demo.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                {/* Logo y Hero */}
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <ImageUpload
-                    id="logoFile"
-                    label="Logo del negocio"
-                    hint="Cuadrado o rectangular, se mostrará en el header"
-                    preview={
-                      step3Data.logo
-                        ? URL.createObjectURL(step3Data.logo)
-                        : step3Data.logoCleared
-                          ? null
-                          : settingsData.profile.logoUrl
-                    }
-                    onChange={(file) =>
-                      setStep3Data((d) => ({ ...d, logo: file, logoCleared: false }))
-                    }
-                    onClear={() =>
-                      setStep3Data((d) => ({ ...d, logo: null, logoCleared: true }))
-                    }
-                  />
-
-                  <ImageUpload
-                    id="heroFile"
-                    label="Foto de portada"
-                    hint="Foto horizontal del local o experiencia"
-                    preview={
-                      step3Data.hero
-                        ? URL.createObjectURL(step3Data.hero)
-                        : step3Data.heroCleared
-                          ? null
-                          : settingsData.profile.heroImageUrl
-                    }
-                    onChange={(file) =>
-                      setStep3Data((d) => ({ ...d, hero: file, heroCleared: false }))
-                    }
-                    onClear={() =>
-                      setStep3Data((d) => ({ ...d, hero: null, heroCleared: true }))
-                    }
-                  />
-                </div>
-
-                {/* Galería */}
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-4">Galería (opcional)</h4>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {galleryImageHints.map((hint, index) => (
-                        <ImageUpload
-                          key={index}
-                          id={`galleryFile${index + 1}`}
-                          label={`Foto ${index + 1}`}
-                          hint={hint}
-                          preview={
-                            step3Data.gallery[index]?.file
-                              ? URL.createObjectURL(step3Data.gallery[index].file!)
-                              : step3Data.gallery[index]?.cleared
-                                ? null
-                                : settingsData.profile.gallery?.[index]?.url
-                          }
-                          descriptionValue={step3Data.gallery[index]?.alt ?? ""}
-                          descriptionPlaceholder={`Ej: ${hint}`}
-                          onDescriptionChange={(value) =>
-                            setStep3Data((d) => ({
-                              ...d,
-                              gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, alt: value } : item
-                              ),
-                            }))
-                          }
-                          onChange={(file) =>
-                            setStep3Data((d) => ({
-                              ...d,
-                              gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, file, cleared: false } : item
-                              ),
-                            }))
-                          }
-                          onClear={() =>
-                            setStep3Data((d) => ({
-                              ...d,
-                              gallery: d.gallery.map((item, i) =>
-                                i === index ? { ...item, file: null, cleared: true } : item
-                              ),
-                            }))
-                          }
-                        />
-                      ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex items-center justify-between">
-                <button
-                  onClick={goBack}
-                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-                >
-                  <ChevronLeft className="size-4 mr-1" />
-                  Atrás
-                </button>
-                {hasExistingBusiness ? (
-                  <button
-                    onClick={handleSaveAll}
-                    disabled={isSubmitting}
-                    className={cn(
-                      buttonVariants({ variant: "default", size: "lg" }),
-                      "h-11",
-                      isSubmitting && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {isSubmitting ? "Guardando..." : "Guardar todo"}
-                    <CheckCircle2 className="size-4 ml-1.5" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={goNext}
-                    className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11")}
-                  >
-                    Continuar
-                    <ChevronRight className="size-4 ml-1" />
-                  </button>
-                )}
-              </div>
-            </article>
+            <ImagesStep
+              step3Data={step3Data}
+              setStep3Data={setStep3Data}
+              galleryImageHints={galleryImageHints}
+              settingsData={settingsData}
+              hasExistingBusiness={hasExistingBusiness}
+              isSubmitting={isSubmitting}
+              onBack={goBack}
+              onNext={goNext}
+              onSaveAll={handleSaveAll}
+            />
           )}
 
           {/* PASO 4: Datos Públicos */}
           {currentStep === 3 && (
-            <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
-              <div className="flex items-start gap-3 mb-8">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/30">
-                  <Globe aria-hidden="true" className="size-5 text-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-card-foreground">
-                    Paso 4: Datos públicos
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Agregá tus redes sociales y la dirección para el mapa.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    id="instagram"
-                    label="Instagram"
-                    placeholder="@tu.marca"
-                    value={step4Data.instagram}
-                    onChange={(value) => setStep4Data((d) => ({ ...d, instagram: value }))}
-                    hint="Sin @, solo el nombre de usuario"
-                  />
-
-                  <FormField
-                    id="facebook"
-                    label="Facebook"
-                    placeholder="tu.pagina"
-                    value={step4Data.facebook}
-                    onChange={(value) => setStep4Data((d) => ({ ...d, facebook: value }))}
-                    hint="Usuario o nombre de pagina"
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    id="tiktok"
-                    label="TikTok"
-                    placeholder="@tu.marca"
-                    value={step4Data.tiktok}
-                    onChange={(value) => setStep4Data((d) => ({ ...d, tiktok: value }))}
-                    hint="Con o sin @"
-                  />
-
-                  <FormField
-                    id="website"
-                    label="Website (opcional)"
-                    type="url"
-                    placeholder="https://..."
-                    value={step4Data.website}
-                    onChange={(value) => setStep4Data((d) => ({ ...d, website: value }))}
-                    hint="Si tenés otro sitio web"
-                  />
-                </div>
-
-                <FormField
-                  id="mapQuery"
-                  label="Dirección para el mapa"
-                  placeholder="Ej: Honduras 4821, Palermo, Buenos Aires"
-                  value={step4Data.mapQuery}
-                  onChange={(value) => setStep4Data((d) => ({ ...d, mapQuery: value }))}
-                  hint="Esta dirección se usa para mostrar el mapa en tu página"
-                />
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-border/60">
-                <div className="rounded-2xl bg-secondary/30 p-5 mb-6">
-                  <h4 className="font-medium text-foreground mb-2">¿Qué sigue?</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Al guardar, tu página quedará lista con todos los cambios. Podés seguir editando
-                    después desde el panel de configuración.
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={goBack}
-                    className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
-                  >
-                    <ChevronLeft className="size-4 mr-1" />
-                    Atrás
-                  </button>
-                  <button
-                    onClick={hasExistingBusiness ? handleSaveAll : handleBrandingSubmit}
-                    disabled={isSubmitting}
-                    className={cn(
-                      buttonVariants({ variant: "default", size: "lg" }),
-                      "h-11",
-                      isSubmitting && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {isSubmitting ? "Guardando..." : (hasExistingBusiness ? "Guardar todo" : "Guardar y publicar")}
-                    <CheckCircle2 className="size-4 ml-1.5" />
-                  </button>
-                </div>
-              </div>
-            </article>
+            <PublicStep
+              step4Data={step4Data}
+              setStep4Data={setStep4Data}
+              hasExistingBusiness={hasExistingBusiness}
+              isSubmitting={isSubmitting}
+              onBack={goBack}
+              onSubmit={hasExistingBusiness ? handleSaveAll : handleBrandingSubmit}
+            />
           )}
         </div>
 

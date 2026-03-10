@@ -46,7 +46,7 @@ export async function getPublicBookingFlowData({
   const selectedService =
     pageData.services.find((service) => service.id === serviceId) ??
     pageData.services[0];
-  const fallbackBaseDate = "2026-03-13";
+  const fallbackBaseDate = new Date().toISOString().slice(0, 10);
 
   if (!selectedService) {
     return {

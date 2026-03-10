@@ -34,6 +34,18 @@ export function getPocketBaseAdminPassword() {
   return getRequiredEnv("POCKETBASE_ADMIN_PASSWORD");
 }
 
+export function hasPocketBasePublicAuthCredentials() {
+  return Boolean(process.env.POCKETBASE_PUBLIC_AUTH_EMAIL && process.env.POCKETBASE_PUBLIC_AUTH_PASSWORD);
+}
+
+export function getPocketBasePublicAuthEmail() {
+  return getRequiredEnv("POCKETBASE_PUBLIC_AUTH_EMAIL");
+}
+
+export function getPocketBasePublicAuthPassword() {
+  return getRequiredEnv("POCKETBASE_PUBLIC_AUTH_PASSWORD");
+}
+
 export function getPocketBaseAuthCookieOptions(expires?: Date) {
   return {
     httpOnly: true,

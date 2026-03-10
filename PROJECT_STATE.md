@@ -31,10 +31,16 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 - Analytics basico del embudo web en modo local
 - Dashboard admin con datos reales desde store local o PocketBase
 - Vistas admin de turnos, clientes, servicios y disponibilidad ya leen datos reales
+- CRUD real de servicios ya operativo
+- Gestion real de disponibilidad y bloqueos ya operativa
+- Edicion operativa de turnos desde admin ya disponible
 - Auth admin, reservas, analytics y recordatorios conectados a PocketBase cuando el backend esta configurado
+- Lecturas publicas endurecidas con credenciales PocketBase dedicadas y rules de solo lectura para datos publicos
+- Rate limit compartido soportado por PocketBase para login, reservas y analytics cuando el backend esta configurado
 - PocketBase bootstrapeable con Docker y colecciones base ya definidas
 - Correccion aplicada al esquema base de PocketBase para evitar fallos de update en colecciones demo
 - Responsive audit completo aplicado con estandar mobile-first y targets tactiles >= 44px
+- Endpoint de jobs de recordatorios listo para uso manual y Vercel Cron
 - Demo publica de barberia lista
 - Demo publica de estetica lista
 - Store local multi-negocio funcionando
@@ -65,9 +71,15 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 ### 2. Confirmaciones y seguimiento
 
 - Activar envio real con credenciales de Resend
-- Conectar el job de recordatorios a ejecucion automatica real
+- Configurar `CRON_SECRET` y despliegue para que el job de recordatorios corra en produccion
 - Mensaje o email post-turno
 - Historial de comunicaciones por booking
+
+### 2.5. Seguridad y operacion
+
+- Completar rules least-privilege para mas operaciones publicas en PocketBase
+- Backups y monitoreo del backend productivo
+- Verificar monitoreo y alertas basicas del backend productivo
 
 ### 3. Personalizacion por negocio
 
@@ -82,30 +94,26 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 
 ### 1. Turnos
 
-- Confirmar / cancelar / completar desde el panel
-- Filtros y acciones utiles para operacion real
+- Validar flujo completo en demo y en backend real
+- Mejorar acciones rapidas para operacion diaria
 
 ### 2. Servicios
 
-- Crear
-- Editar
-- Desactivar
+- Validar casos borde y experiencia final
 
 ### 3. Disponibilidad
 
-- Alta y edicion de reglas
-- Bloqueo de franjas
-- Eliminacion o desactivacion
+- Validar casos borde y experiencia final
 
 ## Riesgo principal ahora
 
-Que la demo se vea bien, pero que todavia falte el admin operativo que convierte una demo en producto usable por un negocio real.
+Que el producto ya haga mucho, pero siga pareciendo menos maduro de lo que realmente es por falta de despliegue, automatizacion real y narrativa de lanzamiento.
 
 ## Prioridad recomendada
 
-1. CRUD de servicios
-2. Gestion de disponibilidad y bloqueos
-3. Acciones operativas sobre turnos
+1. Despliegue publico estable
+2. Activar Resend y cron real de recordatorios
+3. Validacion end-to-end de servicios, disponibilidad y turnos
 4. Seguimiento post-turno
 5. SEO/meta por negocio publico
 6. Backups, monitoreo y despliegue productivo de PocketBase

@@ -15,7 +15,14 @@ import {
 } from "@/lib/bookings/format";
 import { buildWeeklySchedule } from "@/lib/bookings/schedule";
 import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
-import { sendBookingReminderEmail } from "@/server/booking-notifications";
+import { createPocketBasePublicClient } from "@/lib/pocketbase/public";
+import { withBookingDateLock } from "@/server/booking-slot-lock";
+import {
+  getAvailableReminderChannels,
+  hasReminderProviderConfigured,
+  sendBookingReminderEmail,
+  sendBookingReminderWhatsApp,
+} from "@/server/booking-notifications";
 
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
 
@@ -105,9 +112,21 @@ type PocketBaseListOptions = {
   filter?: string;
 };
 
+type PocketBaseScopedClient =
+  | Awaited<ReturnType<typeof createPocketBaseAdminClient>>
+  | Awaited<ReturnType<typeof createPocketBasePublicClient>>;
+
 async function listPocketBaseRecords<T>(collection: string, options?: PocketBaseListOptions) {
   const pb = await getAdminClient();
 
+  return listPocketBaseRecordsWithClient<T>(pb, collection, options);
+}
+
+function listPocketBaseRecordsWithClient<T>(
+  pb: PocketBaseScopedClient,
+  collection: string,
+  options?: PocketBaseListOptions
+) {
   return pb.collection(collection).getFullList<T>({
     sort: options?.sort,
     expand: options?.expand,
@@ -248,6 +267,14 @@ async function getAdminClient() {
   return createPocketBaseAdminClient();
 }
 
+async function getPublicReadClient() {
+  return createPocketBasePublicClient();
+}
+
+async function getPublicMutationClient() {
+  return createPocketBaseAdminClient();
+}
+
 async function getBusinessBySlug(slug: string) {
   const pb = await getAdminClient();
   return (await pb
@@ -294,7 +321,7 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
 }
 
 export async function getPocketBasePublicBusinessPageData(slug: string) {
-  const pb = await getAdminClient();
+  const pb = await getPublicReadClient();
 
   let business: BusinessRecord;
 
@@ -309,11 +336,11 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
   }
 
   const [services, businessAvailabilityRules] = await Promise.all([
-    listPocketBaseRecords<ServiceRecord>("services", {
+    listPocketBaseRecordsWithClient<ServiceRecord>(pb, "services", {
       sort: "-featured,name",
       filter: pb.filter("business = {:business}", { business: business.id }),
     }),
-    listPocketBaseRecords<AvailabilityRuleRecord>("availability_rules", {
+    listPocketBaseRecordsWithClient<AvailabilityRuleRecord>(pb, "availability_rules", {
       sort: "dayOfWeek,startTime",
       filter: pb.filter("business = {:business}", { business: business.id }),
     }),
@@ -356,7 +383,8 @@ export async function getPocketBasePublicBookingFlowData(input: {
   serviceId?: string;
   bookingDate?: string;
 }) {
-  const pb = await getAdminClient();
+  const pb = await getPublicReadClient();
+  const adminPb = await getAdminClient();
   const pageData = await getPocketBasePublicBusinessPageData(input.slug);
 
   if (!pageData) {
@@ -376,9 +404,11 @@ export async function getPocketBasePublicBookingFlowData(input: {
     };
   }
 
-  const allRules = (await listPocketBaseRecords<AvailabilityRuleRecord>("availability_rules", {
-    filter: pb.filter("business = {:business}", { business: pageData.business.id }),
-  })).filter(isActiveRecord);
+  const allRules = (
+    await listPocketBaseRecordsWithClient<AvailabilityRuleRecord>(pb, "availability_rules", {
+      filter: pb.filter("business = {:business}", { business: pageData.business.id }),
+    })
+  ).filter(isActiveRecord);
   const activeDays = Array.from(new Set(allRules.map((rule) => rule.dayOfWeek)));
   const selectedDate =
     input.bookingDate ??
@@ -387,19 +417,19 @@ export async function getPocketBasePublicBookingFlowData(input: {
   const dateOptions = buildBookingDateOptions(selectedDate, activeDays);
 
   const [rules, blocked, bookings] = await Promise.all([
-    listPocketBaseRecords<AvailabilityRuleRecord>("availability_rules", {
+    listPocketBaseRecordsWithClient<AvailabilityRuleRecord>(pb, "availability_rules", {
       filter: pb.filter("business = {:business}", { business: pageData.business.id }),
     }),
-    listPocketBaseRecords<BlockedSlotRecord>("blocked_slots", {
+    listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
       filter: joinPocketBaseFilters(
         pb.filter("business = {:business}", { business: pageData.business.id }),
         pb.filter("blockedDate = {:blockedDate}", { blockedDate: selectedDate })
       ),
     }),
-    listPocketBaseRecords<BookingRecord>("bookings", {
+    listPocketBaseRecordsWithClient<BookingRecord>(adminPb, "bookings", {
       filter: joinPocketBaseFilters(
-        pb.filter("business = {:business}", { business: pageData.business.id }),
-        pb.filter("bookingDate = {:bookingDate}", { bookingDate: selectedDate })
+        adminPb.filter("business = {:business}", { business: pageData.business.id }),
+        adminPb.filter("bookingDate = {:bookingDate}", { bookingDate: selectedDate })
       ),
     }),
   ]);
@@ -439,7 +469,7 @@ export async function getPocketBaseBookingConfirmationData(input: {
     return null;
   }
 
-  const pb = await getAdminClient();
+  const pb = await getPublicMutationClient();
 
   try {
     const booking = await pb.collection("bookings").getOne<BookingRecord>(input.bookingId, {
@@ -471,7 +501,7 @@ export async function getPocketBaseManageBookingData(input: {
     return null;
   }
 
-  const pb = await getAdminClient();
+  const pb = await getPublicMutationClient();
 
   try {
     const booking = await pb.collection("bookings").getOne<BookingRecord>(input.bookingId, {
@@ -519,96 +549,106 @@ export async function createPocketBasePublicBooking(input: {
   email?: string;
   notes?: string;
 }) {
-  const pb = await getAdminClient();
-  const business = await pb
-    .collection("businesses")
-    .getFirstListItem<BusinessRecord>(
-      pb.filter("slug = {:slug} && active = true", { slug: input.businessSlug })
-    );
-  const service = await pb.collection("services").getOne<ServiceRecord>(input.serviceId);
+  return withBookingDateLock(
+    {
+      businessKey: input.businessSlug,
+      bookingDate: input.bookingDate,
+    },
+    async () => {
+      const pb = await getPublicMutationClient();
+      const business = await pb
+        .collection("businesses")
+        .getFirstListItem<BusinessRecord>(
+          pb.filter("slug = {:slug} && active = true", { slug: input.businessSlug })
+        );
+      const service = await pb.collection("services").getOne<ServiceRecord>(input.serviceId);
 
-  if (service.business !== business.id || !service.active) {
-    throw new Error("Servicio no encontrado.");
-  }
+      if (service.business !== business.id || !service.active) {
+        throw new Error("Servicio no encontrado.");
+      }
 
-  const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-  const startMinutes = toMinutes(input.startTime);
-  const endMinutes = toMinutes(endTime);
+      const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
+      const startMinutes = toMinutes(input.startTime);
+      const endMinutes = toMinutes(endTime);
 
-  const [blockedSlots, bookings, customers] = await Promise.all([
-    listPocketBaseRecords<BlockedSlotRecord>("blocked_slots", {
-      filter: joinPocketBaseFilters(
-        pb.filter("business = {:business}", { business: business.id }),
-        pb.filter("blockedDate = {:blockedDate}", { blockedDate: input.bookingDate })
-      ),
-    }),
-    listPocketBaseRecords<BookingRecord>("bookings", {
-      filter: joinPocketBaseFilters(
-        pb.filter("business = {:business}", { business: business.id }),
-        pb.filter("bookingDate = {:bookingDate}", { bookingDate: input.bookingDate })
-      ),
-    }),
-    listPocketBaseRecords<CustomerRecord>("customers", {
-      sort: "fullName",
-      filter: joinPocketBaseFilters(
-        pb.filter("business = {:business}", { business: business.id }),
-        pb.filter("phone = {:phone}", { phone: input.phone })
-      ),
-    }),
-  ]);
-  const businessBlockedSlots = blockedSlots.filter((slot) => slot.blockedDate === input.bookingDate);
-  const businessBookings = bookings.filter((booking) =>
-    ["pending", "confirmed"].includes(booking.status)
+      const [blockedSlots, bookings, customers] = await Promise.all([
+        listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
+          filter: joinPocketBaseFilters(
+            pb.filter("business = {:business}", { business: business.id }),
+            pb.filter("blockedDate = {:blockedDate}", { blockedDate: input.bookingDate })
+          ),
+        }),
+        listPocketBaseRecordsWithClient<BookingRecord>(pb, "bookings", {
+          filter: joinPocketBaseFilters(
+            pb.filter("business = {:business}", { business: business.id }),
+            pb.filter("bookingDate = {:bookingDate}", { bookingDate: input.bookingDate })
+          ),
+        }),
+        listPocketBaseRecordsWithClient<CustomerRecord>(pb, "customers", {
+          sort: "fullName",
+          filter: joinPocketBaseFilters(
+            pb.filter("business = {:business}", { business: business.id }),
+            pb.filter("phone = {:phone}", { phone: input.phone })
+          ),
+        }),
+      ]);
+      const businessBlockedSlots = blockedSlots.filter(
+        (slot) => slot.blockedDate === input.bookingDate
+      );
+      const businessBookings = bookings.filter((booking) =>
+        ["pending", "confirmed"].includes(booking.status)
+      );
+      const businessCustomers = customers.filter((customer) => customer.phone === input.phone);
+
+      if (
+        businessBlockedSlots.some((slot) =>
+          overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+        )
+      ) {
+        throw new Error("Ese horario esta bloqueado.");
+      }
+
+      if (
+        businessBookings.some((booking) =>
+          overlaps(startMinutes, endMinutes, toMinutes(booking.startTime), toMinutes(booking.endTime))
+        )
+      ) {
+        throw new Error("Ese horario ya no esta disponible.");
+      }
+
+      let customer = businessCustomers[0];
+
+      if (!customer) {
+        customer = await pb.collection("customers").create<CustomerRecord>({
+          business: business.id,
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email ?? "",
+          notes: input.notes ?? "",
+        });
+      } else {
+        customer = await pb.collection("customers").update<CustomerRecord>(customer.id, {
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email ?? "",
+          notes: input.notes ?? customer.notes ?? "",
+        });
+      }
+
+      const booking = await pb.collection("bookings").create<BookingRecord>({
+        business: business.id,
+        customer: customer.id,
+        service: service.id,
+        bookingDate: input.bookingDate,
+        startTime: input.startTime,
+        endTime,
+        status: "pending",
+        notes: input.notes ?? "",
+      });
+
+      return booking.id;
+    }
   );
-  const businessCustomers = customers.filter((customer) => customer.phone === input.phone);
-
-  if (
-    businessBlockedSlots.some((slot) =>
-      overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-    )
-  ) {
-    throw new Error("Ese horario esta bloqueado.");
-  }
-
-  if (
-    businessBookings.some((booking) =>
-      overlaps(startMinutes, endMinutes, toMinutes(booking.startTime), toMinutes(booking.endTime))
-    )
-  ) {
-    throw new Error("Ese horario ya no esta disponible.");
-  }
-
-  let customer = businessCustomers[0];
-
-  if (!customer) {
-    customer = await pb.collection("customers").create<CustomerRecord>({
-      business: business.id,
-      fullName: input.fullName,
-      phone: input.phone,
-      email: input.email ?? "",
-      notes: input.notes ?? "",
-    });
-  } else {
-    customer = await pb.collection("customers").update<CustomerRecord>(customer.id, {
-      fullName: input.fullName,
-      phone: input.phone,
-      email: input.email ?? "",
-      notes: input.notes ?? customer.notes ?? "",
-    });
-  }
-
-  const booking = await pb.collection("bookings").create<BookingRecord>({
-    business: business.id,
-    customer: customer.id,
-    service: service.id,
-    bookingDate: input.bookingDate,
-    startTime: input.startTime,
-    endTime,
-    status: "pending",
-    notes: input.notes ?? "",
-  });
-
-  return booking.id;
 }
 
 export async function reschedulePocketBasePublicBooking(input: {
@@ -622,91 +662,101 @@ export async function reschedulePocketBasePublicBooking(input: {
   notes?: string;
   rescheduleBookingId: string;
 }) {
-  const pb = await getAdminClient();
-  const booking = await pb.collection("bookings").getOne<BookingRecord>(input.rescheduleBookingId, {
-    expand: "business",
-  });
-  const business = booking.expand?.business as BusinessRecord | undefined;
+  return withBookingDateLock(
+    {
+      businessKey: input.businessSlug,
+      bookingDate: input.bookingDate,
+    },
+    async () => {
+      const pb = await getPublicMutationClient();
+      const booking = await pb.collection("bookings").getOne<BookingRecord>(input.rescheduleBookingId, {
+        expand: "business",
+      });
+      const business = booking.expand?.business as BusinessRecord | undefined;
 
-  if (!business || business.slug !== input.businessSlug) {
-    throw new Error("Link de gestion invalido.");
-  }
+      if (!business || business.slug !== input.businessSlug) {
+        throw new Error("Link de gestion invalido.");
+      }
 
-  if (!["pending", "confirmed"].includes(booking.status)) {
-    throw new Error("Este turno ya no se puede reprogramar.");
-  }
+      if (!["pending", "confirmed"].includes(booking.status)) {
+        throw new Error("Este turno ya no se puede reprogramar.");
+      }
 
-  const service = await pb.collection("services").getOne<ServiceRecord>(input.serviceId);
+      const service = await pb.collection("services").getOne<ServiceRecord>(input.serviceId);
 
-  if (service.business !== business.id || !service.active) {
-    throw new Error("Servicio no encontrado.");
-  }
+      if (service.business !== business.id || !service.active) {
+        throw new Error("Servicio no encontrado.");
+      }
 
-  const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-  const startMinutes = toMinutes(input.startTime);
-  const endMinutes = toMinutes(endTime);
-  const [blockedSlots, bookings] = await Promise.all([
-    listPocketBaseRecords<BlockedSlotRecord>("blocked_slots", {
-      filter: joinPocketBaseFilters(
-        pb.filter("business = {:business}", { business: business.id }),
-        pb.filter("blockedDate = {:blockedDate}", { blockedDate: input.bookingDate })
-      ),
-    }),
-    listPocketBaseRecords<BookingRecord>("bookings", {
-      filter: joinPocketBaseFilters(
-        pb.filter("business = {:business}", { business: business.id }),
-        pb.filter("bookingDate = {:bookingDate}", { bookingDate: input.bookingDate })
-      ),
-    }),
-  ]);
-  const businessBlockedSlots = blockedSlots.filter((slot) => slot.blockedDate === input.bookingDate);
-  const businessBookings = bookings.filter(
-    (candidate) =>
-      candidate.bookingDate === input.bookingDate &&
-      ["pending", "confirmed"].includes(candidate.status) &&
-      candidate.id !== booking.id
+      const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
+      const startMinutes = toMinutes(input.startTime);
+      const endMinutes = toMinutes(endTime);
+      const [blockedSlots, bookings] = await Promise.all([
+        listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
+          filter: joinPocketBaseFilters(
+            pb.filter("business = {:business}", { business: business.id }),
+            pb.filter("blockedDate = {:blockedDate}", { blockedDate: input.bookingDate })
+          ),
+        }),
+        listPocketBaseRecordsWithClient<BookingRecord>(pb, "bookings", {
+          filter: joinPocketBaseFilters(
+            pb.filter("business = {:business}", { business: business.id }),
+            pb.filter("bookingDate = {:bookingDate}", { bookingDate: input.bookingDate })
+          ),
+        }),
+      ]);
+      const businessBlockedSlots = blockedSlots.filter(
+        (slot) => slot.blockedDate === input.bookingDate
+      );
+      const businessBookings = bookings.filter(
+        (candidate) =>
+          candidate.bookingDate === input.bookingDate &&
+          ["pending", "confirmed"].includes(candidate.status) &&
+          candidate.id !== booking.id
+      );
+
+      if (
+        businessBlockedSlots.some((slot) =>
+          overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+        )
+      ) {
+        throw new Error("Ese horario esta bloqueado.");
+      }
+
+      if (
+        businessBookings.some((candidate) =>
+          overlaps(startMinutes, endMinutes, toMinutes(candidate.startTime), toMinutes(candidate.endTime))
+        )
+      ) {
+        throw new Error("Ese horario ya no esta disponible.");
+      }
+
+      await pb.collection("customers").update(booking.customer, {
+        fullName: input.fullName,
+        phone: input.phone,
+        email: input.email ?? "",
+        notes: input.notes ?? "",
+      });
+
+      await pb.collection("bookings").update(booking.id, {
+        service: service.id,
+        bookingDate: input.bookingDate,
+        startTime: input.startTime,
+        endTime,
+        status: "pending",
+        notes: input.notes ?? "",
+      });
+
+      return booking.id;
+    }
   );
-
-  if (
-    businessBlockedSlots.some((slot) =>
-      overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-    )
-  ) {
-    throw new Error("Ese horario esta bloqueado.");
-  }
-
-  if (
-    businessBookings.some((candidate) =>
-      overlaps(startMinutes, endMinutes, toMinutes(candidate.startTime), toMinutes(candidate.endTime))
-    )
-  ) {
-    throw new Error("Ese horario ya no esta disponible.");
-  }
-
-  await pb.collection("customers").update(booking.customer, {
-    fullName: input.fullName,
-    phone: input.phone,
-    email: input.email ?? "",
-    notes: input.notes ?? "",
-  });
-
-  await pb.collection("bookings").update(booking.id, {
-    service: service.id,
-    bookingDate: input.bookingDate,
-    startTime: input.startTime,
-    endTime,
-    status: "pending",
-    notes: input.notes ?? "",
-  });
-
-  return booking.id;
 }
 
 export async function cancelPocketBasePublicBooking(input: {
   businessSlug: string;
   bookingId: string;
 }) {
-  const pb = await getAdminClient();
+  const pb = await getPublicMutationClient();
   const booking = await pb.collection("bookings").getOne<BookingRecord>(input.bookingId, {
     expand: "business",
   });
@@ -730,7 +780,7 @@ export async function trackPocketBaseAnalyticsEvent(input: {
   campaign?: string;
   referrer?: string;
 }) {
-  const pb = await getAdminClient();
+  const pb = await getPublicMutationClient();
   const business = await pb
     .collection("businesses")
     .getFirstListItem<BusinessRecord>(
@@ -838,16 +888,20 @@ export async function getPocketBaseAdminDashboardData(businessId: string) {
       channels: [],
     },
     reminders: {
-      reminderWindowHours: 24,
-      pending: remindersPending,
-      missingEmail: businessBookings.filter(
-        (booking) => !(booking.expand?.customer as CustomerRecord | undefined)?.email
-      ).length,
-      sentRecently: businessCommunicationEvents.filter((event) => event.kind === "reminder").length,
-      providerReady: Boolean(process.env.RESEND_API_KEY),
-      nextBookingAt:
-        businessBookings[0] != null
-          ? `${businessBookings[0].bookingDate} ${businessBookings[0].startTime}`
+        reminderWindowHours: 24,
+        pending: remindersPending,
+        missingEmail: businessBookings.filter(
+          (booking) =>
+            getAvailableReminderChannels({
+              customerEmail: (booking.expand?.customer as CustomerRecord | undefined)?.email,
+              customerPhone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
+            }).length === 0
+        ).length,
+        sentRecently: businessCommunicationEvents.filter((event) => event.kind === "reminder").length,
+        providerReady: hasReminderProviderConfigured(),
+        nextBookingAt:
+          businessBookings[0] != null
+            ? `${businessBookings[0].bookingDate} ${businessBookings[0].startTime}`
           : null,
     },
     notifications: [
@@ -1550,7 +1604,7 @@ export async function runPocketBaseBookingReminderSweep(input?: {
     const businessBookings = bookings.filter((booking) =>
       ["pending", "confirmed"].includes(booking.status)
     );
-    const businessCommunications = communications;
+      const businessCommunications = communications;
 
     for (const booking of businessBookings) {
       const bookingTime = new Date(`${booking.bookingDate}T${booking.startTime}:00`).getTime();
@@ -1568,7 +1622,17 @@ export async function runPocketBaseBookingReminderSweep(input?: {
       const customer = booking.expand?.customer as CustomerRecord | undefined;
       const service = booking.expand?.service as ServiceRecord | undefined;
 
-      if (!customer?.email) {
+      if (!customer) {
+        summary.missingEmail += 1;
+        continue;
+      }
+
+      const channels = getAvailableReminderChannels({
+        customerEmail: customer.email,
+        customerPhone: customer.phone,
+      });
+
+      if (channels.length === 0) {
         summary.missingEmail += 1;
         continue;
       }
@@ -1579,44 +1643,57 @@ export async function runPocketBaseBookingReminderSweep(input?: {
         continue;
       }
 
-      const result = await sendBookingReminderEmail({
-        bookingId: booking.id,
-        businessSlug: business.slug,
-        customerName: customer.fullName,
-        customerEmail: customer.email,
-        confirmation: {
-          businessName: business.name,
-          businessAddress: business.address ?? "",
-          businessTimezone: business.timezone ?? "America/Argentina/Buenos_Aires",
-          bookingDate: booking.bookingDate,
-          startTime: booking.startTime,
-          serviceName: service?.name ?? "Servicio",
-          durationMinutes: Number(service?.durationMinutes ?? 60),
-        },
-      });
+      const confirmation = {
+        businessName: business.name,
+        businessAddress: business.address ?? "",
+        businessTimezone: business.timezone ?? "America/Argentina/Buenos_Aires",
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+        serviceName: service?.name ?? "Servicio",
+        durationMinutes: Number(service?.durationMinutes ?? 60),
+      };
 
-      if (result.status === "skipped") {
-        summary.readyWithoutProvider += 1;
-        continue;
+      for (const channel of channels) {
+        const result =
+          channel === "email"
+            ? await sendBookingReminderEmail({
+                bookingId: booking.id,
+                businessSlug: business.slug,
+                customerName: customer.fullName,
+                customerEmail: customer.email,
+                confirmation,
+              })
+            : await sendBookingReminderWhatsApp({
+                bookingId: booking.id,
+                businessSlug: business.slug,
+                customerName: customer.fullName,
+                customerPhone: customer.phone,
+                confirmation,
+              });
+
+        if (result.status === "skipped") {
+          summary.readyWithoutProvider += 1;
+          continue;
+        }
+
+        if (result.status === "sent") {
+          summary.sent += 1;
+        } else {
+          summary.failed += 1;
+        }
+
+        await pb.collection("communication_events").create({
+          business: business.id,
+          booking: booking.id,
+          customer: customer.id,
+          channel,
+          kind: "reminder",
+          status: result.status,
+          recipient: channel === "email" ? customer.email : customer.phone,
+          subject: result.subject,
+          note: result.reason ?? "",
+        });
       }
-
-      if (result.status === "sent") {
-        summary.sent += 1;
-      } else {
-        summary.failed += 1;
-      }
-
-      await pb.collection("communication_events").create({
-        business: business.id,
-        booking: booking.id,
-        customer: customer.id,
-        channel: "email",
-        kind: "reminder",
-        status: result.status,
-        recipient: customer.email,
-        subject: result.subject,
-        note: result.reason ?? "",
-      });
     }
   }
 
