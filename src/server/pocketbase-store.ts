@@ -16,6 +16,7 @@ import {
 import { buildWeeklySchedule } from "@/lib/bookings/schedule";
 import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
 import { createPocketBasePublicClient } from "@/lib/pocketbase/public";
+import { slugify } from "@/lib/utils";
 import { withBookingDateLock } from "@/server/booking-slot-lock";
 import {
   getAvailableReminderChannels,
@@ -1480,6 +1481,43 @@ export async function getPocketBaseOnboardingData(businessId?: string) {
   };
 }
 
+async function seedPocketBaseBusinessTemplate(input: {
+  pb: Awaited<ReturnType<typeof createPocketBaseAdminClient>>;
+  businessId: string;
+  templateSlug: string;
+}) {
+  const preset = demoPresets[input.templateSlug];
+
+  if (!preset) {
+    throw new Error("La demo base no existe.");
+  }
+
+  await Promise.all(
+    preset.services.map((service) =>
+      input.pb.collection("services").create({
+        business: input.businessId,
+        name: service.name,
+        description: service.description,
+        durationMinutes: service.durationMinutes,
+        price: service.price,
+        active: true,
+      })
+    )
+  );
+
+  await Promise.all(
+    preset.availabilityRules.map((rule) =>
+      input.pb.collection("availability_rules").create({
+        business: input.businessId,
+        dayOfWeek: rule.dayOfWeek,
+        startTime: rule.startTime,
+        endTime: rule.endTime,
+        active: rule.active,
+      })
+    )
+  );
+}
+
 export async function createPocketBaseBusinessFromTemplate(input: {
   templateSlug: string;
   name: string;
@@ -1508,32 +1546,106 @@ export async function createPocketBaseBusinessFromTemplate(input: {
     publicProfileOverrides: "",
   });
 
-  await Promise.all(
-    preset.services.map((service) =>
-      pb.collection("services").create({
-        business: business.id,
-        name: service.name,
-        description: service.description,
-        durationMinutes: service.durationMinutes,
-        price: service.price,
-        active: true,
-      })
-    )
-  );
-
-  await Promise.all(
-    preset.availabilityRules.map((rule) =>
-      pb.collection("availability_rules").create({
-        business: business.id,
-        dayOfWeek: rule.dayOfWeek,
-        startTime: rule.startTime,
-        endTime: rule.endTime,
-        active: rule.active,
-      })
-    )
-  );
+  await seedPocketBaseBusinessTemplate({
+    pb,
+    businessId: business.id,
+    templateSlug: input.templateSlug,
+  });
 
   return business.slug;
+}
+
+export async function createPocketBaseOwnerAccount(input: {
+  ownerName: string;
+  email: string;
+  password: string;
+  businessName: string;
+  businessSlug?: string;
+  phone: string;
+  address: string;
+  templateSlug: string;
+  timezone?: string;
+}) {
+  const pb = await getAdminClient();
+  const normalizedSlug = slugify(input.businessSlug || input.businessName);
+
+  if (!normalizedSlug) {
+    throw new Error("Necesitamos un slug valido para crear tu negocio.");
+  }
+
+  const existingBusiness = await pb.collection("businesses").getList<BusinessRecord>(1, 1, {
+    filter: pb.filter("slug = {:slug}", { slug: normalizedSlug }),
+    requestKey: null,
+  });
+
+  if (existingBusiness.totalItems > 0) {
+    throw new Error("Ese link publico ya existe. Proba con otro.");
+  }
+
+  const existingUser = await pb.collection("users").getList<RecordModel>(1, 1, {
+    filter: pb.filter("email = {:email}", { email: input.email.trim().toLowerCase() }),
+    requestKey: null,
+  });
+
+  if (existingUser.totalItems > 0) {
+    throw new Error("Ya existe una cuenta con ese email.");
+  }
+
+  const business = await pb.collection("businesses").create<BusinessRecord>({
+    name: input.businessName.trim(),
+    slug: normalizedSlug,
+    templateSlug: input.templateSlug,
+    phone: input.phone.trim(),
+    email: input.email.trim().toLowerCase(),
+    address: input.address.trim(),
+    timezone: input.timezone ?? "America/Argentina/Buenos_Aires",
+    active: true,
+    publicProfileOverrides: "",
+  });
+
+  try {
+    await seedPocketBaseBusinessTemplate({
+      pb,
+      businessId: business.id,
+      templateSlug: input.templateSlug,
+    });
+
+    await pb.collection("users").create({
+      email: input.email.trim().toLowerCase(),
+      password: input.password,
+      passwordConfirm: input.password,
+      name: input.ownerName.trim(),
+      business: business.id,
+      role: "owner",
+      active: true,
+      verified: true,
+    });
+  } catch (error) {
+    try {
+      const services = await listPocketBaseRecordsWithClient<ServiceRecord>(pb, "services", {
+        filter: pb.filter("business = {:business}", { business: business.id }),
+      });
+      const rules = await listPocketBaseRecordsWithClient<AvailabilityRuleRecord>(pb, "availability_rules", {
+        filter: pb.filter("business = {:business}", { business: business.id }),
+      });
+
+      await Promise.allSettled([
+        ...services.map((service) => pb.collection("services").delete(service.id)),
+        ...rules.map((rule) => pb.collection("availability_rules").delete(rule.id)),
+        pb.collection("businesses").delete(business.id),
+      ]);
+    } catch {
+      // Best-effort rollback.
+    }
+
+    throw error;
+  }
+
+  return {
+    businessSlug: business.slug,
+    businessId: business.id,
+    email: input.email.trim().toLowerCase(),
+  };
 }
 
 export async function updatePocketBaseBusiness(input: {

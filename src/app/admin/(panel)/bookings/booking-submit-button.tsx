@@ -14,12 +14,16 @@ export function BookingSubmitButton() {
       type="submit"
       disabled={pending}
       aria-live="polite"
-      className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11 min-w-32")}
+      className={cn(
+        buttonVariants({ variant: "default", size: "lg" }), 
+        "h-11 w-full lg:w-auto lg:min-w-32"
+      )}
     >
       {pending ? (
         <>
           <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-          Guardando...
+          <span className="hidden sm:inline">Guardando...</span>
+          <span className="sm:hidden">Guardando</span>
         </>
       ) : (
         <>

@@ -274,48 +274,50 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           highlightedTestimonial={highlightedTestimonial}
         />
 
-        <section className="border-y border-border/40 py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="grid gap-6 md:grid-cols-3">
+        {/* Benefits Section */}
+        <section className="border-y border-border/40 py-10 sm:py-14 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
               {pageData.profile.benefits.map((benefit, idx) => (
                 <article
                   key={benefit}
-                  className="rounded-3xl border border-border/60 bg-background p-8 shadow-sm transition-shadow hover:shadow-md"
+                  className="rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-background p-5 sm:p-6 lg:p-8 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div
-                    className="flex size-12 items-center justify-center rounded-2xl"
+                    className="flex size-10 sm:size-12 items-center justify-center rounded-xl sm:rounded-2xl"
                     style={{ backgroundColor: pageData.profile.accentSoft }}
                   >
                     {idx === 0 ? (
-                      <Clock3 className="size-6" style={{ color: pageData.profile.accent }} />
+                      <Clock3 className="size-5 sm:size-6" style={{ color: pageData.profile.accent }} />
                     ) : idx === 1 ? (
-                      <ShieldCheck className="size-6" style={{ color: pageData.profile.accent }} />
+                      <ShieldCheck className="size-5 sm:size-6" style={{ color: pageData.profile.accent }} />
                     ) : (
-                      <Phone className="size-6" style={{ color: pageData.profile.accent }} />
+                      <Phone className="size-5 sm:size-6" style={{ color: pageData.profile.accent }} />
                     )}
                   </div>
-                  <p className="mt-5 text-lg font-semibold text-card-foreground">{benefit}</p>
+                  <p className="mt-3 sm:mt-5 text-base sm:text-lg font-semibold text-card-foreground">{benefit}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
+        {/* Gallery */}
         {pageData.profile.gallery && pageData.profile.gallery.length > 0 && (
-          <section className="mx-auto max-w-6xl px-6 py-20">
-            <div className="mb-10 text-center">
-              <p className="text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
+          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
+            <div className="mb-6 sm:mb-10 text-center">
+              <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
                 Galeria
               </p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+              <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
                 Asi se vive la experiencia del negocio
               </h2>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pageData.profile.gallery.map((image, index) => (
                 <article
                   key={`${image.url}-${index}`}
-                  className="group cursor-pointer overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm"
+                  className="group cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm"
                   data-lightbox-index={index}
                 >
                   <div
@@ -324,8 +326,8 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     aria-label={image.alt}
                     style={{ backgroundImage: `url(${image.url})` }}
                   />
-                  <div className="p-4">
-                    <p className="text-sm text-muted-foreground">{image.alt}</p>
+                  <div className="p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm text-muted-foreground">{image.alt}</p>
                   </div>
                 </article>
               ))}
@@ -367,54 +369,58 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           tiktokHref={tiktokHref}
         />
 
-        <section className="mx-auto max-w-6xl px-6 py-16">
-          <div className="mb-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
+        {/* Location */}
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
+          <div className="mb-4 sm:mb-6 text-center">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
               Ubicacion
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-foreground">
               {pageData.business.address ?? "Direccion a definir"}
             </h2>
           </div>
-          <div className="overflow-hidden rounded-3xl border border-border/60 shadow-sm">
+          <div className="overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 shadow-sm">
             <iframe
               title={`Mapa de ${pageData.business.name}`}
               src={mapEmbedSrc}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="h-80 w-full"
+              className="h-48 sm:h-64 lg:h-80 w-full"
             />
           </div>
         </section>
 
-        <footer className="border-t border-border/40 bg-background py-12">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="grid gap-8 md:grid-cols-3">
+        {/* Footer */}
+        <footer className="border-t border-border/40 bg-background py-10 sm:py-12">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid gap-8 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <div
                     className={cn(
-                      "flex size-10 items-center justify-center rounded-xl border border-border/60 bg-background text-sm font-bold text-foreground shadow-sm",
+                      "flex size-9 sm:size-10 items-center justify-center rounded-lg sm:rounded-xl border border-border/60 bg-background text-xs sm:text-sm font-bold text-foreground shadow-sm",
                       pageData.profile.logoUrl ? "bg-cover bg-center text-transparent" : ""
                     )}
                     style={logoStyle}
                   >
                     {logoLabel}
                   </div>
-                  <span className="font-bold text-foreground">{pageData.business.name}</span>
+                  <span className="font-bold text-foreground text-sm sm:text-base">{pageData.business.name}</span>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">{pageData.profile.description.slice(0, 80)}...</p>
+                <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                  {pageData.profile.description.slice(0, 100)}...
+                </p>
               </div>
 
               <div>
-                <p className="text-sm font-bold text-foreground">Links rapidos</p>
-                <div className="mt-4 flex flex-col gap-2">
+                <p className="text-xs sm:text-sm font-bold text-foreground">Links rapidos</p>
+                <div className="mt-3 sm:mt-4 flex flex-col gap-1.5">
                   <PublicTrackedLink
                     businessSlug={slug}
                     eventName="booking_cta_clicked"
                     href={bookingHref}
                     pagePath={`/${slug}`}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     Reservar turno
                   </PublicTrackedLink>
@@ -422,7 +428,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     href={whatsappHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     Contactar por WhatsApp
                   </a>
@@ -430,26 +436,26 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     href={mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     Ver ubicacion
                   </a>
                 </div>
               </div>
 
-              <div>
-                <p className="text-sm font-bold text-foreground">Contacto</p>
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm text-muted-foreground">{pageData.business.address ?? "Direccion a definir"}</p>
+              <div className="sm:col-span-2 lg:col-span-1">
+                <p className="text-xs sm:text-sm font-bold text-foreground">Contacto</p>
+                <div className="mt-3 sm:mt-4 space-y-1.5">
+                  <p className="text-xs sm:text-sm text-muted-foreground">{pageData.business.address ?? "Direccion a definir"}</p>
                   <div className="flex flex-wrap gap-2">
                     {instagramHref && (
                       <a
                         href={instagramHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        <Instagram className="size-4" />
+                        <Instagram className="size-3.5 sm:size-4" />
                       </a>
                     )}
                     {facebookHref && (
@@ -457,9 +463,9 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={facebookHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        <Facebook className="size-4" />
+                        <Facebook className="size-3.5 sm:size-4" />
                       </a>
                     )}
                     {tiktokHref && (
@@ -467,29 +473,29 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={tiktokHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        <TikTokIcon className="size-4" />
+                        <TikTokIcon className="size-3.5 sm:size-4" />
                       </a>
                     )}
                     <a
                       href={whatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:text-foreground"
+                      className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
                     >
-                      <WhatsAppIcon className="size-4" />
+                      <WhatsAppIcon className="size-3.5 sm:size-4" />
                     </a>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-8 sm:flex-row">
-              <p className="text-xs text-muted-foreground">
+            <div className="mt-8 sm:mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
+              <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
                 © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
                 Desarrollado con <span className="font-bold text-foreground">ReservaYa</span>
               </p>
             </div>

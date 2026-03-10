@@ -9,10 +9,13 @@ import {
   createPocketBaseServerClient,
   persistPocketBaseAuth,
 } from "@/lib/pocketbase/server";
+import { createPocketBaseOwnerAccount } from "@/server/pocketbase-store";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 
 const ADMIN_LOGIN_LIMIT_MAX = 5;
 const ADMIN_LOGIN_LIMIT_WINDOW_MS = 60_000;
+const ADMIN_SIGNUP_LIMIT_MAX = 3;
+const ADMIN_SIGNUP_LIMIT_WINDOW_MS = 60_000;
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -73,4 +76,75 @@ export async function loginAction(formData: FormData) {
   }
 
   redirect("/admin/dashboard");
+}
+
+export async function signupAction(formData: FormData) {
+  const ownerName = String(formData.get("ownerName") ?? "").trim();
+  const businessName = String(formData.get("businessName") ?? "").trim();
+  const businessSlug = String(formData.get("businessSlug") ?? "").trim();
+  const templateSlug = String(formData.get("templateSlug") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  try {
+    const requestHeaders = await headers();
+    const clientId = getRateLimitIdentifier(requestHeaders, "admin-signup");
+
+    await assertRateLimit({
+      bucket: "admin-signup",
+      identifier: clientId,
+      max: ADMIN_SIGNUP_LIMIT_MAX,
+      windowMs: ADMIN_SIGNUP_LIMIT_WINDOW_MS,
+      message: "Demasiados intentos de registro.",
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      redirect(
+        `/admin/signup?error=${encodeURIComponent(
+          `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
+        )}`
+      );
+    }
+
+    throw error;
+  }
+
+  if (!isPocketBaseConfigured()) {
+    redirect("/admin/signup?error=El registro self-serve requiere PocketBase configurado.");
+  }
+
+  if (!ownerName || !businessName || !templateSlug || !phone || !address || !email || !password) {
+    redirect("/admin/signup?error=Completa todos los campos obligatorios.");
+  }
+
+  if (password.length < 8) {
+    redirect("/admin/signup?error=La contrasena debe tener al menos 8 caracteres.");
+  }
+
+  try {
+    const created = await createPocketBaseOwnerAccount({
+      ownerName,
+      email,
+      password,
+      businessName,
+      businessSlug,
+      phone,
+      address,
+      templateSlug,
+    });
+
+    const pb = await createPocketBaseServerClient();
+    await pb.collection("users").authWithPassword(created.email, password);
+    await persistPocketBaseAuth(pb);
+
+    redirect(`/admin/onboarding?created=${encodeURIComponent(created.businessSlug)}`);
+  } catch (error) {
+    redirect(
+      `/admin/signup?error=${encodeURIComponent(
+        error instanceof Error ? error.message : "No pudimos crear tu cuenta."
+      )}`
+    );
+  }
 }

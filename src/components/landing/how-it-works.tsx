@@ -28,7 +28,7 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section id="como-funciona" className="mx-auto w-full max-w-6xl px-6 py-24 md:py-32">
+    <section id="como-funciona" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
       <AnimatedSection>
         <SectionTitle
           eyebrow="Cómo funciona"
@@ -37,7 +37,7 @@ export function HowItWorksSection() {
         />
       </AnimatedSection>
 
-      <div className="mt-16 grid gap-8 md:grid-cols-3">
+      <div className="mt-10 sm:mt-16 grid gap-8 sm:grid-cols-3">
         {steps.map((step, index) => (
           <AnimatedSection
             key={step.title}
@@ -45,28 +45,28 @@ export function HowItWorksSection() {
             animation={index === 0 ? "slideInLeft" : index === 2 ? "slideInRight" : "fadeInUp"}
           >
             <article className="group relative flex flex-col items-center text-center">
-              <div className="flex size-16 items-center justify-center rounded-2xl bg-foreground text-background shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
-                <step.icon className="size-7 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
+              <div className="flex size-14 sm:size-16 items-center justify-center rounded-2xl bg-foreground text-background shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
+                <step.icon className="size-6 sm:size-7 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
               </div>
-              <div className="mt-6 flex items-center gap-2">
-                <span className="flex size-6 items-center justify-center rounded-full bg-secondary text-xs font-bold transition-colors group-hover:bg-foreground group-hover:text-background">
+              <div className="mt-4 sm:mt-6 flex items-center gap-2">
+                <span className="flex size-5 sm:size-6 items-center justify-center rounded-full bg-secondary text-[10px] sm:text-xs font-bold transition-colors group-hover:bg-foreground group-hover:text-background">
                   {index + 1}
                 </span>
-                <h3 className="text-lg font-semibold tracking-tight text-foreground">{step.title}</h3>
+                <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">{step.title}</h3>
               </div>
-              <p className="mt-3 text-base leading-relaxed text-muted-foreground">{step.description}</p>
+              <p className="mt-2 sm:mt-3 text-sm sm:text-base leading-relaxed text-muted-foreground">{step.description}</p>
             </article>
           </AnimatedSection>
         ))}
       </div>
 
       <AnimatedSection delay={500}>
-        <div className="mt-12 text-center">
+        <div className="mt-8 sm:mt-12 text-center">
           <Link
             href={`/${demoBusinessSlug}`}
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
-              "h-12 rounded-full px-8 transition-all hover:bg-foreground hover:text-background hover:scale-105"
+              "h-11 sm:h-12 rounded-full px-6 sm:px-8 transition-all hover:bg-foreground hover:text-background hover:scale-105"
             )}
           >
             Probar el flujo de reserva

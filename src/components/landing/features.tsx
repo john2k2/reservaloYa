@@ -39,7 +39,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="mx-auto w-full max-w-6xl border-t border-border/40 px-6 py-24 md:py-32">
+    <section className="mx-auto w-full max-w-6xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
       <AnimatedSection>
         <SectionTitle
           eyebrow="Beneficios"
@@ -48,17 +48,17 @@ export function FeaturesSection() {
         />
       </AnimatedSection>
 
-      <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 sm:mt-16 grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((feature, index) => (
           <AnimatedSection key={feature.title} delay={index * 100}>
             <article className="group flex flex-col items-start">
-              <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 transition-all duration-300 group-hover:bg-foreground group-hover:text-background group-hover:scale-110">
-                <feature.icon className="size-5 text-foreground group-hover:text-background" strokeWidth={1.5} />
+              <div className="flex size-11 sm:size-12 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 transition-all duration-300 group-hover:bg-foreground group-hover:text-background group-hover:scale-110">
+                <feature.icon className="size-4 sm:size-5 text-foreground group-hover:text-background" strokeWidth={1.5} />
               </div>
-              <h3 className="mt-5 text-lg font-semibold tracking-tight text-foreground transition-colors">
+              <h3 className="mt-4 sm:mt-5 text-base sm:text-lg font-semibold tracking-tight text-foreground transition-colors">
                 {feature.title}
               </h3>
-              <p className="mt-2 text-base leading-relaxed text-muted-foreground">{feature.description}</p>
+              <p className="mt-2 text-sm sm:text-base leading-relaxed text-muted-foreground">{feature.description}</p>
             </article>
           </AnimatedSection>
         ))}

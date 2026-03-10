@@ -124,7 +124,7 @@ export default async function BookingPage({
         id="main-content"
         className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
       >
-        <div className="mx-auto max-w-xl px-6 py-8">
+        <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-8">
           <BookingStepsHeader backHref={`/${slug}`} />
 
         {pageData.selectedService ? (
@@ -154,7 +154,7 @@ export default async function BookingPage({
         )}
 
         {pageData.selectedService && (
-          <form action={createPublicBookingAction} className="space-y-10">
+          <form action={createPublicBookingAction} className="space-y-8 sm:space-y-10">
             <input type="hidden" name="businessSlug" value={slug} />
             <input type="hidden" name="serviceId" value={pageData.selectedService.id} />
             <input type="hidden" name="bookingDate" value={pageData.bookingDate} />
@@ -169,14 +169,14 @@ export default async function BookingPage({
             <input type="hidden" name="campaign" value={filters.utm_campaign ?? ""} />
 
             {rescheduleBooking && (
-              <div className="rounded-xl border border-border/70 bg-secondary/60 p-4">
+              <div className="rounded-xl border border-border/70 bg-secondary/60 p-3 sm:p-4">
                 <div className="flex items-start gap-3">
-                  <RefreshCcw aria-hidden="true" className="mt-0.5 size-4 text-foreground" />
+                  <RefreshCcw aria-hidden="true" className="mt-0.5 size-4 text-foreground shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">
                       Estás reprogramando tu turno
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
                       Turno actual: {formatDateLabel(rescheduleBooking.bookingDate)} a las{" "}
                       {rescheduleBooking.startTime}.
                     </p>
@@ -188,7 +188,7 @@ export default async function BookingPage({
             {formError && (
               <div
                 aria-live="polite"
-                className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive"
+                className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-3 sm:p-4 text-sm text-destructive"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 {formError}
@@ -196,12 +196,12 @@ export default async function BookingPage({
             )}
 
             {/* Date Selection */}
-            <section className="space-y-4">
+            <section className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2">
-                <CalendarDays aria-hidden="true" className="size-5" style={{ color: accentColor }} />
-                <h2 className="text-lg font-semibold text-foreground">Elige el día</h2>
+                <CalendarDays aria-hidden="true" className="size-4 sm:size-5" style={{ color: accentColor }} />
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">Elige el día</h2>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3">
                 {pageData.dateOptions.map((dateOption) => {
                   const isSelected = dateOption === pageData.bookingDate;
 
@@ -219,7 +219,7 @@ export default async function BookingPage({
                         campaign: filters.utm_campaign,
                       })}
                       className={cn(
-                        "relative rounded-xl border px-4 py-4 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                        "relative rounded-xl border px-3 sm:px-4 py-3 sm:py-4 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 min-h-[4rem] sm:min-h-0 flex flex-col justify-center",
                         isSelected
                           ? "border-transparent text-white shadow-md"
                           : "border-border/70 bg-card text-card-foreground hover:border-foreground/30 hover:shadow-sm"
@@ -227,12 +227,12 @@ export default async function BookingPage({
                       style={isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
                     >
                       {isSelected && (
-                        <CheckCircle2 className="absolute right-2 top-2 size-4 text-white/80" />
+                        <CheckCircle2 className="absolute right-2 top-2 size-3.5 sm:size-4 text-white/80" />
                       )}
-                      <span className={cn("block text-xs uppercase tracking-wide", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                      <span className={cn("block text-[10px] sm:text-xs uppercase tracking-wide", isSelected ? "text-white/80" : "text-muted-foreground")}>
                         {formatShortDateLabel(dateOption)}
                       </span>
-                      <span className={cn("mt-1 block text-sm font-semibold", isSelected && "text-white")}>
+                      <span className={cn("mt-0.5 sm:mt-1 block text-sm font-semibold", isSelected && "text-white")}>
                         {new Date(dateOption).getDate()} {new Date(dateOption).toLocaleDateString('es-AR', { month: 'short' })}
                       </span>
                     </Link>
@@ -242,19 +242,19 @@ export default async function BookingPage({
             </section>
 
             {/* Time Selection */}
-            <fieldset className="space-y-4">
+            <fieldset className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Clock3 aria-hidden="true" className="size-5" style={{ color: accentColor }} />
-                  <legend className="text-lg font-semibold text-foreground">¿A qué hora?</legend>
+                  <Clock3 aria-hidden="true" className="size-4 sm:size-5" style={{ color: accentColor }} />
+                  <legend className="text-base sm:text-lg font-semibold text-foreground">¿A qué hora?</legend>
                 </div>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-xs sm:text-sm text-muted-foreground">
                   {selectedDateLabel}
                 </span>
               </div>
               
               {pageData.slots.length > 0 ? (
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-4">
                   {pageData.slots.map((slot) => (
                     <label 
                       key={slot} 
@@ -270,7 +270,7 @@ export default async function BookingPage({
                         required
                       />
                       <span 
-                        className="flex items-center justify-center rounded-xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground transition-all hover:border-foreground/30 group-has-[:checked]:border-transparent group-has-[:checked]:bg-[var(--accent-color)] group-has-[:checked]:text-white group-has-[:checked]:shadow-md"
+                        className="flex items-center justify-center rounded-xl border-2 border-border bg-card py-3 sm:py-3.5 text-xs sm:text-sm font-semibold text-foreground transition-all hover:border-foreground/30 group-has-[:checked]:border-transparent group-has-[:checked]:bg-[var(--accent-color)] group-has-[:checked]:text-white group-has-[:checked]:shadow-md min-h-[2.75rem] sm:min-h-0"
                       >
                         {slot}
                       </span>
@@ -278,8 +278,8 @@ export default async function BookingPage({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-border/70 bg-secondary/50 p-6 text-center">
-                  <Clock3 className="mx-auto size-8 text-muted-foreground/50" />
+                <div className="rounded-xl border border-border/70 bg-secondary/50 p-4 sm:p-6 text-center">
+                  <Clock3 className="mx-auto size-6 sm:size-8 text-muted-foreground/50" />
                   <p className="mt-2 text-sm text-muted-foreground">
                     No hay horarios disponibles para esta fecha.
                   </p>
@@ -289,14 +289,14 @@ export default async function BookingPage({
             </fieldset>
 
             {/* Personal Data */}
-            <section className="space-y-6">
+            <section className="space-y-5 sm:space-y-6">
               <div className="flex items-center gap-2">
-                <User aria-hidden="true" className="size-5" style={{ color: accentColor }} />
-                <h2 className="text-lg font-semibold text-foreground">Tus datos</h2>
+                <User aria-hidden="true" className="size-4 sm:size-5" style={{ color: accentColor }} />
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">Tus datos</h2>
               </div>
               
-              <div className="space-y-5">
-                <div className="space-y-2">
+              <div className="space-y-4 sm:space-y-5">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label htmlFor="fullName" className="flex items-center gap-1 text-sm font-medium text-foreground">
                     Nombre completo
                     <span className="text-destructive">*</span>
@@ -308,14 +308,14 @@ export default async function BookingPage({
                       name="fullName"
                       autoComplete="name"
                       placeholder="Ej: María González"
-                      className="minimalist-input pl-10"
+                      className="minimalist-input pl-10 h-11 sm:h-auto"
                       defaultValue={rescheduleBooking?.fullName ?? ""}
                       required
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label htmlFor="phone" className="flex items-center gap-1 text-sm font-medium text-foreground">
                     Teléfono (WhatsApp)
                     <span className="text-destructive">*</span>
@@ -329,20 +329,20 @@ export default async function BookingPage({
                       inputMode="tel"
                       autoComplete="tel"
                       placeholder="Ej: 11 5555 5555"
-                      className="minimalist-input pl-10"
+                      className="minimalist-input pl-10 h-11 sm:h-auto"
                       defaultValue={rescheduleBooking?.phone ?? ""}
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
                     Usaremos este número si el negocio activa recordatorios o soporte por WhatsApp
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-foreground">
                     Correo electrónico
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
+                    <span className="ml-1 text-[10px] sm:text-xs font-normal text-muted-foreground">(opcional)</span>
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -353,16 +353,16 @@ export default async function BookingPage({
                       autoComplete="email"
                       spellCheck={false}
                       placeholder="Ej: maria@email.com"
-                      className="minimalist-input pl-10"
+                      className="minimalist-input pl-10 h-11 sm:h-auto"
                       defaultValue={rescheduleBooking?.email ?? ""}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label htmlFor="notes" className="text-sm font-medium text-foreground">
                     Notas adicionales
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
+                    <span className="ml-1 text-[10px] sm:text-xs font-normal text-muted-foreground">(opcional)</span>
                   </label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 size-4 text-muted-foreground" />
@@ -371,7 +371,7 @@ export default async function BookingPage({
                       name="notes"
                       autoComplete="off"
                       placeholder="Ej: tengo alergia a ciertos productos, prefiero atención puntual..."
-                      className="minimalist-input min-h-[100px] resize-none pl-10 pt-2.5"
+                      className="minimalist-input min-h-[80px] sm:min-h-[100px] resize-none pl-10 pt-2.5"
                       defaultValue={rescheduleBooking?.notes ?? ""}
                     />
                   </div>
@@ -382,14 +382,14 @@ export default async function BookingPage({
             <BookingPolicyCard />
 
             {/* Submit Button */}
-            <div className="pt-4">
+            <div className="pt-2 sm:pt-4">
               <PublicSubmitButton 
-                className="h-14 w-full rounded-xl text-base font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                className="h-12 sm:h-14 w-full rounded-xl text-sm sm:text-base font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
                 style={{ backgroundColor: accentColor, borderColor: accentColor }}
               >
                 {rescheduleBooking ? "Guardar nuevo horario" : "Confirmar reserva"}
               </PublicSubmitButton>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
+              <p className="mt-3 text-center text-[10px] sm:text-xs text-muted-foreground">
                 Al confirmar, aceptas nuestras políticas de reserva
               </p>
             </div>

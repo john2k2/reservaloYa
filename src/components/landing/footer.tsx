@@ -7,37 +7,37 @@ import { productName, demoBusinessSlug } from "@/constants/site";
 export function Footer() {
   return (
     <footer id="contacto" className="border-t border-border/40 bg-gradient-to-b from-secondary/20 to-background">
-      <div className="mx-auto max-w-6xl px-6 py-12 md:px-8">
-        <div className="grid gap-8 md:grid-cols-3">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 md:px-8">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* Brand */}
           <div>
-            <span className="font-sans text-lg font-bold tracking-tight text-foreground">
+            <span className="font-sans text-base sm:text-lg font-bold tracking-tight text-foreground">
               {productName}
             </span>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-2 sm:mt-3 text-sm text-muted-foreground">
               Página de reservas + Agenda + Recordatorios para barberías y estéticas.
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <p className="font-semibold text-foreground">Links</p>
-            <div className="mt-4 flex flex-col gap-2">
+            <p className="font-semibold text-foreground text-sm sm:text-base">Links</p>
+            <div className="mt-3 sm:mt-4 flex flex-col gap-2">
               <Link
                 href={`/${demoBusinessSlug}`}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 inline-flex min-h-8 items-center"
               >
                 Demo pública
               </Link>
               <Link
                 href="/admin/login"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 inline-flex min-h-8 items-center"
               >
                 Panel administrador
               </Link>
               <a
                 href="#precios"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 inline-flex min-h-8 items-center"
               >
                 Precios
               </a>
@@ -45,26 +45,26 @@ export function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
-            <p className="font-semibold text-foreground">Contacto</p>
-            <div className="mt-4 space-y-3">
+          <div className="sm:col-span-2 md:col-span-1">
+            <p className="font-semibold text-foreground text-sm sm:text-base">Contacto</p>
+            <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
               <a
                 href="https://wa.me/541155550199"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 min-h-8"
               >
                 <Phone className="size-4" />
                 +54 11 5555 0199
               </a>
               <a
                 href="mailto:hola@reservaya.demo"
-                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 min-h-8"
               >
                 <Mail className="size-4" />
                 hola@reservaya.demo
               </a>
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <p className="flex items-center gap-2 text-sm text-muted-foreground min-h-8">
                 <Clock className="size-4" />
                 Lun-Vie 9:00 a 18:00
               </p>
@@ -72,15 +72,15 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-8 sm:flex-row">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-8 sm:mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
+          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             © {new Date().getFullYear()} {productName}. Todos los derechos reservados.
           </p>
-          <div className="flex gap-6 text-sm text-muted-foreground">
-            <a href="#" className="transition-colors hover:text-foreground">
+          <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+            <a href="#" className="transition-colors hover:text-foreground min-h-8 inline-flex items-center">
               Términos
             </a>
-            <a href="#" className="transition-colors hover:text-foreground">
+            <a href="#" className="transition-colors hover:text-foreground min-h-8 inline-flex items-center">
               Privacidad
             </a>
           </div>

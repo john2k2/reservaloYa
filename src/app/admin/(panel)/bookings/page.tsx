@@ -73,7 +73,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
             Turnos
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -84,56 +84,61 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
           href={bookingsExportHref}
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "h-9 gap-2 shrink-0"
+            "h-9 gap-2 shrink-0 w-full sm:w-auto justify-center"
           )}
         >
           <Download className="size-4" />
-          Exportar CSV
+          <span className="hidden sm:inline">Exportar CSV</span>
+          <span className="sm:hidden">Exportar</span>
         </Link>
       </header>
 
       {notice && <BookingsNotice message={notice.message} tone={notice.tone} />}
 
       {/* Filtros compactos */}
-      <section className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
-        <form className="flex flex-wrap items-end gap-2">
+      <section className="rounded-xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm">
+        <form className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2">
           <input
             name="q"
             type="search"
             defaultValue={activeFilters.q}
             placeholder="Buscar cliente..."
-            className="h-9 min-w-[180px] flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
+            className="h-10 sm:h-9 w-full sm:min-w-[180px] sm:flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
           />
-          <select
-            name="status"
-            defaultValue={activeFilters.status}
-            className="h-9 w-28 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-          >
-            <option value="">Estado</option>
-            {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <input
-            name="date"
-            type="date"
-            defaultValue={activeFilters.date}
-            className="h-9 w-32 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-          />
-          {hasActiveFilters && (
-            <Link
-              href="/admin/bookings"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 px-2")}
+          <div className="flex gap-2">
+            <select
+              name="status"
+              defaultValue={activeFilters.status}
+              className="h-10 sm:h-9 flex-1 sm:w-28 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
             >
-              Limpiar
-            </Link>
-          )}
-          <button
-            type="submit"
-            className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-9")}
-          >
-            Filtrar
-          </button>
+              <option value="">Estado</option>
+              {statusOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <input
+              name="date"
+              type="date"
+              defaultValue={activeFilters.date}
+              className="h-10 sm:h-9 w-32 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
+            />
+          </div>
+          <div className="flex gap-2 mt-1 sm:mt-0">
+            {hasActiveFilters && (
+              <Link
+                href="/admin/bookings"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-10 sm:h-9 px-2 flex-1 sm:flex-none justify-center")}
+              >
+                Limpiar
+              </Link>
+            )}
+            <button
+              type="submit"
+              className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 sm:h-9 flex-1 sm:flex-none")}
+            >
+              Filtrar
+            </button>
+          </div>
         </form>
       </section>
 
@@ -145,7 +150,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
               key={booking.id}
               action={updateBookingAction}
               className={cn(
-                "rounded-xl border border-border/60 bg-background p-4 shadow-sm",
+                "rounded-xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm",
                 savedBookingId === booking.id && "border-emerald-500/40 bg-emerald-500/5"
               )}
             >
@@ -154,11 +159,11 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
               <input type="hidden" name="redirectDate" value={activeFilters.date} />
               <input type="hidden" name="redirectQ" value={activeFilters.q} />
 
-              <div className="grid gap-4 xl:grid-cols-[280px_1fr_auto]">
+              <div className="grid gap-4 lg:grid-cols-[280px_1fr_auto]">
                 {/* Info del cliente */}
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-foreground">{booking.customerName}</h3>
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base">{booking.customerName}</h3>
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
@@ -170,9 +175,9 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       {booking.statusLabel}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground">{booking.phone}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{booking.phone}</p>
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-2.5 py-1 text-xs text-foreground">
-                    <CalendarClock className="size-3.5" />
+                    <CalendarClock className="size-3 sm:size-3.5" />
                     {formatDateLabel(booking.bookingDate)} · {booking.startTime}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -187,7 +192,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                     <select
                       name="status"
                       defaultValue={booking.status}
-                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
+                      className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
                     >
                       {statusOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -202,7 +207,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       name="bookingDate"
                       type="date"
                       defaultValue={booking.bookingDate}
-                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
+                      className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
                     />
                   </div>
                   <div className="space-y-1">
@@ -213,7 +218,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       name="startTime"
                       type="time"
                       defaultValue={booking.startTime}
-                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
+                      className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
                     />
                   </div>
                   <div className="sm:col-span-3 space-y-1">
@@ -232,7 +237,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                 </div>
 
                 {/* Botón guardar */}
-                <div className="flex xl:items-start">
+                <div className="flex lg:items-start">
                   <BookingSubmitButton />
                 </div>
               </div>
@@ -240,7 +245,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
           ))}
         </section>
       ) : (
-        <div className="rounded-xl border border-border/60 bg-background p-8 text-center text-muted-foreground">
+        <div className="rounded-xl border border-border/60 bg-background p-6 sm:p-8 text-center text-muted-foreground">
           {hasActiveFilters ? "No se encontraron turnos." : "No hay turnos cargados."}
         </div>
       )}

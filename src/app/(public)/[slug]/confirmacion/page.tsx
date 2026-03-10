@@ -85,64 +85,64 @@ export default async function ConfirmationPage({
   return (
     <main
       id="main-content"
-      className="flex min-h-screen items-center justify-center bg-background p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
+      className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
     >
       <div className="flex w-full max-w-lg flex-col items-center text-center">
-        <div className="mb-8 flex size-20 items-center justify-center rounded-full bg-secondary">
-          <Check aria-hidden="true" className="size-8 text-foreground" strokeWidth={2.5} />
+        <div className="mb-6 sm:mb-8 flex size-16 sm:size-20 items-center justify-center rounded-full bg-secondary">
+          <Check aria-hidden="true" className="size-6 sm:size-8 text-foreground" strokeWidth={2.5} />
         </div>
 
-        <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
           Reserva confirmada
         </h1>
-        <p className="max-w-sm text-lg text-muted-foreground">
-          Ya podes guardar los detalles y gestionar el turno cuando quieras.
+        <p className="max-w-sm text-base sm:text-lg text-muted-foreground">
+          Ya podés guardar los detalles y gestionar el turno cuando quieras.
         </p>
 
-        <div className="mt-12 w-full rounded-2xl border border-border/70 bg-card p-8 text-left shadow-sm">
-          <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="mt-8 sm:mt-12 w-full rounded-xl sm:rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-left shadow-sm">
+          <h2 className="mb-4 sm:mb-6 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Detalles de la cita
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">Fecha y hora</span>
-              <span className="text-lg font-semibold text-card-foreground">
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Fecha y hora</span>
+              <span className="text-base sm:text-lg font-semibold text-card-foreground">
                 {formattedDate} a las {formattedTime}
               </span>
             </div>
             <div className="h-px w-full bg-border/60" />
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">Servicio</span>
-              <span className="text-lg font-semibold text-card-foreground">
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</span>
+              <span className="text-base sm:text-lg font-semibold text-card-foreground">
                 {confirmation.serviceName}
               </span>
             </div>
             <div className="h-px w-full bg-border/60" />
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">Lugar</span>
-              <span className="text-lg font-semibold text-card-foreground">
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Lugar</span>
+              <span className="text-base sm:text-lg font-semibold text-card-foreground">
                 {confirmation.businessName}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 {confirmation.businessAddress}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 flex w-full flex-col justify-center gap-4">
+        <div className="mt-8 sm:mt-12 flex w-full flex-col justify-center gap-3">
           <a
             href={calendarHref}
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
-              "h-12 w-full gap-2 rounded-md px-8"
+              "h-11 sm:h-12 w-full gap-2 rounded-xl px-6 sm:px-8"
             )}
           >
             <Calendar aria-hidden="true" className="size-4" />
-            Anadir al calendario
+            Añadir al calendario
           </a>
 
           {manageHref && (
@@ -150,11 +150,12 @@ export default async function ConfirmationPage({
               href={manageHref}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                "h-12 w-full gap-2 rounded-md px-8"
+                "h-11 sm:h-12 w-full gap-2 rounded-xl px-6 sm:px-8"
               )}
             >
               <Settings2 aria-hidden="true" className="size-4" />
-              Ver, reprogramar o cancelar
+              <span className="hidden sm:inline">Ver, reprogramar o cancelar</span>
+              <span className="sm:hidden">Gestionar turno</span>
             </Link>
           )}
 
@@ -162,7 +163,7 @@ export default async function ConfirmationPage({
             href={`/${slug}`}
             className={cn(
               buttonVariants({ variant: "link", size: "default" }),
-              "mx-auto h-auto px-0 text-sm font-semibold"
+              "mx-auto h-auto px-0 text-sm font-semibold min-h-10"
             )}
           >
             Reservar otro turno

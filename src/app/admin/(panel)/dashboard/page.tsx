@@ -75,7 +75,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       )}
 
       {/* Métricas principales */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {dashboardData.metrics.map((item) => (
           <MetricCard
             key={item.label}
@@ -158,7 +158,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
               <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
                 Análisis de visitas
               </h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4">
                 <div className="rounded-lg bg-secondary/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <BarChart3 className="size-4" />

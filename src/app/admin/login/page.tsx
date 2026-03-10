@@ -1,24 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { LoadingButton } from "@/components/ui/loading-button";
 import { loginAction } from "@/app/admin/login/actions";
 import { demoBusinessOptions, productName } from "@/constants/site";
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
 import { isDemoModeEnabled } from "@/lib/runtime";
+import { LoadingButton } from "@/components/ui/loading-button";
 
 type AdminLoginPageProps = {
   searchParams: Promise<{ error?: string }>;
 };
 
-export default async function AdminLoginPage({
-  searchParams,
-}: AdminLoginPageProps) {
+export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
   const params = await searchParams;
   const configured = isPocketBaseConfigured();
   const demoModeEnabled = isDemoModeEnabled();
-  const pocketBaseUrlConfigured = isPocketBaseConfigured();
 
   if (configured) {
     const pb = await createPocketBaseServerClient();
@@ -34,7 +31,7 @@ export default async function AdminLoginPage({
       id="main-content"
       className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
     >
-      <div className="flex w-full flex-col justify-center px-8 sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
+      <div className="flex w-full flex-col justify-center px-8 py-10 sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
         <div className="mx-auto w-full max-w-sm">
           <Link href="/" className="inline-flex h-11 items-center text-2xl font-bold tracking-tight">
             {productName}
@@ -44,17 +41,15 @@ export default async function AdminLoginPage({
             <h1 className="text-3xl font-bold tracking-tight">Ingresar a tu negocio</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {configured
-                ? "Inicia sesión con tu correo electrónico para gestionar tu negocio."
+                ? "Inicia sesion con tu correo electronico para gestionar tu negocio."
                 : demoModeEnabled
-                  ? "Modo demo activo. Explora el panel de administración sin necesidad de crear una cuenta."
-                  : pocketBaseUrlConfigured
-                    ? "PocketBase ya está configurado, pero el login admin todavía no está conectado. El panel queda bloqueado hasta integrar la autenticación real."
-                    : "El acceso admin está deshabilitado hasta conectar la autenticación real."}
+                  ? "Modo demo activo. Explora el panel de administracion sin necesidad de crear una cuenta."
+                  : "El acceso admin esta deshabilitado hasta conectar la autenticacion real."}
             </p>
           </div>
 
           {params.error && (
-            <div 
+            <div
               className="mt-6 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive"
               role="alert"
               aria-live="polite"
@@ -66,47 +61,61 @@ export default async function AdminLoginPage({
 
           <div className="mt-8">
             {configured ? (
-              <form action={loginAction} className="space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-foreground">
-                    Correo electrónico
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    spellCheck={false}
-                    placeholder="tu@negocio.com"
-                    className="minimalist-input"
-                    required
-                    aria-invalid={params.error ? "true" : undefined}
-                    aria-describedby={params.error ? "login-error" : undefined}
-                  />
+              <div className="space-y-6">
+                <form action={loginAction} className="space-y-6">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium text-foreground">
+                      Correo electronico
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      spellCheck={false}
+                      placeholder="tu@negocio.com"
+                      className="minimalist-input"
+                      required
+                      aria-invalid={params.error ? "true" : undefined}
+                      aria-describedby={params.error ? "login-error" : undefined}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="text-sm font-medium text-foreground">
+                      Contrasena
+                    </label>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="Tu contrasena"
+                      className="minimalist-input"
+                      required
+                      aria-invalid={params.error ? "true" : undefined}
+                      aria-describedby={params.error ? "login-error" : undefined}
+                    />
+                  </div>
+                  <LoadingButton
+                    pendingLabel="Iniciando sesion..."
+                    className="h-12 w-full rounded-md bg-foreground font-medium text-background"
+                  >
+                    Iniciar sesion
+                  </LoadingButton>
+                </form>
+
+                <div className="rounded-xl border border-border/70 bg-card p-4 text-sm text-muted-foreground">
+                  <div className="space-y-2">
+                    <p>Todavia no tienes cuenta?</p>
+                    <Link
+                      href="/admin/signup"
+                      className="inline-flex min-h-11 items-center rounded-md px-1 font-medium text-foreground underline underline-offset-4"
+                    >
+                      Crea tu negocio y empieza ahora
+                    </Link>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-foreground">
-                    Contraseña
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="Tu contraseña"
-                    className="minimalist-input"
-                    required
-                    aria-invalid={params.error ? "true" : undefined}
-                    aria-describedby={params.error ? "login-error" : undefined}
-                  />
-                </div>
-                <LoadingButton
-                  pendingLabel="Iniciando sesión..."
-                  className="h-12 w-full rounded-md bg-foreground font-medium text-background"
-                >
-                  Iniciar sesión
-                </LoadingButton>
-              </form>
+              </div>
             ) : demoModeEnabled ? (
               <div className="space-y-4">
                 <Link
@@ -138,28 +147,8 @@ export default async function AdminLoginPage({
               </div>
             ) : (
               <div className="space-y-4 rounded-xl border border-border/70 bg-card p-5 text-sm text-muted-foreground">
-                <p>
-                  El panel interno no se expone por defecto mientras seguimos con el modo local y
-                  preparamos la integracion con PocketBase.
-                </p>
-                <p>
-                  Puedes seguir probando la parte publica desde las demos y cuando integremos auth,
-                  este acceso volvera a habilitarse.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {demoBusinessOptions.map((option) => (
-                    <Link
-                      key={option.slug}
-                      href={`/${option.slug}`}
-                      className="rounded-xl border border-border/70 bg-background p-4 transition-colors hover:border-foreground/20 hover:bg-secondary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                    >
-                      <p className="text-sm font-semibold text-card-foreground">{option.label}</p>
-                      <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-                        {option.category}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
+                <p>El panel interno no se expone por defecto mientras seguimos con el modo local.</p>
+                <p>Puedes seguir probando la parte publica desde las demos.</p>
               </div>
             )}
           </div>
@@ -169,10 +158,10 @@ export default async function AdminLoginPage({
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
         <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
         <div className="relative max-w-lg p-12">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestión sin complicaciones</h2>
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestion sin complicaciones</h2>
           <p className="text-lg text-muted-foreground">
             Una herramienta pensada para que administres turnos, servicios y clientes con claridad
-            desde el primer día.
+            desde el primer dia.
           </p>
 
           <div className="mt-12 grid grid-cols-2 gap-4">

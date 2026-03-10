@@ -261,19 +261,19 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
   ];
 
   return (
-    <div className="flex min-h-full flex-col items-center space-y-8 bg-background pb-10">
-      <section className="w-full rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
+    <div className="flex min-h-full flex-col items-center space-y-6 sm:space-y-8 bg-background pb-10">
+      <section className="w-full rounded-2xl sm:rounded-3xl border border-border/60 bg-card p-5 sm:p-8 shadow-sm">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Store aria-hidden="true" className="size-3.5" />
               Editar negocio
             </div>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h2 className="mt-4 sm:mt-5 text-2xl sm:text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
               {business.name}
             </h2>
-            <p className="mt-3 max-w-2xl text-base text-muted-foreground">
-              Modifica los datos, colores, textos o imagenes de tu pagina. Los cambios se aplican
+            <p className="mt-3 max-w-2xl text-sm sm:text-base text-muted-foreground">
+              Modificá los datos, colores, textos o imágenes de tu página. Los cambios se aplican
               inmediatamente al guardar.
             </p>
           </div>
@@ -325,7 +325,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
           </div>
         )}
 
-        <div className="mt-8 flex flex-wrap gap-2">
+        <div className="mt-6 sm:mt-8 flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -377,7 +377,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
         </div>
 
         <aside className="hidden xl:block">
-          <div className="sticky top-6 h-[calc(100vh-6rem)] rounded-3xl border border-border/60 bg-card p-6 shadow-sm">
+          <div className="sticky top-6 h-[calc(100vh-6rem)] rounded-2xl sm:rounded-3xl border border-border/60 bg-card p-6 shadow-sm">
             <LivePreview businessSlug={business.slug} isActive={true} refreshToken={previewRefreshToken} />
           </div>
         </aside>

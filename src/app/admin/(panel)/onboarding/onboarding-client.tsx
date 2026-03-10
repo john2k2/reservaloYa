@@ -480,7 +480,7 @@ export default function OnboardingPageClient({
   return (
     <div className="flex min-h-full flex-col items-center space-y-8 pb-10 bg-background">
       {/* Header */}
-      <section className="w-full rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
+      <section className="w-full rounded-2xl sm:rounded-3xl border border-border/60 bg-card p-5 sm:p-8 shadow-sm">
         <div className="max-w-4xl">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
@@ -488,7 +488,7 @@ export default function OnboardingPageClient({
                 <Sparkles aria-hidden="true" className="size-3.5" />
                 Onboarding guiado
               </div>
-              <h2 className="mt-5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              <h2 className="mt-4 sm:mt-5 text-2xl sm:text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
                 {hasExistingBusiness ? "Editá tu página" : "Configura tu página paso a paso"}
               </h2>
               <p className="mt-3 max-w-3xl text-base text-muted-foreground">
@@ -648,7 +648,7 @@ export default function OnboardingPageClient({
 
       {/* Negocios creados */}
       {onboardingData.businesses.length > 0 && (
-        <section className="w-full rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
+        <section className="w-full rounded-2xl sm:rounded-3xl border border-border/60 bg-card p-5 sm:p-8 shadow-sm">
           <h3 className="text-xl font-semibold text-card-foreground mb-5">Negocios creados</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {onboardingData.businesses.map((business) => (

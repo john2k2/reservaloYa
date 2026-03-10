@@ -104,7 +104,7 @@ export function FaqContactSection({
                   href={instagramHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-10 rounded-full px-4")}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-11 rounded-full px-4")}
                 >
                   <Instagram aria-hidden="true" className="mr-2 size-4" />
                   Instagram
@@ -115,7 +115,7 @@ export function FaqContactSection({
                   href={facebookHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-10 rounded-full px-4")}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-11 rounded-full px-4")}
                 >
                   <Facebook aria-hidden="true" className="mr-2 size-4" />
                   Facebook
@@ -126,7 +126,7 @@ export function FaqContactSection({
                   href={tiktokHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-10 rounded-full px-4")}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-11 rounded-full px-4")}
                 >
                   <TikTokIcon className="mr-2 size-4" />
                   TikTok

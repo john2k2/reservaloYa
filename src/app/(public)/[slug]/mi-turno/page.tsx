@@ -34,18 +34,18 @@ export default async function ManageBookingPage({
         id="main-content"
         className="flex min-h-screen items-center justify-center bg-background p-6 font-sans text-foreground"
       >
-        <div className="w-full max-w-lg rounded-2xl border border-border/70 bg-card p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-card-foreground">
+        <div className="w-full max-w-lg rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-center shadow-sm">
+          <h1 className="text-xl sm:text-2xl font-semibold text-card-foreground">
             No pudimos abrir tu turno
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            El link puede haber expirado o ser invalido.
+            El link puede haber expirado o ser inválido.
           </p>
           <Link
             href={`/${slug}`}
             className={cn(
               buttonVariants({ variant: "default", size: "lg" }),
-              "mt-6 rounded-md"
+              "mt-6 h-11 sm:h-12 w-full rounded-xl sm:rounded-md"
             )}
           >
             Volver al sitio
@@ -61,13 +61,13 @@ export default async function ManageBookingPage({
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-background p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
+      className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
     >
-      <div className="mx-auto max-w-xl py-8">
-        <div className="rounded-2xl border border-border/70 bg-card p-8 shadow-sm">
-          <h1 className="text-3xl font-semibold text-card-foreground">Tu turno</h1>
+      <div className="mx-auto w-full max-w-xl py-4 sm:py-8">
+        <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-8 shadow-sm">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-card-foreground">Tu turno</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Desde aca podes ver, reprogramar o cancelar la reserva.
+            Desde acá podés ver, reprogramar o cancelar la reserva.
           </p>
 
           {status === "cancelled" && (
@@ -82,39 +82,39 @@ export default async function ManageBookingPage({
             </div>
           )}
 
-          <div className="mt-8 space-y-5">
+          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Estado</p>
-              <p className="text-lg font-semibold text-card-foreground">{booking.statusLabel}</p>
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Estado</p>
+              <p className="text-base sm:text-lg font-semibold text-card-foreground">{booking.statusLabel}</p>
             </div>
             <div className="h-px bg-border/60" />
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Servicio</p>
-              <p className="text-lg font-semibold text-card-foreground">{booking.serviceName}</p>
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</p>
+              <p className="text-base sm:text-lg font-semibold text-card-foreground">{booking.serviceName}</p>
             </div>
             <div className="h-px bg-border/60" />
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Fecha y hora</p>
-              <p className="text-lg font-semibold text-card-foreground">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Fecha y hora</p>
+              <p className="text-base sm:text-lg font-semibold text-card-foreground">
                 {formatDateLabel(booking.bookingDate)} a las {formatTimeLabel(booking.startTime)}
               </p>
             </div>
             <div className="h-px bg-border/60" />
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Cliente</p>
-              <p className="text-lg font-semibold text-card-foreground">{booking.fullName}</p>
-              <p className="text-sm text-muted-foreground">{booking.phone}</p>
-              {booking.email && <p className="text-sm text-muted-foreground">{booking.email}</p>}
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Cliente</p>
+              <p className="text-base sm:text-lg font-semibold text-card-foreground">{booking.fullName}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{booking.phone}</p>
+              {booking.email && <p className="text-xs sm:text-sm text-muted-foreground">{booking.email}</p>}
             </div>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <div className="mt-8 sm:mt-10 grid gap-3 sm:gap-4 sm:grid-cols-2">
             <Link
               href={manageHref}
               aria-disabled={isClosedStatus}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-12 gap-2 rounded-md",
+                "h-11 sm:h-12 gap-2 rounded-xl sm:rounded-md",
                 isClosedStatus && "pointer-events-none opacity-50"
               )}
             >
@@ -126,19 +126,19 @@ export default async function ManageBookingPage({
               <div
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "pointer-events-none h-12 gap-2 rounded-md opacity-50"
+                  "pointer-events-none h-11 sm:h-12 gap-2 rounded-xl sm:rounded-md opacity-50"
                 )}
               >
                 <CalendarX2 aria-hidden="true" className="size-4" />
                 Cancelar turno
               </div>
             ) : (
-              <form action={cancelPublicBookingAction}>
+              <form action={cancelPublicBookingAction} className="w-full">
                 <input type="hidden" name="businessSlug" value={slug} />
                 <input type="hidden" name="bookingId" value={booking.id} />
                 <input type="hidden" name="manageToken" value={query.token ?? ""} />
                 <PublicSubmitButton
-                  className="h-12 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="h-11 sm:h-12 w-full rounded-xl sm:rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   pendingLabel="Cancelando turno..."
                 >
                   <span className="inline-flex items-center gap-2">
@@ -157,16 +157,18 @@ export default async function ManageBookingPage({
           )}
         </div>
 
-        <Link
-          href={`/${slug}`}
-          className={cn(
-            buttonVariants({ variant: "link", size: "default" }),
-            "mt-6 inline-flex gap-2 px-0"
-          )}
-        >
-          <CalendarClock aria-hidden="true" className="size-4" />
-          Volver a la pagina publica
-        </Link>
+        <div className="mt-6 flex justify-center">
+          <Link
+            href={`/${slug}`}
+            className={cn(
+              buttonVariants({ variant: "link", size: "default" }),
+              "inline-flex gap-2 px-0 text-sm font-semibold min-h-10"
+            )}
+          >
+            <CalendarClock aria-hidden="true" className="size-4" />
+            Volver a la página pública
+          </Link>
+        </div>
       </div>
     </main>
   );
