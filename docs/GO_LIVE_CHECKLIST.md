@@ -42,6 +42,8 @@
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_WHATSAPP_FROM`
 - `TWILIO_WHATSAPP_TEMPLATE_SID`
+- `NOTIFICATIONS_TEST_EMAIL`
+- `NOTIFICATIONS_TEST_PHONE`
 
 ## Verificaciones antes de publicar en LinkedIn
 
@@ -55,7 +57,13 @@
 
 ```bash
 curl "https://reservaya-kappa.vercel.app/api/jobs/booking-reminders?dryRun=true" ^
-  -H "Authorization: Bearer TU_CRON_SECRET"
+  -H "x-booking-jobs-secret: TU_CRON_SECRET"
+```
+
+8. Validar proveedores antes de activar la demo publica:
+
+```bash
+npm run notifications:test -- --channel both --dry-run
 ```
 
 ## Antes de pasar a produccion real
@@ -65,6 +73,7 @@ curl "https://reservaya-kappa.vercel.app/api/jobs/booking-reminders?dryRun=true"
 3. Configurar PocketBase productivo con backup.
 4. Validar el cron real en Vercel.
 5. Reemplazar cualquier copy que prometa WhatsApp si el canal todavia no esta activo.
+6. Ejecutar una prueba real con Resend y otra con Twilio usando [NOTIFICATIONS_SETUP.md](c:/Users/John/Desktop/Nueva%20carpeta/ReservaYa/docs/NOTIFICATIONS_SETUP.md).
 
 ## Assets para lanzamiento
 

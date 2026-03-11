@@ -12,6 +12,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "demo:reset": "node scripts/reset-local-demo.mjs",
+    "notifications:test": "node scripts/test-notifications.mjs --dry-run",
     "pb:up": "docker compose up -d pocketbase",
     "pb:down": "docker compose down",
     "pb:logs": "docker compose logs -f pocketbase",
