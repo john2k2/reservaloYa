@@ -16,6 +16,10 @@ const ADMIN_LOGIN_LIMIT_MAX = 5;
 const ADMIN_LOGIN_LIMIT_WINDOW_MS = 60_000;
 const ADMIN_SIGNUP_LIMIT_MAX = 3;
 const ADMIN_SIGNUP_LIMIT_WINDOW_MS = 60_000;
+const PASSWORD_RESET_REQUEST_LIMIT_MAX = 3;
+const PASSWORD_RESET_REQUEST_LIMIT_WINDOW_MS = 60_000;
+const PASSWORD_RESET_CONFIRM_LIMIT_MAX = 5;
+const PASSWORD_RESET_CONFIRM_LIMIT_WINDOW_MS = 60_000;
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -147,4 +151,126 @@ export async function signupAction(formData: FormData) {
       )}`
     );
   }
+}
+
+export async function forgotPasswordAction(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  try {
+    const requestHeaders = await headers();
+    const clientId = getRateLimitIdentifier(requestHeaders, "password-reset-request");
+
+    await assertRateLimit({
+      bucket: "password-reset-request",
+      identifier: `${clientId}:${email || "anonymous"}`,
+      max: PASSWORD_RESET_REQUEST_LIMIT_MAX,
+      windowMs: PASSWORD_RESET_REQUEST_LIMIT_WINDOW_MS,
+      message: "Demasiados intentos para recuperar la contrasena.",
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      redirect(
+        `/admin/forgot-password?error=${encodeURIComponent(
+          `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
+        )}`
+      );
+    }
+
+    throw error;
+  }
+
+  if (!isPocketBaseConfigured()) {
+    redirect("/admin/forgot-password?error=La recuperacion de contrasena requiere PocketBase configurado.");
+  }
+
+  if (!email) {
+    redirect("/admin/forgot-password?error=Ingresa tu correo electronico.");
+  }
+
+  const pb = await createPocketBaseServerClient();
+
+  try {
+    await pb.collection("users").requestPasswordReset(email);
+  } catch (error) {
+    redirect(
+      `/admin/forgot-password?error=${encodeURIComponent(
+        error instanceof Error ? error.message : "No pudimos procesar la solicitud."
+      )}`
+    );
+  }
+
+  redirect(
+    `/admin/forgot-password?success=${encodeURIComponent(
+      "Si el correo existe, enviamos instrucciones para restablecer la contrasena."
+    )}`
+  );
+}
+
+export async function resetPasswordAction(formData: FormData) {
+  const token = String(formData.get("token") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
+
+  try {
+    const requestHeaders = await headers();
+    const clientId = getRateLimitIdentifier(requestHeaders, "password-reset-confirm");
+
+    await assertRateLimit({
+      bucket: "password-reset-confirm",
+      identifier: `${clientId}:${token || "missing-token"}`,
+      max: PASSWORD_RESET_CONFIRM_LIMIT_MAX,
+      windowMs: PASSWORD_RESET_CONFIRM_LIMIT_WINDOW_MS,
+      message: "Demasiados intentos para definir una nueva contrasena.",
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      redirect(
+        `/admin/reset-password?token=${encodeURIComponent(token)}&error=${encodeURIComponent(
+          `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
+        )}`
+      );
+    }
+
+    throw error;
+  }
+
+  if (!isPocketBaseConfigured()) {
+    redirect("/admin/reset-password?error=La recuperacion de contrasena requiere PocketBase configurado.");
+  }
+
+  if (!token) {
+    redirect("/admin/reset-password?error=Falta el token de recuperacion.");
+  }
+
+  if (!password || !passwordConfirm) {
+    redirect(`/admin/reset-password?token=${encodeURIComponent(token)}&error=Completa ambos campos.`);
+  }
+
+  if (password.length < 8) {
+    redirect(
+      `/admin/reset-password?token=${encodeURIComponent(token)}&error=La contrasena debe tener al menos 8 caracteres.`
+    );
+  }
+
+  if (password !== passwordConfirm) {
+    redirect(`/admin/reset-password?token=${encodeURIComponent(token)}&error=Las contrasenas no coinciden.`);
+  }
+
+  const pb = await createPocketBaseServerClient();
+
+  try {
+    await pb.collection("users").confirmPasswordReset(token, password, passwordConfirm);
+  } catch (error) {
+    redirect(
+      `/admin/reset-password?token=${encodeURIComponent(token)}&error=${encodeURIComponent(
+        error instanceof Error ? error.message : "No pudimos actualizar la contrasena."
+      )}`
+    );
+  }
+
+  redirect(
+    `/admin/login?success=${encodeURIComponent(
+      "Contrasena actualizada. Ya puedes iniciar sesion con tu nueva clave."
+    )}`
+  );
 }

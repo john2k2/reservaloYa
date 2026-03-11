@@ -9,7 +9,7 @@ import { isDemoModeEnabled } from "@/lib/runtime";
 import { LoadingButton } from "@/components/ui/loading-button";
 
 type AdminLoginPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 };
 
 export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
@@ -59,6 +59,16 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
             </div>
           )}
 
+          {params.success && (
+            <div
+              className="mt-6 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700"
+              role="status"
+              aria-live="polite"
+            >
+              {params.success}
+            </div>
+          )}
+
           <div className="mt-8">
             {configured ? (
               <div className="space-y-6">
@@ -95,6 +105,14 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                       aria-invalid={params.error ? "true" : undefined}
                       aria-describedby={params.error ? "login-error" : undefined}
                     />
+                  </div>
+                  <div className="flex justify-end">
+                    <Link
+                      href="/admin/forgot-password"
+                      className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-medium text-foreground underline underline-offset-4"
+                    >
+                      Olvide mi contrasena
+                    </Link>
                   </div>
                   <LoadingButton
                     pendingLabel="Iniciando sesion..."
