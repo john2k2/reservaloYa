@@ -107,6 +107,15 @@ type CommunicationRecord = RecordModel & {
   note?: string;
 };
 
+type UserRecord = RecordModel & {
+  email: string;
+  name?: string;
+  business?: string | string[];
+  role?: string;
+  active?: boolean;
+  verified?: boolean;
+};
+
 type PocketBaseListOptions = {
   sort?: string;
   expand?: string;
@@ -317,6 +326,8 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: String(userRecord.email ?? ""),
+    userVerified: Boolean((userRecord as { verified?: boolean }).verified),
+    userRole: String((userRecord as { role?: string }).role ?? "staff"),
     businessId: business.id,
   };
 }
@@ -1618,7 +1629,7 @@ export async function createPocketBaseOwnerAccount(input: {
       business: business.id,
       role: "owner",
       active: true,
-      verified: true,
+      verified: false,
     });
   } catch (error) {
     try {
@@ -1646,6 +1657,85 @@ export async function createPocketBaseOwnerAccount(input: {
     businessId: business.id,
     email: input.email.trim().toLowerCase(),
   };
+}
+
+export async function getPocketBaseAdminTeamData(businessId: string) {
+  const pb = await getAdminClient();
+  const users = await listPocketBaseRecords<UserRecord>("users", {
+    sort: "name,email",
+    filter: pb.filter("business = {:business}", { business: businessId }),
+  });
+
+  return users.map((user) => ({
+    id: user.id,
+    name: String(user.name ?? user.email ?? "Sin nombre"),
+    email: user.email,
+    role: String(user.role ?? "staff"),
+    active: user.active !== false,
+    verified: Boolean(user.verified),
+  }));
+}
+
+export async function createPocketBaseStaffAccount(input: {
+  businessId: string;
+  name: string;
+  email: string;
+  password: string;
+  role: "staff";
+}) {
+  const pb = await getAdminClient();
+  const normalizedEmail = input.email.trim().toLowerCase();
+
+  const existingUser = await pb.collection("users").getList<UserRecord>(1, 1, {
+    filter: pb.filter("email = {:email}", { email: normalizedEmail }),
+    requestKey: null,
+  });
+
+  if (existingUser.totalItems > 0) {
+    throw new Error("Ya existe una cuenta con ese email.");
+  }
+
+  const user = await pb.collection("users").create<UserRecord>({
+    email: normalizedEmail,
+    password: input.password,
+    passwordConfirm: input.password,
+    name: input.name.trim(),
+    business: input.businessId,
+    role: input.role,
+    active: true,
+    verified: false,
+  });
+
+  return {
+    id: user.id,
+    email: user.email,
+  };
+}
+
+export async function updatePocketBaseTeamUserStatus(input: {
+  businessId: string;
+  userId: string;
+  active: boolean;
+}) {
+  const pb = await getAdminClient();
+  const user = await pb.collection("users").getOne<UserRecord>(input.userId, {
+    requestKey: null,
+  });
+  const userBusinessId = Array.isArray(user.business) ? user.business[0] : user.business;
+
+  if (String(userBusinessId ?? "") !== input.businessId) {
+    throw new Error("No encontramos ese usuario en tu negocio.");
+  }
+
+  if ((user.role ?? "staff") === "owner" && input.active === false) {
+    throw new Error("No puedes desactivar al owner principal.");
+  }
+
+  await pb.collection("users").update(input.userId, {
+    active: input.active,
+  });
+
+  return input.userId;
 }
 
 export async function updatePocketBaseBusiness(input: {

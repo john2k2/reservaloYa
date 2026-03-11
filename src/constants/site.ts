@@ -116,6 +116,11 @@ export const adminNavigation: Array<{
     icon: Users,
   },
   {
+    href: "/admin/team",
+    label: "Equipo",
+    icon: ShieldCheck,
+  },
+  {
     href: "/admin/onboarding",
     label: "Pagina",
     icon: Sparkles,

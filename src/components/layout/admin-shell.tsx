@@ -8,12 +8,16 @@ import { useTheme } from "next-themes";
 
 import { adminNavigation, demoBusinessSlug, productName } from "@/constants/site";
 import { cn } from "@/lib/utils";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { resendVerificationAction } from "@/app/admin/login/actions";
 
 interface AdminShellProps {
   children: React.ReactNode;
   businessName: string;
   businessSlug: string;
   userEmail: string;
+  userRole: string;
+  userVerified: boolean;
   profileName: string;
   demoMode: boolean;
 }
@@ -51,10 +55,16 @@ export function AdminShell({
   businessName,
   businessSlug,
   userEmail,
+  userRole,
+  userVerified,
   profileName,
   demoMode,
 }: AdminShellProps) {
   const pathname = usePathname();
+  const visibleNavigation = React.useMemo(
+    () => adminNavigation.filter((item) => userRole === "owner" || item.href !== "/admin/team"),
+    [userRole]
+  );
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
@@ -73,7 +83,7 @@ export function AdminShell({
         </div>
 
         <nav className="flex-1 space-y-0.5 px-2">
-          {adminNavigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
 
@@ -98,6 +108,9 @@ export function AdminShell({
         <div className="border-t border-border/60 p-3 space-y-1">
           <div className="rounded-lg bg-secondary/40 p-3 mb-2">
             <p className="truncate text-sm font-medium">{profileName}</p>
+            <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              {userRole === "owner" ? "Owner" : "Staff"}
+            </p>
             <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
           </div>
 
@@ -149,7 +162,7 @@ export function AdminShell({
 
           {/* Navigation Mobile */}
           <nav className="flex gap-1 overflow-x-auto pb-3 xl:hidden scrollbar-hide">
-            {adminNavigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const active = pathname === item.href;
 
               return (
@@ -172,7 +185,30 @@ export function AdminShell({
 
         {/* Page Content */}
         <main id="main-content" className="flex-1 overflow-y-auto bg-background p-4 lg:p-6 xl:p-8">
-          <div className="mx-auto max-w-7xl 2xl:max-w-[1600px]">{children}</div>
+          <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] space-y-4">
+            {!demoMode && !userVerified ? (
+              <section className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-900">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="font-semibold">Tu email todavía no está verificado.</p>
+                    <p className="mt-1 text-amber-800/90">
+                      Puedes seguir usando el panel, pero conviene verificarlo para recuperar acceso sin depender de soporte.
+                    </p>
+                  </div>
+                  <form action={resendVerificationAction}>
+                    <LoadingButton
+                      pendingLabel="Reenviando..."
+                      className="h-11 rounded-xl bg-amber-950 px-4 font-medium text-white"
+                    >
+                      Reenviar verificación
+                    </LoadingButton>
+                  </form>
+                </div>
+              </section>
+            ) : null}
+
+            {children}
+          </div>
         </main>
       </div>
     </div>

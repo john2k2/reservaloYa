@@ -21,6 +21,7 @@ type AdminDashboardPageProps = {
   searchParams: Promise<{
     reminders?: string;
     error?: string;
+    success?: string;
   }>;
 };
 
@@ -29,6 +30,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const params = await searchParams;
   const reminderMessage = params.reminders ?? "";
   const errorMessage = params.error ?? "";
+  const successMessage = params.success ?? "";
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -60,17 +62,19 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       </header>
 
       {/* Alertas */}
-      {(reminderMessage || errorMessage) && (
+      {(reminderMessage || errorMessage || successMessage) && (
         <div
           className={cn(
             "rounded-xl border px-4 py-3 text-sm",
             errorMessage
               ? "border-destructive/20 bg-destructive/10 text-destructive"
-              : "border-border/60 bg-card text-card-foreground"
+              : successMessage
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                : "border-border/60 bg-card text-card-foreground"
           )}
           role="alert"
         >
-          {errorMessage || reminderMessage}
+          {errorMessage || successMessage || reminderMessage}
         </div>
       )}
 

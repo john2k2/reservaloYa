@@ -111,4 +111,45 @@ describe("admin login rate limit", () => {
       "Contrasena actualizada"
     );
   });
+
+  it("requests email verification for the authenticated user", async () => {
+    isPocketBaseConfiguredMock.mockReturnValue(true);
+    const requestVerificationMock = vi.fn(async () => true);
+
+    createPocketBaseServerClientMock.mockResolvedValue({
+      collection: vi.fn(() => ({
+        authRefresh: vi.fn(async () => ({
+          record: { email: "owner@example.com" },
+        })),
+        requestVerification: requestVerificationMock,
+      })),
+    });
+
+    const { resendVerificationAction } = await import("./actions");
+
+    await expect(resendVerificationAction()).rejects.toThrow("REDIRECT:");
+    expect(requestVerificationMock).toHaveBeenCalledWith("owner@example.com");
+    expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
+      "Te reenviamos el correo de verificacion"
+    );
+  });
+
+  it("confirms an email verification token", async () => {
+    isPocketBaseConfiguredMock.mockReturnValue(true);
+    const confirmVerificationMock = vi.fn(async () => true);
+
+    createPocketBaseServerClientMock.mockResolvedValue({
+      collection: vi.fn(() => ({
+        confirmVerification: confirmVerificationMock,
+      })),
+    });
+
+    const { confirmEmailVerificationAction } = await import("./actions");
+
+    await expect(confirmEmailVerificationAction("verify_token_123")).rejects.toThrow("REDIRECT:");
+    expect(confirmVerificationMock).toHaveBeenCalledWith("verify_token_123");
+    expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
+      "Email verificado correctamente"
+    );
+  });
 });

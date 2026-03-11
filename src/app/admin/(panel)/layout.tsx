@@ -19,6 +19,8 @@ export default async function AdminPanelLayout({
       businessName={shellData.businessName}
       businessSlug={shellData.businessSlug}
       userEmail={shellData.userEmail}
+      userRole={shellData.userRole ?? "staff"}
+      userVerified={shellData.userVerified ?? true}
       profileName={shellData.profileName}
       demoMode={shellData.demoMode}
     >

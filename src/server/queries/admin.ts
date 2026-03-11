@@ -22,6 +22,7 @@ import {
   getPocketBaseAdminServicesData,
   getPocketBaseAdminSettingsData,
   getPocketBaseAdminShellData,
+  getPocketBaseAdminTeamData,
   getPocketBaseOnboardingData,
 } from "@/server/pocketbase-store";
 
@@ -31,6 +32,8 @@ type AdminShellData = {
   businessName: string;
   businessSlug: string;
   userEmail: string;
+  userVerified?: boolean;
+  userRole?: string;
   businessId?: string;
   businessOptions?: Array<{
     slug: string;
@@ -84,6 +87,18 @@ export async function getAdminDashboardData() {
   }
 
   return getPocketBaseAdminDashboardData(shellData.businessId);
+}
+
+export async function getAdminTeamData() {
+  noStore();
+
+  const shellData = await getLiveBusinessId();
+
+  if (!shellData) {
+    return [];
+  }
+
+  return getPocketBaseAdminTeamData(shellData.businessId);
 }
 
 export async function getAdminServicesData() {

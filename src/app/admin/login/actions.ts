@@ -140,10 +140,21 @@ export async function signupAction(formData: FormData) {
     });
 
     const pb = await createPocketBaseServerClient();
+
+    try {
+      await pb.collection("users").requestVerification(created.email);
+    } catch {
+      // Best-effort. The account is already created and usable.
+    }
+
     await pb.collection("users").authWithPassword(created.email, password);
     await persistPocketBaseAuth(pb);
 
-    redirect(`/admin/onboarding?created=${encodeURIComponent(created.businessSlug)}`);
+    redirect(
+      `/admin/onboarding?created=${encodeURIComponent(created.businessSlug)}&verification=${encodeURIComponent(
+        "Te enviamos un correo para verificar tu email."
+      )}`
+    );
   } catch (error) {
     redirect(
       `/admin/signup?error=${encodeURIComponent(
@@ -271,6 +282,64 @@ export async function resetPasswordAction(formData: FormData) {
   redirect(
     `/admin/login?success=${encodeURIComponent(
       "Contrasena actualizada. Ya puedes iniciar sesion con tu nueva clave."
+    )}`
+  );
+}
+
+export async function resendVerificationAction() {
+  if (!isPocketBaseConfigured()) {
+    redirect("/admin/dashboard?error=La verificacion requiere PocketBase configurado.");
+  }
+
+  const pb = await createPocketBaseServerClient();
+  const refreshed = await pb.collection("users").authRefresh().catch(() => null);
+  const email = refreshed?.record?.email ? String(refreshed.record.email).trim().toLowerCase() : "";
+
+  if (!email) {
+    redirect("/admin/login?error=Necesitas iniciar sesion para reenviar la verificacion.");
+  }
+
+  try {
+    await pb.collection("users").requestVerification(email);
+  } catch (error) {
+    redirect(
+      `/admin/dashboard?error=${encodeURIComponent(
+        error instanceof Error ? error.message : "No pudimos reenviar la verificacion."
+      )}`
+    );
+  }
+
+  redirect(
+    `/admin/dashboard?success=${encodeURIComponent(
+      "Te reenviamos el correo de verificacion."
+    )}`
+  );
+}
+
+export async function confirmEmailVerificationAction(token: string) {
+  if (!isPocketBaseConfigured()) {
+    redirect("/admin/login?error=La verificacion requiere PocketBase configurado.");
+  }
+
+  if (!token) {
+    redirect("/admin/login?error=Falta el token de verificacion.");
+  }
+
+  const pb = await createPocketBaseServerClient();
+
+  try {
+    await pb.collection("users").confirmVerification(token);
+  } catch (error) {
+    redirect(
+      `/admin/login?error=${encodeURIComponent(
+        error instanceof Error ? error.message : "No pudimos verificar tu email."
+      )}`
+    );
+  }
+
+  redirect(
+    `/admin/login?success=${encodeURIComponent(
+      "Email verificado correctamente. Ya puedes seguir usando tu cuenta."
     )}`
   );
 }
