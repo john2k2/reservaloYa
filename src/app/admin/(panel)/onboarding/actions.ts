@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { getBrandingPalette } from "@/constants/branding-palettes";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import { requireAdminRouteAccess } from "@/server/admin-access";
 import { saveBrandingImageUpload } from "@/server/branding-upload";
 import { setLocalActiveBusinessSlug } from "@/server/local-admin-context";
 import {
@@ -86,6 +87,7 @@ type SaveOnboardingBrandingResult = {
 };
 
 async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboardedBusinessResult> {
+  await requireAdminRouteAccess("/admin/onboarding");
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -131,6 +133,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
 }
 
 async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardingBrandingResult> {
+  await requireAdminRouteAccess("/admin/onboarding");
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
 
   if (!businessSlug) {
@@ -334,6 +337,7 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
 }
 
 export async function createOnboardedBusinessAction(formData: FormData) {
+  await requireAdminRouteAccess("/admin/onboarding");
   const raw = {
     templateSlug: String(formData.get("templateSlug") ?? ""),
     name: String(formData.get("name") ?? "").trim(),
@@ -380,6 +384,7 @@ export async function createOnboardedBusinessAction(formData: FormData) {
 }
 
 export async function activateLocalBusinessAction(formData: FormData) {
+  await requireAdminRouteAccess("/admin/onboarding");
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
 
   if (!businessSlug) {

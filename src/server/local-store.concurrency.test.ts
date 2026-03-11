@@ -14,7 +14,7 @@ async function resetLocalRuntimeStore() {
   await copyFile(path.join(dataDir, "local-store.seed.json"), path.join(dataDir, "local-store.json"));
 }
 
-describe("local booking concurrency", () => {
+describe.sequential("local booking concurrency", () => {
   beforeEach(async () => {
     await resetLocalRuntimeStore();
     resetBookingLocksForTests();

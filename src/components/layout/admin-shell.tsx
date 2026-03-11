@@ -7,6 +7,7 @@ import { ExternalLink, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { adminNavigation, demoBusinessSlug, productName } from "@/constants/site";
+import { canAccessAdminRoute, getAdminRoleLabel } from "@/lib/admin-permissions";
 import { cn } from "@/lib/utils";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { resendVerificationAction } from "@/app/admin/login/actions";
@@ -62,7 +63,7 @@ export function AdminShell({
 }: AdminShellProps) {
   const pathname = usePathname();
   const visibleNavigation = React.useMemo(
-    () => adminNavigation.filter((item) => userRole === "owner" || item.href !== "/admin/team"),
+    () => adminNavigation.filter((item) => canAccessAdminRoute(userRole, item.href)),
     [userRole]
   );
 
@@ -109,7 +110,7 @@ export function AdminShell({
           <div className="rounded-lg bg-secondary/40 p-3 mb-2">
             <p className="truncate text-sm font-medium">{profileName}</p>
             <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              {userRole === "owner" ? "Owner" : "Staff"}
+              {getAdminRoleLabel(userRole)}
             </p>
             <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
           </div>

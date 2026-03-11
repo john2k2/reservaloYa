@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
-import { getAdminShellData, getAdminTeamData } from "@/server/queries/admin";
+import { requireAdminRouteAccess } from "@/server/admin-access";
+import { getAdminTeamData } from "@/server/queries/admin";
 import { createStaffAction, updateStaffStatusAction } from "./actions";
 
 type AdminTeamPageProps = {
@@ -10,15 +11,11 @@ type AdminTeamPageProps = {
 };
 
 export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps) {
-  const shellData = await getAdminShellData();
+  const shellData = await requireAdminRouteAccess("/admin/team");
   const params = await searchParams;
 
   if (!shellData || shellData.demoMode) {
     redirect("/admin/dashboard");
-  }
-
-  if (shellData.userRole !== "owner") {
-    redirect("/admin/dashboard?error=Solo%20el%20owner%20puede%20gestionar%20el%20equipo.");
   }
 
   const members = await getAdminTeamData();

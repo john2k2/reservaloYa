@@ -3,26 +3,17 @@
 import { redirect } from "next/navigation";
 
 import { createPocketBaseServerClient } from "@/lib/pocketbase/server";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { createPocketBaseStaffAccount, updatePocketBaseTeamUserStatus } from "@/server/pocketbase-store";
-import { getAdminShellData } from "@/server/queries/admin";
+import { requireAdminRouteAccess } from "@/server/admin-access";
 
 async function getOwnerContext(): Promise<{
   businessId: string;
   userRole: "owner";
 }> {
-  if (!isPocketBaseConfigured()) {
-    redirect("/admin/dashboard?error=La gestion de equipo requiere PocketBase configurado.");
-  }
+  const shellData = await requireAdminRouteAccess("/admin/team");
 
-  const shellData = await getAdminShellData();
-
-  if (!shellData?.businessId || shellData.demoMode) {
+  if (!shellData.businessId || shellData.demoMode) {
     redirect("/admin/dashboard?error=La gestion de equipo solo esta disponible en modo PocketBase.");
-  }
-
-  if (shellData.userRole !== "owner") {
-    redirect("/admin/dashboard?error=Solo el owner puede gestionar el equipo.");
   }
 
   return {

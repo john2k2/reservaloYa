@@ -1,3 +1,4 @@
+import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminOnboardingData, getAdminSettingsData } from "@/server/queries/admin";
 import OnboardingPageClient from "./onboarding-client";
 
@@ -6,6 +7,7 @@ interface OnboardingWrapperProps {
 }
 
 export default async function OnboardingWrapper({ searchParams }: OnboardingWrapperProps) {
+  await requireAdminRouteAccess("/admin/onboarding");
   const params = await searchParams;
   const [onboardingData, settingsData] = await Promise.all([
     getAdminOnboardingData(),

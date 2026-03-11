@@ -2,18 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   redirectMock,
-  isPocketBaseConfiguredMock,
   createPocketBaseServerClientMock,
-  getAdminShellDataMock,
+  requireAdminRouteAccessMock,
   createPocketBaseStaffAccountMock,
   updatePocketBaseTeamUserStatusMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
   }),
-  isPocketBaseConfiguredMock: vi.fn(() => true),
   createPocketBaseServerClientMock: vi.fn(),
-  getAdminShellDataMock: vi.fn(),
+  requireAdminRouteAccessMock: vi.fn(),
   createPocketBaseStaffAccountMock: vi.fn(),
   updatePocketBaseTeamUserStatusMock: vi.fn(),
 }));
@@ -22,16 +20,12 @@ vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: isPocketBaseConfiguredMock,
-}));
-
 vi.mock("@/lib/pocketbase/server", () => ({
   createPocketBaseServerClient: createPocketBaseServerClientMock,
 }));
 
-vi.mock("@/server/queries/admin", () => ({
-  getAdminShellData: getAdminShellDataMock,
+vi.mock("@/server/admin-access", () => ({
+  requireAdminRouteAccess: requireAdminRouteAccessMock,
 }));
 
 vi.mock("@/server/pocketbase-store", () => ({
@@ -42,14 +36,12 @@ vi.mock("@/server/pocketbase-store", () => ({
 describe("team management actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
-    isPocketBaseConfiguredMock.mockReset();
-    isPocketBaseConfiguredMock.mockReturnValue(true);
     createPocketBaseServerClientMock.mockReset();
-    getAdminShellDataMock.mockReset();
+    requireAdminRouteAccessMock.mockReset();
     createPocketBaseStaffAccountMock.mockReset();
     updatePocketBaseTeamUserStatusMock.mockReset();
 
-    getAdminShellDataMock.mockResolvedValue({
+    requireAdminRouteAccessMock.mockResolvedValue({
       businessId: "biz_123",
       demoMode: false,
       userRole: "owner",
@@ -89,11 +81,9 @@ describe("team management actions", () => {
   });
 
   it("blocks non-owners from creating staff users", async () => {
-    getAdminShellDataMock.mockResolvedValue({
-      businessId: "biz_123",
-      demoMode: false,
-      userRole: "staff",
-    });
+    requireAdminRouteAccessMock.mockRejectedValue(
+      new Error("REDIRECT:/admin/dashboard?error=Solo%20el%20owner%20puede%20gestionar%20el%20equipo.")
+    );
 
     const { createStaffAction } = await import("./actions");
     const formData = new FormData();
@@ -101,11 +91,10 @@ describe("team management actions", () => {
     formData.set("email", "staff@example.com");
     formData.set("password", "Temporal123");
 
-    await expect(createStaffAction(formData)).rejects.toThrow("REDIRECT:");
-    expect(createPocketBaseStaffAccountMock).not.toHaveBeenCalled();
-    expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
-      "Solo el owner puede gestionar el equipo"
+    await expect(createStaffAction(formData)).rejects.toThrow(
+      "REDIRECT:/admin/dashboard?error=Solo%20el%20owner%20puede%20gestionar%20el%20equipo."
     );
+    expect(createPocketBaseStaffAccountMock).not.toHaveBeenCalled();
   });
 
   it("validates staff form data before creating the user", async () => {
