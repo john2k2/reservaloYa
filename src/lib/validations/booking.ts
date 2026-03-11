@@ -9,7 +9,7 @@ export const publicBookingSchema = z.object({
   phone: z.string().min(6).max(30),
   email: z.union([z.string().email(), z.literal("")]).optional(),
   notes: z.union([z.string().max(500), z.literal("")]).optional(),
-  rescheduleBookingId: z.union([z.string().uuid(), z.literal("")]).optional(),
+  rescheduleBookingId: z.union([z.string().min(1).max(64), z.literal("")]).optional(),
   manageToken: z.union([z.string().min(32), z.literal("")]).optional(),
 });
 
