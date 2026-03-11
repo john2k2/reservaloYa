@@ -44,6 +44,7 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 - Demo publica de barberia lista
 - Demo publica de estetica lista
 - Store local multi-negocio funcionando
+- Interfaz de reserva rediseñada: fecha y hora unificados en una sola seccion, horarios agrupados por franja (Manana/Tarde/Noche), selector de fecha premium con sombras dinamicas
 - `npm run lint`, `npm run build` y `npm run test -- --run` pasando
 
 ## Ya validado
