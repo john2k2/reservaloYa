@@ -379,6 +379,18 @@
 
 @layer utilities {
   /* 
+   * SCROLLBAR HIDE - Para carruseles y scroll horizontal
+   */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 
    * ANIMACIONES QUE RESPETAN PREFERS-REDUCED-MOTION
    */
   .animate-fade-in {

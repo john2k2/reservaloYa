@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock3 } from "lucide-react";
+import { ChevronRight, Clock3 } from "lucide-react";
 
 type BookingServicePickerProps = {
   accentColor: string;
@@ -22,38 +22,65 @@ export function BookingServicePicker({
   getHref,
 }: BookingServicePickerProps) {
   return (
-    <div className="mb-12">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{heading}</h1>
-      <p className="mt-2 text-muted-foreground">{description}</p>
-      <div className="mt-6 flex flex-col gap-3">
+    <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
+      <div className="max-w-2xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          Paso 1
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          {heading}
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+
+      {services.length === 0 ? (
+        <div className="mt-6 rounded-[1.5rem] border border-border/60 bg-background/85 p-5 text-sm text-muted-foreground">
+          Este negocio todavia no cargo servicios activos para reservar online.
+        </div>
+      ) : null}
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
         {services.map((service) => (
           <Link
             key={service.id}
             href={getHref(service.id)}
-            className="group relative cursor-pointer overflow-hidden rounded-xl border border-border/70 bg-card p-5 transition-all duration-200 hover:scale-[1.01] hover:border-foreground/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="group relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/85 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
-            <div className="flex items-start justify-between">
+            <span
+              className="absolute inset-x-0 top-0 h-1.5"
+              style={{ backgroundColor: accentColor }}
+            />
+
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-card-foreground group-hover:text-foreground">
+                <p className="text-lg font-semibold text-card-foreground group-hover:text-foreground">
                   {service.name}
                 </p>
-                <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
                     <Clock3 className="size-3.5" />
                     {service.durationMinutes} min
                   </span>
+                  <span
+                    className="inline-flex rounded-full px-3 py-1.5 text-xs font-semibold"
+                    style={{ backgroundColor: `${accentColor}14`, color: accentColor }}
+                  >
+                    {service.priceLabel}
+                  </span>
                 </div>
               </div>
-              <span
-                className="rounded-full px-3 py-1 text-sm font-bold"
-                style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
-              >
-                {service.priceLabel}
+
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground transition-all duration-300 group-hover:translate-x-1 group-hover:text-foreground">
+                <ChevronRight className="size-4" />
               </span>
             </div>
+
+            <p className="mt-5 text-sm text-muted-foreground">
+              Elegir este servicio y ver horarios disponibles.
+            </p>
           </Link>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
