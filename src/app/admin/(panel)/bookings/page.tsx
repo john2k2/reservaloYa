@@ -245,8 +245,15 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
           ))}
         </section>
       ) : (
-        <div className="rounded-xl border border-border/60 bg-background p-6 sm:p-8 text-center text-muted-foreground">
-          {hasActiveFilters ? "No se encontraron turnos." : "No hay turnos cargados."}
+        <div className="rounded-xl border border-border/60 bg-background p-6 sm:p-8 text-center">
+          <p className="text-sm font-medium text-foreground">
+            {hasActiveFilters ? "No se encontraron turnos con esos filtros." : "Todavia no hay turnos cargados."}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {hasActiveFilters
+              ? "Prueba limpiar filtros o revisar otra fecha para ver mas resultados."
+              : "Cuando entren reservas desde la pagina publica, vas a poder gestionarlas desde aca."}
+          </p>
         </div>
       )}
     </div>

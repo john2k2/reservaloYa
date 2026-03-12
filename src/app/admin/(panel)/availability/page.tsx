@@ -221,7 +221,10 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-border/50 bg-secondary/20 p-4 text-center">
-                <p className="text-xs text-muted-foreground">No hay bloqueos activos</p>
+                <p className="text-sm font-medium text-foreground">No hay bloqueos activos.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Si necesitas reservar un almuerzo, feriado o evento, agregalo desde el formulario de arriba.
+                </p>
               </div>
             )}
           </section>
