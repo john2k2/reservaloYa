@@ -1,3 +1,8 @@
+param(
+  [string]$PocketBaseUrl,
+  [string]$AppUrl = "https://reservaya-kappa.vercel.app"
+)
+
 $envMap = @{}
 
 Get-Content .env.local | ForEach-Object {
@@ -9,8 +14,10 @@ Get-Content .env.local | ForEach-Object {
   }
 }
 
+$resolvedPocketBaseUrl = if ($PocketBaseUrl) { $PocketBaseUrl } elseif ($envMap["NEXT_PUBLIC_POCKETBASE_URL"]) { $envMap["NEXT_PUBLIC_POCKETBASE_URL"] } else { throw "Debes indicar -PocketBaseUrl o definir NEXT_PUBLIC_POCKETBASE_URL en .env.local" }
+
 $values = [ordered]@{
-  NEXT_PUBLIC_POCKETBASE_URL = "https://humanities-temporal-philips-nano.trycloudflare.com"
+  NEXT_PUBLIC_POCKETBASE_URL = $resolvedPocketBaseUrl
   POCKETBASE_ADMIN_EMAIL = $envMap["POCKETBASE_ADMIN_EMAIL"]
   POCKETBASE_ADMIN_PASSWORD = $envMap["POCKETBASE_ADMIN_PASSWORD"]
   POCKETBASE_PUBLIC_AUTH_EMAIL = $envMap["POCKETBASE_PUBLIC_AUTH_EMAIL"]
@@ -22,7 +29,7 @@ $values = [ordered]@{
   BOOKING_LINK_SECRET = $envMap["BOOKING_LINK_SECRET"]
   BOOKING_JOBS_SECRET = $envMap["BOOKING_JOBS_SECRET"]
   CRON_SECRET = $envMap["BOOKING_JOBS_SECRET"]
-  NEXT_PUBLIC_APP_URL = "https://reservaya-kappa.vercel.app"
+  NEXT_PUBLIC_APP_URL = $AppUrl
 }
 
 foreach ($entry in $values.GetEnumerator()) {
