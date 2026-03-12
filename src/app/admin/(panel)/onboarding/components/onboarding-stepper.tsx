@@ -27,6 +27,7 @@ export function OnboardingStepper({
 }: OnboardingStepperProps) {
   const completedSteps = steps.filter((s) => s.status === "completed").length;
   const progressPercent = (completedSteps / steps.length) * 100;
+  const current = steps[currentStep];
 
   return (
     <div className="w-full">
@@ -48,20 +49,30 @@ export function OnboardingStepper({
         </div>
       </div>
 
+      {current ? (
+        <div className="mb-4 rounded-2xl border border-border/60 bg-secondary/20 p-3 sm:hidden">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Paso {currentStep + 1}
+          </p>
+          <p className="mt-1 text-sm font-medium text-foreground">{current.label}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{current.description}</p>
+        </div>
+      ) : null}
+
       {/* Steps */}
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2 overflow-x-auto pb-1 sm:overflow-visible">
         {steps.map((step, index) => {
           const isClickable = allowNavigation && step.status !== "pending";
           const isLast = index === steps.length - 1;
 
           return (
-            <div key={step.id} className="flex items-center flex-1">
+            <div key={step.id} className="flex min-w-[4.5rem] flex-1 items-center sm:min-w-0">
               <button
                 type="button"
                 onClick={() => isClickable && onStepClick?.(index)}
                 disabled={!isClickable}
                 className={cn(
-                  "flex flex-col items-center text-center group",
+                  "group flex w-full flex-col items-center text-center",
                   isClickable && "cursor-pointer",
                   !isClickable && "cursor-default"
                 )}

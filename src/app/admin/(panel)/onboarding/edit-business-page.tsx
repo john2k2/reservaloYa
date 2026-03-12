@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, Store, Save } from "lucide-react";
+import { CheckCircle2, ChevronDown, ExternalLink, Save, Store } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -130,6 +130,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [activeTab, setActiveTab] = useState<"business" | "style" | "images" | "public">("business");
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   const [businessData, setBusinessData] = useState({
     name: business.name,
@@ -254,10 +255,10 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
   }, [business.slug, businessData, styleData, imageData, publicData, router]);
 
   const tabs = [
-    { id: "business" as const, label: "Negocio", icon: Store, description: "Datos basicos" },
+    { id: "business" as const, label: "Negocio", icon: Store, description: "Datos básicos" },
     { id: "style" as const, label: "Estilo", icon: Store, description: "Colores y textos" },
-    { id: "images" as const, label: "Fotos", icon: Store, description: "Logo y galeria" },
-    { id: "public" as const, label: "Publico", icon: Store, description: "Redes y contacto" },
+    { id: "images" as const, label: "Fotos", icon: Store, description: "Logo y galería" },
+    { id: "public" as const, label: "Público", icon: Store, description: "Redes y contacto" },
   ];
 
   return (
@@ -281,9 +282,12 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
             <Link
               href={`/${business.slug}`}
               target="_blank"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-11 w-full gap-2 sm:w-auto"
+              )}
             >
-              Ver pagina
+              Ver página
               <ExternalLink aria-hidden="true" className="size-4" />
             </Link>
             <button
@@ -291,7 +295,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
               disabled={isSubmitting}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                "h-11 gap-2",
+                "h-11 w-full gap-2 sm:w-auto",
                 isSubmitting && "cursor-not-allowed opacity-50"
               )}
             >
@@ -325,22 +329,61 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
           </div>
         )}
 
-        <div className="mt-6 sm:mt-8 flex flex-wrap gap-2">
+        <div className="mt-6 grid gap-2 sm:mt-8 sm:grid-cols-2 xl:grid-cols-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all",
+                "flex min-h-11 w-full flex-col items-start gap-1 rounded-2xl px-4 py-3 text-left text-sm font-medium transition-all sm:min-h-[4.5rem]",
                 activeTab === tab.id
                   ? "bg-foreground text-background"
                   : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
               )}
             >
-              <tab.icon className="size-4" />
-              <span>{tab.label}</span>
+              <div className="flex items-center gap-2">
+                <tab.icon className="size-4" />
+                <span>{tab.label}</span>
+              </div>
+              <span
+                className={cn(
+                  "text-xs",
+                  activeTab === tab.id ? "text-background/80" : "text-muted-foreground"
+                )}
+              >
+                {tab.description}
+              </span>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section className="w-full xl:hidden">
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setMobilePreviewOpen((open) => !open)}
+            className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 text-left"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Preview de tu página</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Revisá cómo se ven los cambios antes de guardar.
+              </p>
+            </div>
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 text-muted-foreground transition-transform",
+                mobilePreviewOpen && "rotate-180"
+              )}
+            />
+          </button>
+
+          {mobilePreviewOpen ? (
+            <div className="mt-4 h-[28rem] rounded-2xl border border-border/60 bg-background p-3 sm:h-[34rem]">
+              <LivePreview businessSlug={business.slug} isActive={true} refreshToken={previewRefreshToken} />
+            </div>
+          ) : null}
         </div>
       </section>
 

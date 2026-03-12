@@ -25,19 +25,31 @@ export function OnboardingStepActions({
   showSaveIcon = false,
 }: OnboardingStepActionsProps) {
   return (
-    <div className="flex items-center justify-between">
-      <div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="w-full sm:w-auto">
         {onBack ? (
-          <button onClick={onBack} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}>
+          <button
+            onClick={onBack}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "h-11 w-full sm:w-auto"
+            )}
+          >
             <ChevronLeft className="mr-1 size-4" />
-            Atras
+            Atrás
           </button>
         ) : null}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         {onNext ? (
-          <button onClick={onNext} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}>
+          <button
+            onClick={onNext}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "h-11 w-full sm:w-auto"
+            )}
+          >
             {nextLabel}
             <ChevronRight className="ml-1 size-4" />
           </button>
@@ -47,7 +59,7 @@ export function OnboardingStepActions({
           disabled={primaryDisabled || isSubmitting}
           className={cn(
             buttonVariants({ variant: "default", size: "lg" }),
-            "h-11",
+            "h-11 w-full sm:w-auto",
             (primaryDisabled || isSubmitting) && "cursor-not-allowed opacity-50"
           )}
         >

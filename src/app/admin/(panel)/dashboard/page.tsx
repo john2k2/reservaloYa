@@ -13,9 +13,10 @@ import {
 import { runLocalReminderSweepAction } from "@/app/admin/(panel)/dashboard/actions";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { canAccessAdminRoute } from "@/lib/admin-permissions";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
-import { getAdminDashboardData } from "@/server/queries/admin";
+import { getAdminDashboardData, getAdminShellData } from "@/server/queries/admin";
 
 type AdminDashboardPageProps = {
   searchParams: Promise<{
@@ -26,11 +27,15 @@ type AdminDashboardPageProps = {
 };
 
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
-  const dashboardData = await getAdminDashboardData();
+  const [dashboardData, shellData] = await Promise.all([
+    getAdminDashboardData(),
+    getAdminShellData(),
+  ]);
   const params = await searchParams;
   const reminderMessage = params.reminders ?? "";
   const errorMessage = params.error ?? "";
   const successMessage = params.success ?? "";
+  const canEditSite = canAccessAdminRoute(shellData?.userRole, "/admin/onboarding");
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -357,16 +362,18 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 <Send className="size-4" />
                 Servicios
               </Link>
-              <Link
-                href="/admin/onboarding"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "h-10 w-full justify-start gap-2 text-sm"
-                )}
-              >
-                <ExternalLink className="size-4" />
-                Personalizar sitio
-              </Link>
+              {canEditSite ? (
+                <Link
+                  href="/admin/onboarding"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "h-10 w-full justify-start gap-2 text-sm"
+                  )}
+                >
+                  <ExternalLink className="size-4" />
+                  Personalizar sitio
+                </Link>
+              ) : null}
             </div>
           </article>
 

@@ -38,7 +38,7 @@ export function LivePreview({ businessSlug, isActive, refreshToken = 0 }: LivePr
           Preview no disponible
         </h4>
         <p className="text-sm text-muted-foreground">
-          Completa el primer paso para ver la preview de tu página
+          Completá el primer paso para ver la preview de tu página
         </p>
       </div>
     );
@@ -48,12 +48,12 @@ export function LivePreview({ businessSlug, isActive, refreshToken = 0 }: LivePr
     <div className="h-full flex flex-col">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+        <div className="flex items-center gap-1 rounded-xl bg-secondary/50 p-1">
           <button
             type="button"
             onClick={() => setViewMode("desktop")}
             className={cn(
-              "p-2 rounded-md transition-colors",
+              "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
               viewMode === "desktop"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -66,7 +66,7 @@ export function LivePreview({ businessSlug, isActive, refreshToken = 0 }: LivePr
             type="button"
             onClick={() => setViewMode("tablet")}
             className={cn(
-              "p-2 rounded-md transition-colors",
+              "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
               viewMode === "tablet"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -79,12 +79,12 @@ export function LivePreview({ businessSlug, isActive, refreshToken = 0 }: LivePr
             type="button"
             onClick={() => setViewMode("mobile")}
             className={cn(
-              "p-2 rounded-md transition-colors",
+              "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
               viewMode === "mobile"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             )}
-            title="Vista mobile"
+            title="Vista móvil"
           >
             <Smartphone className="size-4" />
           </button>
@@ -95,7 +95,7 @@ export function LivePreview({ businessSlug, isActive, refreshToken = 0 }: LivePr
           target="_blank"
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "h-9 gap-1.5"
+            "h-10 gap-1.5"
           )}
         >
           <ExternalLink className="size-3.5" />
@@ -144,7 +144,7 @@ export function LivePreview({ businessSlug, isActive, refreshToken = 0 }: LivePr
       <button
         type="button"
         onClick={() => setManualRefreshCount((count) => count + 1)}
-        className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+        className="mt-3 min-h-11 rounded-lg px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         Refrescar preview
       </button>

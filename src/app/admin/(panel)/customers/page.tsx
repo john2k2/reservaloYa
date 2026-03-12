@@ -98,8 +98,13 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
         </section>
       ) : (
         <div className="rounded-xl border border-border/60 bg-background p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            {query ? "No se encontraron clientes." : "No hay clientes guardados."}
+          <p className="text-sm font-medium text-foreground">
+            {query ? "No se encontraron clientes con esa busqueda." : "Todavia no hay clientes guardados."}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {query
+              ? "Prueba otro nombre, telefono o email para encontrar coincidencias."
+              : "A medida que entren reservas, vas a ver aca el historial y los datos de contacto."}
           </p>
         </div>
       )}

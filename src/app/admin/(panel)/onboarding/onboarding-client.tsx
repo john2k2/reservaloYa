@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -171,6 +172,7 @@ export default function OnboardingPageClient({
     return new Set();
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   // Buscar datos del negocio activo para precargar
   const activeBusiness = hasExistingBusiness
@@ -538,7 +540,7 @@ export default function OnboardingPageClient({
       {createdBusiness && (
         <OnboardingStatusBanner
           title={`¡Negocio "${createdBusiness.name}" creado!`}
-          description="Continua configurando el estilo visual y las fotos de tu pagina."
+          description="Continuá configurando el estilo visual y las fotos de tu página."
           href={`/${createdBusiness.slug}`}
           secondaryAction={
             <button onClick={goNext} className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11")}>
@@ -552,7 +554,7 @@ export default function OnboardingPageClient({
       {businessUpdated && (
         <OnboardingStatusBanner
           title={`¡Negocio "${businessUpdated}" actualizado!`}
-          description="Los cambios ya estan aplicados en tu pagina publica."
+          description="Los cambios ya están aplicados en tu página pública."
           href={`/${activeBusinessSlug}`}
         />
       )}
@@ -568,12 +570,44 @@ export default function OnboardingPageClient({
       {brandingSaved && (
         <OnboardingStatusBanner
           title={brandingSaved}
-          description="Los cambios ya estan aplicados en tu pagina publica."
+          description="Los cambios ya están aplicados en tu página pública."
           href={`/${activeBusinessSlug}`}
         />
       )}
 
       {/* Contenido principal: Formulario + Preview */}
+      <section className="w-full xl:hidden">
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setMobilePreviewOpen((open) => !open)}
+            className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 text-left"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Preview de tu página</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Revisá cómo se va viendo antes de guardar.
+              </p>
+            </div>
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 text-muted-foreground transition-transform",
+                mobilePreviewOpen && "rotate-180"
+              )}
+            />
+          </button>
+
+          {mobilePreviewOpen ? (
+            <div className="mt-4 h-[28rem] rounded-2xl border border-border/60 bg-background p-3 sm:h-[34rem]">
+              <LivePreview
+                businessSlug={activeBusinessSlug}
+                isActive={onboardingData.businesses.length > 0}
+              />
+            </div>
+          ) : null}
+        </div>
+      </section>
+
       <div className="grid w-full gap-6 xl:grid-cols-[1fr_420px]">
         {/* Formulario */}
         <div className="space-y-6">
