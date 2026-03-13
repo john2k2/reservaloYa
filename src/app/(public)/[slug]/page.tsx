@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { Clock3, Facebook, Instagram, Phone, ShieldCheck } from "lucide-react";
 
 import { TikTokIcon, WhatsAppIcon } from "@/components/icons";
@@ -18,9 +18,9 @@ import { getPublicBookingFlowData, getPublicBusinessPageData } from "@/server/qu
 const demoServices = [
   {
     id: "22222222-2222-2222-2222-222222222221",
-    name: "Corte clásico",
+    name: "Corte clÃ¡sico",
     priceLabel: "$ 12.000",
-    description: "Corte con terminación prolija para uso diario.",
+    description: "Corte con terminaciÃ³n prolija para uso diario.",
     durationMinutes: 45,
     popular: false,
   },
@@ -28,7 +28,7 @@ const demoServices = [
     id: "22222222-2222-2222-2222-222222222222",
     name: "Corte + barba",
     priceLabel: "$ 18.000",
-    description: "Servicio completo con perfilado y terminación.",
+    description: "Servicio completo con perfilado y terminaciÃ³n.",
     durationMinutes: 60,
     popular: true,
   },
@@ -36,7 +36,7 @@ const demoServices = [
     id: "22222222-2222-2222-2222-222222222223",
     name: "Perfilado premium",
     priceLabel: "$ 8.000",
-    description: "Repaso rápido para mantener prolijo el look.",
+    description: "Repaso rÃ¡pido para mantener prolijo el look.",
     durationMinutes: 30,
     popular: false,
   },
@@ -182,7 +182,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         "featured" in service && service.featured
           ? service.featuredLabel || "Destacado"
           : index === 0
-            ? "Más elegido"
+            ? "MÃ¡s elegido"
             : "",
     })
   );
@@ -307,17 +307,17 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
             <div className="mb-6 sm:mb-10 text-center">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                Galería
+                GalerÃ­a
               </p>
               <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                Así se vive la experiencia del negocio
+                AsÃ­ se vive la experiencia del negocio
               </h2>
             </div>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pageData.profile.gallery.map((image, index) => (
                 <article
                   key={`${image.url}-${index}`}
-                  className="group cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm"
+                  className={cn("group cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm", index >= 2 ? "hidden sm:block" : "")}
                   data-lightbox-index={index}
                 >
                   <div
@@ -373,10 +373,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
           <div className="mb-4 sm:mb-6 text-center">
             <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-            Ubicación
+              Ubicación
             </p>
             <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-foreground">
-              {pageData.business.address ?? "Direccion a definir"}
+              {pageData.business.address ?? "Dirección a definir"}
             </h2>
           </div>
           <div className="overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 shadow-sm">
@@ -413,7 +413,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               </div>
 
               <div>
-                <p className="text-xs sm:text-sm font-bold text-foreground">Links rápidos</p>
+                <p className="text-xs sm:text-sm font-bold text-foreground">Links rÃ¡pidos</p>
                 <div className="mt-3 sm:mt-4 flex flex-col gap-1.5">
                   <PublicTrackedLink
                     businessSlug={slug}
@@ -438,7 +438,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     rel="noopener noreferrer"
                     className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                      Ver ubicación
+                      Ver ubicaciÃ³n
                   </a>
                 </div>
               </div>
@@ -446,7 +446,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               <div className="sm:col-span-2 lg:col-span-1">
                 <p className="text-xs sm:text-sm font-bold text-foreground">Contacto</p>
                 <div className="mt-3 sm:mt-4 space-y-1.5">
-                  <p className="text-xs sm:text-sm text-muted-foreground">{pageData.business.address ?? "Direccion a definir"}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{pageData.business.address ?? "Dirección a definir"}</p>
                   <div className="flex flex-wrap gap-2">
                     {instagramHref && (
                       <a
@@ -493,7 +493,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
             <div className="mt-8 sm:mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
               <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
-                © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
+                Â© {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
                 Desarrollado con <span className="font-bold text-foreground">ReservaYa</span>
@@ -507,3 +507,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     </PublicBusinessPageWrapper>
   );
 }
+
+
+

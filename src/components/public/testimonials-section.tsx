@@ -1,4 +1,5 @@
-import { Quote, ShieldCheck, Star } from "lucide-react";
+﻿import { Quote, ShieldCheck, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Testimonial = {
   quote: string;
@@ -17,54 +18,59 @@ export function TestimonialsSection({
   testimonials,
 }: TestimonialsSectionProps) {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
-      <div className="mb-10 text-center">
-        <p className="text-sm font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
+      <div className="mb-6 text-center sm:mb-10">
+        <p className="text-xs font-semibold uppercase tracking-widest sm:text-sm" style={{ color: accentColor }}>
           Testimonios
         </p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Lo que dicen nuestros clientes
+        <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:mt-3 sm:text-3xl md:text-4xl">
+          Lo que más valoran después de reservar
         </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:mt-4 sm:text-base sm:leading-7">
           La confianza no sale de promesas vacías. Sale de una experiencia clara, rápida y fácil de repetir.
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
-            <Star className="size-4 fill-current" style={{ color: accentColor }} />
-            Experiencia entendible desde el primer vistazo
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6 sm:gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm sm:px-4 sm:text-sm">
+            <Star className="size-3.5 fill-current sm:size-4" style={{ color: accentColor }} />
+            Simple desde el primer vistazo
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+          <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm sm:inline-flex">
             <ShieldCheck className="size-4" style={{ color: accentColor }} />
-            Reprogramación simple sin llamadas cruzadas
+            Reprogramación sin llamadas cruzadas
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {testimonials.map((testimonial) => (
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        {testimonials.map((testimonial, index) => (
           <article
             key={testimonial.author}
-            className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg"
+            className={cn(
+              "rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl sm:p-8",
+              index > 0 ? "hidden lg:block" : ""
+            )}
           >
             <div className="flex items-center justify-between gap-4">
-              <Quote aria-hidden="true" className="size-8" style={{ color: accentColor }} />
-              <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
+              <Quote aria-hidden="true" className="size-6 sm:size-8" style={{ color: accentColor }} />
+              <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground sm:text-xs">
                 <Star className="size-3 fill-current" style={{ color: accentColor }} />
                 Confianza real
               </div>
             </div>
-            <p className="mt-5 text-lg leading-8 text-card-foreground">{testimonial.quote}</p>
-            <div className="mt-6 flex items-center gap-4">
+            <p className="mt-4 text-base leading-7 text-card-foreground sm:mt-5 sm:text-lg sm:leading-8">
+              {testimonial.quote}
+            </p>
+            <div className="mt-5 flex items-center gap-4 sm:mt-6">
               {testimonial.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={testimonial.avatar}
                   alt={testimonial.author}
-                  className="size-14 rounded-full object-cover ring-2 ring-border"
+                  className="size-12 rounded-full object-cover ring-2 ring-border sm:size-14"
                 />
               ) : (
                 <div
-                  className="flex size-14 items-center justify-center rounded-full text-lg font-bold text-white"
+                  className="flex size-12 items-center justify-center rounded-full text-base font-bold text-white sm:size-14 sm:text-lg"
                   style={{ backgroundColor: accentColor }}
                 >
                   {testimonial.author.charAt(0)}
@@ -78,6 +84,12 @@ export function TestimonialsSection({
           </article>
         ))}
       </div>
+
+      {testimonials.length > 1 ? (
+        <p className="mt-4 text-center text-xs text-muted-foreground lg:hidden">
+          Mostramos un testimonio en celular para que la página no se haga eterna.
+        </p>
+      ) : null}
     </section>
   );
 }

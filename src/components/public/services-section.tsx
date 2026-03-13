@@ -1,4 +1,4 @@
-import { Scissors, Star } from "lucide-react";
+﻿import { Scissors, Star } from "lucide-react";
 
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -31,61 +31,65 @@ export function ServicesSection({
   bookingHrefForService,
   services,
 }: ServicesSectionProps) {
+  const mobilePreviewCount = 4;
+  const hiddenOnMobile = Math.max(services.length - mobilePreviewCount, 0);
+
   return (
     <section className="border-y border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: surfaceTint }}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mb-6 sm:mb-10 flex items-center justify-between gap-4">
+        <div className="mb-6 flex items-start justify-between gap-4 sm:mb-10">
           <div>
-            <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
+            <p className="text-xs font-semibold uppercase tracking-widest sm:text-sm" style={{ color: accentColor }}>
               Servicios
             </p>
-            <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:mt-3 sm:text-2xl lg:text-3xl">
               Elegí el turno que mejor encaja con tu agenda
             </h2>
+            <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:hidden">
+              En celular mostramos primero lo más elegido para que la decisión sea rápida.
+            </p>
           </div>
-          <span className="hidden text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground sm:block">
+          <span className="hidden text-xs font-semibold uppercase tracking-widest text-muted-foreground sm:block sm:text-sm">
             {services.length} opciones
           </span>
         </div>
 
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
+          {services.map((service, index) => (
             <article
               key={service.id}
               className={cn(
-                "relative flex h-full flex-col rounded-2xl sm:rounded-3xl border p-4 sm:p-6 shadow-sm transition-all hover:shadow-lg",
+                "relative flex h-full flex-col rounded-2xl border p-4 shadow-sm transition-all hover:shadow-lg sm:rounded-3xl sm:p-6",
+                index >= mobilePreviewCount ? "hidden sm:flex" : "",
                 service.popular ? "border-2 bg-background" : "border-border/60 bg-background/80"
               )}
               style={service.popular ? { borderColor: accentColor } : undefined}
             >
               {service.popular && (
                 <div
-                  className="absolute -top-2 sm:-top-3 left-4 sm:left-6 flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-white"
+                  className="absolute left-4 -top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white sm:-top-3 sm:left-6 sm:px-3 sm:py-1 sm:text-xs"
                   style={{ backgroundColor: accentColor }}
                 >
-                  <Star className="size-2.5 sm:size-3 fill-current" />
+                  <Star className="size-2.5 fill-current sm:size-3" />
                   {service.featureBadge}
                 </div>
               )}
 
               <div className="flex items-center justify-between gap-3 sm:gap-4">
-                <h3 className="text-base sm:text-xl font-bold text-card-foreground">{service.name}</h3>
+                <h3 className="text-base font-bold text-card-foreground sm:text-xl">{service.name}</h3>
                 <span
-                  className="rounded-full px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-bold whitespace-nowrap"
-                  style={{
-                    backgroundColor: accentSoft,
-                    color: accentColor,
-                  }}
+                  className="whitespace-nowrap rounded-full px-2 py-1 text-xs font-bold sm:px-3 sm:py-1.5 sm:text-sm"
+                  style={{ backgroundColor: accentSoft, color: accentColor }}
                 >
                   {service.priceLabel}
                 </span>
               </div>
 
-              <p className="mt-3 sm:mt-4 flex-1 text-xs sm:text-sm leading-5 sm:leading-6 text-muted-foreground">
+              <p className="mt-3 flex-1 text-xs leading-5 text-muted-foreground sm:mt-4 sm:text-sm sm:leading-6">
                 {service.description}
               </p>
 
-              <div className="mt-4 sm:mt-5 flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
+              <div className="mt-4 flex items-center gap-2 text-xs font-medium text-muted-foreground sm:mt-5 sm:text-sm">
                 <Scissors className="size-3.5 sm:size-4" style={{ color: accentColor }} />
                 <span>{service.durationMinutes} min</span>
               </div>
@@ -97,7 +101,7 @@ export function ServicesSection({
                 pagePath={`/${slug}`}
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "mt-4 sm:mt-6 h-10 sm:h-12 rounded-full font-semibold transition-transform hover:scale-[1.02] text-xs sm:text-sm",
+                  "mt-4 h-10 rounded-full text-xs font-semibold transition-transform hover:scale-[1.02] sm:mt-6 sm:h-12 sm:text-sm",
                   service.popular ? "" : "bg-foreground hover:bg-foreground/90"
                 )}
                 style={service.popular ? { backgroundColor: accentColor, borderColor: accentColor } : undefined}
@@ -107,6 +111,13 @@ export function ServicesSection({
             </article>
           ))}
         </div>
+
+        {hiddenOnMobile > 0 ? (
+          <div className="mt-5 rounded-2xl border border-border/60 bg-background/85 p-4 text-center shadow-sm sm:hidden">
+            <p className="text-sm font-medium text-foreground">+ {hiddenOnMobile} servicios más dentro del flujo de reserva.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Mostramos primero los más buscados para no hacer eterna la demo en celular.</p>
+          </div>
+        ) : null}
       </div>
     </section>
   );
