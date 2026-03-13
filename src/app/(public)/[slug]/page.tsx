@@ -18,9 +18,9 @@ import { getPublicBookingFlowData, getPublicBusinessPageData } from "@/server/qu
 const demoServices = [
   {
     id: "22222222-2222-2222-2222-222222222221",
-    name: "Corte clasico",
+    name: "Corte clásico",
     priceLabel: "$ 12.000",
-    description: "Corte con terminacion prolija para uso diario.",
+    description: "Corte con terminación prolija para uso diario.",
     durationMinutes: 45,
     popular: false,
   },
@@ -28,7 +28,7 @@ const demoServices = [
     id: "22222222-2222-2222-2222-222222222222",
     name: "Corte + barba",
     priceLabel: "$ 18.000",
-    description: "Servicio completo con perfilado y terminacion.",
+    description: "Servicio completo con perfilado y terminación.",
     durationMinutes: 60,
     popular: true,
   },
@@ -36,7 +36,7 @@ const demoServices = [
     id: "22222222-2222-2222-2222-222222222223",
     name: "Perfilado premium",
     priceLabel: "$ 8.000",
-    description: "Repaso rapido para mantener prolijo el look.",
+    description: "Repaso rápido para mantener prolijo el look.",
     durationMinutes: 30,
     popular: false,
   },
@@ -137,7 +137,7 @@ function getFirstActiveDayLabel(
 
 function getShortAddressLabel(address?: string | null) {
   if (!address) {
-    return "Ubicacion a confirmar";
+    return "Ubicación a confirmar";
   }
 
   const [firstSegment] = address.split(",");
@@ -182,7 +182,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         "featured" in service && service.featured
           ? service.featuredLabel || "Destacado"
           : index === 0
-            ? "Mas elegido"
+            ? "Más elegido"
             : "",
     })
   );
@@ -307,10 +307,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
             <div className="mb-6 sm:mb-10 text-center">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                Galeria
+                Galería
               </p>
               <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                Asi se vive la experiencia del negocio
+                Así se vive la experiencia del negocio
               </h2>
             </div>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -373,7 +373,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
           <div className="mb-4 sm:mb-6 text-center">
             <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-              Ubicacion
+            Ubicación
             </p>
             <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-foreground">
               {pageData.business.address ?? "Direccion a definir"}
@@ -413,7 +413,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               </div>
 
               <div>
-                <p className="text-xs sm:text-sm font-bold text-foreground">Links rapidos</p>
+                <p className="text-xs sm:text-sm font-bold text-foreground">Links rápidos</p>
                 <div className="mt-3 sm:mt-4 flex flex-col gap-1.5">
                   <PublicTrackedLink
                     businessSlug={slug}
@@ -430,7 +430,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     rel="noopener noreferrer"
                     className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    Contactar por WhatsApp
+                      Contactar por WhatsApp
                   </a>
                   <a
                     href={mapsHref}
@@ -438,7 +438,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     rel="noopener noreferrer"
                     className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    Ver ubicacion
+                      Ver ubicación
                   </a>
                 </div>
               </div>
