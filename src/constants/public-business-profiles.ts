@@ -213,19 +213,19 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     facebook: "aura.estetica.demo",
     tiktok: "@aura.estetica.demo",
     website: "https://reservaya.app/estetica",
-    heroImageUrl: "https://picsum.photos/seed/reservaya-estetica-hero/1400/900",
+    heroImageUrl: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1400&h=900&fit=crop",
     heroImageAlt: "Cabina de estética minimalista con tonos suaves",
     gallery: [
       {
-        url: "https://picsum.photos/seed/reservaya-estetica-gallery-1/1000/700",
+        url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1000&h=700&fit=crop",
         alt: "Camilla de tratamiento y set de skincare",
       },
       {
-        url: "https://picsum.photos/seed/reservaya-estetica-gallery-2/1000/700",
+        url: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=1000&h=700&fit=crop",
         alt: "Sesión facial con luz tenue y ambiente premium",
       },
       {
-        url: "https://picsum.photos/seed/reservaya-estetica-gallery-3/1000/700",
+        url: "https://images.unsplash.com/photo-1503236823255-94609f598e71?w=1000&h=700&fit=crop",
         alt: "Recepción de centro estético con branding",
       },
     ],
