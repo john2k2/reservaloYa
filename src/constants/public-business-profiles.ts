@@ -158,9 +158,9 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     eyebrow: "Cabina reservada con una experiencia más cuidada",
     headline: "Sesiones de estética con agenda clara y una página que vende mejor.",
     description:
-      "Esta demo muestra cómo una marca de estética puede verse más premium, ordenar su agenda y dar confianza antes de la primera visita.",
+      "Una marca de estética puede verse más premium, ordenar su agenda y dar confianza antes de la primera visita con un flujo simple y claro.",
     primaryCta: "Quiero reservar",
-    secondaryCta: "Hablar por WhatsApp",
+    secondaryCta: "Soporte por WhatsApp",
     accent: "#A55D6F",
     accentSoft: "#F1D8DF",
     surfaceTint: "#FCF6F7",
@@ -239,7 +239,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     description:
       "Pensada para estudios de uñas que venden mucho por Instagram pero necesitan ordenar agenda, tiempos y reprogramaciones.",
     primaryCta: "Reservar manicure",
-    secondaryCta: "Consultar disponibilidad",
+    secondaryCta: "Soporte por WhatsApp",
     accent: "#B86C8B",
     accentSoft: "#F3DDE6",
     surfaceTint: "#FDF7F9",
@@ -275,10 +275,15 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
         question: "¿Se puede sumar retiro de esmaltado?",
         answer: "Sí. El negocio puede dejarlo aclarado en el servicio o tomarlo como detalle adicional al confirmar.",
       },
+      {
+        question: "¿Cuánto tarda cada turno?",
+        answer: "Cada servicio muestra su duración estimada antes de reservar para evitar malentendidos.",
+      },
     ],
     policies: [
       "Si vienes con otro esmaltado, avísalo al reservar.",
       "Para nail art complejo conviene dejar una nota breve en la reserva.",
+      "Si necesitas cambiar el turno, hazlo desde el link de gestión para no perder el horario.",
     ],
     instagram: "@demo.nails.studio",
     tiktok: "@demo.nails.studio",
@@ -309,14 +314,14 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     description:
       "Una plantilla orientada a profesionales que necesitan transmitir confianza, ubicación y horarios sin depender del ida y vuelta manual.",
     primaryCta: "Reservar consulta",
-    secondaryCta: "Resolver una duda",
+    secondaryCta: "Soporte por WhatsApp",
     accent: "#3D6B85",
     accentSoft: "#D9E8EF",
     surfaceTint: "#F5FAFC",
     enableDarkMode: false,
     sectionLayout: {
       ...defaultSectionLayout,
-      mobileGalleryItems: 1,
+      mobileGalleryItems: 2,
       mobileServiceCards: 3,
       mobileTestimonials: 1,
     },
@@ -329,8 +334,13 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     testimonials: [
       {
         quote: "Me dio mucha más confianza ver todo claro antes de reservar.",
-        author: "Paciente demo",
+        author: "Martín Quiroga",
         detail: "Primera consulta",
+      },
+      {
+        quote: "Poder reprogramar sin llamar al consultorio me resolvió todo en segundos.",
+        author: "Lucía Ferrer",
+        detail: "Seguimiento",
       },
     ],
     faqs: [
@@ -338,13 +348,35 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
         question: "¿Qué necesito llevar?",
         answer: "El negocio puede usar este bloque para anticipar estudios, obras sociales o documentación necesaria.",
       },
+      {
+        question: "¿Cómo cambio o cancelo el turno?",
+        answer: "Desde el link de gestión que recibes al confirmar la reserva, sin llamar al consultorio.",
+      },
+      {
+        question: "¿Cuánto dura cada consulta?",
+        answer: "Cada servicio muestra su duración estimada antes de confirmar el horario.",
+      },
     ],
-    policies: ["Si es una urgencia, usar canales directos y no la agenda online."],
-    heroImageUrl: "https://picsum.photos/seed/reservaya-consultorio-hero/1400/900",
+    policies: [
+      "Si es una urgencia, usar canales directos y no la agenda online.",
+      "Si traes estudios o análisis, menciónalo en las notas de la reserva.",
+      "La reprogramación se puede hacer desde el link del turno sin costo.",
+    ],
+    instagram: "@consultorio.norte.demo",
+    website: "https://reservaya.app/consultorio",
+    heroImageUrl: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1400&h=900&fit=crop",
     heroImageAlt: "Consultorio moderno con escritorio y luz natural",
     gallery: [
-      { url: "https://picsum.photos/seed/reservaya-consultorio-1/1000/700", alt: "Recepción del consultorio" },
+      {
+        url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1000&h=700&fit=crop",
+        alt: "Recepción del consultorio",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=1000&h=700&fit=crop",
+        alt: "Consultorio con escritorio y atención profesional",
+      },
     ],
+    mapQuery: "Av. Cabildo 1847, Belgrano",
   },
 };
 

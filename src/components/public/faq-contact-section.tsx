@@ -93,7 +93,7 @@ export function FaqContactSection({
               Cierre rápido
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Si el usuario ya llegó hasta acá, lo mejor es empujarlo a reservar o a pedir ayuda puntual.
+              Si el usuario llegó hasta acá, lo mejor es resolver la reserva o una duda puntual sin desviar el flujo.
             </p>
             <div className="mt-4 flex flex-col gap-3">
               <PublicTrackedLink
