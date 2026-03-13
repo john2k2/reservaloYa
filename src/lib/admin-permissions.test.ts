@@ -28,6 +28,6 @@ describe("admin permissions", () => {
 
   it("returns clear access errors for protected sections", () => {
     expect(getAdminRouteAccessError("/admin/team")).toContain("equipo");
-    expect(getAdminRouteAccessError("/admin/onboarding")).toContain("pagina");
+    expect(getAdminRouteAccessError("/admin/onboarding")).toContain("página");
   });
 });

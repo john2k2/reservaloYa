@@ -39,7 +39,8 @@ export function StickyHeader({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsVisible(window.scrollY > 400);
+      const mobileThreshold = window.innerWidth < 640 ? 560 : 400;
+      setIsVisible(window.scrollY > mobileThreshold);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -49,9 +50,9 @@ export function StickyHeader({
   if (!isVisible) return null;
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
-      <div className="mx-auto flex max-w-6xl items-center justify-between">
-        <div className="flex items-center gap-3">
+    <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+        <div className="min-w-0 flex items-center gap-2.5 sm:gap-3">
           <div
             className={cn(
               "flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-sm font-bold text-foreground shadow-sm",
@@ -61,10 +62,10 @@ export function StickyHeader({
           >
             {logoLabel}
           </div>
-          <span className="hidden font-semibold text-foreground sm:block">{businessName}</span>
+          <span className="hidden truncate font-semibold text-foreground sm:block">{businessName}</span>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
           <a
             href={whatsappHref}
@@ -72,10 +73,11 @@ export function StickyHeader({
             rel="noopener noreferrer"
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
-              "h-10 rounded-full px-4"
+              "h-10 w-10 rounded-full px-0 sm:w-auto sm:px-4"
             )}
+            aria-label="Consultar por WhatsApp"
           >
-            <WhatsAppIcon className="mr-2 size-4" />
+            <WhatsAppIcon className="size-4 sm:mr-2" />
             <span className="hidden sm:inline">WhatsApp</span>
           </a>
           <PublicTrackedLink
@@ -85,11 +87,11 @@ export function StickyHeader({
             pagePath={`/${businessSlug}`}
             className={cn(
               buttonVariants({ variant: "default", size: "sm" }),
-              "h-10 rounded-full px-5 font-semibold"
+              "h-10 min-w-[132px] rounded-full px-4 font-semibold sm:px-5"
             )}
             style={{ backgroundColor: accent, borderColor: accent }}
           >
-            <Calendar className="mr-2 size-4" />
+            <Calendar className="mr-1.5 size-4 sm:mr-2" />
             Reservar
           </PublicTrackedLink>
         </div>

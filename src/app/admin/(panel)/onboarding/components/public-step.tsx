@@ -37,9 +37,9 @@ export function PublicStep({
           <Globe aria-hidden="true" className="size-5 text-foreground" />
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-card-foreground">Paso 4: Datos publicos</h3>
+          <h3 className="text-xl font-semibold text-card-foreground">Paso 4: Datos públicos</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Agrega tus redes sociales y la direccion para el mapa.
+            Agrega tus redes sociales y la dirección para el mapa.
           </p>
         </div>
       </div>
@@ -61,7 +61,7 @@ export function PublicStep({
             placeholder="tu.pagina"
             value={step4Data.facebook}
             onChange={(value) => setStep4Data((d) => ({ ...d, facebook: value }))}
-            hint="Usuario o nombre de pagina"
+            hint="Usuario o nombre de página"
           />
         </div>
 
@@ -88,20 +88,20 @@ export function PublicStep({
 
         <FormField
           id="mapQuery"
-          label="Direccion para el mapa"
+          label="Dirección para el mapa"
           placeholder="Ej: Honduras 4821, Palermo, Buenos Aires"
           value={step4Data.mapQuery}
           onChange={(value) => setStep4Data((d) => ({ ...d, mapQuery: value }))}
-          hint="Esta direccion se usa para mostrar el mapa en tu pagina"
+          hint="Esta dirección se usa para mostrar el mapa en tu página"
         />
       </div>
 
       <div className="mt-8 border-t border-border/60 pt-6">
         <div className="mb-6 rounded-2xl bg-secondary/30 p-5">
-          <h4 className="mb-2 font-medium text-foreground">Que sigue?</h4>
+          <h4 className="mb-2 font-medium text-foreground">Qué sigue</h4>
           <p className="text-sm text-muted-foreground">
-            Al guardar, tu pagina quedara lista con todos los cambios. Podes seguir editando despues
-            desde el panel de configuracion.
+            Al guardar, tu página quedará lista con todos los cambios. Podés seguir editando después
+            desde el panel de configuración.
           </p>
         </div>
 

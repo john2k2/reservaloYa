@@ -38,7 +38,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
           <div className="mt-12">
             <h1 className="text-3xl font-bold tracking-tight">Crea tu cuenta y tu negocio</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Completa los datos iniciales y entra directo a configurar tu pagina y tu panel.
+              Completa los datos iniciales y entra directo a configurar tu página y tu panel.
             </p>
           </div>
 
@@ -102,7 +102,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label htmlFor="businessSlug" className="text-sm font-medium text-foreground">
-                    Link publico
+                    Link público
                   </label>
                   <input
                     id="businessSlug"
@@ -148,7 +148,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-foreground">
-                    Contrasena
+                    Contraseña
                   </label>
                   <input
                     id="password"
@@ -164,7 +164,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
 
               <div className="space-y-2">
                 <label htmlFor="address" className="text-sm font-medium text-foreground">
-                  Direccion
+                  Dirección
                 </label>
                 <input
                   id="address"
@@ -190,12 +190,12 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
           )}
 
           <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-            <p>Ya tienes cuenta?</p>
+            <p>¿Ya tienes cuenta?</p>
             <Link
               href="/admin/login"
               className="inline-flex min-h-11 items-center rounded-md px-1 font-medium text-foreground underline underline-offset-4"
             >
-              Inicia sesion
+              Inicia sesión
             </Link>
           </div>
         </div>
@@ -206,8 +206,8 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
         <div className="relative max-w-lg p-12">
           <h2 className="mb-4 text-3xl font-bold tracking-tight">Entras y sales vendiendo</h2>
           <p className="text-lg text-muted-foreground">
-            El objetivo es que tu negocio tenga su pagina publica, panel y agenda listos en minutos,
-            sin depender de una configuracion manual.
+            El objetivo es que tu negocio tenga su página pública, panel y agenda listos en minutos,
+            sin depender de una configuración manual.
           </p>
         </div>
       </div>

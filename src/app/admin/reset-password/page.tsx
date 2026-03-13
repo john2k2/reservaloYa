@@ -32,9 +32,9 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
         </Link>
 
         <div className="mt-8 space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Nueva contrasena</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Nueva contraseña</h1>
           <p className="text-sm text-muted-foreground">
-            Define una nueva contrasena para volver a entrar al panel.
+            Define una nueva contraseña para volver a entrar al panel.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Nueva contrasena
+                Nueva contraseña
               </label>
               <input
                 id="password"
@@ -73,25 +73,25 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
 
             <div className="space-y-2">
               <label htmlFor="passwordConfirm" className="text-sm font-medium text-foreground">
-                Repite la contrasena
+                Repite la contraseña
               </label>
               <input
                 id="passwordConfirm"
                 name="passwordConfirm"
                 type="password"
                 autoComplete="new-password"
-                placeholder="Repite tu nueva contrasena"
+                placeholder="Repite tu nueva contraseña"
                 className="minimalist-input"
                 required
               />
             </div>
 
             <LoadingButton
-              pendingLabel="Actualizando contrasena..."
+              pendingLabel="Actualizando contraseña..."
               className="h-12 w-full rounded-md bg-foreground font-medium text-background"
               disabled={!configured}
             >
-              Guardar nueva contrasena
+              Guardar nueva contraseña
             </LoadingButton>
           </form>
         )}

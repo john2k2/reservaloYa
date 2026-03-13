@@ -45,7 +45,7 @@ export function EditImagesTab({
         </div>
         <div>
           <h3 className="text-xl font-semibold text-card-foreground">Fotos del negocio</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Subi imagenes para personalizar tu pagina.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Subí imágenes para personalizar tu página.</p>
         </div>
       </div>
 
@@ -83,7 +83,7 @@ export function EditImagesTab({
         </div>
 
         <div>
-          <h4 className="mb-4 text-sm font-medium text-foreground">Galeria (opcional)</h4>
+          <h4 className="mb-4 text-sm font-medium text-foreground">Galería (opcional)</h4>
           <div className="grid gap-4 sm:grid-cols-3">
             {galleryImageHints.map((hint, index) => (
               <ImageUpload

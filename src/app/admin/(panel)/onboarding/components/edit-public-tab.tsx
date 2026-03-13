@@ -25,8 +25,8 @@ export function EditPublicTab({ publicData, setPublicData }: EditPublicTabProps)
           <Globe aria-hidden="true" className="size-5 text-foreground" />
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-card-foreground">Datos publicos</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Redes sociales y direccion para el mapa.</p>
+          <h3 className="text-xl font-semibold text-card-foreground">Datos públicos</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Redes sociales y dirección para el mapa.</p>
         </div>
       </div>
 
@@ -47,7 +47,7 @@ export function EditPublicTab({ publicData, setPublicData }: EditPublicTabProps)
             placeholder="tu.pagina"
             value={publicData.facebook}
             onChange={(value) => setPublicData((d) => ({ ...d, facebook: value }))}
-            hint="Usuario o nombre de pagina"
+            hint="Usuario o nombre de página"
           />
         </div>
 
@@ -74,11 +74,11 @@ export function EditPublicTab({ publicData, setPublicData }: EditPublicTabProps)
 
         <FormField
           id="mapQuery"
-          label="Direccion para el mapa"
+          label="Dirección para el mapa"
           placeholder="Ej: Honduras 4821, Palermo, Buenos Aires"
           value={publicData.mapQuery}
           onChange={(value) => setPublicData((d) => ({ ...d, mapQuery: value }))}
-          hint="Esta direccion se usa para mostrar el mapa en tu pagina"
+          hint="Esta dirección se usa para mostrar el mapa en tu página"
         />
       </div>
     </article>

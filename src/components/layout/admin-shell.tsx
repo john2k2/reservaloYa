@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, LogOut, Moon, Sun } from "lucide-react";
+import { ExternalLink, LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { adminNavigation, demoBusinessSlug, productName } from "@/constants/site";
@@ -42,7 +42,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={handleToggle}
-      className="relative z-10 flex h-9 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-all hover:bg-secondary hover:text-foreground active:scale-[0.98]"
+      className="relative z-10 flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-all hover:bg-secondary hover:text-foreground active:scale-[0.98]"
       aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -62,10 +62,19 @@ export function AdminShell({
   demoMode,
 }: AdminShellProps) {
   const pathname = usePathname();
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const visibleNavigation = React.useMemo(
     () => adminNavigation.filter((item) => canAccessAdminRoute(userRole, item.href)),
     [userRole]
   );
+  const currentNavigationItem = React.useMemo(
+    () => visibleNavigation.find((item) => item.href === pathname) ?? visibleNavigation[0] ?? null,
+    [pathname, visibleNavigation]
+  );
+
+  React.useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
@@ -144,44 +153,112 @@ export function AdminShell({
       <div className="flex h-screen flex-1 flex-col overflow-hidden">
         {/* Header Mobile */}
         <header className="border-b border-border/60 bg-background px-4 lg:px-6">
-          <div className="flex h-14 items-center justify-between gap-4">
+          <div className="flex min-h-14 items-center justify-between gap-4 py-2">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 {demoMode ? "Demo" : "Admin"}
               </p>
               <h1 className="truncate text-sm font-semibold">{businessName}</h1>
             </div>
-            <Link
-              href={`/${businessSlug || demoBusinessSlug}`}
-              target="_blank"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground xl:hidden"
-            >
-              <ExternalLink className="size-3.5" />
-              <span className="hidden sm:inline">Ver página</span>
-            </Link>
+            <div className="flex items-center gap-2 xl:hidden">
+              <Link
+                href={`/${businessSlug || demoBusinessSlug}`}
+                target="_blank"
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border/60 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                aria-label="Ver página pública"
+              >
+                <ExternalLink className="size-3.5" />
+                <span className="hidden sm:inline">Ver página</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen((open) => !open)}
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-border/60 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                aria-expanded={mobileNavOpen}
+                aria-controls="admin-mobile-menu"
+              >
+                {mobileNavOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+                <span className="hidden sm:inline">{mobileNavOpen ? "Cerrar" : "Menú"}</span>
+              </button>
+            </div>
           </div>
 
           {/* Navigation Mobile */}
-          <nav className="flex gap-1 overflow-x-auto pb-3 xl:hidden scrollbar-hide">
-            {visibleNavigation.map((item) => {
-              const active = pathname === item.href;
+          <div className="pb-3 xl:hidden">
+            {currentNavigationItem ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Sección
+                </span>
+                <span className="inline-flex min-h-8 items-center rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs font-medium text-foreground">
+                  {currentNavigationItem.label}
+                </span>
+              </div>
+            ) : null}
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "inline-flex h-8 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors whitespace-nowrap",
-                    active
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+            {mobileNavOpen ? (
+              <div
+                id="admin-mobile-menu"
+                className="mt-3 space-y-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
+              >
+                <div className="rounded-xl bg-secondary/40 p-3">
+                  <p className="truncate text-sm font-medium">{profileName}</p>
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                    {getAdminRoleLabel(userRole)}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                </div>
+
+                <nav className="grid grid-cols-2 gap-2">
+                  {visibleNavigation.map((item) => {
+                    const Icon = item.icon;
+                    const active = pathname === item.href;
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                          active
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border bg-background text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Icon aria-hidden="true" className="size-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                <div className="space-y-2">
+                  <ThemeToggle />
+
+                  <Link
+                    href={`/${businessSlug || demoBusinessSlug}`}
+                    target="_blank"
+                    className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  >
+                    <ExternalLink className="size-4" />
+                    Ver página pública
+                  </Link>
+
+                  {!demoMode ? (
+                    <form action="/auth/signout" method="post">
+                      <button
+                        type="submit"
+                        className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <LogOut aria-hidden="true" className="size-4" />
+                        Cerrar sesión
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </header>
 
         {/* Page Content */}
@@ -193,7 +270,7 @@ export function AdminShell({
                   <div>
                     <p className="font-semibold">Tu email todavía no está verificado.</p>
                     <p className="mt-1 text-amber-800/90">
-                      Puedes seguir usando el panel, pero conviene verificarlo para recuperar acceso sin depender de soporte.
+                      Podés seguir usando el panel, pero conviene verificarlo para recuperar acceso sin depender de soporte.
                     </p>
                   </div>
                   <form action={resendVerificationAction}>

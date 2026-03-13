@@ -57,8 +57,8 @@ export function BusinessStep({
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {hasExistingBusiness
-              ? "Modifica los datos basicos de tu negocio. Los cambios se aplican inmediatamente."
-              : "Completa los datos basicos para crear tu pagina. El link publico es como tus clientes accederan."}
+              ? "Modifica los datos básicos de tu negocio. Los cambios se aplican inmediatamente."
+              : "Completa los datos básicos para crear tu página. El link público es como tus clientes accederán."}
           </p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export function BusinessStep({
             value: t.slug,
             label: `${t.label} - ${t.category}`,
           }))}
-          hint="Elegi el tipo que mas se parezca a tu negocio"
+          hint="Elegí el tipo que más se parezca a tu negocio"
         />
 
         <FormField
@@ -86,13 +86,13 @@ export function BusinessStep({
           value={step1Data.name}
           onChange={(value) => setStep1Data((d) => ({ ...d, name: value }))}
           validate={validations.name}
-          hint="Este nombre aparecera en el titulo de tu pagina"
+          hint="Este nombre aparecerá en el título de tu página"
         />
 
         <div className="grid gap-6 sm:grid-cols-2">
           <FormField
             id="slug"
-            label="Link publico"
+            label="Link público"
             placeholder="Ej: aura-studio"
             value={step1Data.slug}
             onChange={(value) =>
@@ -111,7 +111,7 @@ export function BusinessStep({
             value={step1Data.phone}
             onChange={(value) => setStep1Data((d) => ({ ...d, phone: value }))}
             validate={validations.phone}
-            hint="Con codigo de pais para WhatsApp"
+            hint="Con código de país para WhatsApp"
           />
         </div>
 
@@ -129,13 +129,13 @@ export function BusinessStep({
 
           <FormField
             id="address"
-            label="Direccion"
+            label="Dirección"
             placeholder="Ej: Honduras 4821, Palermo"
             required
             value={step1Data.address}
             onChange={(value) => setStep1Data((d) => ({ ...d, address: value }))}
             validate={validations.address}
-            hint="Direccion completa de tu local"
+            hint="Dirección completa de tu local"
           />
         </div>
       </div>

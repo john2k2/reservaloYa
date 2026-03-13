@@ -26,7 +26,7 @@ describe("requireAdminRouteAccess", () => {
     const { requireAdminRouteAccess } = await import("./admin-access");
 
     await expect(requireAdminRouteAccess("/admin/onboarding")).rejects.toThrow(
-      "REDIRECT:/admin/login?error=Inicia sesion para continuar."
+      "REDIRECT:/admin/login?error=Inicia sesión para continuar."
     );
   });
 
@@ -40,7 +40,7 @@ describe("requireAdminRouteAccess", () => {
 
     await expect(requireAdminRouteAccess("/admin/onboarding")).rejects.toThrow("REDIRECT:");
     expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
-      "Solo el owner puede cambiar la pagina y la configuracion del negocio."
+      "Solo el owner puede cambiar la página y la configuración del negocio."
     );
   });
 

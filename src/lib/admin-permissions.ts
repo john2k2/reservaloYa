@@ -40,7 +40,7 @@ export function getAdminRouteAccessError(href: string) {
   }
 
   if (href === "/admin/onboarding" || href === "/admin/settings") {
-    return "Solo el owner puede cambiar la pagina y la configuracion del negocio.";
+    return "Solo el owner puede cambiar la página y la configuración del negocio.";
   }
 
   return "No tienes permisos para acceder a esa seccion.";

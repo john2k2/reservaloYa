@@ -32,9 +32,9 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
         </Link>
 
         <div className="mt-8 space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Recuperar contrasena</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Recuperar contraseña</h1>
           <p className="text-sm text-muted-foreground">
-            Ingresa tu correo y te enviaremos un enlace para definir una nueva contrasena.
+            Ingresa tu correo y te enviaremos un enlace para definir una nueva contraseña.
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
         <form action={forgotPasswordAction} className="mt-8 space-y-6">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-foreground">
-              Correo electronico
+              Correo electrónico
             </label>
             <input
               id="email"

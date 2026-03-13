@@ -149,7 +149,7 @@ function SocialLinksMobile({
           href={websiteHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-9 items-center justify-center rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+          className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
         >
           Web
         </a>
@@ -159,7 +159,7 @@ function SocialLinksMobile({
           href={instagramHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-9 items-center justify-center rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+          className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
         >
           IG
         </a>
@@ -168,7 +168,7 @@ function SocialLinksMobile({
         href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex h-9 items-center justify-center rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+        className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
       >
         WhatsApp
       </a>
@@ -277,7 +277,7 @@ export function BusinessHero({
             </p>
 
             {/* CTA Buttons */}
-            <div className="mt-5 sm:mt-8 flex flex-col gap-2.5 sm:flex-row">
+            <div className="mt-5 flex flex-col gap-2.5 sm:mt-8 sm:flex-row">
               <PublicTrackedLink
                 businessSlug={slug}
                 eventName="booking_cta_clicked"
@@ -285,7 +285,7 @@ export function BusinessHero({
                 pagePath={`/${slug}`}
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "h-11 sm:h-12 w-full rounded-full px-6 sm:px-8 text-sm sm:text-base font-semibold shadow-lg transition-transform hover:scale-[1.02] sm:w-auto"
+                  "h-12 w-full rounded-full px-6 text-sm font-semibold shadow-lg transition-transform hover:scale-[1.02] sm:h-12 sm:w-auto sm:px-8 sm:text-base"
                 )}
                 style={{ backgroundColor: profile.accent, borderColor: profile.accent }}
               >
@@ -298,17 +298,25 @@ export function BusinessHero({
                 rel="noopener noreferrer"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 sm:h-12 w-full rounded-full px-6 sm:px-8 text-sm sm:text-base transition-all duration-200 hover:bg-secondary hover:scale-105 active:scale-95 sm:w-auto"
+                  "inline-flex h-11 items-center justify-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-12 sm:w-auto sm:px-8 sm:text-base"
                 )}
               >
                 <WhatsAppIcon className="mr-1.5 sm:mr-2 size-4 sm:size-5" />
-                {profile.secondaryCta}
+                <span className="sm:hidden">Soporte por WhatsApp</span>
+                <span className="hidden sm:inline">{profile.secondaryCta}</span>
               </a>
             </div>
 
-            {/* Info Cards - Mobile Scrollable */}
-            <div className="-mx-4 mt-5 flex gap-3 overflow-x-auto px-4 pb-2 sm:hidden">
-              <div className="min-w-[140px] flex-1 snap-start rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
+            <div
+              className="relative mt-5 aspect-[16/10] overflow-hidden rounded-2xl border border-border/60 bg-cover bg-center shadow-sm sm:hidden"
+              role="img"
+              aria-label={profile.heroImageAlt ?? `Portada de ${businessName}`}
+              style={heroImageStyle}
+            />
+
+            {/* Info Cards - Mobile */}
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">
+              <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Calendar className="size-3" style={{ color: profile.accent }} />
                   Próximo turno
@@ -316,7 +324,7 @@ export function BusinessHero({
                 <p className="mt-2 text-base font-bold text-foreground">{nextAvailableSlot.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{nextAvailableSlot.detail}</p>
               </div>
-              <div className="min-w-[140px] flex-1 snap-start rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
+              <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Scissors className="size-3" style={{ color: profile.accent }} />
                   Servicios
@@ -324,7 +332,7 @@ export function BusinessHero({
                 <p className="mt-2 text-base font-bold text-foreground">{servicesCount} opciones</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">Precios visibles</p>
               </div>
-              <div className="min-w-[140px] flex-1 snap-start rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
+              <div className="col-span-2 rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Clock className="size-3" style={{ color: profile.accent }} />
                   Horarios
@@ -339,11 +347,14 @@ export function BusinessHero({
             </div>
 
             {/* Trust Points */}
-            <div className="mt-4 sm:mt-8 flex flex-wrap gap-2">
-              {profile.trustPoints.map((point) => (
+            <div className="mt-4 flex flex-wrap gap-2 sm:mt-8">
+              {profile.trustPoints.map((point, index) => (
                 <div
                   key={point}
-                  className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-foreground shadow-sm"
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm sm:text-sm",
+                    index > 1 ? "hidden sm:flex" : ""
+                  )}
                 >
                   <CheckCircle2 className="size-3.5 sm:size-4" style={{ color: profile.accent }} />
                   {point}
@@ -386,9 +397,9 @@ export function BusinessHero({
 
           {/* Right Column - Hero Image & Cards */}
           <div className="rounded-2xl sm:rounded-[2rem] border border-border/60 bg-card/90 p-4 sm:p-6 shadow-xl shadow-black/5 backdrop-blur">
-            {/* Hero Image - Aspect ratio más bajo en móvil */}
+            {/* Hero Image */}
             <div
-              className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden rounded-xl sm:rounded-2xl border border-border/60 bg-cover bg-center"
+              className="relative hidden aspect-[16/10] overflow-hidden rounded-2xl border border-border/60 bg-cover bg-center sm:block"
               role="img"
               aria-label={profile.heroImageAlt ?? `Portada de ${businessName}`}
               style={heroImageStyle}

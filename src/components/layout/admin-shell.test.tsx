@@ -53,7 +53,7 @@ describe("AdminShell navigation", () => {
     );
 
     expect(screen.getAllByText("Equipo").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Pagina").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Página").length).toBeGreaterThan(0);
   });
 
   it("hides owner-only sections for staff", () => {
@@ -72,7 +72,7 @@ describe("AdminShell navigation", () => {
     );
 
     expect(screen.queryByText("Equipo")).not.toBeInTheDocument();
-    expect(screen.queryByText("Pagina")).not.toBeInTheDocument();
+    expect(screen.queryByText("Página")).not.toBeInTheDocument();
     expect(screen.getAllByText("Turnos").length).toBeGreaterThan(0);
   });
 });

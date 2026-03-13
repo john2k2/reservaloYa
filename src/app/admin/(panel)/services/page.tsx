@@ -286,9 +286,9 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 p-8 text-center">
-              <p className="text-sm font-medium text-foreground">Todavia no cargaste servicios.</p>
+              <p className="text-sm font-medium text-foreground">Todavía no cargaste servicios.</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Crea tu primer servicio desde el formulario para que aparezca en la reserva publica.
+                Crea tu primer servicio desde el formulario para que aparezca en la reserva pública.
               </p>
             </div>
           )}

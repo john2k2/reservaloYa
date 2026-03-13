@@ -122,7 +122,7 @@ export const adminNavigation: Array<{
   },
   {
     href: "/admin/onboarding",
-    label: "Pagina",
+    label: "Página",
     icon: Sparkles,
   },
 ];

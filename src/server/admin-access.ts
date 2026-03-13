@@ -11,7 +11,7 @@ export async function requireAdminRouteAccess(route: string) {
   const shellData = await getAdminShellData();
 
   if (!shellData) {
-    redirect("/admin/login?error=Inicia sesion para continuar.");
+    redirect("/admin/login?error=Inicia sesión para continuar.");
   }
 
   if (!canAccessAdminRoute(shellData.userRole, route)) {

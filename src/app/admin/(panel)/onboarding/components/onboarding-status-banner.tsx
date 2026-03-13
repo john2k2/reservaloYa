@@ -17,7 +17,7 @@ export function OnboardingStatusBanner({
   title,
   description,
   href,
-  actionLabel = "Ver pagina",
+  actionLabel = "Ver página",
   secondaryAction,
 }: OnboardingStatusBannerProps) {
   return (

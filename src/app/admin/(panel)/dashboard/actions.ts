@@ -32,7 +32,7 @@ export async function runLocalReminderSweepAction() {
         ? `Hay ${result.readyWithoutProvider} recordatorios listos. Solo falta configurar email o WhatsApp.`
         : result.missingEmail > 0
           ? `Hay ${result.missingEmail} turnos sin canal disponible para recordar.`
-          : "No habia recordatorios pendientes en las proximas 24 hs.";
+          : "No había recordatorios pendientes en las próximas 24 hs.";
 
   redirect(`/admin/dashboard?reminders=${encodeURIComponent(message)}`);
 }

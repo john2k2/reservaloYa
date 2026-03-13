@@ -247,12 +247,12 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
       ) : (
         <div className="rounded-xl border border-border/60 bg-background p-6 sm:p-8 text-center">
           <p className="text-sm font-medium text-foreground">
-            {hasActiveFilters ? "No se encontraron turnos con esos filtros." : "Todavia no hay turnos cargados."}
+            {hasActiveFilters ? "No se encontraron turnos con esos filtros." : "Todavía no hay turnos cargados."}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
             {hasActiveFilters
-              ? "Prueba limpiar filtros o revisar otra fecha para ver mas resultados."
-              : "Cuando entren reservas desde la pagina publica, vas a poder gestionarlas desde aca."}
+              ? "Prueba limpiar filtros o revisar otra fecha para ver más resultados."
+              : "Cuando entren reservas desde la página pública, vas a poder gestionarlas desde acá."}
           </p>
         </div>
       )}

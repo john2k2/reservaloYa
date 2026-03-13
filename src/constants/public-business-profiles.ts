@@ -67,17 +67,17 @@ const profileMap: Record<string, PublicBusinessProfile> = {
       "Confirmacion inmediata con acceso para reprogramar o cancelar.",
       "Experiencia simple para clientes que reservan desde el celular.",
     ],
-    trustPoints: ["Atencion puntual", "Ubicacion en Palermo", "Horarios visibles antes de reservar"],
+    trustPoints: ["Atención puntual", "Ubicación en Palermo", "Horarios visibles antes de reservar"],
     testimonials: [
       {
-        quote: "Antes respondia lo mismo todo el dia. Ahora la mayoria entra, reserva y listo.",
-        author: "Matias Gomez",
+        quote: "Antes respondía lo mismo todo el día. Ahora la mayoría entra, reserva y listo.",
+        author: "Matías Gómez",
         detail: "Barbero independiente",
         avatar:
           "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
       },
       {
-        quote: "La pagina se entiende en segundos y mis clientes no se pierden con el proceso.",
+        quote: "La página se entiende en segundos y mis clientes no se pierden con el proceso.",
         author: "Luca Sosa",
         detail: "Cliente frecuente",
         avatar:
@@ -111,7 +111,7 @@ const profileMap: Record<string, PublicBusinessProfile> = {
     logoLabel: "DB",
     heroImageUrl:
       "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1400&h=900&fit=crop",
-    heroImageAlt: "Interior clasico de barberia con sillas vintage y espejos",
+    heroImageAlt: "Interior clásico de barbería con sillas vintage y espejos",
     gallery: [
       {
         url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=1000&h=750&fit=crop",
@@ -123,7 +123,7 @@ const profileMap: Record<string, PublicBusinessProfile> = {
       },
       {
         url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1000&h=750&fit=crop",
-        alt: "Sillon de barberia clasico y ambiente premium",
+        alt: "Sillón de barbería clásico y ambiente premium",
       },
     ],
     mapQuery: "Av. del Libertador 214, Palermo",

@@ -61,7 +61,7 @@ export function BrandingStep({
         <div>
           <h3 className="text-xl font-semibold text-card-foreground">Paso 2: Estilo visual</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Elegi una paleta de colores y personaliza los textos de tu pagina.
+            Elegí una paleta de colores y personaliza los textos de tu página.
           </p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function BrandingStep({
         </section>
 
         <section className="space-y-6">
-          <h4 className="text-sm font-medium text-foreground">Textos de la pagina</h4>
+          <h4 className="text-sm font-medium text-foreground">Textos de la página</h4>
 
           <div className="grid gap-6 sm:grid-cols-2">
             <FormField
@@ -124,7 +124,7 @@ export function BrandingStep({
               onChange={(value) => setStep2Data((d) => ({ ...d, badge: value }))}
               validate={validations.badge}
               maxLength={80}
-              hint="Aparece como etiqueta arriba del titulo"
+              hint="Aparece como etiqueta arriba del título"
             />
 
             <FormField
@@ -136,7 +136,7 @@ export function BrandingStep({
               onChange={(value) => setStep2Data((d) => ({ ...d, eyebrow: value }))}
               validate={validations.eyebrow}
               maxLength={120}
-              hint="Subtitulo debajo de la franja"
+              hint="Subtítulo debajo de la franja"
             />
           </div>
 
@@ -148,7 +148,7 @@ export function BrandingStep({
             onChange={(value) => setStep2Data((d) => ({ ...d, headline: value }))}
             validate={validations.headline}
             maxLength={160}
-            hint="El titulo mas importante de tu pagina"
+            hint="El título más importante de tu página"
           />
 
           <FormField

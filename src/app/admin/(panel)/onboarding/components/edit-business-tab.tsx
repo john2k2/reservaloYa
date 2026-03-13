@@ -37,7 +37,7 @@ export function EditBusinessTab({
         </div>
         <div>
           <h3 className="text-xl font-semibold text-card-foreground">Datos del negocio</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Informacion basica de tu negocio.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Información básica de tu negocio.</p>
         </div>
       </div>
 
@@ -50,7 +50,7 @@ export function EditBusinessTab({
           value={businessData.name}
           onChange={(value) => setBusinessData((d) => ({ ...d, name: value }))}
           validate={validations.name}
-          hint="Este nombre aparecera en el titulo de tu pagina"
+          hint="Este nombre aparecerá en el título de tu página"
         />
 
         <div className="grid gap-6 sm:grid-cols-2">
@@ -63,7 +63,7 @@ export function EditBusinessTab({
             value={businessData.phone}
             onChange={(value) => setBusinessData((d) => ({ ...d, phone: value }))}
             validate={validations.phone}
-            hint="Con codigo de pais para WhatsApp"
+            hint="Con código de país para WhatsApp"
           />
 
           <FormField
@@ -80,13 +80,13 @@ export function EditBusinessTab({
 
         <FormField
           id="address"
-          label="Direccion"
+          label="Dirección"
           placeholder="Ej: Honduras 4821, Palermo"
           required
           value={businessData.address}
           onChange={(value) => setBusinessData((d) => ({ ...d, address: value }))}
           validate={validations.address}
-          hint="Direccion completa de tu local"
+          hint="Dirección completa de tu local"
         />
       </div>
     </article>

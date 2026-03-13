@@ -81,7 +81,7 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Contrasena temporal
+                Contraseña temporal
               </label>
               <input
                 id="password"

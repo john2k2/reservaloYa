@@ -57,7 +57,7 @@ export function ImagesStep({
         <div>
           <h3 className="text-xl font-semibold text-card-foreground">Paso 3: Fotos del negocio</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Subi imagenes para personalizar tu pagina. Si no subis nada, usamos imagenes demo.
+            Subí imágenes para personalizar tu página. Si no subís nada, usamos imágenes demo.
           </p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function ImagesStep({
         </div>
 
         <div>
-          <h4 className="mb-4 text-sm font-medium text-foreground">Galeria (opcional)</h4>
+          <h4 className="mb-4 text-sm font-medium text-foreground">Galería (opcional)</h4>
           <div className="grid gap-4 sm:grid-cols-3">
             {galleryImageHints.map((hint, index) => (
               <ImageUpload
