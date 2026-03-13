@@ -6,9 +6,6 @@ import {
   hasPocketBasePublicAuthCredentials,
 } from "@/lib/pocketbase/config";
 
-let pocketBasePublicClient: ReturnType<typeof createPocketBaseClient> | null = null;
-let pocketBasePublicClientPromise: Promise<ReturnType<typeof createPocketBaseClient>> | null = null;
-
 async function authenticatePublicClient(client: ReturnType<typeof createPocketBaseClient>) {
   if (!hasPocketBasePublicAuthCredentials()) {
     return client;
@@ -28,28 +25,11 @@ export async function createPocketBasePublicClient() {
     return createPocketBaseAdminClient();
   }
 
-  if (pocketBasePublicClient?.authStore.isValid) {
-    return pocketBasePublicClient;
+  try {
+    const client = createPocketBaseClient();
+    await authenticatePublicClient(client);
+    return client;
+  } catch {
+    return createPocketBaseAdminClient();
   }
-
-  if (!pocketBasePublicClientPromise) {
-    pocketBasePublicClientPromise = (async () => {
-      const client = pocketBasePublicClient ?? createPocketBaseClient();
-
-      await authenticatePublicClient(client);
-
-      pocketBasePublicClient = client;
-
-      return client;
-    })()
-      .catch((error) => {
-        pocketBasePublicClient = null;
-        throw error;
-      })
-      .finally(() => {
-        pocketBasePublicClientPromise = null;
-      });
-  }
-
-  return pocketBasePublicClientPromise;
 }

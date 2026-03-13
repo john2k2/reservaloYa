@@ -396,7 +396,6 @@ export async function getPocketBasePublicBookingFlowData(input: {
   bookingDate?: string;
 }) {
   const pb = await getPublicReadClient();
-  const adminPb = await getAdminClient();
   const pageData = await getPocketBasePublicBusinessPageData(input.slug);
 
   if (!pageData) {
@@ -438,10 +437,10 @@ export async function getPocketBasePublicBookingFlowData(input: {
         pb.filter("blockedDate = {:blockedDate}", { blockedDate: selectedDate })
       ),
     }),
-    listPocketBaseRecordsWithClient<BookingRecord>(adminPb, "bookings", {
+    listPocketBaseRecordsWithClient<BookingRecord>(pb, "bookings", {
       filter: joinPocketBaseFilters(
-        adminPb.filter("business = {:business}", { business: pageData.business.id }),
-        adminPb.filter("bookingDate = {:bookingDate}", { bookingDate: selectedDate })
+        pb.filter("business = {:business}", { business: pageData.business.id }),
+        pb.filter("bookingDate = {:bookingDate}", { bookingDate: selectedDate })
       ),
     }),
   ]);

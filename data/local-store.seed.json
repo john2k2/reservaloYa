@@ -21,6 +21,18 @@
       "timezone": "America/Argentina/Buenos_Aires",
       "active": true,
       "createdAt": "2026-03-01T10:00:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-1111-1111-1111-111111111111",
+      "name": "Demo Nails Studio",
+      "slug": "demo-nails",
+      "templateSlug": "demo-nails",
+      "phone": "+54 11 5555 0377",
+      "email": "hola@nails-demo.estudio",
+      "address": "Gorriti 5172, Palermo",
+      "timezone": "America/Argentina/Buenos_Aires",
+      "active": true,
+      "createdAt": "2026-03-01T10:00:00.000Z"
     }
   ],
   "services": [
@@ -83,6 +95,36 @@
       "price": 22000,
       "active": true,
       "createdAt": "2026-03-01T10:10:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-2222-2222-2222-222222222221",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "name": "Manicura express",
+      "description": "Limpieza, limado y esmaltado simple para resolver en menos de una hora.",
+      "durationMinutes": 40,
+      "price": 14000,
+      "active": true,
+      "createdAt": "2026-03-01T10:11:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-2222-2222-2222-222222222222",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "name": "Semipermanente",
+      "description": "Preparaci?n completa con color semipermanente y terminaci?n brillante.",
+      "durationMinutes": 70,
+      "price": 22000,
+      "active": true,
+      "createdAt": "2026-03-01T10:12:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-2222-2222-2222-222222222223",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "name": "Nail art simple",
+      "description": "Dise?o sutil para sumar detalle sin estirar demasiado el turno.",
+      "durationMinutes": 90,
+      "price": 26000,
+      "active": true,
+      "createdAt": "2026-03-01T10:13:00.000Z"
     }
   ],
   "availabilityRules": [
@@ -133,6 +175,30 @@
       "startTime": "10:00",
       "endTime": "16:00",
       "active": true
+    },
+    {
+      "id": "bbbbbbbb-5555-5555-5555-555555555551",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "dayOfWeek": 2,
+      "startTime": "09:30",
+      "endTime": "18:30",
+      "active": true
+    },
+    {
+      "id": "bbbbbbbb-5555-5555-5555-555555555552",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "dayOfWeek": 4,
+      "startTime": "10:00",
+      "endTime": "19:00",
+      "active": true
+    },
+    {
+      "id": "bbbbbbbb-5555-5555-5555-555555555553",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "dayOfWeek": 6,
+      "startTime": "10:00",
+      "endTime": "17:00",
+      "active": true
     }
   ],
   "blockedSlots": [
@@ -151,6 +217,14 @@
       "startTime": "15:00",
       "endTime": "16:00",
       "reason": "Capacitacion interna"
+    },
+    {
+      "id": "bbbbbbbb-6666-6666-6666-666666666661",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "blockedDate": "2026-03-14",
+      "startTime": "13:00",
+      "endTime": "14:30",
+      "reason": "Capacitaci?n de dise?os"
     }
   ],
   "customers": [
@@ -189,6 +263,24 @@
       "email": "agus@example.com",
       "notes": "Consulta seguido por lifting y skincare.",
       "createdAt": "2026-03-02T11:10:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-4444-4444-4444-444444444441",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "fullName": "Sof?a Mart?nez",
+      "phone": "+54 11 4777 3100",
+      "email": "sofi@example.com",
+      "notes": "Le gusta reservar cerca del mediod?a.",
+      "createdAt": "2026-03-02T12:00:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-4444-4444-4444-444444444442",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "fullName": "Valentina N??ez",
+      "phone": "+54 11 4777 3110",
+      "email": "vale@example.com",
+      "notes": "Suele elegir semipermanente.",
+      "createdAt": "2026-03-02T12:10:00.000Z"
     }
   ],
   "bookings": [
@@ -239,6 +331,30 @@
       "status": "pending",
       "notes": "Confirma por WhatsApp durante la tarde.",
       "createdAt": "2026-03-03T11:20:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-7777-7777-7777-777777777771",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "customerId": "bbbbbbbb-4444-4444-4444-444444444441",
+      "serviceId": "bbbbbbbb-2222-2222-2222-222222222222",
+      "bookingDate": "2026-03-14",
+      "startTime": "10:00",
+      "endTime": "11:10",
+      "status": "confirmed",
+      "notes": "Color nude con retiro previo.",
+      "createdAt": "2026-03-03T12:00:00.000Z"
+    },
+    {
+      "id": "bbbbbbbb-7777-7777-7777-777777777772",
+      "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
+      "customerId": "bbbbbbbb-4444-4444-4444-444444444442",
+      "serviceId": "bbbbbbbb-2222-2222-2222-222222222221",
+      "bookingDate": "2026-03-17",
+      "startTime": "15:00",
+      "endTime": "15:40",
+      "status": "pending",
+      "notes": "Primera visita desde Instagram.",
+      "createdAt": "2026-03-03T12:20:00.000Z"
     }
   ],
   "analyticsEvents": [],

@@ -17,15 +17,21 @@ export const demoBusinessSlug = "demo-barberia";
 export const demoBusinessOptions = [
   {
     slug: "demo-barberia",
-    label: "Demo Barberia",
-    category: "Barberia y peluqueria",
-    description: "Flujo agil para cortes, barba y servicios rapidos con turnos cortos.",
+    label: "Demo Barbería",
+    category: "Barbería y peluquería",
+    description: "Flujo ágil para cortes, barba y servicios rápidos con turnos cortos.",
   },
   {
     slug: "demo-estetica",
-    label: "Demo Estetica",
-    category: "Estetica y skincare",
+    label: "Demo Estética",
+    category: "Estética y skincare",
     description: "Demo pensada para faciales, lifting y sesiones con mayor tiempo de cabina.",
+  },
+  {
+    slug: "demo-nails",
+    label: "Demo Nails",
+    category: "Nails studio",
+    description: "Demo enfocada en manicure, semipermanente y turnos ordenados desde Instagram.",
   },
 ] as const;
 

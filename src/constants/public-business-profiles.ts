@@ -260,20 +260,46 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
         author: "Sofía M.",
         detail: "Cliente recurrente",
       },
+      {
+        quote: "Me sirve ver la duración antes de reservar y reprogramar sin escribir tanto.",
+        author: "Valentina N.",
+        detail: "Cliente nueva por Instagram",
+      },
     ],
     faqs: [
       {
         question: "¿Puedo elegir diseño después?",
         answer: "Sí. La reserva sirve para asegurar el horario y luego se termina de definir el detalle por WhatsApp si hace falta.",
       },
+      {
+        question: "¿Se puede sumar retiro de esmaltado?",
+        answer: "Sí. El negocio puede dejarlo aclarado en el servicio o tomarlo como detalle adicional al confirmar.",
+      },
     ],
-    policies: ["Si vienes con otro esmaltado, avísalo al reservar."],
-    heroImageUrl: "https://picsum.photos/seed/reservaya-nails-hero/1400/900",
+    policies: [
+      "Si vienes con otro esmaltado, avísalo al reservar.",
+      "Para nail art complejo conviene dejar una nota breve en la reserva.",
+    ],
+    instagram: "@demo.nails.studio",
+    tiktok: "@demo.nails.studio",
+    website: "https://reservaya.app/nails",
+    heroImageUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=1400&h=900&fit=crop",
     heroImageAlt: "Mesa de manicura con herramientas y tonos suaves",
     gallery: [
-      { url: "https://picsum.photos/seed/reservaya-nails-1/1000/700", alt: "Mesa de trabajo para manicure" },
-      { url: "https://picsum.photos/seed/reservaya-nails-2/1000/700", alt: "Set de uñas semipermanentes" },
+      {
+        url: "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=1000&h=700&fit=crop",
+        alt: "Mesa de trabajo para manicure",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=1000&h=700&fit=crop",
+        alt: "Set de uñas semipermanentes y colores",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1000&h=700&fit=crop",
+        alt: "Detalle de manicura prolija con acabado brillante",
+      },
     ],
+    mapQuery: "Gorriti 5172, Palermo",
   },
   "demo-consultorio": {
     templateKey: "demo-consultorio",

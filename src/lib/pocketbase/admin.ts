@@ -5,9 +5,6 @@ import {
   isPocketBaseAdminConfigured,
 } from "@/lib/pocketbase/config";
 
-let pocketBaseAdminClient: ReturnType<typeof createPocketBaseClient> | null = null;
-let pocketBaseAdminClientPromise: Promise<ReturnType<typeof createPocketBaseClient>> | null = null;
-
 async function authenticateAdminClient(client: ReturnType<typeof createPocketBaseClient>) {
   await client.collection("_superusers").authWithPassword(
     getPocketBaseAdminEmail(),
@@ -18,30 +15,9 @@ async function authenticateAdminClient(client: ReturnType<typeof createPocketBas
 }
 
 export async function createPocketBaseAdminClient() {
-  if (pocketBaseAdminClient?.authStore.isValid) {
-    return pocketBaseAdminClient;
-  }
-
-  if (!pocketBaseAdminClientPromise) {
-    pocketBaseAdminClientPromise = (async () => {
-      const client = pocketBaseAdminClient ?? createPocketBaseClient();
-
-      await authenticateAdminClient(client);
-
-      pocketBaseAdminClient = client;
-
-      return client;
-    })()
-      .catch((error) => {
-        pocketBaseAdminClient = null;
-        throw error;
-      })
-      .finally(() => {
-        pocketBaseAdminClientPromise = null;
-      });
-  }
-
-  return pocketBaseAdminClientPromise;
+  const client = createPocketBaseClient();
+  await authenticateAdminClient(client);
+  return client;
 }
 
 export function assertPocketBaseAdminConfigured() {

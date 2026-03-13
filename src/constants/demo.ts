@@ -137,6 +137,41 @@ export const estheticsDemoServices = [
   },
 ] satisfies DemoService[];
 
+export const nailsDemoBusiness = {
+  id: "bbbbbbbb-1111-1111-1111-111111111111",
+  name: "Demo Nails Studio",
+  slug: "demo-nails",
+  templateSlug: "demo-nails",
+  phone: "+54 11 5555 0377",
+  email: "hola@nails-demo.estudio",
+  address: "Gorriti 5172, Palermo",
+  timezone: "America/Argentina/Buenos_Aires",
+} satisfies DemoBusiness;
+
+export const nailsDemoServices = [
+  {
+    id: "bbbbbbbb-2222-2222-2222-222222222221",
+    name: "Manicura express",
+    description: "Limpieza, limado y esmaltado simple para resolver en menos de una hora.",
+    durationMinutes: 40,
+    price: 14000,
+  },
+  {
+    id: "bbbbbbbb-2222-2222-2222-222222222222",
+    name: "Semipermanente",
+    description: "Preparación completa con color semipermanente y terminación brillante.",
+    durationMinutes: 70,
+    price: 22000,
+  },
+  {
+    id: "bbbbbbbb-2222-2222-2222-222222222223",
+    name: "Nail art simple",
+    description: "Diseño sutil para sumar detalle sin estirar demasiado el turno.",
+    durationMinutes: 90,
+    price: 26000,
+  },
+] satisfies DemoService[];
+
 export const demoPresets: Record<string, DemoPreset> = {
   [demoBusiness.slug]: {
     business: demoBusiness,
@@ -190,7 +225,7 @@ export const demoPresets: Record<string, DemoPreset> = {
       {
         id: "44444444-4444-4444-4444-444444444442",
         businessId: demoBusiness.id,
-        fullName: "Mara Diaz",
+        fullName: "Mara Díaz",
         phone: "+54 11 4444 2000",
         email: "mara@example.com",
         notes: "Cliente recurrente.",
@@ -219,7 +254,7 @@ export const demoPresets: Record<string, DemoPreset> = {
         startTime: "16:45",
         endTime: "17:15",
         status: "pending",
-        notes: "Esperando confirmacion.",
+        notes: "Esperando confirmación.",
         createdAt: "2026-03-03T10:10:00.000Z",
       },
     ],
@@ -260,7 +295,7 @@ export const demoPresets: Record<string, DemoPreset> = {
         blockedDate: "2026-03-13",
         startTime: "15:00",
         endTime: "16:00",
-        reason: "Capacitacion interna",
+        reason: "Capacitación interna",
       },
     ],
     customers: [
@@ -270,7 +305,7 @@ export const demoPresets: Record<string, DemoPreset> = {
         fullName: "Camila Duarte",
         phone: "+54 11 4333 2200",
         email: "camila@example.com",
-        notes: "Prefiere sesiones despues de las 18 hs.",
+        notes: "Prefiere sesiones después de las 18 hs.",
         createdAt: "2026-03-02T11:00:00.000Z",
       },
       {
@@ -310,13 +345,99 @@ export const demoPresets: Record<string, DemoPreset> = {
       },
     ],
   },
+  [nailsDemoBusiness.slug]: {
+    business: nailsDemoBusiness,
+    services: nailsDemoServices,
+    availabilityRules: [
+      {
+        id: "bbbbbbbb-5555-5555-5555-555555555551",
+        businessId: nailsDemoBusiness.id,
+        dayOfWeek: 2,
+        startTime: "09:30",
+        endTime: "18:30",
+        active: true,
+      },
+      {
+        id: "bbbbbbbb-5555-5555-5555-555555555552",
+        businessId: nailsDemoBusiness.id,
+        dayOfWeek: 4,
+        startTime: "10:00",
+        endTime: "19:00",
+        active: true,
+      },
+      {
+        id: "bbbbbbbb-5555-5555-5555-555555555553",
+        businessId: nailsDemoBusiness.id,
+        dayOfWeek: 6,
+        startTime: "10:00",
+        endTime: "17:00",
+        active: true,
+      },
+    ],
+    blockedSlots: [
+      {
+        id: "bbbbbbbb-6666-6666-6666-666666666661",
+        businessId: nailsDemoBusiness.id,
+        blockedDate: "2026-03-14",
+        startTime: "13:00",
+        endTime: "14:30",
+        reason: "Capacitación de diseños",
+      },
+    ],
+    customers: [
+      {
+        id: "bbbbbbbb-4444-4444-4444-444444444441",
+        businessId: nailsDemoBusiness.id,
+        fullName: "Sofía Martínez",
+        phone: "+54 11 4777 3100",
+        email: "sofi@example.com",
+        notes: "Le gusta reservar cerca del mediodía.",
+        createdAt: "2026-03-02T12:00:00.000Z",
+      },
+      {
+        id: "bbbbbbbb-4444-4444-4444-444444444442",
+        businessId: nailsDemoBusiness.id,
+        fullName: "Valentina Núñez",
+        phone: "+54 11 4777 3110",
+        email: "vale@example.com",
+        notes: "Suele elegir semipermanente.",
+        createdAt: "2026-03-02T12:10:00.000Z",
+      },
+    ],
+    bookings: [
+      {
+        id: "bbbbbbbb-7777-7777-7777-777777777771",
+        businessId: nailsDemoBusiness.id,
+        customerId: "bbbbbbbb-4444-4444-4444-444444444441",
+        serviceId: "bbbbbbbb-2222-2222-2222-222222222222",
+        bookingDate: "2026-03-14",
+        startTime: "10:00",
+        endTime: "11:10",
+        status: "confirmed",
+        notes: "Color nude con retiro previo.",
+        createdAt: "2026-03-03T12:00:00.000Z",
+      },
+      {
+        id: "bbbbbbbb-7777-7777-7777-777777777772",
+        businessId: nailsDemoBusiness.id,
+        customerId: "bbbbbbbb-4444-4444-4444-444444444442",
+        serviceId: "bbbbbbbb-2222-2222-2222-222222222221",
+        bookingDate: "2026-03-17",
+        startTime: "15:00",
+        endTime: "15:40",
+        status: "pending",
+        notes: "Primera visita desde Instagram.",
+        createdAt: "2026-03-03T12:20:00.000Z",
+      },
+    ],
+  },
 };
 
 export const demoSlots = ["10:00", "10:45", "11:30", "16:00", "16:45", "17:30"];
 
 export const demoDashboardData = {
   profileName: "Demo Owner",
-  businessName: "Demo Barberia",
+  businessName: "Demo Barbería",
   businessSlug: "demo-barberia",
   userEmail: "demo@reservaya.app",
   metrics: [
@@ -339,7 +460,7 @@ export const demoDashboardData = {
   bookings: [
     {
       id: "demo-1",
-      name: "Matias Gomez",
+      name: "Matías Gómez",
       service: "Corte + barba",
       date: "2026-03-13",
       time: "10:00",
@@ -348,14 +469,14 @@ export const demoDashboardData = {
     {
       id: "demo-2",
       name: "Luca Sosa",
-      service: "Corte clasico",
+      service: "Corte clásico",
       date: "2026-03-13",
       time: "11:30",
       status: "Pendiente",
     },
     {
       id: "demo-3",
-      name: "Mara Diaz",
+      name: "Mara Díaz",
       service: "Perfilado premium",
       date: "2026-03-13",
       time: "16:45",

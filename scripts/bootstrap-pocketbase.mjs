@@ -257,6 +257,8 @@ async function buildCollections(pb) {
   const bookings = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "bookings",
+    listRule: `${buildActiveRelatedBusinessRule()} && @request.auth.role = 'public_app'`,
+    viewRule: `${buildActiveRelatedBusinessRule()} && @request.auth.role = 'public_app'`,
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       relationField("customer", idByName.customers, { required: true }),
