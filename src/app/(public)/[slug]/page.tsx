@@ -18,9 +18,9 @@ import { getPublicBookingFlowData, getPublicBusinessPageData } from "@/server/qu
 const demoServices = [
   {
     id: "22222222-2222-2222-2222-222222222221",
-    name: "Corte clÃ¡sico",
+    name: "Corte clásico",
     priceLabel: "$ 12.000",
-    description: "Corte con terminaciÃ³n prolija para uso diario.",
+    description: "Corte con terminación prolija para uso diario.",
     durationMinutes: 45,
     popular: false,
   },
@@ -28,7 +28,7 @@ const demoServices = [
     id: "22222222-2222-2222-2222-222222222222",
     name: "Corte + barba",
     priceLabel: "$ 18.000",
-    description: "Servicio completo con perfilado y terminaciÃ³n.",
+    description: "Servicio completo con perfilado y terminación.",
     durationMinutes: 60,
     popular: true,
   },
@@ -36,7 +36,7 @@ const demoServices = [
     id: "22222222-2222-2222-2222-222222222223",
     name: "Perfilado premium",
     priceLabel: "$ 8.000",
-    description: "Repaso rÃ¡pido para mantener prolijo el look.",
+    description: "Repaso rápido para mantener prolijo el look.",
     durationMinutes: 30,
     popular: false,
   },
@@ -182,7 +182,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         "featured" in service && service.featured
           ? service.featuredLabel || "Destacado"
           : index === 0
-            ? "MÃ¡s elegido"
+            ? "Más elegido"
             : "",
     })
   );
@@ -307,10 +307,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
             <div className="mb-6 sm:mb-10 text-center">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                GalerÃ­a
+                Galería
               </p>
               <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                AsÃ­ se vive la experiencia del negocio
+                Así se vive la experiencia del negocio
               </h2>
             </div>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -413,7 +413,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               </div>
 
               <div>
-                <p className="text-xs sm:text-sm font-bold text-foreground">Links rÃ¡pidos</p>
+                <p className="text-xs sm:text-sm font-bold text-foreground">Links rápidos</p>
                 <div className="mt-3 sm:mt-4 flex flex-col gap-1.5">
                   <PublicTrackedLink
                     businessSlug={slug}
@@ -438,7 +438,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     rel="noopener noreferrer"
                     className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                      Ver ubicaciÃ³n
+                      Ver ubicación
                   </a>
                 </div>
               </div>
@@ -493,7 +493,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
             <div className="mt-8 sm:mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
               <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
-                Â© {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
+                © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
                 Desarrollado con <span className="font-bold text-foreground">ReservaYa</span>
@@ -507,6 +507,8 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     </PublicBusinessPageWrapper>
   );
 }
+
+
 
 
 
