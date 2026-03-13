@@ -312,12 +312,18 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
                 Así se vive la experiencia del negocio
               </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:hidden">
+                En celular mostramos una muestra corta para mantener el foco en reservar.
+              </p>
             </div>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pageData.profile.gallery.map((image, index) => (
                 <article
                   key={`${image.url}-${index}`}
-                  className={cn("group cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm", index >= 2 ? "hidden sm:block" : "")}
+                  className={cn(
+                    "group cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm",
+                    index >= pageData.profile.sectionLayout.mobileGalleryItems ? "hidden sm:block" : ""
+                  )}
                   data-lightbox-index={index}
                 >
                   <div
@@ -333,6 +339,12 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               ))}
             </div>
 
+            {pageData.profile.gallery.length > pageData.profile.sectionLayout.mobileGalleryItems ? (
+              <p className="mt-4 text-center text-xs text-muted-foreground sm:hidden">
+                Mostramos una selección corta en celular. El resto suma más en desktop.
+              </p>
+            ) : null}
+
             <GalleryLightbox images={pageData.profile.gallery} />
           </section>
         )}
@@ -343,6 +355,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           accentSoft={pageData.profile.accentSoft}
           surfaceTint={pageData.profile.surfaceTint}
           services={services}
+          mobilePreviewCount={pageData.profile.sectionLayout.mobileServiceCards}
           bookingHrefForService={(serviceId) =>
             buildBookingHref({
               slug,
@@ -354,7 +367,11 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           }
         />
 
-        <TestimonialsSection accentColor={pageData.profile.accent} testimonials={pageData.profile.testimonials} />
+        <TestimonialsSection
+          accentColor={pageData.profile.accent}
+          testimonials={pageData.profile.testimonials}
+          mobileVisibleCount={pageData.profile.sectionLayout.mobileTestimonials}
+        />
 
         <FaqContactSection
           slug={slug}
@@ -367,6 +384,8 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           instagramHref={instagramHref}
           facebookHref={facebookHref}
           tiktokHref={tiktokHref}
+          mobileFaqCount={pageData.profile.sectionLayout.mobileFaqItems}
+          mobilePolicyCount={pageData.profile.sectionLayout.mobilePolicyItems}
         />
 
         {/* Location */}

@@ -21,6 +21,8 @@ type FaqContactSectionProps = {
   instagramHref: string | null;
   facebookHref: string | null;
   tiktokHref: string | null;
+  mobileFaqCount?: number;
+  mobilePolicyCount?: number;
 };
 
 export function FaqContactSection({
@@ -34,6 +36,8 @@ export function FaqContactSection({
   instagramHref,
   facebookHref,
   tiktokHref,
+  mobileFaqCount = 2,
+  mobilePolicyCount = 2,
 }: FaqContactSectionProps) {
   return (
     <section className="border-y border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: surfaceTint }}>
@@ -48,7 +52,7 @@ export function FaqContactSection({
                 key={faq.question}
                 className={cn(
                   "border-b border-border/50 pb-5 last:border-b-0 last:pb-0 sm:pb-6",
-                  index > 1 ? "hidden sm:block" : ""
+                  index >= mobileFaqCount ? "hidden sm:block" : ""
                 )}
               >
                 <h3 className="text-base font-bold text-card-foreground sm:text-lg">{faq.question}</h3>
@@ -56,9 +60,9 @@ export function FaqContactSection({
               </div>
             ))}
           </div>
-          {faqs.length > 2 ? (
+          {faqs.length > mobileFaqCount ? (
             <p className="mt-4 text-xs text-muted-foreground sm:hidden">
-              Dejamos las 2 preguntas clave en celular para que el cierre sea más directo.
+              Dejamos solo lo clave en celular para que el cierre sea más directo.
             </p>
           ) : null}
         </div>
@@ -70,7 +74,13 @@ export function FaqContactSection({
             </p>
             <div className="mt-5 space-y-4 sm:mt-6">
               {policies.map((policy, index) => (
-                <div key={policy} className={cn("flex gap-3 text-sm leading-6 text-muted-foreground", index > 1 ? "hidden sm:flex" : "") }>
+                <div
+                  key={policy}
+                  className={cn(
+                    "flex gap-3 text-sm leading-6 text-muted-foreground",
+                    index >= mobilePolicyCount ? "hidden sm:flex" : ""
+                  )}
+                >
                   <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0" style={{ color: accentColor }} />
                   <span>{policy}</span>
                 </div>

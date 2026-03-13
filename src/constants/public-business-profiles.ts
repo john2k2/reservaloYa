@@ -8,7 +8,16 @@
   cardForeground: string;
 };
 
+export type PublicPageSectionLayout = {
+  mobileGalleryItems: number;
+  mobileServiceCards: number;
+  mobileTestimonials: number;
+  mobileFaqItems: number;
+  mobilePolicyItems: number;
+};
+
 export type PublicBusinessProfile = {
+  templateKey: string;
   badge: string;
   eyebrow: string;
   headline: string;
@@ -20,6 +29,7 @@ export type PublicBusinessProfile = {
   surfaceTint: string;
   enableDarkMode: boolean;
   darkModeColors?: DarkModeColors;
+  sectionLayout: PublicPageSectionLayout;
   benefits: string[];
   trustPoints: string[];
   testimonials: Array<{
@@ -49,8 +59,19 @@ export type PublicBusinessProfile = {
   mapEmbedUrl?: string;
 };
 
-const profileMap: Record<string, PublicBusinessProfile> = {
+type PublicTemplatePreset = Omit<PublicBusinessProfile, "logoUrl">;
+
+const defaultSectionLayout: PublicPageSectionLayout = {
+  mobileGalleryItems: 2,
+  mobileServiceCards: 4,
+  mobileTestimonials: 1,
+  mobileFaqItems: 2,
+  mobilePolicyItems: 2,
+};
+
+const templatePresets: Record<string, PublicTemplatePreset> = {
   "demo-barberia": {
+    templateKey: "demo-barberia",
     badge: "Barbería de barrio premium",
     eyebrow: "Reserva online en segundos",
     headline: "Cortes y barba con turnos claros.",
@@ -62,6 +83,10 @@ const profileMap: Record<string, PublicBusinessProfile> = {
     accentSoft: "#E8DCCB",
     surfaceTint: "#F6F1EA",
     enableDarkMode: false,
+    sectionLayout: {
+      ...defaultSectionLayout,
+      mobileServiceCards: 4,
+    },
     benefits: [
       "Turnos cortos y bien ordenados para evitar pisadas.",
       "Confirmación inmediata con acceso para reprogramar o cancelar.",
@@ -108,7 +133,6 @@ const profileMap: Record<string, PublicBusinessProfile> = {
     facebook: "demo.barberia",
     tiktok: "@demo.barberia",
     website: "https://reservaya.app/barberia",
-    logoLabel: "DB",
     heroImageUrl:
       "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1400&h=900&fit=crop",
     heroImageAlt: "Interior clásico de barbería con sillas vintage y espejos",
@@ -129,8 +153,9 @@ const profileMap: Record<string, PublicBusinessProfile> = {
     mapQuery: "Av. del Libertador 214, Palermo",
   },
   "demo-estetica": {
+    templateKey: "demo-estetica",
     badge: "Estética y skincare",
-    eyebrow: "Cabina reservada con experiencia más cuidada",
+    eyebrow: "Cabina reservada con una experiencia más cuidada",
     headline: "Sesiones de estética con agenda clara y una página que vende mejor.",
     description:
       "Esta demo muestra cómo una marca de estética puede verse más premium, ordenar su agenda y dar confianza antes de la primera visita.",
@@ -140,6 +165,12 @@ const profileMap: Record<string, PublicBusinessProfile> = {
     accentSoft: "#F1D8DF",
     surfaceTint: "#FCF6F7",
     enableDarkMode: false,
+    sectionLayout: {
+      ...defaultSectionLayout,
+      mobileGalleryItems: 2,
+      mobileServiceCards: 3,
+      mobileFaqItems: 2,
+    },
     benefits: [
       "Presentación más cuidada para faciales, lifting y sesiones de cabina.",
       "Políticas claras y preguntas frecuentes visibles antes de reservar.",
@@ -153,8 +184,7 @@ const profileMap: Record<string, PublicBusinessProfile> = {
         detail: "Cliente nueva por Instagram",
       },
       {
-        quote:
-          "Tener horarios, políticas y FAQ visibles me ahorró muchísimas preguntas repetidas.",
+        quote: "Tener horarios, políticas y FAQ visibles me ahorró muchísimas preguntas repetidas.",
         author: "Agustina Rey",
         detail: "Esteticista",
       },
@@ -183,7 +213,6 @@ const profileMap: Record<string, PublicBusinessProfile> = {
     facebook: "aura.estetica.demo",
     tiktok: "@aura.estetica.demo",
     website: "https://reservaya.app/estetica",
-    logoLabel: "AE",
     heroImageUrl: "https://picsum.photos/seed/reservaya-estetica-hero/1400/900",
     heroImageAlt: "Cabina de estética minimalista con tonos suaves",
     gallery: [
@@ -201,6 +230,95 @@ const profileMap: Record<string, PublicBusinessProfile> = {
       },
     ],
     mapQuery: "Honduras 4821, Palermo",
+  },
+  "demo-nails": {
+    templateKey: "demo-nails",
+    badge: "Nails studio boutique",
+    eyebrow: "Turnos prolijos para manicura y belleza de manos",
+    headline: "Reservas claras para manos, semipermanente y beauty express.",
+    description:
+      "Pensada para estudios de uñas que venden mucho por Instagram pero necesitan ordenar agenda, tiempos y reprogramaciones.",
+    primaryCta: "Reservar manicure",
+    secondaryCta: "Consultar disponibilidad",
+    accent: "#B86C8B",
+    accentSoft: "#F3DDE6",
+    surfaceTint: "#FDF7F9",
+    enableDarkMode: false,
+    sectionLayout: {
+      ...defaultSectionLayout,
+      mobileServiceCards: 3,
+    },
+    benefits: [
+      "Servicios visuales y tiempos claros antes de reservar.",
+      "Más orden para cabina, horarios y reprogramaciones.",
+      "Una página que acompaña mejor el tráfico desde Instagram.",
+    ],
+    trustPoints: ["Diseños visibles", "Duración clara", "Agenda ordenada"],
+    testimonials: [
+      {
+        quote: "Se entiende rápido qué elegir y cuánto tarda cada servicio.",
+        author: "Sofía M.",
+        detail: "Cliente recurrente",
+      },
+    ],
+    faqs: [
+      {
+        question: "¿Puedo elegir diseño después?",
+        answer: "Sí. La reserva sirve para asegurar el horario y luego se termina de definir el detalle por WhatsApp si hace falta.",
+      },
+    ],
+    policies: ["Si vienes con otro esmaltado, avísalo al reservar."],
+    heroImageUrl: "https://picsum.photos/seed/reservaya-nails-hero/1400/900",
+    heroImageAlt: "Mesa de manicura con herramientas y tonos suaves",
+    gallery: [
+      { url: "https://picsum.photos/seed/reservaya-nails-1/1000/700", alt: "Mesa de trabajo para manicure" },
+      { url: "https://picsum.photos/seed/reservaya-nails-2/1000/700", alt: "Set de uñas semipermanentes" },
+    ],
+  },
+  "demo-consultorio": {
+    templateKey: "demo-consultorio",
+    badge: "Consultorio con agenda ordenada",
+    eyebrow: "Turnos claros para consulta y seguimiento",
+    headline: "Menos llamados para coordinar y más claridad antes de cada consulta.",
+    description:
+      "Una plantilla orientada a profesionales que necesitan transmitir confianza, ubicación y horarios sin depender del ida y vuelta manual.",
+    primaryCta: "Reservar consulta",
+    secondaryCta: "Resolver una duda",
+    accent: "#3D6B85",
+    accentSoft: "#D9E8EF",
+    surfaceTint: "#F5FAFC",
+    enableDarkMode: false,
+    sectionLayout: {
+      ...defaultSectionLayout,
+      mobileGalleryItems: 1,
+      mobileServiceCards: 3,
+      mobileTestimonials: 1,
+    },
+    benefits: [
+      "Información clara para primera consulta y seguimiento.",
+      "Menos fricción para cambiar o cancelar turnos.",
+      "Mejor presentación profesional desde la página pública.",
+    ],
+    trustPoints: ["Consulta clara", "Ubicación visible", "Reprogramación simple"],
+    testimonials: [
+      {
+        quote: "Me dio mucha más confianza ver todo claro antes de reservar.",
+        author: "Paciente demo",
+        detail: "Primera consulta",
+      },
+    ],
+    faqs: [
+      {
+        question: "¿Qué necesito llevar?",
+        answer: "El negocio puede usar este bloque para anticipar estudios, obras sociales o documentación necesaria.",
+      },
+    ],
+    policies: ["Si es una urgencia, usar canales directos y no la agenda online."],
+    heroImageUrl: "https://picsum.photos/seed/reservaya-consultorio-hero/1400/900",
+    heroImageAlt: "Consultorio moderno con escritorio y luz natural",
+    gallery: [
+      { url: "https://picsum.photos/seed/reservaya-consultorio-1/1000/700", alt: "Recepción del consultorio" },
+    ],
   },
 };
 
@@ -220,56 +338,66 @@ export function getPublicBusinessProfile(
   businessName: string,
   templateSlug?: string
 ): PublicBusinessProfile {
-  return (
-    profileMap[templateSlug ?? slug] ?? {
-      badge: "Reservas online",
-      eyebrow: "Agenda simple para negocios chicos",
-      headline: `${businessName} ahora puede vender mejor sus turnos online.`,
-      description:
-        "Página pública clara, servicios visibles y una experiencia simple para convertir visitas en reservas.",
-      primaryCta: "Reservar ahora",
-      secondaryCta: "Escribir por WhatsApp",
-      accent: "#1F2937",
-      accentSoft: "#E5E7EB",
-      surfaceTint: "#F9FAFB",
-      enableDarkMode: false,
-      benefits: [
-        "Servicios y horarios claros.",
-        "Proceso simple desde el celular.",
-        "Confirmación inmediata del turno.",
-      ],
-      trustPoints: ["Reserva simple", "Horarios visibles", "Gestión online del turno"],
-      testimonials: [
-        {
-          quote: "La experiencia es más clara que tomar turnos solo por mensaje.",
-          author: "Cliente demo",
-          detail: "ReservaYa",
-        },
-      ],
-      faqs: [
-        {
-          question: "¿Cómo funciona la reserva?",
-          answer: "Eliges servicio, fecha, horario y confirmas tus datos.",
-        },
-      ],
-      policies: ["La gestión del turno se hace desde el link recibido al confirmar."],
-      logoLabel: buildDefaultLogoLabel(businessName),
-      heroImageUrl: "https://picsum.photos/seed/reservaya-generic-hero/1400/900",
-      heroImageAlt: `Vista principal de ${businessName}`,
-      gallery: [
-        {
-          url: "https://picsum.photos/seed/reservaya-generic-gallery-1/1000/700",
-          alt: `Espacio principal de ${businessName}`,
-        },
-        {
-          url: "https://picsum.photos/seed/reservaya-generic-gallery-2/1000/700",
-          alt: `Detalle de servicio en ${businessName}`,
-        },
-        {
-          url: "https://picsum.photos/seed/reservaya-generic-gallery-3/1000/700",
-          alt: `Ambiente general de ${businessName}`,
-        },
-      ],
-    }
-  );
+  const resolvedTemplateKey = templateSlug ?? slug;
+  const preset = templatePresets[resolvedTemplateKey];
+
+  if (preset) {
+    return {
+      ...preset,
+      logoLabel: preset.logoLabel ?? buildDefaultLogoLabel(businessName),
+    };
+  }
+
+  return {
+    templateKey: resolvedTemplateKey,
+    badge: "Reservas online",
+    eyebrow: "Agenda simple para negocios chicos",
+    headline: `${businessName} ahora puede vender mejor sus turnos online.`,
+    description:
+      "Página pública clara, servicios visibles y una experiencia simple para convertir visitas en reservas.",
+    primaryCta: "Reservar ahora",
+    secondaryCta: "Escribir por WhatsApp",
+    accent: "#1F2937",
+    accentSoft: "#E5E7EB",
+    surfaceTint: "#F9FAFB",
+    enableDarkMode: false,
+    sectionLayout: defaultSectionLayout,
+    benefits: [
+      "Servicios y horarios claros.",
+      "Proceso simple desde el celular.",
+      "Confirmación inmediata del turno.",
+    ],
+    trustPoints: ["Reserva simple", "Horarios visibles", "Gestión online del turno"],
+    testimonials: [
+      {
+        quote: "La experiencia es más clara que tomar turnos solo por mensaje.",
+        author: "Cliente demo",
+        detail: "ReservaYa",
+      },
+    ],
+    faqs: [
+      {
+        question: "¿Cómo funciona la reserva?",
+        answer: "Eliges servicio, fecha, horario y confirmas tus datos.",
+      },
+    ],
+    policies: ["La gestión del turno se hace desde el link recibido al confirmar."],
+    logoLabel: buildDefaultLogoLabel(businessName),
+    heroImageUrl: "https://picsum.photos/seed/reservaya-generic-hero/1400/900",
+    heroImageAlt: `Vista principal de ${businessName}`,
+    gallery: [
+      {
+        url: "https://picsum.photos/seed/reservaya-generic-gallery-1/1000/700",
+        alt: `Espacio principal de ${businessName}`,
+      },
+      {
+        url: "https://picsum.photos/seed/reservaya-generic-gallery-2/1000/700",
+        alt: `Detalle de servicio en ${businessName}`,
+      },
+      {
+        url: "https://picsum.photos/seed/reservaya-generic-gallery-3/1000/700",
+        alt: `Ambiente general de ${businessName}`,
+      },
+    ],
+  };
 }

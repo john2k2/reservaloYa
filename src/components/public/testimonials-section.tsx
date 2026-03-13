@@ -11,11 +11,13 @@ type Testimonial = {
 type TestimonialsSectionProps = {
   accentColor: string;
   testimonials: Testimonial[];
+  mobileVisibleCount?: number;
 };
 
 export function TestimonialsSection({
   accentColor,
   testimonials,
+  mobileVisibleCount = 1,
 }: TestimonialsSectionProps) {
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
@@ -47,7 +49,7 @@ export function TestimonialsSection({
             key={testimonial.author}
             className={cn(
               "rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl sm:p-8",
-              index > 0 ? "hidden lg:block" : ""
+              index >= mobileVisibleCount ? "hidden lg:block" : ""
             )}
           >
             <div className="flex items-center justify-between gap-4">
@@ -85,9 +87,9 @@ export function TestimonialsSection({
         ))}
       </div>
 
-      {testimonials.length > 1 ? (
+      {testimonials.length > mobileVisibleCount ? (
         <p className="mt-4 text-center text-xs text-muted-foreground lg:hidden">
-          Mostramos un testimonio en celular para que la página no se haga eterna.
+          Mostramos una versión resumida en celular para que la página no se haga eterna.
         </p>
       ) : null}
     </section>

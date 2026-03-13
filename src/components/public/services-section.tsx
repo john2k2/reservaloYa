@@ -21,6 +21,7 @@ type ServicesSectionProps = {
   surfaceTint: string;
   bookingHrefForService: (serviceId: string) => string;
   services: ServiceCard[];
+  mobilePreviewCount?: number;
 };
 
 export function ServicesSection({
@@ -30,8 +31,8 @@ export function ServicesSection({
   surfaceTint,
   bookingHrefForService,
   services,
+  mobilePreviewCount = 4,
 }: ServicesSectionProps) {
-  const mobilePreviewCount = 4;
   const hiddenOnMobile = Math.max(services.length - mobilePreviewCount, 0);
 
   return (
