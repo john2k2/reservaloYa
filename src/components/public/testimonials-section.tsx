@@ -26,7 +26,7 @@ export function TestimonialsSection({
           Lo que dicen nuestros clientes
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-          La confianza no sale de promesas vacias. Sale de una experiencia clara, rapida y facil de repetir.
+          La confianza no sale de promesas vacías. Sale de una experiencia clara, rápida y fácil de repetir.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
@@ -35,7 +35,7 @@ export function TestimonialsSection({
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
             <ShieldCheck className="size-4" style={{ color: accentColor }} />
-            Reprogramacion simple sin llamadas cruzadas
+            Reprogramación simple sin llamadas cruzadas
           </div>
         </div>
       </div>

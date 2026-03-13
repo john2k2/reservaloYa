@@ -55,7 +55,7 @@ export function FaqContactSection({
         <div className="space-y-6">
           <div className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
-              Politicas del turno
+              Políticas del turno
             </p>
             <div className="mt-6 space-y-4">
               {policies.map((policy) => (
@@ -73,7 +73,7 @@ export function FaqContactSection({
 
           <div className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
-              Contacto rapido
+              Contacto rápido
             </p>
             <div className="mt-4 flex flex-col gap-3">
               <a
