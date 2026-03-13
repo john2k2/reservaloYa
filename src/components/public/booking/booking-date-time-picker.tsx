@@ -14,7 +14,7 @@ interface DateOption {
   /** ISO date string yyyy-mm-dd */
   value: string;
   /** Next.js href to navigate when selected */
-  href: string;
+  href?: string;
   isSelected: boolean;
   isToday: boolean;
 }
@@ -27,6 +27,8 @@ interface BookingDateTimePickerProps {
   selectedDateLabel: string;
   slots: string[];
   rescheduleStartTime?: string;
+  onSelectDate?: (date: string) => void;
+  isLoading?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -90,6 +92,8 @@ export function BookingDateTimePicker({
   selectedDateLabel,
   slots,
   rescheduleStartTime,
+  onSelectDate,
+  isLoading = false,
 }: BookingDateTimePickerProps) {
   // Available dates as a Set for fast lookup
   const availableDates = useMemo(
@@ -250,7 +254,20 @@ export function BookingDateTimePicker({
               </span>
             );
 
-            if (isAvailable && option) {
+            if (isAvailable && option && onSelectDate) {
+              return (
+                <button
+                  key={dateStr}
+                  type="button"
+                  onClick={() => onSelectDate(dateStr)}
+                  className="flex items-center justify-center py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                >
+                  {cellContent}
+                </button>
+              );
+            }
+
+            if (isAvailable && option?.href) {
               return (
                 <Link
                   key={dateStr}
@@ -279,13 +296,31 @@ export function BookingDateTimePicker({
           {selectedDateLabel}
         </p>
         <p className="mt-1 text-[11px] text-muted-foreground/60">
-          {hasSlots
+          {isLoading
+            ? "Cargando horarios disponibles..."
+            : hasSlots
             ? `${slots.length} ${slots.length === 1 ? "horario disponible" : "horarios disponibles"}`
             : "Sin horarios disponibles"}
         </p>
 
         {/* Slots list */}
-        {hasSlots ? (
+        {isLoading ? (
+          <div className="mt-4 space-y-4">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index}>
+                <div className="mb-2 h-3 w-20 rounded-full bg-muted/70" />
+                <div className="grid grid-cols-2 gap-1.5">
+                  {Array.from({ length: 4 }).map((__, slotIndex) => (
+                    <div
+                      key={slotIndex}
+                      className="flex min-h-10 animate-pulse items-center justify-center rounded-lg border border-border/50 bg-muted/60"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : hasSlots ? (
           <fieldset className="mt-4 flex-1 space-y-4 overflow-y-auto" style={{ maxHeight: "20rem" }}>
             <legend className="sr-only">Selecciona la hora del turno</legend>
 

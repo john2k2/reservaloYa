@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 
 import { WhatsAppIcon } from "@/components/icons";
-import { BookingDateTimePicker } from "@/components/public/booking/booking-date-time-picker";
 import { BookingPolicyCard } from "@/components/public/booking/booking-policy-card";
+import { BookingScheduleSection } from "@/components/public/booking/booking-schedule-section";
 import { BookingSelectedServiceCard } from "@/components/public/booking/booking-selected-service-card";
 import { BookingServicePicker } from "@/components/public/booking/booking-service-picker";
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
@@ -21,9 +21,9 @@ import { BookingSupportCard } from "@/components/public/booking/booking-support-
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { PublicSubmitButton } from "@/components/public/public-submit-button";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
-import { formatDateLabel } from "@/lib/bookings/format";
+import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
 import { createPublicBookingAction } from "@/server/actions/public-booking";
-import { getPublicBookingFlowData, getPublicManageBookingData } from "@/server/queries/public";
+import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
 
 type BookingPageProps = {
   params: Promise<{ slug: string }>;
@@ -75,35 +75,23 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     : null;
 
   const effectiveServiceId = filters.service ?? rescheduleBooking?.serviceId;
-  const pageData = await getPublicBookingFlowData({
-    slug,
-    serviceId: effectiveServiceId,
-    bookingDate: filters.date,
-  });
+  const pageData = await getPublicBusinessPageData(slug);
 
   if (!pageData) notFound();
 
   const accentColor = pageData.profile?.accent || "#111111";
-  const selectedService = effectiveServiceId ? pageData.selectedService : null;
+  const selectedService =
+    pageData.services.find((service) => service.id === effectiveServiceId) ?? null;
   const whatsappHref = `https://wa.me/${(pageData.business.phone ?? "5491155550199").replace(/\D/g, "")}`;
-  const selectedDateLabel = formatDateLabel(pageData.bookingDate);
-  const hasSlots = pageData.slots.length > 0;
-
-  const datePickerOptions = pageData.dateOptions.map((dateOption) => ({
-    value: dateOption,
-    href: buildBookingHref({
-      slug,
-      serviceId: selectedService?.id,
-      bookingDate: dateOption,
-      rescheduleBookingId: filters.reschedule,
-      token: filters.token,
-      source: filters.utm_source,
-      medium: filters.utm_medium,
-      campaign: filters.utm_campaign,
-    }),
-    isSelected: dateOption === pageData.bookingDate,
-    isToday: dateOption === new Date().toISOString().slice(0, 10),
-  }));
+  const activeDays = pageData.weeklyHours
+    .map((slot, index) => ({ slot, index }))
+    .filter(({ slot }) => !slot.hoursLabel.toLocaleLowerCase("es-AR").includes("cerrado"))
+    .map(({ index }) => index);
+  const fallbackDate = new Date().toISOString().slice(0, 10);
+  const selectedDate =
+    filters.date ??
+    (activeDays.length > 0 ? findNextBookingDate(fallbackDate, activeDays) : fallbackDate);
+  const datePickerOptions = buildBookingDateOptions(selectedDate, activeDays);
 
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>
@@ -182,7 +170,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   </p>
                   <p className="mt-1 text-sm font-medium text-foreground">
                     {selectedService
-                      ? `${pageData.slots.length} horarios disponibles para reservar`
+                      ? "Los horarios se cargan apenas eliges la fecha"
                       : `${pageData.services.length} servicios disponibles para elegir`}
                   </p>
                 </div>
@@ -198,7 +186,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               {/* Hidden fields */}
               <input type="hidden" name="businessSlug" value={slug} />
               <input type="hidden" name="serviceId" value={selectedService.id} />
-              <input type="hidden" name="bookingDate" value={pageData.bookingDate} />
               <input type="hidden" name="rescheduleBookingId" value={rescheduleBooking?.id ?? ""} />
               <input type="hidden" name="manageToken" value={filters.token ?? ""} />
               <input type="hidden" name="source" value={filters.utm_source ?? ""} />
@@ -222,7 +209,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   service={selectedService}
                   changeHref={buildBookingHref({
                     slug,
-                    bookingDate: pageData.bookingDate,
+                    bookingDate: selectedDate,
                     rescheduleBookingId: filters.reschedule,
                     token: filters.token,
                     source: filters.utm_source,
@@ -244,12 +231,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                       Solo dias con disponibilidad real. Selecciona una fecha y despues el horario.
                     </p>
                   </div>
-                  <BookingDateTimePicker
+                  <BookingScheduleSection
+                    slug={slug}
+                    serviceId={selectedService.id}
                     accentColor={accentColor}
-                    dateOptions={datePickerOptions}
-                    selectedDate={pageData.bookingDate}
-                    selectedDateLabel={selectedDateLabel}
-                    slots={pageData.slots}
+                    initialSelectedDate={selectedDate}
+                    initialDateOptions={datePickerOptions}
                     rescheduleStartTime={rescheduleBooking?.startTime}
                   />
                 </section>
@@ -402,15 +389,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                       />
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          Dia
+                          Fecha y horario
                         </p>
                         <p className="mt-1 text-sm font-semibold text-foreground">
-                          {selectedDateLabel}
+                          Calendario activo
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {hasSlots
-                            ? `${pageData.slots.length} horarios disponibles hoy`
-                            : "Cambia de fecha para ver otra disponibilidad"}
+                          Los horarios se cargan al instante cuando eliges una fecha.
                         </p>
                       </div>
                     </div>
@@ -436,9 +421,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
                   <div className="mt-5 rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
                     <p className="text-sm font-semibold text-foreground">
-                      {hasSlots
-                        ? "Solo falta elegir la hora y enviar tus datos."
-                        : "Primero cambia de fecha para habilitar horarios."}
+                      Elige la hora y después envía tus datos.
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       La confirmacion llega al instante y despues puedes gestionar el turno desde
@@ -475,7 +458,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   buildBookingHref({
                     slug,
                     serviceId,
-                    bookingDate: pageData.bookingDate,
+                    bookingDate: selectedDate,
                     rescheduleBookingId: filters.reschedule,
                     token: filters.token,
                     source: filters.utm_source,
