@@ -12,7 +12,6 @@ import {
   MapPin,
   Quote,
   Scissors,
-  ShieldCheck,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -56,7 +55,6 @@ type BusinessHeroProps = {
   startingPriceLabel: string;
   shortAddressLabel: string;
   firstActiveDay: { dayLabel: string; hoursLabel: string } | null;
-  weeklyHours: Array<{ dayLabel: string; hoursLabel: string }>;
   highlightedTestimonial:
     | {
         quote: string;
@@ -193,7 +191,6 @@ export function BusinessHero({
   startingPriceLabel,
   shortAddressLabel,
   firstActiveDay,
-  weeklyHours,
   highlightedTestimonial,
 }: BusinessHeroProps) {
   const heroStyle = {
@@ -209,7 +206,7 @@ export function BusinessHero({
     : undefined;
 
   return (
-    <section className="px-4 pb-8 pt-3 sm:px-6 sm:pb-14 sm:pt-6 lg:pb-20 lg:pt-8" style={heroStyle}>
+    <section className="px-4 pb-8 pt-2 sm:px-6 sm:pb-12 sm:pt-5 lg:pb-16 lg:pt-8" style={heroStyle}>
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-4">
           <div className="flex items-center gap-2.5">
@@ -242,7 +239,7 @@ export function BusinessHero({
           <SocialLinksMobile websiteHref={websiteHref} instagramHref={instagramHref} whatsappHref={whatsappHref} />
         </div>
 
-        <div className="grid gap-6 py-4 sm:py-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-10 lg:py-10">
+        <div className="grid gap-5 py-3 sm:py-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-8 lg:py-8">
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground shadow-sm sm:text-xs">
@@ -302,7 +299,7 @@ export function BusinessHero({
               style={heroImageStyle}
             />
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">
+            <div className="mt-4 grid grid-cols-3 gap-3 sm:hidden">
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Calendar className="size-3" style={{ color: profile.accent }} />
@@ -319,13 +316,15 @@ export function BusinessHero({
                 <p className="mt-2 text-base font-bold text-foreground">{servicesCount} opciones</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">Precios visibles</p>
               </div>
-              <div className="col-span-2 rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
+              <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Clock className="size-3" style={{ color: profile.accent }} />
-                  Horarios
+                  Desde
                 </div>
-                <p className="mt-2 text-base font-bold text-foreground">{firstActiveDay ? firstActiveDay.dayLabel : "Consultar"}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{firstActiveDay ? firstActiveDay.hoursLabel : "Agenda activa"}</p>
+                <p className="mt-2 text-base font-bold text-foreground">{startingPriceLabel}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {firstActiveDay ? `${firstActiveDay.dayLabel} ${firstActiveDay.hoursLabel}` : "Agenda activa"}
+                </p>
               </div>
             </div>
 
@@ -344,16 +343,11 @@ export function BusinessHero({
               ))}
             </div>
 
-            <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-3">
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm sm:p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Próximo turno</p>
                 <p className="mt-2 text-base font-bold text-foreground sm:text-lg">{nextAvailableSlot.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">{nextAvailableSlot.detail}</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm sm:p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Valor claro</p>
-                <p className="mt-2 text-base font-bold text-foreground sm:text-lg">{startingPriceLabel}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Precios visibles antes de reservar</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm sm:p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Oferta real</p>
@@ -361,9 +355,11 @@ export function BusinessHero({
                 <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Opciones claras con duración definida</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm sm:p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Ubicación</p>
-                <p className="mt-2 text-base font-bold text-foreground sm:text-lg">{shortAddressLabel}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Con acceso rápido al mapa</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Desde</p>
+                <p className="mt-2 text-base font-bold text-foreground sm:text-lg">{startingPriceLabel}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                  {firstActiveDay ? `${firstActiveDay.dayLabel} · ${firstActiveDay.hoursLabel}` : "Horarios visibles antes de reservar"}
+                </p>
               </div>
             </div>
           </div>
@@ -376,61 +372,44 @@ export function BusinessHero({
               style={heroImageStyle}
             />
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-border/60 bg-background p-5">
-                <Sparkles aria-hidden="true" className="size-5" style={{ color: profile.accent }} />
-                <p className="mt-3 text-sm font-medium text-muted-foreground">Experiencia</p>
-                <p className="mt-1 text-base font-semibold text-foreground">Reserva clara desde el primer vistazo</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background p-5">
-                <ShieldCheck aria-hidden="true" className="size-5" style={{ color: profile.accent }} />
-                <p className="mt-3 text-sm font-medium text-muted-foreground">Gestión</p>
-                <p className="mt-1 text-base font-semibold text-foreground">Link directo para cambiar o cancelar</p>
-              </div>
-            </div>
-
-            {highlightedTestimonial ? (
-              <div className="mt-4 rounded-xl border border-border/60 bg-background p-5">
-                <div className="flex items-center gap-2">
-                  <Quote aria-hidden="true" className="size-4" style={{ color: profile.accent }} />
-                  <p className="text-sm font-medium text-muted-foreground">Lo primero que perciben</p>
-                </div>
-                <p className="mt-2 text-base font-semibold leading-7 text-foreground">&ldquo;{highlightedTestimonial.quote}&rdquo;</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {highlightedTestimonial.author} · {highlightedTestimonial.detail}
-                </p>
-              </div>
-            ) : null}
-
-            <div className="mt-4 rounded-xl border border-border/60 bg-background p-5">
-              <div className="flex items-start gap-2">
-                <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" style={{ color: profile.accent }} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-foreground">{shortAddressLabel}</p>
-                  <a
-                    href={mapsHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1.5 inline-flex text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-                  >
-                    Ver en Google Maps
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-border/60 bg-background p-5">
-              <div className="flex items-center gap-2">
-                <Clock aria-hidden="true" className="size-4" style={{ color: profile.accent }} />
-                <p className="text-sm font-medium text-muted-foreground">Horarios de atención</p>
-              </div>
-              <div className="mt-2 space-y-1">
-                {weeklyHours.slice(0, 4).map((slot) => (
-                  <div key={slot.dayLabel} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="font-medium text-foreground">{slot.dayLabel}</span>
-                    <span className="text-muted-foreground">{slot.hoursLabel}</span>
+            <div className="mt-4 grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+              {highlightedTestimonial ? (
+                <div className="rounded-xl border border-border/60 bg-background p-5">
+                  <div className="flex items-center gap-2">
+                    <Quote aria-hidden="true" className="size-4" style={{ color: profile.accent }} />
+                    <p className="text-sm font-medium text-muted-foreground">Lo primero que perciben</p>
                   </div>
-                ))}
+                  <p className="mt-2 text-base font-semibold leading-7 text-foreground">&ldquo;{highlightedTestimonial.quote}&rdquo;</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {highlightedTestimonial.author} · {highlightedTestimonial.detail}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border/60 bg-background p-5">
+                  <Sparkles aria-hidden="true" className="size-5" style={{ color: profile.accent }} />
+                  <p className="mt-3 text-sm font-medium text-muted-foreground">Experiencia</p>
+                  <p className="mt-1 text-base font-semibold text-foreground">Reservar es rápido y el turno se gestiona desde el mismo link.</p>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-border/60 bg-background p-5">
+                <div className="flex items-start gap-2">
+                  <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" style={{ color: profile.accent }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-foreground">{shortAddressLabel}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {firstActiveDay ? `${firstActiveDay.dayLabel} · ${firstActiveDay.hoursLabel}` : "Horarios visibles antes de reservar"}
+                    </p>
+                    <a
+                      href={mapsHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                    >
+                      Ver en Google Maps
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

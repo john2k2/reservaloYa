@@ -86,12 +86,6 @@ export function TestimonialsSection({
           </article>
         ))}
       </div>
-
-      {testimonials.length > mobileVisibleCount ? (
-        <p className="mt-4 text-center text-xs text-muted-foreground lg:hidden">
-          Mostramos una versión resumida en celular para mantener el foco en reservar.
-        </p>
-      ) : null}
     </section>
   );
 }

@@ -60,11 +60,6 @@ export function FaqContactSection({
               </div>
             ))}
           </div>
-          {faqs.length > mobileFaqCount ? (
-            <p className="mt-4 text-xs text-muted-foreground sm:hidden">
-              Dejamos solo lo clave en celular para que el cierre sea más directo.
-            </p>
-          ) : null}
         </div>
 
         <div className="space-y-5 sm:space-y-6">
@@ -93,7 +88,7 @@ export function FaqContactSection({
               Cierre rápido
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Si el usuario llegó hasta acá, lo mejor es resolver la reserva o una duda puntual sin desviar el flujo.
+              Reserva online o resuelve una duda puntual sin salir del mismo flujo.
             </p>
             <div className="mt-4 flex flex-col gap-3">
               <PublicTrackedLink

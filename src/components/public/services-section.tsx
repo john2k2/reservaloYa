@@ -46,9 +46,6 @@ export function ServicesSection({
             <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:mt-3 sm:text-2xl lg:text-3xl">
               Elegí el turno que mejor encaja con tu agenda
             </h2>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:hidden">
-              En celular mostramos primero lo más importante para que la decisión sea rápida.
-            </p>
           </div>
           <span className="hidden text-xs font-semibold uppercase tracking-widest text-muted-foreground sm:block sm:text-sm">
             {services.length} opciones
@@ -115,8 +112,7 @@ export function ServicesSection({
 
         {hiddenOnMobile > 0 ? (
           <div className="mt-5 rounded-2xl border border-border/60 bg-background/85 p-4 text-center shadow-sm sm:hidden">
-            <p className="text-sm font-medium text-foreground">+ {hiddenOnMobile} servicios más dentro del flujo de reserva.</p>
-            <p className="mt-1 text-xs text-muted-foreground">Priorizamos los más buscados para que la navegación sea más ágil en celular.</p>
+            <p className="text-sm font-medium text-foreground">+ {hiddenOnMobile} servicios más disponibles dentro del flujo de reserva.</p>
           </div>
         ) : null}
       </div>

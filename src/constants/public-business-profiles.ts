@@ -63,7 +63,7 @@ type PublicTemplatePreset = Omit<PublicBusinessProfile, "logoUrl">;
 
 const defaultSectionLayout: PublicPageSectionLayout = {
   mobileGalleryItems: 2,
-  mobileServiceCards: 4,
+  mobileServiceCards: 3,
   mobileTestimonials: 1,
   mobileFaqItems: 2,
   mobilePolicyItems: 2,
@@ -78,15 +78,12 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     description:
       "Sin mensajes de WhatsApp cruzados. Elige tu servicio, día y horario. Confirmación inmediata con acceso para reprogramar o cancelar.",
     primaryCta: "Reservar turno",
-    secondaryCta: "Consultar por WhatsApp",
+    secondaryCta: "Soporte por WhatsApp",
     accent: "#8F6A3A",
     accentSoft: "#E8DCCB",
     surfaceTint: "#F6F1EA",
     enableDarkMode: false,
-    sectionLayout: {
-      ...defaultSectionLayout,
-      mobileServiceCards: 4,
-    },
+    sectionLayout: defaultSectionLayout,
     benefits: [
       "Turnos cortos y bien ordenados para evitar pisadas.",
       "Confirmación inmediata con acceso para reprogramar o cancelar.",
@@ -414,7 +411,7 @@ export function getPublicBusinessProfile(
     description:
       "Página pública clara, servicios visibles y una experiencia simple para convertir visitas en reservas.",
     primaryCta: "Reservar ahora",
-    secondaryCta: "Escribir por WhatsApp",
+    secondaryCta: "Soporte por WhatsApp",
     accent: "#1F2937",
     accentSoft: "#E5E7EB",
     surfaceTint: "#F9FAFB",

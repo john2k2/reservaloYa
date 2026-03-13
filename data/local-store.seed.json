@@ -122,7 +122,7 @@
       "id": "bbbbbbbb-2222-2222-2222-222222222222",
       "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
       "name": "Semipermanente",
-      "description": "Preparaci?n completa con color semipermanente y terminaci?n brillante.",
+      "description": "Preparación completa con color semipermanente y terminación brillante.",
       "durationMinutes": 70,
       "price": 22000,
       "active": true,
@@ -132,7 +132,7 @@
       "id": "bbbbbbbb-2222-2222-2222-222222222223",
       "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
       "name": "Nail art simple",
-      "description": "Dise?o sutil para sumar detalle sin estirar demasiado el turno.",
+      "description": "Diseño sutil para sumar detalle sin estirar demasiado el turno.",
       "durationMinutes": 90,
       "price": 26000,
       "active": true,
@@ -142,7 +142,7 @@
       "id": "cccccccc-2222-2222-2222-222222222221",
       "businessId": "cccccccc-1111-1111-1111-111111111111",
       "name": "Primera consulta",
-      "description": "Turno inicial para evaluaci?n, antecedentes y definici?n de seguimiento.",
+      "description": "Turno inicial para evaluación, antecedentes y definición de seguimiento.",
       "durationMinutes": 45,
       "price": 26000,
       "active": true,
@@ -152,7 +152,7 @@
       "id": "cccccccc-2222-2222-2222-222222222222",
       "businessId": "cccccccc-1111-1111-1111-111111111111",
       "name": "Consulta de seguimiento",
-      "description": "Revisi?n de evoluci?n, ajuste de indicaciones y pr?ximos pasos.",
+      "description": "Revisión de evolución, ajuste de indicaciones y próximos pasos.",
       "durationMinutes": 30,
       "price": 18000,
       "active": true,
@@ -290,7 +290,7 @@
       "blockedDate": "2026-03-14",
       "startTime": "13:00",
       "endTime": "14:30",
-      "reason": "Capacitaci?n de dise?os"
+      "reason": "Capacitación de diseños"
     },
     {
       "id": "cccccccc-6666-6666-6666-666666666661",
@@ -341,16 +341,16 @@
     {
       "id": "bbbbbbbb-4444-4444-4444-444444444441",
       "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
-      "fullName": "Sof?a Mart?nez",
+      "fullName": "Sofía Martínez",
       "phone": "+54 11 4777 3100",
       "email": "sofi@example.com",
-      "notes": "Le gusta reservar cerca del mediod?a.",
+      "notes": "Le gusta reservar cerca del mediodía.",
       "createdAt": "2026-03-02T12:00:00.000Z"
     },
     {
       "id": "bbbbbbbb-4444-4444-4444-444444444442",
       "businessId": "bbbbbbbb-1111-1111-1111-111111111111",
-      "fullName": "Valentina N??ez",
+      "fullName": "Valentina Núñez",
       "phone": "+54 11 4777 3110",
       "email": "vale@example.com",
       "notes": "Suele elegir semipermanente.",
@@ -359,16 +359,16 @@
     {
       "id": "cccccccc-4444-4444-4444-444444444441",
       "businessId": "cccccccc-1111-1111-1111-111111111111",
-      "fullName": "Mart?n Quiroga",
+      "fullName": "Martín Quiroga",
       "phone": "+54 11 4888 1200",
       "email": "martin@example.com",
-      "notes": "Primera consulta por recomendaci?n.",
+      "notes": "Primera consulta por recomendación.",
       "createdAt": "2026-03-02T13:00:00.000Z"
     },
     {
       "id": "cccccccc-4444-4444-4444-444444444442",
       "businessId": "cccccccc-1111-1111-1111-111111111111",
-      "fullName": "Luc?a Ferrer",
+      "fullName": "Lucía Ferrer",
       "phone": "+54 11 4888 1210",
       "email": "lucia@example.com",
       "notes": "Trae estudios recientes para control.",
@@ -457,7 +457,7 @@
       "startTime": "10:00",
       "endTime": "10:45",
       "status": "confirmed",
-      "notes": "Consulta inicial con historia cl?nica.",
+      "notes": "Consulta inicial con historia clínica.",
       "createdAt": "2026-03-03T13:00:00.000Z"
     },
     {
