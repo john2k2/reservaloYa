@@ -390,13 +390,17 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
   };
 }
 
-export async function getPocketBasePublicBookingFlowData(input: {
-  slug: string;
-  serviceId?: string;
-  bookingDate?: string;
-}) {
+export async function getPocketBasePublicBookingFlowData(
+  input: {
+    slug: string;
+    serviceId?: string;
+    bookingDate?: string;
+  },
+  preloadedPageData?: Awaited<ReturnType<typeof getPocketBasePublicBusinessPageData>> | null
+) {
   const pb = await getPublicReadClient();
-  const pageData = await getPocketBasePublicBusinessPageData(input.slug);
+  const pageData =
+    preloadedPageData ?? (await getPocketBasePublicBusinessPageData(input.slug));
 
   if (!pageData) {
     return null;
@@ -427,10 +431,7 @@ export async function getPocketBasePublicBookingFlowData(input: {
   const dayOfWeek = getDayOfWeek(selectedDate);
   const dateOptions = buildBookingDateOptions(selectedDate, activeDays);
 
-  const [rules, blocked, bookings] = await Promise.all([
-    listPocketBaseRecordsWithClient<AvailabilityRuleRecord>(pb, "availability_rules", {
-      filter: pb.filter("business = {:business}", { business: pageData.business.id }),
-    }),
+  const [blocked, bookings] = await Promise.all([
     listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
       filter: joinPocketBaseFilters(
         pb.filter("business = {:business}", { business: pageData.business.id }),
@@ -444,7 +445,7 @@ export async function getPocketBasePublicBookingFlowData(input: {
       ),
     }),
   ]);
-  const dayRules = rules.filter(
+  const dayRules = allRules.filter(
     (rule) =>
       rule.dayOfWeek === dayOfWeek &&
       isActiveRecord(rule)

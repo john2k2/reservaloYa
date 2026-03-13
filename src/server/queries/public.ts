@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 
 import { demoSlots } from "@/constants/demo";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
@@ -16,14 +16,30 @@ import {
   getPocketBasePublicBusinessPageData,
 } from "@/server/pocketbase-store";
 
-export async function getPublicBusinessPageData(slug: string) {
-  noStore();
+const getCachedLocalPublicBusinessPageData = unstable_cache(
+  async (slug: string) => getLocalPublicBusinessPageData(slug),
+  ["public-business-local"],
+  {
+    revalidate: 60,
+    tags: ["public-business"],
+  }
+);
 
+const getCachedPocketBasePublicBusinessPageData = unstable_cache(
+  async (slug: string) => getPocketBasePublicBusinessPageData(slug),
+  ["public-business-pocketbase"],
+  {
+    revalidate: 60,
+    tags: ["public-business"],
+  }
+);
+
+export async function getPublicBusinessPageData(slug: string) {
   if (!isPocketBaseConfigured()) {
-    return getLocalPublicBusinessPageData(slug);
+    return getCachedLocalPublicBusinessPageData(slug);
   }
 
-  return getPocketBasePublicBusinessPageData(slug);
+  return getCachedPocketBasePublicBusinessPageData(slug);
 }
 
 export async function getPublicBookingFlowData({
@@ -65,7 +81,10 @@ export async function getPublicBookingFlowData({
       bookingDate,
     });
   }
-  return getPocketBasePublicBookingFlowData({ slug, serviceId, bookingDate });
+  return getPocketBasePublicBookingFlowData(
+    { slug, serviceId, bookingDate },
+    pageData
+  );
 }
 
 export async function getBookingConfirmationData({
