@@ -450,9 +450,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           ) : (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
               <BookingServicePicker
+                businessSlug={slug}
                 accentColor={accentColor}
                 heading="Selecciona el servicio que quieres reservar"
                 description="Este es el primer paso real del flujo. Cuando elijas uno, te mostraremos solo la disponibilidad que corresponde."
+                prefetchDate={selectedDate}
                 services={pageData.services}
                 getHref={(serviceId) =>
                   buildBookingHref({

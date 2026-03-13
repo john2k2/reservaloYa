@@ -1,10 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight, Clock3 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
 
 type BookingServicePickerProps = {
+  businessSlug: string;
   accentColor: string;
   heading: string;
   description: string;
+  prefetchDate: string;
   services: Array<{
     id: string;
     name: string;
@@ -15,12 +21,40 @@ type BookingServicePickerProps = {
 };
 
 export function BookingServicePicker({
+  businessSlug,
   accentColor,
   heading,
   description,
+  prefetchDate,
   services,
   getHref,
 }: BookingServicePickerProps) {
+  const router = useRouter();
+  const prefetchedKeys = useRef(new Set<string>());
+
+  const prefetchService = (serviceId: string) => {
+    const cacheKey = `${serviceId}:${prefetchDate}`;
+
+    if (prefetchedKeys.current.has(cacheKey)) {
+      return;
+    }
+
+    prefetchedKeys.current.add(cacheKey);
+
+    const href = getHref(serviceId);
+    router.prefetch(href);
+
+    void fetch(
+      `/api/public/booking-slots?slug=${encodeURIComponent(businessSlug)}&serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(prefetchDate)}`,
+      {
+        method: "GET",
+        cache: "force-cache",
+      }
+    ).catch(() => {
+      prefetchedKeys.current.delete(cacheKey);
+    });
+  };
+
   return (
     <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
       <div className="max-w-2xl">
@@ -44,6 +78,10 @@ export function BookingServicePicker({
           <Link
             key={service.id}
             href={getHref(service.id)}
+            prefetch
+            onMouseEnter={() => prefetchService(service.id)}
+            onFocus={() => prefetchService(service.id)}
+            onTouchStart={() => prefetchService(service.id)}
             className="group relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/85 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <span
