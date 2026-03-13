@@ -33,6 +33,12 @@ export const demoBusinessOptions = [
     category: "Nails studio",
     description: "Demo enfocada en manicure, semipermanente y turnos ordenados desde Instagram.",
   },
+  {
+    slug: "demo-consultorio",
+    label: "Demo Consultorio",
+    category: "Consultorio y salud",
+    description: "Demo orientada a primeras consultas, seguimientos y agenda clara para profesionales.",
+  },
 ] as const;
 
 export const landingProblems = [

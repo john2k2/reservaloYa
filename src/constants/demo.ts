@@ -172,6 +172,41 @@ export const nailsDemoServices = [
   },
 ] satisfies DemoService[];
 
+export const consultorioDemoBusiness = {
+  id: "cccccccc-1111-1111-1111-111111111111",
+  name: "Demo Consultorio Norte",
+  slug: "demo-consultorio",
+  templateSlug: "demo-consultorio",
+  phone: "+54 11 5555 0466",
+  email: "hola@consultorio-demo.med",
+  address: "Av. Cabildo 1847, Belgrano",
+  timezone: "America/Argentina/Buenos_Aires",
+} satisfies DemoBusiness;
+
+export const consultorioDemoServices = [
+  {
+    id: "cccccccc-2222-2222-2222-222222222221",
+    name: "Primera consulta",
+    description: "Turno inicial para evaluación, antecedentes y definición de seguimiento.",
+    durationMinutes: 45,
+    price: 26000,
+  },
+  {
+    id: "cccccccc-2222-2222-2222-222222222222",
+    name: "Consulta de seguimiento",
+    description: "Revisión de evolución, ajuste de indicaciones y próximos pasos.",
+    durationMinutes: 30,
+    price: 18000,
+  },
+  {
+    id: "cccccccc-2222-2222-2222-222222222223",
+    name: "Control de resultados",
+    description: "Espacio breve para revisar estudios y resolver dudas puntuales.",
+    durationMinutes: 20,
+    price: 14000,
+  },
+] satisfies DemoService[];
+
 export const demoPresets: Record<string, DemoPreset> = {
   [demoBusiness.slug]: {
     business: demoBusiness,
@@ -428,6 +463,92 @@ export const demoPresets: Record<string, DemoPreset> = {
         status: "pending",
         notes: "Primera visita desde Instagram.",
         createdAt: "2026-03-03T12:20:00.000Z",
+      },
+    ],
+  },
+  [consultorioDemoBusiness.slug]: {
+    business: consultorioDemoBusiness,
+    services: consultorioDemoServices,
+    availabilityRules: [
+      {
+        id: "cccccccc-5555-5555-5555-555555555551",
+        businessId: consultorioDemoBusiness.id,
+        dayOfWeek: 1,
+        startTime: "09:00",
+        endTime: "15:00",
+        active: true,
+      },
+      {
+        id: "cccccccc-5555-5555-5555-555555555552",
+        businessId: consultorioDemoBusiness.id,
+        dayOfWeek: 3,
+        startTime: "10:00",
+        endTime: "18:00",
+        active: true,
+      },
+      {
+        id: "cccccccc-5555-5555-5555-555555555553",
+        businessId: consultorioDemoBusiness.id,
+        dayOfWeek: 5,
+        startTime: "09:00",
+        endTime: "13:00",
+        active: true,
+      },
+    ],
+    blockedSlots: [
+      {
+        id: "cccccccc-6666-6666-6666-666666666661",
+        businessId: consultorioDemoBusiness.id,
+        blockedDate: "2026-03-16",
+        startTime: "12:00",
+        endTime: "13:00",
+        reason: "Ateneo interno",
+      },
+    ],
+    customers: [
+      {
+        id: "cccccccc-4444-4444-4444-444444444441",
+        businessId: consultorioDemoBusiness.id,
+        fullName: "Martín Quiroga",
+        phone: "+54 11 4888 1200",
+        email: "martin@example.com",
+        notes: "Primera consulta por recomendación.",
+        createdAt: "2026-03-02T13:00:00.000Z",
+      },
+      {
+        id: "cccccccc-4444-4444-4444-444444444442",
+        businessId: consultorioDemoBusiness.id,
+        fullName: "Lucía Ferrer",
+        phone: "+54 11 4888 1210",
+        email: "lucia@example.com",
+        notes: "Trae estudios recientes para control.",
+        createdAt: "2026-03-02T13:10:00.000Z",
+      },
+    ],
+    bookings: [
+      {
+        id: "cccccccc-7777-7777-7777-777777777771",
+        businessId: consultorioDemoBusiness.id,
+        customerId: "cccccccc-4444-4444-4444-444444444441",
+        serviceId: "cccccccc-2222-2222-2222-222222222221",
+        bookingDate: "2026-03-16",
+        startTime: "10:00",
+        endTime: "10:45",
+        status: "confirmed",
+        notes: "Consulta inicial con historia clínica.",
+        createdAt: "2026-03-03T13:00:00.000Z",
+      },
+      {
+        id: "cccccccc-7777-7777-7777-777777777772",
+        businessId: consultorioDemoBusiness.id,
+        customerId: "cccccccc-4444-4444-4444-444444444442",
+        serviceId: "cccccccc-2222-2222-2222-222222222222",
+        bookingDate: "2026-03-18",
+        startTime: "16:30",
+        endTime: "17:00",
+        status: "pending",
+        notes: "Seguimiento post estudios.",
+        createdAt: "2026-03-03T13:20:00.000Z",
       },
     ],
   },
