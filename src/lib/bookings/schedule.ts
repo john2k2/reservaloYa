@@ -1,4 +1,4 @@
-const weekdayLabels = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+﻿const weekdayLabels = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export function buildWeeklySchedule(
   rules: Array<{ dayOfWeek: number; startTime: string; endTime: string }>
@@ -14,7 +14,7 @@ export function buildWeeklySchedule(
   return Array.from(grouped.entries())
     .sort((left, right) => left[0] - right[0])
     .map(([dayOfWeek, windows]) => ({
-      dayLabel: weekdayLabels[dayOfWeek] ?? "Dia",
+      dayLabel: weekdayLabels[dayOfWeek] ?? "Día",
       hoursLabel: windows.join(" · "),
     }));
 }

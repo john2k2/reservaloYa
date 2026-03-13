@@ -69,7 +69,7 @@ export type DemoPreset = {
 
 export const demoBusiness = {
   id: "11111111-1111-1111-1111-111111111111",
-  name: "Demo Barberia",
+  name: "Demo Barbería",
   slug: "demo-barberia",
   templateSlug: "demo-barberia",
   phone: "+54 11 5555 0199",
@@ -81,22 +81,22 @@ export const demoBusiness = {
 export const demoServices = [
   {
     id: "22222222-2222-2222-2222-222222222221",
-    name: "Corte clasico",
-    description: "Corte con terminacion prolija para uso diario.",
+    name: "Corte clásico",
+    description: "Corte con terminación prolija para uso diario.",
     durationMinutes: 45,
     price: 12000,
   },
   {
     id: "22222222-2222-2222-2222-222222222222",
     name: "Corte + barba",
-    description: "Servicio completo con perfilado y terminacion.",
+    description: "Servicio completo con perfilado y terminación.",
     durationMinutes: 60,
     price: 18000,
   },
   {
     id: "22222222-2222-2222-2222-222222222223",
     name: "Perfilado premium",
-    description: "Repaso rapido para mantener prolijo el look.",
+    description: "Repaso rápido para mantener prolijo el look.",
     durationMinutes: 30,
     price: 8000,
   },
@@ -104,7 +104,7 @@ export const demoServices = [
 
 export const estheticsDemoBusiness = {
   id: "aaaaaaaa-1111-1111-1111-111111111111",
-  name: "Demo Estetica Aura",
+  name: "Demo Estética Aura",
   slug: "demo-estetica",
   templateSlug: "demo-estetica",
   phone: "+54 11 5555 0288",
@@ -117,21 +117,21 @@ export const estheticsDemoServices = [
   {
     id: "aaaaaaaa-2222-2222-2222-222222222221",
     name: "Limpieza facial profunda",
-    description: "Sesion completa con extracciones suaves, mascara calmante y cierre hidratante.",
+    description: "Sesión completa con extracciones suaves, máscara calmante y cierre hidratante.",
     durationMinutes: 75,
     price: 28000,
   },
   {
     id: "aaaaaaaa-2222-2222-2222-222222222222",
     name: "Dermaplaning glow",
-    description: "Exfoliacion precisa para mejorar textura, luminosidad y absorcion de activos.",
+    description: "Exfoliación precisa para mejorar textura, luminosidad y absorción de activos.",
     durationMinutes: 60,
     price: 24000,
   },
   {
     id: "aaaaaaaa-2222-2222-2222-222222222223",
-    name: "Lifting de pestanas",
-    description: "Curvatura y definicion natural con acabado prolijo para varias semanas.",
+    name: "Lifting de pestañas",
+    description: "Curvatura y definición natural con acabado prolijo para varias semanas.",
     durationMinutes: 50,
     price: 22000,
   },
