@@ -11,9 +11,8 @@ import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
-import { formatShortDateLabel, formatTimeLabel } from "@/lib/bookings/format";
 import { cn } from "@/lib/utils";
-import { getPublicBookingFlowData, getPublicBusinessPageData } from "@/server/queries/public";
+import { getPublicBusinessPageData } from "@/server/queries/public";
 
 const demoServices = [
   {
@@ -145,23 +144,19 @@ function getShortAddressLabel(address?: string | null) {
 }
 
 function getNextAvailableSlotLabel(input?: {
-  bookingDate?: string;
-  dateOptions?: string[];
-  slots?: string[];
+  dayLabel: string;
+  hoursLabel: string;
 } | null) {
-  const firstDate = input?.bookingDate ?? input?.dateOptions?.[0];
-  const firstSlot = input?.slots?.[0];
-
-  if (!firstDate || !firstSlot) {
+  if (!input) {
     return {
       title: "Agenda activa",
-      detail: "Mira horarios disponibles",
+      detail: "Ver disponibilidad",
     };
   }
 
   return {
-    title: formatShortDateLabel(firstDate),
-    detail: formatTimeLabel(firstSlot),
+    title: input.dayLabel,
+    detail: input.hoursLabel,
   };
 }
 
@@ -187,18 +182,11 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     })
   );
 
-  const bookingFlowPreview = services[0]
-    ? await getPublicBookingFlowData({
-        slug,
-        serviceId: services[0].id,
-      })
-    : null;
-
   const startingPriceLabel = getStartingPriceLabel(services);
   const firstActiveDay = getFirstActiveDayLabel(pageData.weeklyHours);
   const highlightedTestimonial = pageData.profile.testimonials[0] ?? null;
   const shortAddressLabel = getShortAddressLabel(pageData.business.address);
-  const nextAvailableSlot = getNextAvailableSlotLabel(bookingFlowPreview);
+  const nextAvailableSlot = getNextAvailableSlotLabel(firstActiveDay);
 
   const whatsappHref = buildWhatsAppHref(pageData.business.phone, pageData.business.name);
   const instagramHref = buildInstagramHref(pageData.profile.instagram);
