@@ -39,7 +39,7 @@ export function StickyHeader({
 
   useEffect(() => {
     const handleScroll = () => {
-      const mobileThreshold = window.innerWidth < 640 ? 560 : 400;
+      const mobileThreshold = window.innerWidth < 640 ? 720 : 400;
       setIsVisible(window.scrollY > mobileThreshold);
     };
 
@@ -50,7 +50,7 @@ export function StickyHeader({
   if (!isVisible) return null;
 
   return (
-    <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
+    <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2.5 sm:gap-3">
           <div
@@ -66,7 +66,9 @@ export function StickyHeader({
         </div>
         
         <div className="flex shrink-0 items-center gap-2">
-          <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
+          <div className="hidden sm:block">
+            <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
+          </div>
           <a
             href={whatsappHref}
             target="_blank"
@@ -87,7 +89,7 @@ export function StickyHeader({
             pagePath={`/${businessSlug}`}
             className={cn(
               buttonVariants({ variant: "default", size: "sm" }),
-              "h-10 min-w-[132px] rounded-full px-4 font-semibold sm:px-5"
+              "h-10 min-w-[128px] rounded-full px-4 font-semibold sm:min-w-[132px] sm:px-5"
             )}
             style={{ backgroundColor: accent, borderColor: accent }}
           >
