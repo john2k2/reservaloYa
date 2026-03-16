@@ -78,12 +78,12 @@ function selectField(name, values, options = {}) {
   });
 }
 
-function buildActiveBusinessRule() {
-  return "@request.auth.id != '' && active = true";
+function buildPublicAppActiveBusinessRule() {
+  return "@request.auth.id != '' && @request.auth.role = 'public_app' && active = true";
 }
 
-function buildActiveRelatedBusinessRule() {
-  return "@request.auth.id != '' && business.active = true";
+function buildPublicAppActiveRelatedBusinessRule() {
+  return "@request.auth.id != '' && @request.auth.role = 'public_app' && business.active = true";
 }
 
 function repairBaseCollectionTimestamps() {
@@ -99,6 +99,7 @@ function repairBaseCollectionTimestamps() {
     "analytics_events",
     "communication_events",
     "rate_limit_events",
+    "booking_locks",
   ];
 
   try {
@@ -165,8 +166,8 @@ async function buildCollections(pb) {
   const businesses = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "businesses",
-    listRule: buildActiveBusinessRule(),
-    viewRule: buildActiveBusinessRule(),
+    listRule: buildPublicAppActiveBusinessRule(),
+    viewRule: buildPublicAppActiveBusinessRule(),
     fields: [
       textField("name", { required: true }),
       textField("slug", { required: true }),
@@ -200,8 +201,8 @@ async function buildCollections(pb) {
   const services = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "services",
-    listRule: `${buildActiveRelatedBusinessRule()} && active = true`,
-    viewRule: `${buildActiveRelatedBusinessRule()} && active = true`,
+    listRule: `${buildPublicAppActiveRelatedBusinessRule()} && active = true`,
+    viewRule: `${buildPublicAppActiveRelatedBusinessRule()} && active = true`,
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("name", { required: true }),
@@ -217,8 +218,8 @@ async function buildCollections(pb) {
   const availabilityRules = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "availability_rules",
-    listRule: `${buildActiveRelatedBusinessRule()} && active = true`,
-    viewRule: `${buildActiveRelatedBusinessRule()} && active = true`,
+    listRule: `${buildPublicAppActiveRelatedBusinessRule()} && active = true`,
+    viewRule: `${buildPublicAppActiveRelatedBusinessRule()} && active = true`,
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       numberField("dayOfWeek", { required: true, min: 0, max: 6 }),
@@ -231,8 +232,8 @@ async function buildCollections(pb) {
   const blockedSlots = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "blocked_slots",
-    listRule: buildActiveRelatedBusinessRule(),
-    viewRule: buildActiveRelatedBusinessRule(),
+    listRule: buildPublicAppActiveRelatedBusinessRule(),
+    viewRule: buildPublicAppActiveRelatedBusinessRule(),
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("blockedDate", { required: true }),
@@ -245,6 +246,10 @@ async function buildCollections(pb) {
   const customers = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "customers",
+    listRule: buildPublicAppActiveRelatedBusinessRule(),
+    viewRule: buildPublicAppActiveRelatedBusinessRule(),
+    createRule: buildPublicAppActiveRelatedBusinessRule(),
+    updateRule: buildPublicAppActiveRelatedBusinessRule(),
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("fullName", { required: true }),
@@ -257,8 +262,10 @@ async function buildCollections(pb) {
   const bookings = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "bookings",
-    listRule: `${buildActiveRelatedBusinessRule()} && @request.auth.role = 'public_app'`,
-    viewRule: `${buildActiveRelatedBusinessRule()} && @request.auth.role = 'public_app'`,
+    listRule: `${buildPublicAppActiveRelatedBusinessRule()} && customer.business = business && service.business = business`,
+    viewRule: `${buildPublicAppActiveRelatedBusinessRule()} && customer.business = business && service.business = business`,
+    createRule: `${buildPublicAppActiveRelatedBusinessRule()} && customer.business = business && service.business = business && service.active = true`,
+    updateRule: `${buildPublicAppActiveRelatedBusinessRule()} && customer.business = business && service.business = business && service.active = true`,
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       relationField("customer", idByName.customers, { required: true }),
@@ -274,6 +281,7 @@ async function buildCollections(pb) {
   const analyticsEvents = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "analytics_events",
+    createRule: buildPublicAppActiveRelatedBusinessRule(),
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("eventName", { required: true }),
@@ -292,6 +300,18 @@ async function buildCollections(pb) {
       textField("bucket", { required: true }),
       textField("identifierHash", { required: true }),
       textField("expiresAt", { required: true }),
+    ],
+  };
+
+  const bookingLocks = {
+    ...withExistingId(structuredClone(scaffolds.base)),
+    name: "booking_locks",
+    fields: [
+      textField("lockKey", { required: true }),
+      textField("expiresAt", { required: true }),
+    ],
+    indexes: [
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_booking_locks_lock_key ON booking_locks (lockKey)",
     ],
   };
 
@@ -321,6 +341,7 @@ async function buildCollections(pb) {
       customers,
       analyticsEvents,
       rateLimitEvents,
+      bookingLocks,
     ],
     false
   );

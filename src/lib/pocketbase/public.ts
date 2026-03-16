@@ -5,6 +5,7 @@ import {
   getPocketBasePublicAuthPassword,
   hasPocketBasePublicAuthCredentials,
 } from "@/lib/pocketbase/config";
+import { isProductionEnvironment } from "@/lib/runtime";
 
 async function authenticatePublicClient(client: ReturnType<typeof createPocketBaseClient>) {
   if (!hasPocketBasePublicAuthCredentials()) {
@@ -20,9 +21,13 @@ async function authenticatePublicClient(client: ReturnType<typeof createPocketBa
 
 export async function createPocketBasePublicClient() {
   if (!hasPocketBasePublicAuthCredentials()) {
-    // Until least-privilege public credentials and collection rules are in place,
-    // we resolve public server-side requests through the admin client.
-    return createPocketBaseAdminClient();
+    if (!isProductionEnvironment()) {
+      return createPocketBaseAdminClient();
+    }
+
+    throw new Error(
+      "PocketBase public credentials are required in production. Define POCKETBASE_PUBLIC_AUTH_EMAIL and POCKETBASE_PUBLIC_AUTH_PASSWORD."
+    );
   }
 
   try {
@@ -30,6 +35,16 @@ export async function createPocketBasePublicClient() {
     await authenticatePublicClient(client);
     return client;
   } catch {
-    return createPocketBaseAdminClient();
+    if (!isProductionEnvironment()) {
+      return createPocketBaseAdminClient();
+    }
+
+    throw new Error(
+      "PocketBase public credentials are configured but the public client could not authenticate."
+    );
   }
+}
+
+export function canFallbackToAdminForPublicRequests() {
+  return !isProductionEnvironment();
 }

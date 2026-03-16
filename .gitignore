@@ -31,18 +31,22 @@ yarn-error.log*
 .pnpm-debug.log*
 cloudflared.log
 .next-dev.log
+.claude/*.local.json
 
 # env files (can opt-in for committing if needed)
 .env*
 /data/local-store.json
 /data/local-store.*.tmp.json
 /pocketbase/pb_data/
+/pocketbase/pb_data_corrupt_*/
 /public/uploads/
 *.exe
 *.png
 !public/*.png
 !src/**/*.png
 /public/preview-*.png
+tmp-*.png
+landing-mobile-menu-test.md
 
 # vercel
 .vercel
