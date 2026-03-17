@@ -195,7 +195,7 @@ export async function forgotPasswordAction(formData: FormData) {
   }
 
   if (!email) {
-    redirect("/admin/forgot-password?error=Ingresa tu correo electronico.");
+    redirect("/admin/forgot-password?error=Ingresa tu correo electrónico.");
   }
 
   const pb = await createPocketBaseServerClient();
@@ -212,7 +212,7 @@ export async function forgotPasswordAction(formData: FormData) {
 
   redirect(
     `/admin/forgot-password?success=${encodeURIComponent(
-      "Si el correo existe, enviamos instrucciones para restablecer la contrasena."
+      "Si el correo existe, enviamos instrucciones para restablecer la contraseña."
     )}`
   );
 }
@@ -311,7 +311,7 @@ export async function resendVerificationAction() {
 
   redirect(
     `/admin/dashboard?success=${encodeURIComponent(
-      "Te reenviamos el correo de verificacion."
+      "Te reenviamos el correo de verificación."
     )}`
   );
 }

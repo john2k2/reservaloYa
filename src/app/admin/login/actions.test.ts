@@ -130,7 +130,7 @@ describe("admin login rate limit", () => {
     await expect(resendVerificationAction()).rejects.toThrow("REDIRECT:");
     expect(requestVerificationMock).toHaveBeenCalledWith("owner@example.com");
     expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
-      "Te reenviamos el correo de verificacion"
+      "Te reenviamos el correo de verificación"
     );
   });
 

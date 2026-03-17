@@ -63,7 +63,7 @@ export function BookingSelectedServiceCard({
           <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Reserva
           </p>
-          <p className="mt-1 text-lg font-semibold text-foreground">Confirmacion inmediata</p>
+          <p className="mt-1 text-lg font-semibold text-foreground">Confirmación inmediata</p>
         </div>
       </div>
     </section>

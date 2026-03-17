@@ -1,4 +1,5 @@
-﻿import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Clock3, Facebook, Instagram, Phone, ShieldCheck } from "lucide-react";
 
 import { TikTokIcon, WhatsAppIcon } from "@/components/icons";
@@ -11,8 +12,44 @@ import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import {
+  BreadcrumbJsonLd,
+  LocalBusinessJsonLd,
+  WebPageJsonLd,
+} from "@/lib/seo/business-json-ld";
+import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  try {
+    const { slug } = await params;
+    const pageData = await getPublicBusinessPageData(slug);
+
+    if (!pageData) {
+      return {
+        title: "Negocio no encontrado | ReservaYa",
+      };
+    }
+
+    return generateBusinessMetadata({
+      businessName: pageData.business.name,
+      slug,
+      description: pageData.profile?.description,
+      address: pageData.business.address,
+      phone: pageData.business.phone,
+      image: pageData.profile?.heroImageUrl || pageData.profile?.logoUrl,
+      category: (pageData.profile as { category?: string })?.category,
+    });
+  } catch (error) {
+    console.error("Error generating metadata:", error);
+    return { title: "ReservaYa | Turnos online para negocios chicos" };
+  }
+}
 
 const demoServices = [
   {
@@ -224,8 +261,47 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     campaign: tracking.utm_campaign,
   });
 
+  // Preparar datos para JSON-LD
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reservaya.app";
+  const businessUrl = `${siteUrl}/${slug}`;
+  
+  const openingHoursForJsonLd = pageData.weeklyHours
+    .filter((h) => !h.hoursLabel.toLowerCase().includes("cerrado"))
+    .map((h) => {
+      const [opens, closes] = h.hoursLabel.split("-").map((t) => t.trim());
+      return {
+        day: h.dayLabel,
+        opens: opens || "09:00",
+        closes: closes || "18:00",
+      };
+    });
+
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>
+      {/* SEO: JSON-LD Structured Data */}
+      <LocalBusinessJsonLd
+        name={pageData.business.name}
+        description={pageData.profile?.description || `Reserva tu turno en ${pageData.business.name}`}
+        url={businessUrl}
+        telephone={pageData.business.phone}
+        address={pageData.business.address}
+        image={pageData.profile?.heroImageUrl || pageData.profile?.logoUrl}
+        openingHours={openingHoursForJsonLd}
+        services={services.map((s) => s.name)}
+      />
+      <WebPageJsonLd
+        name={pageData.business.name}
+        description={pageData.profile?.description || `Reserva tu turno en ${pageData.business.name}`}
+        url={businessUrl}
+        image={pageData.profile?.heroImageUrl ?? undefined}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", url: siteUrl },
+          { name: pageData.business.name, url: businessUrl },
+        ]}
+      />
+
       <main
         id="main-content"
         className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"

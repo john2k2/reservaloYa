@@ -17,7 +17,7 @@ const demoHighlights = [
     icon: CalendarDays,
     title: "Reserva publica real",
     description:
-      "El cliente elige servicio, dia y horario desde el celular sin dar vueltas ni pedir ayuda.",
+      "El cliente elige servicio, día y horario desde el celular sin dar vueltas ni pedir ayuda.",
     badge: "Flujo completo",
   },
   {
@@ -25,7 +25,7 @@ const demoHighlights = [
     title: "Panel admin util",
     description:
       "Agenda, clientes, servicios y disponibilidad ya listos para mostrar el producto en uso real.",
-    badge: "Operacion diaria",
+    badge: "Operación diaria",
   },
   {
     icon: Palette,
@@ -38,7 +38,7 @@ const demoHighlights = [
 
 const demoProofPoints = [
   "Responsive en mobile y desktop",
-  "Reprogramacion y cancelacion desde link",
+  "Reprogramación y cancelación desde link",
   "Onboarding listo para nuevos negocios",
 ];
 

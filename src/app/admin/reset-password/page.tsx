@@ -50,7 +50,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
 
         {!params.token ? (
           <div className="mt-8 rounded-md border border-border/70 bg-background/80 p-4 text-sm text-muted-foreground">
-            Falta el token de recuperacion. Abre el enlace que recibiste por correo.
+            Falta el token de recuperación. Abre el enlace que recibiste por correo.
           </div>
         ) : (
           <form action={resetPasswordAction} className="mt-8 space-y-6">
