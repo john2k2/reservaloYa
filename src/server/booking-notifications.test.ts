@@ -64,12 +64,22 @@ describe("booking notifications", () => {
     const { sendBookingConfirmationEmail } = await import("./booking-notifications");
 
     const result = await sendBookingConfirmationEmail({
+      ...confirmation,
       bookingId: "booking_123",
-      businessSlug: "demo-barberia",
+      confirmationCode: "ABC123",
       customerName: "Cliente QA",
       customerEmail: "cliente@example.com",
-      confirmation,
-    });
+      customerPhone: "+5491112345678",
+      businessId: "business_123",
+      businessSlug: "demo-barberia",
+      businessNotificationEmail: "negocio@example.com",
+      serviceId: "service_123",
+      priceAmount: 5500,
+      currency: "ARS",
+      startsAt: "2026-03-11T09:00:00.000Z",
+      timezone: "America/Argentina/Buenos_Aires",
+      status: "confirmed",
+    }, "created");
 
     expect(result.status).toBe("sent");
     expect(emailSendMock).toHaveBeenCalledTimes(1);

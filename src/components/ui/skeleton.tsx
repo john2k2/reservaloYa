@@ -39,12 +39,16 @@ export function SkeletonText({ lines = 3, className }: { lines?: number; classNa
   );
 }
 
-export function SkeletonCard({ className }: { className?: string }) {
+export function SkeletonCard({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
     <div className={cn("rounded-xl border border-border bg-card p-6", className)}>
-      <Skeleton variant="circle" className="mb-4" />
-      <Skeleton variant="text" className="mb-2 w-1/2" />
-      <SkeletonText lines={2} />
+      {children ? children : (
+        <>
+          <Skeleton variant="circle" className="mb-4" />
+          <Skeleton variant="text" className="mb-2 w-1/2" />
+          <SkeletonText lines={2} />
+        </>
+      )}
     </div>
   );
 }

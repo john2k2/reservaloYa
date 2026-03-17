@@ -2,28 +2,25 @@
 
 import { LoaderCircle } from "lucide-react";
 import type { ReactNode, ButtonHTMLAttributes } from "react";
-import { useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "./button-variants";
 import type { ButtonVariants } from "./button-variants";
 
 interface LoadingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, ButtonVariants {
   children: ReactNode;
-  pendingLabel?: string;
-  loading?: boolean;
+  isLoading?: boolean;
+  loadingLabel?: string;
+  pendingLabel?: string; // Alias for loadingLabel (for compatibility)
+  showSpinner?: boolean;
 }
 
 /**
- * Botón con estado de carga integrado
+ * Botón con estado de carga controlado manualmente
+ * Útil para acciones asíncronas fuera de formularios
  * 
- * Uso con Server Actions (automático):
- * <LoadingButton pendingLabel="Guardando...">
- *   Guardar
- * </LoadingButton>
- * 
- * Uso manual (controlado):
- * <LoadingButton loading={isSubmitting} pendingLabel="Guardando...">
- *   Guardar
+ * Uso:
+ * <LoadingButton isLoading={isPending} loadingLabel="Guardando...">
+ *   Guardar cambios
  * </LoadingButton>
  */
 export function LoadingButton({
@@ -31,37 +28,37 @@ export function LoadingButton({
   className,
   variant = "default",
   size = "default",
-  pendingLabel = "Cargando...",
-  loading,
+  isLoading = false,
+  loadingLabel,
+  pendingLabel,
+  showSpinner = true,
   disabled,
   ...props
 }: LoadingButtonProps) {
-  const { pending } = useFormStatus();
-  const isLoading = loading ?? pending;
+  const label = loadingLabel ?? pendingLabel ?? (typeof children === "string" ? `${children}...` : "Cargando...");
 
   return (
     <button
-      type="submit"
+      type="button"
       disabled={isLoading || disabled}
       aria-live="polite"
       aria-busy={isLoading}
       className={cn(
         buttonVariants({ variant, size }),
+        "relative",
         isLoading && "cursor-not-allowed opacity-70",
         className
       )}
       {...props}
     >
-      {isLoading ? (
-        <span className="inline-flex items-center gap-2">
+      {isLoading && showSpinner && (
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-          {pendingLabel}
         </span>
-      ) : (
-        children
       )}
+      <span className={cn(isLoading && showSpinner && "invisible")}>
+        {isLoading ? label : children}
+      </span>
     </button>
   );
 }
-
-export default LoadingButton;
