@@ -39,7 +39,7 @@ export function LoadingButton({
 
   return (
     <button
-      type="button"
+      type="submit"
       disabled={isLoading || disabled}
       aria-live="polite"
       aria-busy={isLoading}

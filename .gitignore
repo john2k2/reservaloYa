@@ -98,3 +98,4 @@ resend.html
 # misc local files
 proxy.ts
 *.log
+e2e/.auth/
