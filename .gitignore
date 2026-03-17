@@ -58,4 +58,39 @@ landing-mobile-menu-test.md
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# agent skills (installed locally, not needed for deployment)
+.agents/skills/
+.claude/skills/
+.adal/skills/
+.adau/skills/
+.augment/skills/
+.agent/skills/
+.codebuddy/skills/
+.codex/skills/
+.commandcode/skills/
+.continue/skills/
+.cursor/skills/
+.droid/skills/
+.factory/skills/
+.iflow/skills/
+.junie/skills/
+.kilocode/skills/
+.kiro/skills/
+.kode/skills/
+.mcpjam/skills/
+.mux/skills/
+.neovate/skills/
+.openclaw/skills/
+.openhands/skills/
+.pochi/skills/
+.qoder/skills/
+.qwen/skills/
+.roo/skills/
+.trae/skills/
+.vibe/skills/
+.zencoder/skills/
+skills/
+skills-lock.json
+
+# email templates (local development only)
+resend.html
