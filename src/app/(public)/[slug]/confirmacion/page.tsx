@@ -74,7 +74,7 @@ export default async function ConfirmationPage({
   const calendarHref = buildCalendarHref({
     title: `${confirmation.serviceName} en ${confirmation.businessName}`,
     details: `Reserva confirmada con ${confirmation.businessName}.`,
-    location: confirmation.businessAddress,
+    location: confirmation.businessAddress ?? "",
     date: confirmation.bookingDate,
     startTime: confirmation.startTime,
     durationMinutes: confirmation.durationMinutes,

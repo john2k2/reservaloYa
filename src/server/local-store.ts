@@ -341,44 +341,49 @@ export async function getLocalBookingConfirmationData(bookingId?: string) {
   const fallbackBusiness = getPrimaryBusiness(store);
 
   if (!bookingId) {
-    return {
-      businessName: fallbackBusiness.name,
-      businessAddress: fallbackBusiness.address,
-      businessTimezone: fallbackBusiness.timezone,
-      bookingDate: new Date().toISOString().slice(0, 10),
-      startTime: "16:45",
-      serviceName: "Corte + barba",
-      durationMinutes: 60,
-      source: "local" as const,
-    };
+    return null;
   }
 
   const booking = store.bookings.find((candidate) => candidate.id === bookingId);
 
   if (!booking) {
-    return {
-      businessName: fallbackBusiness.name,
-      businessAddress: fallbackBusiness.address,
-      businessTimezone: fallbackBusiness.timezone,
-      bookingDate: new Date().toISOString().slice(0, 10),
-      startTime: "16:45",
-      serviceName: "Corte + barba",
-      durationMinutes: 60,
-      source: "local" as const,
-    };
+    return null;
   }
 
   const service = store.services.find((candidate) => candidate.id === booking.serviceId);
   const business = store.businesses.find((candidate) => candidate.id === booking.businessId);
+  const customer = store.customers.find((candidate) => candidate.id === booking.customerId);
+
+  // Construir fecha ISO completa
+  const [year, month, day] = booking.bookingDate.split("-").map(Number);
+  const [hours, minutes] = booking.startTime.split(":").map(Number);
+  const startsAt = new Date(year, month - 1, day, hours, minutes).toISOString();
+  const timezone = business?.timezone ?? fallbackBusiness.timezone;
 
   return {
+    bookingId: booking.id,
+    confirmationCode: (booking as { confirmationCode?: string }).confirmationCode ?? booking.id.slice(0, 8).toUpperCase(),
+    customerName: customer?.fullName ?? "Cliente",
+    customerEmail: customer?.email || undefined,
+    customerPhone: customer?.phone || undefined,
+    businessId: business?.id ?? fallbackBusiness.id,
     businessName: business?.name ?? fallbackBusiness.name,
+    businessSlug: business?.slug ?? fallbackBusiness.slug,
     businessAddress: business?.address ?? fallbackBusiness.address,
-    businessTimezone: business?.timezone ?? fallbackBusiness.timezone,
-    bookingDate: booking.bookingDate,
-    startTime: booking.startTime,
+    businessTimezone: timezone,
+    businessNotificationEmail: business?.notificationEmail ?? business?.email,
+    serviceId: service?.id ?? "",
     serviceName: service?.name ?? "Servicio",
     durationMinutes: service?.durationMinutes ?? 60,
+    priceAmount: service?.price ?? null,
+    currency: "ARS",
+    // Compatibilidad hacia atrás para UI
+    bookingDate: booking.bookingDate,
+    startTime: booking.startTime,
+    startsAt,
+    timezone,
+    status: booking.status,
+    manageToken: (booking as { manageToken?: string }).manageToken,
     source: "local" as const,
   };
 }
@@ -954,6 +959,9 @@ export async function runLocalBookingReminderSweep(input?: {
         };
 
         for (const channel of channels) {
+          // Skip SMS for now - not implemented
+          if (channel === "sms") continue;
+
           const result =
             channel === "email"
               ? await sendBookingReminderEmail({
@@ -988,13 +996,13 @@ export async function runLocalBookingReminderSweep(input?: {
             customerId: candidate.customer?.id ?? candidate.booking.customerId,
             channel,
             kind: "reminder",
-            status: result.status,
+            status: result.status === "error" ? "failed" : result.status,
             recipient:
               channel === "email"
                 ? candidate.customer?.email?.trim() ?? ""
                 : candidate.customer?.phone?.trim() ?? "",
-            subject: result.subject,
-            note: result.reason ?? "",
+            subject: result.subject ?? "Recordatorio de reserva",
+            note: (result as { reason?: string }).reason ?? "",
           });
         }
       }

@@ -1,403 +1,249 @@
 import { Resend } from "resend";
+import { formatInTimeZone } from "date-fns-tz";
+import { es } from "date-fns/locale";
 
-import { buildAbsoluteManageBookingUrl } from "@/server/public-booking-links";
-
-type BookingEmailInput = {
-  bookingId: string;
-  businessSlug: string;
-  customerName: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  mode?: "created" | "rescheduled";
-  confirmation: {
-    businessName: string;
-    businessAddress: string;
-    businessTimezone: string;
-    bookingDate: string;
-    startTime: string;
-    serviceName: string;
-    durationMinutes: number;
-  };
-};
-
-type BusinessNotificationInput = {
-  bookingId: string;
-  businessSlug: string;
-  businessName: string;
-  notificationEmail: string;
-  customerName: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  serviceName: string;
-  bookingDate: string;
-  startTime: string;
-  notes?: string;
-};
-
-type BookingEmailResult = {
-  status: "sent" | "skipped" | "failed";
-  subject: string;
-  reason?: string;
-};
-
-type BookingWhatsAppResult = BookingEmailResult;
-
-type ReminderChannel = "email" | "whatsapp";
-
-type ReminderRecipientInput = {
-  customerEmail?: string;
-  customerPhone?: string;
-};
-
-function getTwilioWhatsAppConfig() {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_WHATSAPP_FROM;
-  const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID;
-
-  if (!accountSid || !authToken || !fromNumber || !templateSid) {
-    return null;
+// Lazy initialization to avoid build-time errors
+let resendInstance: Resend | null = null;
+function getResend(): Resend {
+  if (!resendInstance) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+    resendInstance = new Resend(apiKey);
   }
-
-  return {
-    accountSid,
-    authToken,
-    fromNumber,
-    templateSid,
-  };
+  return resendInstance;
 }
 
-function normalizePhoneForWhatsApp(phone?: string): string | null {
-  if (!phone) return null;
-  
-  const cleaned = phone.replace(/\D/g, "");
-  
-  if (cleaned.length < 10) return null;
-  
-  if (cleaned.startsWith("54")) {
-    return `whatsapp:+${cleaned}`;
-  }
-  
-  if (cleaned.startsWith("9")) {
-    return `whatsapp:+54${cleaned}`;
-  }
-  
-  return `whatsapp:+549${cleaned}`;
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "ortiz.jonathan2k@gmail.com";
+
+// Re-exportar tipos para compatibilidad
+export type ReminderChannel = "email" | "sms" | "whatsapp";
+
+export function getAvailableReminderChannels(input: {
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+}): ReminderChannel[] {
+  const channels: ReminderChannel[] = [];
+  if (input.customerEmail) channels.push("email");
+  if (input.customerPhone) channels.push("sms");
+  return channels;
 }
 
-function hasReminderProviderConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY) || Boolean(process.env.TWILIO_ACCOUNT_SID);
+export function hasReminderProviderConfigured(): boolean {
+  return !!process.env.RESEND_API_KEY;
 }
 
-function getResendClient(): Resend | null {
-  const apiKey = process.env.RESEND_API_KEY;
+// Stub functions for reminder emails - TODO: implement if needed
+type ReminderResult = 
+  | { status: "sent"; messageId: string; subject: string }
+  | { status: "skipped"; reason: string; subject?: string }
+  | { status: "error"; error: string; subject?: string };
 
-  if (!apiKey) {
-    return null;
-  }
-
-  return new Resend(apiKey);
-}
-
-function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "ReservaYa <onboarding@resend.dev>";
-}
-
-async function sendBookingEmail({
-  customerEmail,
-  subject,
-  heading,
-  businessSlug,
-  bookingId,
-  confirmation,
-  customerName,
-}: {
-  customerEmail?: string;
-  subject: string;
-  heading: string;
-  businessSlug: string;
-  bookingId: string;
-  confirmation: BookingEmailInput["confirmation"];
-  customerName: string;
-}): Promise<BookingEmailResult> {
-  if (!customerEmail) {
-    return {
-      status: "skipped",
-      subject,
-      reason: "missing_customer_email",
-    };
-  }
-
-  const resend = getResendClient();
-
-  if (!resend) {
-    return {
-      status: "skipped",
-      subject,
-      reason: "missing_resend_api_key",
-    };
-  }
-
-  const manageUrl = buildAbsoluteManageBookingUrl(businessSlug, bookingId);
-
-  try {
-    await resend.emails.send({
-      from: getFromEmail(),
-      to: customerEmail,
-      subject,
-      text: [
-        `Hola ${customerName || "cliente"},`,
-        "",
-        heading,
-        `${confirmation.serviceName} - ${confirmation.bookingDate} a las ${confirmation.startTime}`,
-        `${confirmation.businessName} - ${confirmation.businessAddress}`,
-        "",
-        manageUrl ? `Gestionar turno: ${manageUrl}` : "Gestion del turno disponible pronto.",
-      ].join("\n"),
-      html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
-          <h1 style="font-size:20px;margin-bottom:12px">${heading}</h1>
-          <p>Hola ${customerName || "cliente"},</p>
-          <p>
-            <strong>${confirmation.serviceName}</strong><br />
-            ${confirmation.bookingDate} a las ${confirmation.startTime}<br />
-            ${confirmation.businessName}<br />
-            ${confirmation.businessAddress}
-          </p>
-          ${
-            manageUrl
-              ? `<p>
-            <a
-              href="${manageUrl}"
-              style="display:inline-block;padding:10px 16px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px"
-            >
-              Ver, reprogramar o cancelar
-            </a>
-          </p>`
-              : ""
-          }
-        </div>
-      `,
-    });
-
-    return {
-      status: "sent",
-      subject,
-    };
-  } catch (error) {
-    console.error("Failed to send booking email", error);
-
-    return {
-      status: "failed",
-      subject,
-      reason: error instanceof Error ? error.message : "unknown_error",
-    };
-  }
-}
-
-export async function sendBookingConfirmationEmail(input: BookingEmailInput) {
-  const actionLabel =
-    input.mode === "rescheduled" ? "Tu turno fue reprogramado" : "Tu turno fue confirmado";
-  const subject =
-    input.mode === "rescheduled"
-      ? `${input.confirmation.businessName}: tu turno fue reprogramado`
-      : `${input.confirmation.businessName}: confirmación de tu turno`;
-
-  return sendBookingEmail({
-    customerName: input.customerName,
-    customerEmail: input.customerEmail,
-    subject,
-    heading: actionLabel,
-    businessSlug: input.businessSlug,
-    bookingId: input.bookingId,
-    confirmation: input.confirmation,
-  });
-}
-
-export async function sendBookingReminderEmail(input: BookingEmailInput) {
-  return sendBookingEmail({
-    customerName: input.customerName,
-    customerEmail: input.customerEmail,
-    subject: `${input.confirmation.businessName}: recordatorio de tu turno`,
-    heading: "Te recordamos tu proximo turno",
-    businessSlug: input.businessSlug,
-    bookingId: input.bookingId,
-    confirmation: input.confirmation,
-  });
+export async function sendBookingReminderEmail(
+  _input: Record<string, unknown>
+): Promise<ReminderResult> {
+  console.log("sendBookingReminderEmail: not implemented");
+  return { status: "skipped", reason: "not_implemented", subject: "Recordatorio de reserva" };
 }
 
 export async function sendBookingReminderWhatsApp(
-  input: BookingEmailInput & { customerPhone?: string }
-): Promise<BookingWhatsAppResult> {
-  const subject = `${input.confirmation.businessName}: recordatorio de tu turno por WhatsApp`;
-  const recipient = normalizePhoneForWhatsApp(input.customerPhone);
+  _input: Record<string, unknown>
+): Promise<ReminderResult> {
+  console.log("sendBookingReminderWhatsApp: not implemented");
+  return { status: "skipped", reason: "not_implemented", subject: "Recordatorio de reserva" };
+}
 
-  if (!recipient) {
-    return {
-      status: "skipped",
-      subject,
-      reason: "missing_or_invalid_customer_phone",
-    };
+export type BookingConfirmationData = {
+  bookingId: string;
+  confirmationCode: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  businessId: string;
+  businessName: string;
+  businessSlug: string;
+  businessAddress: string | null;
+  businessNotificationEmail?: string | null;
+  serviceId: string;
+  serviceName: string;
+  durationMinutes: number;
+  priceAmount: number | null;
+  currency: string;
+  startsAt: string; // ISO string
+  timezone: string;
+  status: string;
+  manageToken?: string;
+};
+
+type BookingEmailResult =
+  | { status: "sent"; messageId: string }
+  | { status: "skipped"; reason: string }
+  | { status: "error"; error: string };
+
+/**
+ * Envía email al cliente usando plantilla de Resend
+ */
+export async function sendBookingConfirmationEmail(
+  confirmation: BookingConfirmationData,
+  mode: "created" | "rescheduled" = "created"
+): Promise<BookingEmailResult> {
+  if (!confirmation.customerEmail) {
+    return { status: "skipped", reason: "no_customer_email" };
   }
 
-  const twilio = getTwilioWhatsAppConfig();
+  const subject =
+    mode === "rescheduled"
+      ? `✅ Tu reserva en ${confirmation.businessName} fue reprogramada`
+      : `✅ Tu reserva en ${confirmation.businessName} está confirmada`;
 
-  if (!twilio) {
-    return {
-      status: "skipped",
-      subject,
-      reason: "missing_twilio_whatsapp_config",
-    };
-  }
+  const manageUrl = confirmation.manageToken
+    ? `${getBaseUrl()}/${confirmation.businessSlug}/reserva/${confirmation.manageToken}`
+    : `${getBaseUrl()}/${confirmation.businessSlug}`;
 
-  const manageUrl = buildAbsoluteManageBookingUrl(input.businessSlug, input.bookingId);
-  const body = new URLSearchParams({
-    From: twilio.fromNumber,
-    To: recipient,
-    ContentSid: twilio.templateSid,
-    ContentVariables: JSON.stringify({
-      "1": input.customerName || "cliente",
-      "2": input.confirmation.businessName,
-      "3": input.confirmation.serviceName,
-      "4": input.confirmation.bookingDate,
-      "5": input.confirmation.startTime,
-      "6": manageUrl ?? "",
-    }),
-  });
+  const priceLabel = formatPrice(confirmation.priceAmount, confirmation.currency);
 
   try {
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${twilio.accountSid}/Messages.json`,
+    const { data, error } = await getResend().emails.send(
       {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${twilio.accountSid}:${twilio.authToken}`).toString("base64")}`,
-          "Content-Type": "application/x-www-form-urlencoded",
+        from: `${confirmation.businessName} <${FROM_EMAIL}>`,
+        to: [confirmation.customerEmail],
+        subject,
+        template: {
+          id: "customer-booking-confirmation",
+          variables: {
+            BUSINESS_NAME: confirmation.businessName,
+            BRAND_COLOR: "#3b82f6",
+            BRAND_COLOR_DARK: "#2563eb",
+            CUSTOMER_NAME: confirmation.customerName,
+            SERVICE_NAME: confirmation.serviceName,
+            DATE: formatDate(confirmation.startsAt, confirmation.timezone),
+            TIME: formatTime(confirmation.startsAt, confirmation.timezone),
+            DURATION: formatDuration(confirmation.durationMinutes),
+            PRICE: priceLabel || "",
+            ADDRESS: confirmation.businessAddress || "",
+            MANAGE_URL: manageUrl,
+          },
         },
-        body,
-      }
+        tags: [
+          { name: "type", value: "booking_confirmation" },
+          { name: "business", value: confirmation.businessSlug },
+          { name: "mode", value: mode },
+        ],
+      },
+      { idempotencyKey: `booking-confirm/${confirmation.bookingId}` }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      return {
-        status: "failed",
-        subject,
-        reason: errorText || `twilio_http_${response.status}`,
-      };
+    if (error) {
+      console.error("Resend error:", error);
+      return { status: "error", error: error.message };
     }
 
-    return {
-      status: "sent",
-      subject,
-    };
-  } catch (error) {
-    console.error("Failed to send booking WhatsApp reminder", error);
-
-    return {
-      status: "failed",
-      subject,
-      reason: error instanceof Error ? error.message : "unknown_error",
-    };
+    console.log(`📧 Email de confirmación enviado a ${confirmation.customerEmail}`);
+    return { status: "sent", messageId: data?.id ?? "" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Failed to send booking confirmation:", err);
+    return { status: "error", error: message };
   }
 }
 
 /**
- * Envía notificación al negocio cuando hay una nueva reserva
+ * Envía notificación al negocio usando plantilla de Resend
  */
 export async function sendBusinessNotificationEmail(
-  input: BusinessNotificationInput
+  confirmation: BookingConfirmationData,
+  mode: "created" | "rescheduled" = "created"
 ): Promise<BookingEmailResult> {
-  const subject = `Nueva reserva en ${input.businessName}: ${input.serviceName}`;
-  const resend = getResendClient();
-
-  if (!resend) {
-    return {
-      status: "skipped",
-      subject,
-      reason: "missing_resend_api_key",
-    };
+  if (!confirmation.businessNotificationEmail) {
+    return { status: "skipped", reason: "no_business_notification_email" };
   }
 
-  const customerInfo = [
-    `Nombre: ${input.customerName}`,
-    input.customerEmail ? `Email: ${input.customerEmail}` : "",
-    input.customerPhone ? `Teléfono: ${input.customerPhone}` : "",
-  ].filter(Boolean).join("\n");
+  const subject =
+    mode === "rescheduled"
+      ? `📅 Reserva reprogramada: ${confirmation.serviceName} - ${confirmation.customerName}`
+      : `🎉 Nueva reserva: ${confirmation.serviceName} - ${confirmation.customerName}`;
 
-  const manageUrl = buildAbsoluteManageBookingUrl(input.businessSlug, input.bookingId);
+  const adminUrl = `${getBaseUrl()}/admin/reservas`;
 
   try {
-    await resend.emails.send({
-      from: getFromEmail(),
-      to: input.notificationEmail,
-      subject,
-      text: [
-        `¡Tienes una nueva reserva!`,
-        "",
-        `Servicio: ${input.serviceName}`,
-        `Fecha: ${input.bookingDate}`,
-        `Hora: ${input.startTime}`,
-        "",
-        "Datos del cliente:",
-        customerInfo,
-        input.notes ? `\nNotas: ${input.notes}` : "",
-        "",
-        manageUrl ? `Ver detalles: ${manageUrl}` : "",
-      ].join("\n"),
-      html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827;max-width:600px;margin:0 auto;padding:20px">
-          <h1 style="font-size:24px;margin-bottom:16px;color:#111827">¡Nueva reserva recibida!</h1>
-          
-          <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px">
-            <p style="margin:0 0 8px 0"><strong>Servicio:</strong> ${input.serviceName}</p>
-            <p style="margin:0 0 8px 0"><strong>Fecha:</strong> ${input.bookingDate}</p>
-            <p style="margin:0"><strong>Hora:</strong> ${input.startTime}</p>
-          </div>
-          
-          <h2 style="font-size:18px;margin-bottom:12px;color:#111827">Datos del cliente</h2>
-          <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px">
-            <p style="margin:0 0 8px 0"><strong>Nombre:</strong> ${input.customerName}</p>
-            ${input.customerEmail ? `<p style="margin:0 0 8px 0"><strong>Email:</strong> ${input.customerEmail}</p>` : ""}
-            ${input.customerPhone ? `<p style="margin:0"><strong>Teléfono:</strong> ${input.customerPhone}</p>` : ""}
-          </div>
-          
-          ${input.notes ? `
-          <h2 style="font-size:18px;margin-bottom:12px;color:#111827">Notas</h2>
-          <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px">
-            <p style="margin:0">${input.notes}</p>
-          </div>
-          ` : ""}
-          
-          ${manageUrl ? `
-          <p style="margin-top:20px">
-            <a
-              href="${manageUrl}"
-              style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:500"
-            >
-              Ver detalles del turno
-            </a>
-          </p>
-          ` : ""}
-        </div>
-      `,
-    });
+    const { data, error } = await getResend().emails.send(
+      {
+        from: `ReservaYa <${FROM_EMAIL}>`,
+        to: [confirmation.businessNotificationEmail],
+        subject,
+        template: {
+          id: "business-booking-notification",
+          variables: {
+            BUSINESS_NAME: confirmation.businessName,
+            BRAND_COLOR: "#3b82f6",
+            CUSTOMER_NAME: confirmation.customerName,
+            CUSTOMER_EMAIL: confirmation.customerEmail || "",
+            CUSTOMER_PHONE: confirmation.customerPhone || "",
+            SERVICE_NAME: confirmation.serviceName,
+            DATE: formatDate(confirmation.startsAt, confirmation.timezone),
+            TIME: formatTime(confirmation.startsAt, confirmation.timezone),
+            DURATION: formatDuration(confirmation.durationMinutes),
+            ADMIN_URL: adminUrl,
+          },
+        },
+        tags: [
+          { name: "type", value: "business_notification" },
+          { name: "business", value: confirmation.businessSlug },
+          { name: "mode", value: mode },
+        ],
+      },
+      { idempotencyKey: `business-notify/${confirmation.bookingId}` }
+    );
 
-    return {
-      status: "sent",
-      subject,
-    };
-  } catch (error) {
-    console.error("Failed to send business notification email", error);
+    if (error) {
+      console.error("Resend error:", error);
+      return { status: "error", error: error.message };
+    }
 
-    return {
-      status: "failed",
-      subject,
-      reason: error instanceof Error ? error.message : "unknown_error",
-    };
+    console.log(`📧 Notificación enviada a ${confirmation.businessNotificationEmail}`);
+    return { status: "sent", messageId: data?.id ?? "" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Failed to send business notification:", err);
+    return { status: "error", error: message };
   }
 }
 
-export { hasReminderProviderConfigured, getResendClient };
-export type { ReminderChannel, ReminderRecipientInput };
+// Helper functions
+function getBaseUrl(): string {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+}
+
+function formatDate(isoDate: string, timezone: string): string {
+  return formatInTimeZone(new Date(isoDate), timezone, "EEEE d 'de' MMMM", {
+    locale: es,
+  });
+}
+
+function formatTime(isoDate: string, timezone: string): string {
+  return formatInTimeZone(new Date(isoDate), timezone, "HH:mm", { locale: es });
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} minutos`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (mins === 0) return `${hours} hora${hours > 1 ? "s" : ""}`;
+  return `${hours}h ${mins}min`;
+}
+
+function formatPrice(amount: number | null, currency: string): string | null {
+  if (amount === null) return null;
+  try {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: currency || "ARS",
+    }).format(amount);
+  } catch {
+    return `$${amount}`;
+  }
+}

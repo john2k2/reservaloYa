@@ -1,10 +1,7 @@
+"use client";
+
 import Link from "next/link";
 import { Home, Search, ArrowLeft } from "lucide-react";
-
-export const metadata = {
-  title: "Página no encontrada | ReservaYa",
-  description: "La página que buscás no existe. Volvé al inicio o probá con otra búsqueda.",
-};
 
 export default function NotFoundPage() {
   return (

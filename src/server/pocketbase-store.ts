@@ -287,19 +287,42 @@ export async function getPocketBaseBookingConfirmationData(input: {
 
   try {
     const booking = await pb.collection("bookings").getOne<BookingRecord>(input.bookingId, {
-      expand: "business,service",
+      expand: "business,service,customer",
     });
     const business = booking.expand?.business as BusinessRecord | undefined;
     const service = booking.expand?.service as ServiceRecord | undefined;
+    const customer = booking.expand?.customer as CustomerRecord | undefined;
+
+    // Construir fecha ISO completa
+    const [year, month, day] = booking.bookingDate.split("-").map(Number);
+    const [hours, minutes] = booking.startTime.split(":").map(Number);
+    const startsAt = new Date(year, month - 1, day, hours, minutes).toISOString();
+    const timezone = business?.timezone ?? "America/Argentina/Buenos_Aires";
 
     return {
+      bookingId: booking.id,
+      confirmationCode: booking.confirmationCode,
+      customerName: customer?.name ?? "Cliente",
+      customerEmail: customer?.email ?? undefined,
+      customerPhone: customer?.phone ?? undefined,
+      businessId: business?.id ?? "",
       businessName: business?.name ?? input.slug,
-      businessAddress: business?.address ?? "",
-      businessTimezone: business?.timezone ?? "America/Argentina/Buenos_Aires",
-      bookingDate: booking.bookingDate,
-      startTime: booking.startTime,
+      businessSlug: business?.slug ?? input.slug,
+      businessAddress: business?.address ?? null,
+      businessTimezone: timezone,
+      businessNotificationEmail: business?.notificationEmail ?? business?.email,
+      serviceId: service?.id ?? "",
       serviceName: service?.name ?? "Servicio",
       durationMinutes: Number(service?.durationMinutes ?? 60),
+      priceAmount: service?.priceAmount ?? null,
+      currency: service?.currency ?? "ARS",
+      // Compatibilidad hacia atrás para UI
+      bookingDate: booking.bookingDate,
+      startTime: booking.startTime,
+      startsAt,
+      timezone,
+      status: booking.status,
+      manageToken: booking.manageToken,
       source: "pocketbase" as const,
     };
   } catch {
@@ -1695,7 +1718,7 @@ export async function runPocketBaseBookingReminderSweep(input?: {
           status: result.status,
           recipient: channel === "email" ? customer.email : customer.phone,
           subject: result.subject,
-          note: result.reason ?? "",
+          note: (result as { reason?: string }).reason ?? "",
         });
       }
     }

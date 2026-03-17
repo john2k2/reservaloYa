@@ -135,38 +135,20 @@ async function sendConfirmationEmailIfPossible(input: {
     bookingId: input.bookingId,
   });
 
+  if (!confirmation) {
+    console.error("No se pudo obtener datos de confirmación para:", input.bookingId);
+    return;
+  }
+
   // Enviar email al cliente si tiene email
   if (input.customerEmail) {
-    await sendBookingConfirmationEmail({
-      bookingId: input.bookingId,
-      businessSlug: input.businessSlug,
-      customerName: input.customerName,
-      customerEmail: input.customerEmail,
-      mode: input.mode,
-      confirmation,
-    });
+    await sendBookingConfirmationEmail(confirmation, input.mode);
   }
 
   // Enviar notificación al negocio
-  const { getPublicBusinessPageData } = await import("@/server/queries/public");
-  const pageData = await getPublicBusinessPageData(input.businessSlug);
-  
-  if (pageData?.business.notificationEmail || pageData?.business.email) {
+  if (confirmation.businessNotificationEmail) {
     const { sendBusinessNotificationEmail } = await import("@/server/booking-notifications");
-    
-    await sendBusinessNotificationEmail({
-      bookingId: input.bookingId,
-      businessSlug: input.businessSlug,
-      businessName: pageData.business.name,
-      notificationEmail: pageData.business.notificationEmail || pageData.business.email!,
-      customerName: input.customerName,
-      customerEmail: input.customerEmail,
-      customerPhone: input.customerPhone,
-      serviceName: input.serviceName,
-      bookingDate: input.bookingDate,
-      startTime: input.startTime,
-      notes: input.notes,
-    });
+    await sendBusinessNotificationEmail(confirmation, input.mode);
   }
 }
 
