@@ -21,10 +21,10 @@ export function OnboardingStatusBanner({
   secondaryAction,
 }: OnboardingStatusBannerProps) {
   return (
-    <section className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
+    <section className="w-full rounded-3xl border border-success/20 bg-success/10 p-6 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
-          <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-emerald-600 dark:text-emerald-400" />
+          <CheckCircle2 aria-hidden="true" className="mt-0.5 size-5 text-success" />
           <div>
             <p className="text-base font-semibold text-foreground">{title}</p>
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>

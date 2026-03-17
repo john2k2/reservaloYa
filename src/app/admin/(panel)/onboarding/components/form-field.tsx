@@ -65,7 +65,7 @@ export function FormField({
     hasError
       ? "border-destructive focus-visible:ring-destructive/20"
       : isValid
-      ? "border-green-500 focus-visible:ring-green-500/20"
+      ? "border-success focus-visible:ring-success/20"
       : "border-border focus-visible:ring-foreground/20",
     className
   );
@@ -134,7 +134,7 @@ export function FormField({
             <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-destructive" />
           )}
           {isValid && (
-            <Check className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+            <Check className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-success" />
           )}
         </div>
       )}

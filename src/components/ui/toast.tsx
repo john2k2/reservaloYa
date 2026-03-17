@@ -64,15 +64,15 @@ function ToastContainer({ toasts, onHide }: { toasts: Toast[]; onHide: (id: stri
 
 function ToastItem({ toast, onHide }: { toast: Toast; onHide: () => void }) {
   const icons = {
-    success: <CheckCircle className="h-5 w-5 text-green-500" />,
-    error: <AlertCircle className="h-5 w-5 text-red-500" />,
-    info: <Info className="h-5 w-5 text-blue-500" />,
+    success: <CheckCircle className="h-5 w-5 text-success" />,
+    error: <AlertCircle className="h-5 w-5 text-destructive" />,
+    info: <Info className="h-5 w-5 text-foreground" />,
   };
 
   const styles = {
-    success: "border-green-200 bg-green-50 dark:bg-green-950/30",
-    error: "border-red-200 bg-red-50 dark:bg-red-950/30",
-    info: "border-blue-200 bg-blue-50 dark:bg-blue-950/30",
+    success: "border-success/20 bg-success/10",
+    error: "border-destructive/20 bg-destructive/10",
+    info: "border-border/60 bg-card",
   };
 
   return (

@@ -20,6 +20,7 @@ import {
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
+import { productName } from "@/constants/site";
 
 export async function generateMetadata({
   params,
@@ -609,7 +610,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                 © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
-                Desarrollado con <span className="font-bold text-foreground">ReservaYa</span>
+                Desarrollado con <span className="font-bold text-foreground">{productName}</span>
               </p>
             </div>
           </div>

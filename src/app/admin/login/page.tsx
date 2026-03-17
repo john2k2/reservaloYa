@@ -61,7 +61,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
 
           {params.success && (
             <div
-              className="mt-6 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700"
+              className="mt-6 rounded-md border border-success/20 bg-success/10 p-4 text-sm text-success"
               role="status"
               aria-live="polite"
             >

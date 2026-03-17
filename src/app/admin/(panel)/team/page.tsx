@@ -23,7 +23,7 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
   return (
     <div className="flex flex-col gap-6 pb-10">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Equipo</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Equipo</h1>
         <p className="max-w-2xl text-base text-muted-foreground">
           Crea usuarios de staff para operar el negocio sin compartir la cuenta principal.
         </p>
@@ -35,7 +35,7 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
             "rounded-xl border px-4 py-3 text-sm",
             params.error
               ? "border-destructive/20 bg-destructive/10 text-destructive"
-              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+              : "border-success/20 bg-success/10 text-success"
           )}
           role="alert"
         >
@@ -133,7 +133,7 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
                         className={cn(
                           "rounded-full px-2.5 py-1 text-[11px] font-medium",
                           member.active
-                            ? "bg-emerald-500/15 text-emerald-700"
+                            ? "bg-success/15 text-success"
                             : "bg-muted text-muted-foreground"
                         )}
                       >
@@ -143,8 +143,8 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
                         className={cn(
                           "rounded-full px-2.5 py-1 text-[11px] font-medium",
                           member.verified
-                            ? "bg-sky-500/15 text-sky-700"
-                            : "bg-amber-500/15 text-amber-700"
+                            ? "bg-secondary text-foreground"
+                            : "bg-muted text-muted-foreground"
                         )}
                       >
                         {member.verified ? "Verificado" : "Sin verificar"}

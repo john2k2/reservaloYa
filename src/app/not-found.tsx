@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Home, Search, ArrowLeft } from "lucide-react";
+import { productName } from "@/constants/site";
 
 export default function NotFoundPage() {
   return (
@@ -79,7 +80,7 @@ export default function NotFoundPage() {
 
       {/* Footer simple */}
       <footer className="absolute bottom-6 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} ReservaYa. Todos los derechos reservados.</p>
+        <p>© {new Date().getFullYear()} {productName}. Todos los derechos reservados.</p>
       </footer>
     </div>
   );

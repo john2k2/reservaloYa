@@ -72,6 +72,8 @@
   --accent: #f4f4f5;
   --accent-foreground: #111111;
   --destructive: #ef4444;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
   --border: #e4e4e7;
   --input: #e4e4e7;
   --ring: #111111;
@@ -113,7 +115,9 @@
   --muted-foreground: #a1a1aa;
   --accent: #27272a;
   --accent-foreground: #fafafa;
-  --destructive: #7f1d1d;
+  --destructive: #f87171;
+  --success: #4ade80;
+  --success-foreground: #052e16;
   --border: #27272a;
   --input: #27272a;
   --ring: #fafafa;
@@ -330,6 +334,11 @@
     @apply w-full rounded-none border-0 border-b border-border/70 bg-transparent px-0 py-3 text-base font-normal text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-foreground focus-visible:outline-none md:text-sm;
   }
 
+  select.field-input,
+  select.minimalist-input {
+    @apply appearance-none cursor-pointer;
+  }
+
   .field-input[aria-invalid="true"],
   .minimalist-input[aria-invalid="true"] {
     @apply border-destructive;
@@ -378,7 +387,24 @@
 }
 
 @layer utilities {
-  /* 
+  /*
+   * UTILIDADES DE COLOR SUCCESS
+   * Tailwind v4 no puede resolver var() en @theme inline en runtime.
+   * Se definen como utilidades directas para que funcionen con opacidad.
+   */
+  .text-success { color: var(--success); }
+  .bg-success { background-color: var(--success); }
+  .border-success { border-color: var(--success); }
+  .bg-success\/5 { background-color: color-mix(in srgb, var(--success) 5%, transparent); }
+  .bg-success\/10 { background-color: color-mix(in srgb, var(--success) 10%, transparent); }
+  .bg-success\/15 { background-color: color-mix(in srgb, var(--success) 15%, transparent); }
+  .border-success\/20 { border-color: color-mix(in srgb, var(--success) 20%, transparent); }
+  .border-success\/30 { border-color: color-mix(in srgb, var(--success) 30%, transparent); }
+  .border-success\/40 { border-color: color-mix(in srgb, var(--success) 40%, transparent); }
+  .ring-success\/20 { --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent); }
+  .focus-visible\:ring-success\/20:focus-visible { --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent); }
+
+  /*
    * SCROLLBAR HIDE - Para carruseles y scroll horizontal
    */
   .scrollbar-hide {

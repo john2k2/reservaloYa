@@ -73,7 +73,7 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
         <div
           className={cn(
             "rounded-xl border px-4 py-3 text-sm",
-            notice.tone === "error" ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+            notice.tone === "error" ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-success/30 bg-success/10 text-success"
           )}
           role="alert"
         >

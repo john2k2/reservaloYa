@@ -75,8 +75,8 @@ export function EditIntegrationsTab({
 
           {isCurrentlyConnected ? (
             <div className="flex shrink-0 items-center gap-1.5">
-              <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-4 text-success" />
+              <span className="text-sm font-medium text-success">
                 Conectado
               </span>
             </div>

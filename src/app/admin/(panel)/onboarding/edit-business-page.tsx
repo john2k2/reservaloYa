@@ -327,10 +327,10 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
         </div>
 
         {successMessage && (
-          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+          <div className="mt-6 rounded-2xl border border-success/20 bg-success/10 p-4">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />
-              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">{successMessage}</p>
+              <CheckCircle2 className="size-5 text-success" />
+              <p className="text-sm font-medium text-success">{successMessage}</p>
             </div>
           </div>
         )}

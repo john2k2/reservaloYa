@@ -74,7 +74,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Turnos
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -154,7 +154,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
               action={updateBookingAction}
               className={cn(
                 "rounded-xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm",
-                savedBookingId === booking.id && "border-emerald-500/40 bg-emerald-500/5"
+                savedBookingId === booking.id && "border-success/40 bg-success/5"
               )}
             >
               <input type="hidden" name="bookingId" value={booking.id} />
@@ -171,7 +171,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
                         savedBookingId === booking.id
-                          ? "bg-emerald-500/15 text-emerald-700"
+                          ? "bg-success/15 text-success"
                           : "bg-secondary text-foreground"
                       )}
                     >

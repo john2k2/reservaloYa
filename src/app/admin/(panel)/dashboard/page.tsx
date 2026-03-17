@@ -42,7 +42,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       {/* Header con acciones rápidas */}
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Panel de {dashboardData.businessName}
           </h1>
           <p className="mt-2 max-w-2xl text-base text-muted-foreground">
@@ -74,7 +74,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             errorMessage
               ? "border-destructive/20 bg-destructive/10 text-destructive"
               : successMessage
-                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                ? "border-success/20 bg-success/10 text-success"
                 : "border-border/60 bg-card text-card-foreground"
           )}
           role="alert"
@@ -134,7 +134,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                       className={cn(
                         "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
                         booking.status === "Confirmado"
-                          ? "bg-emerald-500/15 text-emerald-700"
+                          ? "bg-success/15 text-success"
                           : booking.status === "Pendiente"
                           ? "bg-amber-500/15 text-amber-700"
                           : "bg-secondary text-foreground"
