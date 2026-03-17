@@ -178,6 +178,12 @@ async function buildCollections(pb) {
       textField("timezone", { required: true }),
       boolField("active"),
       textField("publicProfileOverrides"),
+      // MercadoPago OAuth (per-business)
+      textField("mpAccessToken"),
+      textField("mpRefreshToken"),
+      textField("mpCollectorId"),
+      textField("mpTokenExpiresAt"),
+      boolField("mpConnected"),
     ],
   };
 

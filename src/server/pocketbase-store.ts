@@ -169,6 +169,7 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
       email: business.email ?? "",
       address: business.address ?? "",
       timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
+      mpAccessToken: business.mpAccessToken,
     },
     profile: buildBusinessPublicProfile(business),
     weeklyHours: buildWeeklySchedule(
@@ -385,6 +386,8 @@ export async function createPocketBasePublicBooking(input: {
   phone: string;
   email?: string;
   notes?: string;
+  initialStatus?: BookingStatus;
+  paymentPreferenceId?: string;
 }) {
   return withBookingDateLock(
     {
@@ -433,7 +436,7 @@ export async function createPocketBasePublicBooking(input: {
         (slot) => slot.blockedDate === input.bookingDate
       );
       const businessBookings = bookings.filter((booking) =>
-        ["pending", "confirmed"].includes(booking.status)
+        ["pending", "pending_payment", "confirmed"].includes(booking.status)
       );
       const businessCustomers = customers.filter((customer) => customer.phone === input.phone);
 
@@ -479,8 +482,15 @@ export async function createPocketBasePublicBooking(input: {
         bookingDate: input.bookingDate,
         startTime: input.startTime,
         endTime,
-        status: "pending",
+        status: input.initialStatus ?? "pending",
         notes: input.notes ?? "",
+        ...(input.paymentPreferenceId
+          ? {
+              paymentProvider: "mercadopago",
+              paymentPreferenceId: input.paymentPreferenceId,
+              paymentStatus: "pending",
+            }
+          : {}),
       });
 
       return booking.id;
@@ -1293,6 +1303,9 @@ export async function getPocketBaseAdminSettingsData(businessId: string) {
     timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
     publicUrl: `/${business.slug}`,
     profile: buildBusinessPublicProfile(business),
+    mpConnected: business.mpConnected ?? false,
+    mpCollectorId: business.mpCollectorId,
+    mpAccessToken: business.mpAccessToken,
   };
 }
 
@@ -1606,10 +1619,29 @@ export async function runPocketBaseBookingReminderSweep(input?: {
   const businesses = input?.businessId
     ? [await getBusinessById(input.businessId)]
     : (await listPocketBaseRecords<BusinessRecord>("businesses")).filter(isActiveRecord);
+  const PENDING_PAYMENT_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 horas
+  const dryRun = Boolean(input?.dryRun);
+  let expiredPaymentsCancelled = 0;
+
+  // Auto-cancelar bookings pending_payment vencidos (más de 2 horas)
+  if (!dryRun) {
+    const expiredBookings = await listPocketBaseRecords<BookingRecord>("bookings", {
+      filter: pb.filter("status = 'pending_payment'"),
+    });
+    for (const booking of expiredBookings) {
+      const createdAt = new Date(booking.created).getTime();
+      if (now.getTime() - createdAt > PENDING_PAYMENT_EXPIRY_MS) {
+        await pb.collection("bookings").update(booking.id, { status: "cancelled" });
+        expiredPaymentsCancelled += 1;
+      }
+    }
+  }
+
   const summary = {
-    dryRun: Boolean(input?.dryRun),
+    dryRun,
     reminderWindowHours: 24,
     businesses: businesses.length,
+    expiredPaymentsCancelled,
     candidates: 0,
     missingEmail: 0,
     readyWithoutProvider: 0,
@@ -1725,4 +1757,121 @@ export async function runPocketBaseBookingReminderSweep(input?: {
   }
 
   return summary;
+}
+
+/**
+ * Revierte el status de un booking de pending_payment a pending.
+ * Usado cuando falla la creación de preferencia de pago.
+ */
+export async function revertPocketBaseBookingFromPendingPayment(bookingId: string) {
+  const pb = await getAdminClient();
+  const booking = await pb.collection("bookings").getOne<BookingRecord>(bookingId, { requestKey: null }).catch(() => null);
+  if (!booking || booking.status !== "pending_payment") return;
+  await pb.collection("bookings").update(bookingId, { status: "pending" });
+}
+
+/**
+ * Devuelve el slug del negocio al que pertenece un booking.
+ * Usado internamente por el webhook de MercadoPago.
+ */
+export async function getPocketBaseBookingBusinessSlug(bookingId: string): Promise<string | null> {
+  const pb = await getAdminClient();
+  const booking = await pb
+    .collection("bookings")
+    .getOne<BookingRecord>(bookingId, { expand: "business", requestKey: null })
+    .catch(() => null);
+
+  if (!booking) return null;
+  const business = booking.expand?.business as { slug?: string } | undefined;
+  return business?.slug ?? null;
+}
+
+export type UpdatePocketBaseBookingPaymentInput = {
+  bookingId: string;
+  paymentStatus: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentProvider?: "mercadopago";
+  paymentPreferenceId?: string;
+  paymentExternalId?: string;
+};
+
+/**
+ * Actualiza los campos de pago de una reserva en PocketBase.
+ * Si el pago fue aprobado, cambia el status del booking a "confirmed".
+ */
+export async function updatePocketBaseBookingPayment(
+  input: UpdatePocketBaseBookingPaymentInput
+) {
+  const pb = await getAdminClient();
+
+  const data: Record<string, unknown> = {
+    paymentStatus: input.paymentStatus,
+  };
+
+  if (input.paymentAmount !== undefined) data.paymentAmount = input.paymentAmount;
+  if (input.paymentCurrency !== undefined) data.paymentCurrency = input.paymentCurrency;
+  if (input.paymentProvider !== undefined) data.paymentProvider = input.paymentProvider;
+  if (input.paymentPreferenceId !== undefined) data.paymentPreferenceId = input.paymentPreferenceId;
+  if (input.paymentExternalId !== undefined) data.paymentExternalId = input.paymentExternalId;
+
+  if (input.paymentStatus === "approved") {
+    data.status = "confirmed";
+  }
+
+  await pb.collection("bookings").update(input.bookingId, data);
+
+  return input.bookingId;
+}
+
+/**
+ * Guarda los tokens OAuth de MercadoPago en el negocio.
+ */
+export async function updatePocketBaseBusinessMPTokens(input: {
+  businessId: string;
+  mpAccessToken: string;
+  mpRefreshToken: string;
+  mpCollectorId: string;
+  mpTokenExpiresAt: string;
+}) {
+  const pb = await getAdminClient();
+  await pb.collection("businesses").update(input.businessId, {
+    mpAccessToken: input.mpAccessToken,
+    mpRefreshToken: input.mpRefreshToken,
+    mpCollectorId: input.mpCollectorId,
+    mpTokenExpiresAt: input.mpTokenExpiresAt,
+    mpConnected: true,
+  });
+}
+
+/**
+ * Elimina los tokens OAuth de MercadoPago del negocio.
+ */
+export async function clearPocketBaseBusinessMPTokens(businessId: string) {
+  const pb = await getAdminClient();
+  await pb.collection("businesses").update(businessId, {
+    mpAccessToken: "",
+    mpRefreshToken: "",
+    mpCollectorId: "",
+    mpTokenExpiresAt: "",
+    mpConnected: false,
+  });
+}
+
+/**
+ * Busca el ID de PocketBase de un negocio dado su slug.
+ * Usado en el callback OAuth para encontrar el business por slug.
+ */
+export async function getPocketBaseBusinessIdBySlug(slug: string): Promise<string | null> {
+  try {
+    const pb = await getAdminClient();
+    const business = await pb
+      .collection("businesses")
+      .getFirstListItem<BusinessRecord>(
+        pb.filter("slug = {:slug}", { slug })
+      );
+    return business.id;
+  } catch {
+    return null;
+  }
 }

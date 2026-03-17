@@ -3,18 +3,20 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ChevronDown, ExternalLink, Save, Store } from "lucide-react";
+import { CheckCircle2, ChevronDown, ExternalLink, Plug, Save, Store } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getPaletteIdFromColors } from "@/constants/branding-palettes";
 
 import {
+  disconnectMercadoPagoInlineAction,
   saveOnboardingBrandingInlineAction,
   updateOnboardedBusinessInlineAction,
 } from "./actions";
 import { EditBusinessTab } from "./components/edit-business-tab";
 import { EditImagesTab } from "./components/edit-images-tab";
+import { EditIntegrationsTab } from "./components/edit-integrations-tab";
 import { EditPublicTab } from "./components/edit-public-tab";
 import { EditStyleTab } from "./components/edit-style-tab";
 import { LivePreview } from "./components/live-preview";
@@ -31,6 +33,10 @@ interface EditBusinessPageProps {
     email: string;
     address: string;
     publicUrl: string;
+    mpConnected?: boolean;
+    mpCollectorId?: string;
+    mpOAuthUrl?: string | null;
+    defaultTab?: "business" | "style" | "images" | "public" | "integrations";
     profile: {
       accent: string;
       accentSoft: string;
@@ -129,7 +135,9 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
-  const [activeTab, setActiveTab] = useState<"business" | "style" | "images" | "public">("business");
+  const [activeTab, setActiveTab] = useState<"business" | "style" | "images" | "public" | "integrations">(
+    settingsData.defaultTab ?? "business"
+  );
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   const [businessData, setBusinessData] = useState({
@@ -259,6 +267,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
     { id: "style" as const, label: "Estilo", icon: Store, description: "Colores y textos" },
     { id: "images" as const, label: "Fotos", icon: Store, description: "Logo y galería" },
     { id: "public" as const, label: "Público", icon: Store, description: "Redes y contacto" },
+    { id: "integrations" as const, label: "Integraciones", icon: Plug, description: "Pagos y más" },
   ];
 
   return (
@@ -329,7 +338,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
           </div>
         )}
 
-        <div className="mt-6 grid gap-2 sm:mt-8 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-2 sm:mt-8 sm:grid-cols-2 xl:grid-cols-5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -416,6 +425,21 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
 
           {activeTab === "public" && (
             <EditPublicTab publicData={publicData} setPublicData={setPublicData} />
+          )}
+
+          {activeTab === "integrations" && (
+            <EditIntegrationsTab
+              businessSlug={business.slug}
+              mpConnected={settingsData.mpConnected ?? false}
+              mpCollectorId={settingsData.mpCollectorId}
+              mpOAuthUrl={settingsData.mpOAuthUrl ?? null}
+              onDisconnect={async () => {
+                const fd = new FormData();
+                fd.append("businessSlug", business.slug);
+                await disconnectMercadoPagoInlineAction(fd);
+                router.refresh();
+              }}
+            />
           )}
         </div>
 

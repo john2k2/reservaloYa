@@ -430,3 +430,27 @@ export async function updateOnboardedBusinessInlineAction(formData: FormData) {
 export async function saveOnboardingBrandingInlineAction(formData: FormData) {
   return saveOnboardingBranding(formData);
 }
+
+/**
+ * Desconecta la cuenta de MercadoPago del negocio (acción inline, sin redirect).
+ */
+export async function disconnectMercadoPagoInlineAction(formData: FormData) {
+  await requireAdminRouteAccess("/admin/onboarding");
+
+  if (isPocketBaseConfigured()) {
+    const user = await getAuthenticatedPocketBaseUser();
+    const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+    if (!businessId) throw new Error("No encontramos el negocio activo.");
+
+    const { clearPocketBaseBusinessMPTokens } = await import("@/server/pocketbase-store");
+    await clearPocketBaseBusinessMPTokens(String(businessId));
+  } else {
+    const businessSlug = String(formData.get("businessSlug") ?? "").trim();
+    if (!businessSlug) throw new Error("businessSlug requerido.");
+
+    const { clearLocalBusinessMPTokens } = await import("@/server/local-store");
+    await clearLocalBusinessMPTokens(businessSlug);
+  }
+
+  revalidatePath("/admin/onboarding");
+}

@@ -108,6 +108,10 @@ interface OnboardingPageClientProps {
     email: string;
     address: string;
     publicUrl: string;
+    mpConnected?: boolean;
+    mpCollectorId?: string;
+    mpOAuthUrl?: string | null;
+    defaultTab?: "business" | "style" | "images" | "public" | "integrations";
     profile: {
       accent: string;
       accentSoft: string;
@@ -143,6 +147,8 @@ interface OnboardingPageClientProps {
     created?: string;
     brandingSaved?: string;
     businessUpdated?: string;
+    tab?: string;
+    mp?: string;
   };
 }
 

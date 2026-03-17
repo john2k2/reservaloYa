@@ -1,7 +1,7 @@
 import OnboardingWrapper from "./wrapper";
 
 interface PageProps {
-  searchParams: Promise<{ error?: string; created?: string; brandingSaved?: string; businessUpdated?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; brandingSaved?: string; businessUpdated?: string; tab?: string; mp?: string }>;
 }
 
 export default function OnboardingPage({ searchParams }: PageProps) {

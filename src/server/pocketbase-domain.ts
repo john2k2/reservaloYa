@@ -5,7 +5,13 @@ import {
   type PublicBusinessProfile,
 } from "@/constants/public-business-profiles";
 
-export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
+export type BookingStatus =
+  | "pending"
+  | "pending_payment"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "no_show";
 
 export type BusinessRecord = RecordModel & {
   name: string;
@@ -17,6 +23,12 @@ export type BusinessRecord = RecordModel & {
   timezone?: string;
   active?: boolean;
   publicProfileOverrides?: string;
+  // MercadoPago OAuth (per-business)
+  mpAccessToken?: string;
+  mpRefreshToken?: string;
+  mpCollectorId?: string;
+  mpTokenExpiresAt?: string;
+  mpConnected?: boolean;
 };
 
 export type ServiceRecord = RecordModel & {
@@ -47,6 +59,13 @@ export type BookingRecord = RecordModel & {
   endTime: string;
   status: BookingStatus;
   notes?: string;
+  // Payment fields (optional)
+  paymentStatus?: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentProvider?: "mercadopago";
+  paymentPreferenceId?: string;
+  paymentExternalId?: string;
 };
 
 export type AvailabilityRuleRecord = RecordModel & {
@@ -136,6 +155,7 @@ export function toMoney(value?: number | null) {
 export function formatStatus(status: BookingStatus) {
   const labels: Record<BookingStatus, string> = {
     pending: "Pendiente",
+    pending_payment: "Pago pendiente",
     confirmed: "Confirmado",
     completed: "Completado",
     cancelled: "Cancelado",

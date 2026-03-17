@@ -53,6 +53,7 @@ import {
   type UpdateLocalAdminBookingInput,
   type UpdateLocalBusinessBrandingInput,
   type UpdateLocalBusinessInput,
+  type UpdateLocalBusinessMPTokensInput,
   type UpsertLocalAvailabilityRuleInput,
   type UpsertLocalAvailabilityRulesInput,
   type UpsertLocalServiceInput,
@@ -259,7 +260,9 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
             booking.id !== input.rescheduleBookingId &&
             booking.businessId === business.id &&
             booking.bookingDate === input.bookingDate &&
-            (booking.status === "pending" || booking.status === "confirmed") &&
+            (booking.status === "pending" ||
+              booking.status === "pending_payment" ||
+              booking.status === "confirmed") &&
             overlaps(
               startMinutes,
               endMinutes,
@@ -324,9 +327,16 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           bookingDate: input.bookingDate,
           startTime: input.startTime,
           endTime,
-          status: "pending",
+          status: input.initialStatus ?? "pending",
           notes: input.notes ?? "",
           createdAt: new Date().toISOString(),
+          ...(input.paymentPreferenceId
+            ? {
+                paymentProvider: "mercadopago" as const,
+                paymentPreferenceId: input.paymentPreferenceId,
+                paymentStatus: "pending" as const,
+              }
+            : {}),
         };
 
         store.bookings.unshift(booking);
@@ -385,6 +395,9 @@ export async function getLocalBookingConfirmationData(bookingId?: string) {
     status: booking.status,
     manageToken: (booking as { manageToken?: string }).manageToken,
     source: "local" as const,
+    paymentStatus: booking.paymentStatus,
+    paymentAmount: booking.paymentAmount,
+    paymentCurrency: booking.paymentCurrency,
   };
 }
 
@@ -912,10 +925,28 @@ export async function runLocalBookingReminderSweep(input?: {
       input?.businessSlug ? getBusinessBySlug(store, input.businessSlug) : null;
     const businesses = scopedBusiness ? [scopedBusiness] : store.businesses;
     const dryRun = Boolean(input?.dryRun);
+    const PENDING_PAYMENT_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 horas
+    let expiredPaymentsCancelled = 0;
+
+    // Auto-cancelar bookings pending_payment vencidos (más de 2 horas)
+    if (!dryRun) {
+      for (const booking of store.bookings) {
+        if (
+          booking.status === "pending_payment" &&
+          booking.createdAt &&
+          now.getTime() - new Date(booking.createdAt).getTime() > PENDING_PAYMENT_EXPIRY_MS
+        ) {
+          booking.status = "cancelled";
+          expiredPaymentsCancelled += 1;
+        }
+      }
+    }
+
     const summary = {
       dryRun,
       reminderWindowHours,
       businesses: businesses.length,
+      expiredPaymentsCancelled,
       candidates: 0,
       missingEmail: 0,
       readyWithoutProvider: 0,
@@ -1321,5 +1352,108 @@ export async function getLocalAdminSettingsData(activeBusinessSlug?: string | nu
     timezone: business.timezone,
     publicUrl: `/${business.slug}`,
     profile,
+    mpConnected: business.mpConnected ?? false,
+    mpCollectorId: business.mpCollectorId,
+    mpAccessToken: business.mpAccessToken,
   };
+}
+
+/**
+ * Devuelve el slug del negocio al que pertenece un booking.
+ * Usado internamente por el webhook de MercadoPago.
+ */
+export async function getLocalBookingBusinessSlug(bookingId: string): Promise<string | null> {
+  const store = await readStore();
+  const booking = store.bookings.find((b) => b.id === bookingId);
+  if (!booking) return null;
+  const business = store.businesses.find((b) => b.id === booking.businessId);
+  return business?.slug ?? null;
+}
+
+export type UpdateLocalBookingPaymentInput = {
+  bookingId: string;
+  paymentStatus: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentProvider?: "mercadopago";
+  paymentPreferenceId?: string;
+  paymentExternalId?: string;
+};
+
+/**
+ * Actualiza los campos de pago de una reserva.
+ * Si el pago fue aprobado, cambia el status del booking a "confirmed".
+ */
+export async function updateLocalBookingPayment(input: UpdateLocalBookingPaymentInput) {
+  return mutateStore((store) => {
+    const booking = store.bookings.find((b) => b.id === input.bookingId);
+
+    if (!booking) {
+      throw new Error("No encontramos el turno para actualizar el pago.");
+    }
+
+    booking.paymentStatus = input.paymentStatus;
+
+    if (input.paymentAmount !== undefined) booking.paymentAmount = input.paymentAmount;
+    if (input.paymentCurrency !== undefined) booking.paymentCurrency = input.paymentCurrency;
+    if (input.paymentProvider !== undefined) booking.paymentProvider = input.paymentProvider;
+    if (input.paymentPreferenceId !== undefined) booking.paymentPreferenceId = input.paymentPreferenceId;
+    if (input.paymentExternalId !== undefined) booking.paymentExternalId = input.paymentExternalId;
+
+    if (input.paymentStatus === "approved") {
+      booking.status = "confirmed";
+    }
+
+    return booking.id;
+  });
+}
+
+/**
+ * Revierte el status de un booking de pending_payment a pending.
+ * Usado cuando falla la creación de preferencia de pago.
+ */
+export async function revertLocalBookingFromPendingPayment(bookingId: string) {
+  return mutateStore((store) => {
+    const booking = store.bookings.find((b) => b.id === bookingId);
+    if (!booking || booking.status !== "pending_payment") return;
+    booking.status = "pending";
+  });
+}
+
+/**
+ * Guarda los tokens OAuth de MercadoPago en el negocio.
+ */
+export async function updateLocalBusinessMPTokens(
+  input: UpdateLocalBusinessMPTokensInput
+) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+    if (!business) throw new Error("No encontramos el negocio.");
+
+    business.mpAccessToken = input.mpAccessToken;
+    business.mpRefreshToken = input.mpRefreshToken;
+    business.mpCollectorId = input.mpCollectorId;
+    business.mpTokenExpiresAt = input.mpTokenExpiresAt;
+    business.mpConnected = true;
+
+    return business.slug;
+  });
+}
+
+/**
+ * Elimina los tokens OAuth de MercadoPago del negocio.
+ */
+export async function clearLocalBusinessMPTokens(businessSlug: string) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, businessSlug);
+    if (!business) throw new Error("No encontramos el negocio.");
+
+    business.mpAccessToken = undefined;
+    business.mpRefreshToken = undefined;
+    business.mpCollectorId = undefined;
+    business.mpTokenExpiresAt = undefined;
+    business.mpConnected = false;
+
+    return business.slug;
+  });
 }

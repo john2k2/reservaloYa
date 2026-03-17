@@ -10,6 +10,7 @@ import {
 
 export type LocalBookingStatus =
   | "pending"
+  | "pending_payment"
   | "confirmed"
   | "completed"
   | "cancelled"
@@ -37,6 +38,20 @@ export type LocalBusiness = {
   timezone: string;
   active: boolean;
   createdAt: string;
+  // MercadoPago OAuth (per-business)
+  mpAccessToken?: string;
+  mpRefreshToken?: string;
+  mpCollectorId?: string;
+  mpTokenExpiresAt?: string;
+  mpConnected?: boolean;
+};
+
+export type UpdateLocalBusinessMPTokensInput = {
+  businessSlug: string;
+  mpAccessToken: string;
+  mpRefreshToken: string;
+  mpCollectorId: string;
+  mpTokenExpiresAt: string;
 };
 
 export type LocalService = {
@@ -91,6 +106,13 @@ export type LocalBooking = {
   status: LocalBookingStatus;
   notes: string;
   createdAt: string;
+  // Payment fields (optional)
+  paymentStatus?: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentProvider?: "mercadopago";
+  paymentPreferenceId?: string;
+  paymentExternalId?: string;
 };
 
 export type LocalAnalyticsEvent = {
@@ -149,6 +171,8 @@ export type CreateLocalBookingInput = {
   email?: string;
   notes?: string;
   rescheduleBookingId?: string;
+  initialStatus?: LocalBookingStatus;
+  paymentPreferenceId?: string;
 };
 
 export type CreateLocalBusinessFromTemplateInput = {
@@ -411,6 +435,7 @@ export function formatMoney(value: number | null) {
 export function formatBookingStatus(status: LocalBookingStatus) {
   const labels: Record<LocalBookingStatus, string> = {
     pending: "Pendiente",
+    pending_payment: "Pago pendiente",
     confirmed: "Confirmado",
     completed: "Completado",
     cancelled: "Cancelado",

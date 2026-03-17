@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Check, Settings2 } from "lucide-react";
+import { Calendar, Check, Clock, Settings2 } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
@@ -16,7 +16,7 @@ import { getBookingConfirmationData } from "@/server/queries/public";
 
 type ConfirmationPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ booking?: string }>;
+  searchParams: Promise<{ booking?: string; payment?: string }>;
 };
 
 function toCalendarStamp(date: string, time: string) {
@@ -54,6 +54,19 @@ function buildCalendarHref(input: {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
+function formatPrice(amount: number | null | undefined, currency?: string) {
+  if (amount == null) return null;
+  try {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: currency || "ARS",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `$${amount}`;
+  }
+}
+
 export default async function ConfirmationPage({
   params,
   searchParams,
@@ -82,24 +95,87 @@ export default async function ConfirmationPage({
   });
   const manageHref = query.booking ? buildManageBookingHref(slug, query.booking) : null;
 
+  // Estado de pago desde query param (MP back_url) o desde el booking guardado
+  const paymentParam = query.payment; // "success" | "failure" | "pending" | undefined
+  const paymentStatus = (confirmation as { paymentStatus?: string }).paymentStatus;
+  const priceLabel = formatPrice(
+    (confirmation as { paymentAmount?: number }).paymentAmount ?? confirmation.priceAmount,
+    (confirmation as { paymentCurrency?: string }).paymentCurrency
+  );
+
+  const isPendingPayment =
+    confirmation.status === "pending_payment" ||
+    paymentParam === "pending" ||
+    (paymentStatus && paymentStatus !== "approved" && paymentStatus !== "rejected");
+
+  const isPaymentFailed = paymentParam === "failure" || paymentStatus === "rejected";
+  const isPaymentSuccess =
+    paymentParam === "success" || paymentStatus === "approved" || confirmation.status === "confirmed";
+
+  const showPaymentBanner = priceLabel && (isPendingPayment || isPaymentFailed || isPaymentSuccess);
+
   return (
     <main
       id="main-content"
       className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
     >
       <div className="flex w-full max-w-lg flex-col items-center text-center">
-        <div className="mb-6 sm:mb-8 flex size-16 sm:size-20 items-center justify-center rounded-full bg-secondary">
-          <Check aria-hidden="true" className="size-6 sm:size-8 text-foreground" strokeWidth={2.5} />
+
+        {/* Icono de estado */}
+        <div className={cn(
+          "mb-6 sm:mb-8 flex size-16 sm:size-20 items-center justify-center rounded-full",
+          isPaymentFailed ? "bg-destructive/10" : "bg-secondary"
+        )}>
+          {isPaymentFailed ? (
+            <Clock aria-hidden="true" className="size-6 sm:size-8 text-destructive" strokeWidth={2.5} />
+          ) : (
+            <Check aria-hidden="true" className="size-6 sm:size-8 text-foreground" strokeWidth={2.5} />
+          )}
         </div>
 
+        {/* Título */}
         <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-          Reserva confirmada
+          {isPaymentFailed
+            ? "Pago no completado"
+            : isPendingPayment
+            ? "Reserva registrada"
+            : "Reserva confirmada"}
         </h1>
         <p className="max-w-sm text-base sm:text-lg text-muted-foreground">
-          Ya podés guardar los detalles y gestionar el turno cuando quieras.
+          {isPaymentFailed
+            ? "No se pudo procesar el pago. Tu reserva está guardada pero pendiente de pago."
+            : isPendingPayment
+            ? "Tu reserva está registrada. Quedará confirmada cuando se acredite el pago."
+            : "Ya podés guardar los detalles y gestionar el turno cuando quieras."}
         </p>
 
-        <div className="mt-8 sm:mt-12 w-full rounded-xl sm:rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-left shadow-sm">
+        {/* Banner de estado de pago */}
+        {showPaymentBanner && (
+          <div className={cn(
+            "mt-6 w-full rounded-xl border px-5 py-4 text-left text-sm",
+            isPaymentFailed
+              ? "border-destructive/30 bg-destructive/5 text-destructive"
+              : isPaymentSuccess
+              ? "border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400"
+              : "border-yellow-500/30 bg-yellow-500/5 text-yellow-700 dark:text-yellow-400"
+          )}>
+            <p className="font-semibold">
+              {isPaymentFailed
+                ? "Pago rechazado"
+                : isPaymentSuccess
+                ? `Pago aprobado${priceLabel ? ` · ${priceLabel}` : ""}`
+                : `Pago pendiente${priceLabel ? ` · ${priceLabel}` : ""}`}
+            </p>
+            {isPendingPayment && !isPaymentFailed && (
+              <p className="mt-1 text-xs opacity-80">
+                MercadoPago puede demorar unos minutos en confirmar el pago.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Detalles del turno */}
+        <div className="mt-8 sm:mt-10 w-full rounded-xl sm:rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-left shadow-sm">
           <h2 className="mb-4 sm:mb-6 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Detalles de la cita
           </h2>
@@ -117,6 +193,11 @@ export default async function ConfirmationPage({
               <span className="text-base sm:text-lg font-semibold text-card-foreground">
                 {confirmation.serviceName}
               </span>
+              {confirmation.priceAmount != null && (
+                <span className="text-xs sm:text-sm text-muted-foreground">
+                  {formatPrice(confirmation.priceAmount)}
+                </span>
+              )}
             </div>
             <div className="h-px w-full bg-border/60" />
             <div className="flex flex-col">
@@ -131,7 +212,7 @@ export default async function ConfirmationPage({
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-12 flex w-full flex-col justify-center gap-3">
+        <div className="mt-8 sm:mt-10 flex w-full flex-col justify-center gap-3">
           <a
             href={calendarHref}
             target="_blank"

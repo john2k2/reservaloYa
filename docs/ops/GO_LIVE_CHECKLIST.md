@@ -1,0 +1,120 @@
+# Go Live Checklist
+
+**URL actual:** https://reservaya-kappa.vercel.app
+
+---
+
+## Estado actual (2026-03-17)
+
+| Item | Estado |
+|------|--------|
+| App desplegada en Vercel | ✅ |
+| Build productivo pasando | ✅ |
+| Tests pasando | ✅ |
+| Emails HTML inline (sin dominio requerido) | ✅ |
+| CRUD admin completo | ✅ |
+| Flujo público de reserva | ✅ |
+| Endpoint cron `/api/jobs/booking-reminders` | ✅ |
+| `vercel.json` con cron `0 13 * * *` (1pm UTC) | ✅ |
+| Variables de entorno en Vercel | ⏳ ver abajo |
+| PocketBase en producción | ⏳ pendiente |
+| Cron activo y probado | ⏳ pendiente |
+
+---
+
+## Paso 1 — Variables de entorno en Vercel
+
+Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variables**
+
+### Mínimas para que funcione la demo pública
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `NEXT_PUBLIC_APP_URL` | `https://reservaya-kappa.vercel.app` | URL pública de la app |
+| `BOOKING_LINK_SECRET` | (generar 32+ chars aleatorios) | Para tokens de gestión |
+| `CRON_SECRET` | (generar 32+ chars aleatorios) | Vercel lo envía automáticamente al cron |
+
+> Generar secrets: `openssl rand -hex 32` o https://1password.com/password-generator/
+
+### Para emails (Resend)
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `RESEND_API_KEY` | `re_xxxxx` | API Key de https://resend.com |
+| `RESEND_FROM_EMAIL` | (vacío) | Sin dominio propio, dejar vacío → usa onboarding@resend.dev |
+
+> Con `RESEND_FROM_EMAIL` vacío solo podés enviar a tu propio email verificado en Resend.
+> Para producción real con clientes, necesitás dominio propio.
+
+### Para PocketBase (cuando esté listo)
+
+| Variable | Valor |
+|----------|-------|
+| `NEXT_PUBLIC_POCKETBASE_URL` | URL de tu instancia PocketBase |
+| `POCKETBASE_ADMIN_EMAIL` | Email del superuser |
+| `POCKETBASE_ADMIN_PASSWORD` | Password del superuser |
+| `POCKETBASE_PUBLIC_AUTH_EMAIL` | Email usuario de solo lectura |
+| `POCKETBASE_PUBLIC_AUTH_PASSWORD` | Password usuario de solo lectura |
+
+---
+
+## Paso 2 — Redeploy
+
+Después de agregar variables: **Deployments → deploy reciente → ··· → Redeploy**
+
+---
+
+## Paso 3 — Verificar el cron
+
+El cron ya está configurado en `vercel.json`:
+```json
+{
+  "crons": [{ "path": "/api/jobs/booking-reminders", "schedule": "0 13 * * *" }]
+}
+```
+
+Vercel envía automáticamente `Authorization: Bearer {CRON_SECRET}` al endpoint.
+
+**Verificar manualmente después del redeploy:**
+```bash
+curl "https://reservaya-kappa.vercel.app/api/jobs/booking-reminders?dryRun=true" \
+  -H "Authorization: Bearer TU_CRON_SECRET"
+```
+
+Respuesta esperada:
+```json
+{ "ok": true, "result": { "processed": 0, "sent": 0, "errors": 0 } }
+```
+
+> Nota: en plan Hobby de Vercel el cron solo puede correr 1 vez al día.
+> `0 13 * * *` = todos los días a las 1pm UTC = 10am Argentina.
+
+---
+
+## Paso 4 — Verificar el flujo completo
+
+1. Resetear demo si vas a mostrar modo local: `npm run demo:reset`
+2. Abrir https://reservaya-kappa.vercel.app/demo-barberia
+3. Crear una reserva completa con tu email
+4. Verificar que llegue el email de confirmación
+5. Verificar que el link de "mi turno" permita reprogramar y cancelar
+6. Verificar que el admin refleje los cambios en `/admin/dashboard`
+
+---
+
+## Antes de pasar a producción real con clientes
+
+- [ ] PocketBase deployado en VPS o PaaS con backups diarios
+- [ ] Dominio propio comprado y configurado en Resend
+- [ ] `RESEND_FROM_EMAIL` actualizado con dominio verificado
+- [ ] Cron probado con reservas reales en ventana de 24hs
+- [ ] WhatsApp Twilio configurado (opcional)
+- [ ] Monitoreo básico activo (Vercel logs + alertas)
+
+---
+
+## Assets para lanzamiento
+
+- [ ] Video demo 30-45 segundos (landing → reserva → confirmación → admin)
+- [ ] 3 capturas: landing, flujo de reserva, panel admin
+- [ ] Post LinkedIn con CTA a demo o piloto
