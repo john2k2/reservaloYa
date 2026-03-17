@@ -68,7 +68,7 @@ type ReminderInput = {
   };
 };
 
-function toISOString(bookingDate: string, startTime: string, timezone: string): string {
+function toISOString(bookingDate: string, startTime: string): string {
   // Combina fecha "YYYY-MM-DD" y hora "HH:mm" en ISO string
   const dateTimeStr = `${bookingDate}T${startTime}:00`;
   // Devuelve como ISO sin conversión de timezone (la función formatInTimeZone se encarga de eso)
@@ -86,7 +86,7 @@ export async function sendBookingReminderEmail(input: ReminderInput): Promise<Re
     ? `${getBaseUrl()}/${input.businessSlug}/mi-turno?token=${input.manageToken}`
     : `${getBaseUrl()}/${input.businessSlug}`;
 
-  const startsAt = toISOString(confirmation.bookingDate, confirmation.startTime, confirmation.businessTimezone);
+  const startsAt = toISOString(confirmation.bookingDate, confirmation.startTime);
 
   try {
     const { data, error } = await getResend().emails.send({
@@ -158,8 +158,7 @@ export async function sendBookingReminderWhatsApp(
 
     const startsAt = toISOString(
       confirmation.bookingDate,
-      confirmation.startTime,
-      confirmation.businessTimezone
+      confirmation.startTime
     );
     const dateLabel = formatWhatsAppDate(
       startsAt,
