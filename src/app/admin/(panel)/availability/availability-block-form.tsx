@@ -117,7 +117,7 @@ export function AvailabilityBlockForm({
           </div>
 
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Se crearan bloqueos individuales para el dia elegido a partir de la fecha indicada.
+            Se crearán bloqueos individuales para el día elegido a partir de la fecha indicada.
           </p>
         </div>
       )}

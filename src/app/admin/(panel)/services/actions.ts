@@ -91,7 +91,7 @@ export async function saveServiceAction(formData: FormData) {
     });
 
     if (!parsed.success) {
-      throw new Error("Revisa nombre, duracion y precio antes de guardar.");
+      throw new Error("Revisa nombre, duración y precio antes de guardar.");
     }
 
     const context = await getServiceContext();

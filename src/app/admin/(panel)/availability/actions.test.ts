@@ -79,7 +79,7 @@ describe("admin availability actions", () => {
     formData.set("endTime_1", "09:00");
 
     await expect(saveAvailabilityRulesAction(formData)).rejects.toThrow(
-      "La hora de fin debe quedar despues de la hora de inicio."
+      "La hora de fin debe quedar después de la hora de inicio."
     );
     expect(upsertLocalAvailabilityRulesMock).not.toHaveBeenCalled();
   });

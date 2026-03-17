@@ -364,7 +364,7 @@ export function BookingDateTimePicker({
             <Clock3 className="mb-3 size-5 text-muted-foreground/40" />
             <p className="text-sm font-medium text-foreground">Sin horarios</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Prueba seleccionando otro dia en el calendario.
+              Prueba seleccionando otro día en el calendario.
             </p>
           </div>
         )}

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Clock3, ExternalLink, PencilLine, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Clock3, ExternalLink, PencilLine, Plus, Sparkles } from "lucide-react";
 
 import {
   deactivateServiceAction,
   saveServiceAction,
 } from "@/app/admin/(panel)/services/actions";
+import { ServiceDeleteButton } from "@/app/admin/(panel)/services/service-delete-button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
@@ -268,15 +269,7 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
                         <form action={deactivateServiceAction}>
                           <input type="hidden" name="serviceId" value={service.id} />
                           <input type="hidden" name="serviceName" value={service.name} />
-                          <button
-                            type="submit"
-                            className={cn(
-                              buttonVariants({ variant: "ghost", size: "sm" }),
-                              "h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            )}
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
+                          <ServiceDeleteButton />
                         </form>
                       </div>
                     </div>

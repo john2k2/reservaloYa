@@ -84,7 +84,7 @@ async function getAvailabilityContext() {
 
 function ensureRange(startTime: string, endTime: string) {
   if (startTime >= endTime) {
-    throw new Error("La hora de fin debe quedar despues de la hora de inicio.");
+    throw new Error("La hora de fin debe quedar después de la hora de inicio.");
   }
 }
 
@@ -98,7 +98,7 @@ function getAvailabilityRuleFromFormData(formData: FormData, dayOfWeek: number) 
   });
 
   if (!parsed.success) {
-    throw new Error(`Revisa el horario de ${dayLabels[dayOfWeek] ?? "ese dia"}.`);
+    throw new Error(`Revisa el horario de ${dayLabels[dayOfWeek] ?? "ese día"}.`);
   }
 
   ensureRange(parsed.data.startTime, parsed.data.endTime);
@@ -140,7 +140,7 @@ export async function saveAvailabilityRulesAction(formData: FormData) {
             const match = scope.match(/^day:(\d)$/);
 
             if (!match) {
-              throw new Error("No encontramos el dia a guardar.");
+              throw new Error("No encontramos el día a guardar.");
             }
 
             const dayOfWeek = Number(match[1]);
@@ -180,7 +180,7 @@ export async function saveAvailabilityRulesAction(formData: FormData) {
     }
 
     const savedDay = targetRules[0]?.dayOfWeek ?? 0;
-    redirect(`/admin/availability?savedDay=${encodeURIComponent(dayLabels[savedDay] ?? "dia")}`);
+    redirect(`/admin/availability?savedDay=${encodeURIComponent(dayLabels[savedDay] ?? "día")}`);
   } catch (error) {
     unstable_rethrow(error);
 
@@ -225,7 +225,7 @@ export async function createBlockedSlotAction(formData: FormData) {
                 endTime: parsed.data.endTime,
                 reason: parsed.data.reason,
               })),
-              label: `${dayLabels[parsed.data.repeatDayOfWeek] ?? "ese dia"} durante ${parsed.data.repeatWeeks} semanas`,
+              label: `${dayLabels[parsed.data.repeatDayOfWeek] ?? "ese día"} durante ${parsed.data.repeatWeeks} semanas`,
             };
           })()
         : (() => {

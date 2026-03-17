@@ -29,11 +29,11 @@ export async function createStaffAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
   if (!name || !email || !password) {
-    redirect("/admin/team?error=Completa nombre, email y contrasena.");
+    redirect("/admin/team?error=Completa nombre, email y contraseña.");
   }
 
   if (password.length < 8) {
-    redirect("/admin/team?error=La contrasena temporal debe tener al menos 8 caracteres.");
+    redirect("/admin/team?error=La contraseña temporal debe tener al menos 8 caracteres.");
   }
 
   try {

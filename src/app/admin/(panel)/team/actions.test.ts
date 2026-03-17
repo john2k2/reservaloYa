@@ -107,7 +107,7 @@ describe("team management actions", () => {
     await expect(createStaffAction(formData)).rejects.toThrow("REDIRECT:");
     expect(createPocketBaseStaffAccountMock).not.toHaveBeenCalled();
     expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
-      "La contrasena temporal debe tener al menos 8 caracteres"
+      "La contraseña temporal debe tener al menos 8 caracteres"
     );
   });
 

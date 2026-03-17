@@ -5,6 +5,7 @@ import { updateBookingAction } from "@/app/admin/(panel)/bookings/actions";
 import { BookingsNotice } from "@/app/admin/(panel)/bookings/bookings-notice";
 import { BookingSubmitButton } from "@/app/admin/(panel)/bookings/booking-submit-button";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { getAdminBookingsData } from "@/server/queries/admin";
 
@@ -132,12 +133,14 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                 Limpiar
               </Link>
             )}
-            <button
-              type="submit"
-              className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-10 sm:h-9 flex-1 sm:flex-none")}
+            <SubmitButton
+              variant="default"
+              size="sm"
+              pendingLabel="Filtrando..."
+              className="h-10 sm:h-9 flex-1 sm:flex-none"
             >
               Filtrar
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </section>

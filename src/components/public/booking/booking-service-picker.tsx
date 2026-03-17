@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronRight, Clock3 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 
 type BookingServicePickerProps = {
   businessSlug: string;
@@ -17,7 +17,8 @@ type BookingServicePickerProps = {
     durationMinutes: number;
     priceLabel: string;
   }>;
-  getHref: (serviceId: string) => string;
+  // Parámetros adicionales para construir la URL (serializables)
+  baseQueryParams?: Record<string, string | undefined>;
 };
 
 export function BookingServicePicker({
@@ -27,10 +28,24 @@ export function BookingServicePicker({
   description,
   prefetchDate,
   services,
-  getHref,
+  baseQueryParams = {},
 }: BookingServicePickerProps) {
   const router = useRouter();
   const prefetchedKeys = useRef(new Set<string>());
+
+  // Construir URL dentro del componente cliente
+  const getHref = useCallback((serviceId: string): string => {
+    const params = new URLSearchParams();
+    params.set("service", serviceId);
+    
+    // Agregar parámetros base si existen
+    Object.entries(baseQueryParams).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    
+    const query = params.toString();
+    return query ? `/${businessSlug}/reservar?${query}` : `/${businessSlug}/reservar`;
+  }, [businessSlug, baseQueryParams]);
 
   const prefetchService = (serviceId: string) => {
     const cacheKey = `${serviceId}:${prefetchDate}`;

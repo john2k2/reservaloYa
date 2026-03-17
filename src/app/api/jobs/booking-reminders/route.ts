@@ -16,14 +16,12 @@ function isAuthorized(request: Request) {
 
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const headerSecret = request.headers.get("x-booking-jobs-secret");
-  const userAgent = request.headers.get("user-agent") ?? "";
   const matchesExpectedSecret = (candidate: string | null | undefined) =>
     candidate ? expectedSecrets.includes(candidate) : false;
 
   return (
     matchesExpectedSecret(bearer) ||
-    matchesExpectedSecret(headerSecret) ||
-    (userAgent === "vercel-cron/1.0" && expectedSecrets.length > 0)
+    matchesExpectedSecret(headerSecret)
   );
 }
 

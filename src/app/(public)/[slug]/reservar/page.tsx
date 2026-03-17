@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   AlertCircle,
@@ -21,9 +22,43 @@ import { BookingSupportCard } from "@/components/public/booking/booking-support-
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { PublicSubmitButton } from "@/components/public/public-submit-button";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { BreadcrumbJsonLd, WebPageJsonLd } from "@/lib/seo/business-json-ld";
+import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
 import { createPublicBookingAction } from "@/server/actions/public-booking";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ service?: string }>;
+}): Promise<Metadata> {
+  try {
+    const { slug } = await params;
+    const { service } = await searchParams;
+    
+    const pageData = await getPublicBusinessPageData(slug);
+    
+    if (!pageData) {
+      return { title: "Reserva no encontrada | ReservaYa" };
+    }
+
+    const serviceName = service
+      ? pageData.services.find((s) => s.id === service)?.name
+      : undefined;
+
+    return generateBookingMetadata({
+      businessName: pageData.business.name,
+      slug,
+      serviceName,
+    });
+  } catch (error) {
+    console.error("Error generating metadata:", error);
+    return { title: "Reservar turno | ReservaYa" };
+  }
+}
 
 type BookingPageProps = {
   params: Promise<{ slug: string }>;
@@ -93,8 +128,29 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     (activeDays.length > 0 ? findNextBookingDate(fallbackDate, activeDays) : fallbackDate);
   const datePickerOptions = buildBookingDateOptions(selectedDate, activeDays);
 
+  // Preparar datos para JSON-LD
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reservaya.app";
+  const businessUrl = `${siteUrl}/${slug}`;
+  const bookingUrl = `${siteUrl}/${slug}/reservar`;
+  const pageTitle = selectedService
+    ? `Reservar ${selectedService.name} | ${pageData.business.name}`
+    : `Reservar turno | ${pageData.business.name}`;
+
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>
+      {/* SEO: JSON-LD Structured Data */}
+      <WebPageJsonLd
+        name={pageTitle}
+        description={`Reserva tu turno en ${pageData.business.name}. Selecciona fecha, horario y servicio. Confirmación inmediata.`}
+        url={bookingUrl}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", url: siteUrl },
+          { name: pageData.business.name, url: businessUrl },
+          { name: "Reservar", url: bookingUrl },
+        ]}
+      />
       <main
         id="main-content"
         className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
@@ -113,16 +169,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <section className="mb-6 grid gap-6 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur sm:mb-8 sm:p-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
               <span className="inline-flex min-h-11 items-center rounded-full border border-border/60 bg-background/80 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                {rescheduleBooking ? "Reprogramacion" : "Reserva online"}
+                {rescheduleBooking ? "Reprogramación" : "Reserva online"}
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                 {selectedService
                   ? `Reserva tu turno para ${selectedService.name}.`
-                  : "Elige un servicio y despues tu turno."}
+                  : "Elige un servicio y después tu turno."}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
                 {selectedService
-                  ? "Ya tienes el servicio definido. Ahora te mostramos dias y horas reales para confirmar el turno sin vueltas."
+                  ? "Ya tienes el servicio definido. Ahora te mostramos días y horas reales para confirmar el turno sin vueltas."
                   : "Primero selecciona que quieres reservar. Cuando lo hagas, vas a ver disponibilidad real y el formulario final."}
               </p>
               {rescheduleBooking && (
@@ -145,7 +201,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                     {pageData.business.name}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {pageData.business.address ?? "Direccion a confirmar"}
+                    {pageData.business.address ?? "Dirección a confirmar"}
                   </p>
                 </div>
               </div>
@@ -225,10 +281,10 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                       Paso 2
                     </p>
                     <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                      Elige dia y hora
+                      Elige día y hora
                     </h2>
                     <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      Solo dias con disponibilidad real. Selecciona una fecha y despues el horario.
+                      Solo días con disponibilidad real. Selecciona una fecha y después el horario.
                     </p>
                   </div>
                   <BookingScheduleSection
@@ -250,7 +306,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                     Completa tus datos
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Solo pedimos la informacion justa para confirmar y poder contactarte si hace
+                    Solo pedimos la información justa para confirmar y poder contactarte si hace
                     falta.
                   </p>
                   <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -309,7 +365,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                     {/* Email */}
                     <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
                       <label htmlFor="email" className="text-sm font-medium text-foreground">
-                        Correo electronico
+                        Correo electrónico
                         <span className="ml-1 text-xs font-normal text-muted-foreground">
                           opcional
                         </span>
@@ -377,7 +433,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                           {selectedService.name}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {selectedService.durationMinutes} min de duracion
+                          {selectedService.durationMinutes} min de duración
                         </p>
                       </div>
                     </div>
@@ -424,7 +480,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                       Elige la hora y después envía tus datos.
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      La confirmacion llega al instante y despues puedes gestionar el turno desde
+                      La confirmación llega al instante y después puedes gestionar el turno desde
                       tu link.
                     </p>
                   </div>
@@ -456,18 +512,14 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 description="Este es el primer paso real del flujo. Cuando elijas uno, te mostraremos solo la disponibilidad que corresponde."
                 prefetchDate={selectedDate}
                 services={pageData.services}
-                getHref={(serviceId) =>
-                  buildBookingHref({
-                    slug,
-                    serviceId,
-                    bookingDate: selectedDate,
-                    rescheduleBookingId: filters.reschedule,
-                    token: filters.token,
-                    source: filters.utm_source,
-                    medium: filters.utm_medium,
-                    campaign: filters.utm_campaign,
-                  })
-                }
+                baseQueryParams={{
+                  date: selectedDate,
+                  reschedule: filters.reschedule,
+                  token: filters.token,
+                  utm_source: filters.utm_source,
+                  utm_medium: filters.utm_medium,
+                  utm_campaign: filters.utm_campaign,
+                }}
               />
 
               <aside className="space-y-4 lg:sticky lg:top-6">

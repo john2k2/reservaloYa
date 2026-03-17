@@ -200,7 +200,7 @@ export async function sendBookingConfirmationEmail(input: BookingEmailInput) {
   const subject =
     input.mode === "rescheduled"
       ? `${input.confirmation.businessName}: tu turno fue reprogramado`
-      : `${input.confirmation.businessName}: confirmacion de tu turno`;
+      : `${input.confirmation.businessName}: confirmación de tu turno`;
 
   return sendBookingEmail({
     customerName: input.customerName,
