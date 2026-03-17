@@ -123,25 +123,51 @@ async function sendConfirmationEmailIfPossible(input: {
   businessSlug: string;
   customerName: string;
   customerEmail?: string;
+  customerPhone?: string;
+  serviceName: string;
+  bookingDate: string;
+  startTime: string;
+  notes?: string;
   mode: "created" | "rescheduled";
 }) {
-  if (!input.customerEmail) {
-    return;
-  }
-
   const confirmation = await getBookingConfirmationData({
     slug: input.businessSlug,
     bookingId: input.bookingId,
   });
 
-  await sendBookingConfirmationEmail({
-    bookingId: input.bookingId,
-    businessSlug: input.businessSlug,
-    customerName: input.customerName,
-    customerEmail: input.customerEmail,
-    mode: input.mode,
-    confirmation,
-  });
+  // Enviar email al cliente si tiene email
+  if (input.customerEmail) {
+    await sendBookingConfirmationEmail({
+      bookingId: input.bookingId,
+      businessSlug: input.businessSlug,
+      customerName: input.customerName,
+      customerEmail: input.customerEmail,
+      mode: input.mode,
+      confirmation,
+    });
+  }
+
+  // Enviar notificación al negocio
+  const { getPublicBusinessPageData } = await import("@/server/queries/public");
+  const pageData = await getPublicBusinessPageData(input.businessSlug);
+  
+  if (pageData?.business.notificationEmail || pageData?.business.email) {
+    const { sendBusinessNotificationEmail } = await import("@/server/booking-notifications");
+    
+    await sendBusinessNotificationEmail({
+      bookingId: input.bookingId,
+      businessSlug: input.businessSlug,
+      businessName: pageData.business.name,
+      notificationEmail: pageData.business.notificationEmail || pageData.business.email!,
+      customerName: input.customerName,
+      customerEmail: input.customerEmail,
+      customerPhone: input.customerPhone,
+      serviceName: input.serviceName,
+      bookingDate: input.bookingDate,
+      startTime: input.startTime,
+      notes: input.notes,
+    });
+  }
 }
 
 async function reschedulePocketBaseBooking(input: {
@@ -287,11 +313,21 @@ export async function createPublicBookingAction(formData: FormData) {
     );
   }
 
+  // Obtener datos del servicio para la notificación
+  const { getPublicBusinessPageData } = await import("@/server/queries/public");
+  const pageData = await getPublicBusinessPageData(parsed.data.businessSlug);
+  const service = pageData?.services.find(s => s.id === parsed.data.serviceId);
+  
   await sendConfirmationEmailIfPossible({
     bookingId,
     businessSlug: parsed.data.businessSlug,
     customerName: parsed.data.fullName,
     customerEmail: parsed.data.email || undefined,
+    customerPhone: parsed.data.phone,
+    serviceName: service?.name || "Servicio",
+    bookingDate: parsed.data.bookingDate,
+    startTime: parsed.data.startTime,
+    notes: parsed.data.notes,
     mode: parsed.data.rescheduleBookingId ? "rescheduled" : "created",
   });
 

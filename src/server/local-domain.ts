@@ -32,6 +32,7 @@ export type LocalBusiness = {
   publicProfileOverrides?: Partial<PublicBusinessProfile>;
   phone: string;
   email: string;
+  notificationEmail?: string; // Email para recibir notificaciones de reservas
   address: string;
   timezone: string;
   active: boolean;

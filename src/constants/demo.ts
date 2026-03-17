@@ -5,6 +5,7 @@ export type DemoBusiness = {
   templateSlug?: string;
   phone: string;
   email: string;
+  notificationEmail?: string; // Email para recibir notificaciones de reservas
   address: string;
   timezone: string;
 };
@@ -74,6 +75,7 @@ export const demoBusiness = {
   templateSlug: "demo-barberia",
   phone: "+54 11 5555 0199",
   email: "hola@reservaya.app",
+  notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Av. del Libertador 214, Palermo",
   timezone: "America/Argentina/Buenos_Aires",
 } satisfies DemoBusiness;
@@ -109,6 +111,7 @@ export const estheticsDemoBusiness = {
   templateSlug: "demo-estetica",
   phone: "+54 11 5555 0288",
   email: "hola@aura-estetica.demo",
+  notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Honduras 4821, Palermo",
   timezone: "America/Argentina/Buenos_Aires",
 } satisfies DemoBusiness;
@@ -144,6 +147,7 @@ export const nailsDemoBusiness = {
   templateSlug: "demo-nails",
   phone: "+54 11 5555 0377",
   email: "hola@nails-demo.estudio",
+  notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Gorriti 5172, Palermo",
   timezone: "America/Argentina/Buenos_Aires",
 } satisfies DemoBusiness;
@@ -179,6 +183,7 @@ export const consultorioDemoBusiness = {
   templateSlug: "demo-consultorio",
   phone: "+54 11 5555 0466",
   email: "hola@consultorio-demo.med",
+  notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Av. Cabildo 1847, Belgrano",
   timezone: "America/Argentina/Buenos_Aires",
 } satisfies DemoBusiness;

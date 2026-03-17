@@ -13,6 +13,7 @@ export interface Business {
   slug: string;
   phone: string | null;
   email: string | null;
+  notificationEmail?: string | null; // Email para recibir notificaciones de reservas
   address: string | null;
   timezone: string;
   active: boolean;
