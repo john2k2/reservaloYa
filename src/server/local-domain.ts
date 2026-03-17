@@ -22,7 +22,7 @@ export type LocalAnalyticsEventName =
   | "booking_page_view"
   | "booking_created";
 
-export type LocalCommunicationKind = "confirmation" | "reminder";
+export type LocalCommunicationKind = "confirmation" | "reminder" | "followup";
 export type LocalCommunicationStatus = "sent" | "failed";
 
 export type LocalBusiness = {
@@ -38,6 +38,7 @@ export type LocalBusiness = {
   timezone: string;
   active: boolean;
   createdAt: string;
+  cancellationPolicy?: string;
   // MercadoPago OAuth (per-business)
   mpAccessToken?: string;
   mpRefreshToken?: string;
@@ -191,6 +192,7 @@ export type UpdateLocalBusinessInput = {
   phone: string;
   email: string;
   address: string;
+  cancellationPolicy?: string;
 };
 
 export type UpsertLocalServiceInput = {

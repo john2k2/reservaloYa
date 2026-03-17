@@ -37,6 +37,7 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
   const sd = settingsData as {
     mpConnected?: boolean;
     mpCollectorId?: string;
+    cancellationPolicy?: string;
   } & typeof settingsData;
 
   return (
@@ -57,6 +58,7 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
         email: sd.email,
         address: sd.address,
         publicUrl: sd.publicUrl,
+        cancellationPolicy: sd.cancellationPolicy,
         mpConnected: sd.mpConnected ?? false,
         mpCollectorId: sd.mpCollectorId,
         mpOAuthUrl,

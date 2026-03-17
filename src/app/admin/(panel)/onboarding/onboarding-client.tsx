@@ -107,6 +107,7 @@ interface OnboardingPageClientProps {
     businessSlug: string;
     email: string;
     address: string;
+    cancellationPolicy?: string;
     publicUrl: string;
     mpConnected?: boolean;
     mpCollectorId?: string;

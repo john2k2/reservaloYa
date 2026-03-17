@@ -35,4 +35,36 @@ test.describe("Smoke Tests - Páginas principales", () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
   });
+
+  test("Admin onboarding debería cargar", async ({ page }) => {
+    const response = await page.goto("/admin/onboarding");
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("body")).toBeVisible();
+  });
+
+  test("Admin bookings debería cargar", async ({ page }) => {
+    const response = await page.goto("/admin/bookings");
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("body")).toBeVisible();
+  });
+
+  test("Admin services debería cargar", async ({ page }) => {
+    const response = await page.goto("/admin/services");
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("body")).toBeVisible();
+  });
+
+  test("Admin availability debería cargar", async ({ page }) => {
+    const response = await page.goto("/admin/availability");
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("body")).toBeVisible();
+  });
+
+  test("Ruta 404 debería manejarse", async ({ page }) => {
+    await page.goto("/ruta-que-no-existe-abc123");
+    await expect(page.locator("body")).toBeVisible();
+    // Not found page o redirect — debe cargar sin crash
+    const status = await page.evaluate(() => document.title);
+    expect(status).toBeTruthy();
+  });
 });

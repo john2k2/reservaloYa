@@ -426,12 +426,53 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           mobileVisibleCount={pageData.profile.sectionLayout.mobileTestimonials}
         />
 
+        {/* Horarios de atención */}
+        {pageData.weeklyHours && pageData.weeklyHours.length > 0 && (
+          <section className="border-t border-border/40 py-10 sm:py-14 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
+            <div className="mx-auto max-w-6xl px-4 sm:px-6">
+              <div className="mb-8 sm:mb-10 text-center">
+                <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
+                  Horarios
+                </p>
+                <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                  Días y horarios de atención
+                </h2>
+              </div>
+              <div className="mx-auto max-w-sm sm:max-w-md">
+                <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-border/60 bg-background shadow-sm">
+                  {pageData.weeklyHours.map((slot, idx) => {
+                    const isClosed = slot.hoursLabel.toLowerCase().includes("cerrado");
+                    return (
+                      <div
+                        key={slot.dayLabel}
+                        className={cn(
+                          "flex items-center justify-between px-5 py-3.5 text-sm",
+                          idx !== 0 && "border-t border-border/40",
+                          isClosed && "opacity-50"
+                        )}
+                      >
+                        <span className="font-medium text-foreground">{slot.dayLabel}</span>
+                        <span className={cn("text-right", isClosed ? "text-muted-foreground" : "font-semibold")} style={isClosed ? undefined : { color: pageData.profile.accent }}>
+                          {slot.hoursLabel}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         <FaqContactSection
           slug={slug}
           accentColor={pageData.profile.accent}
           surfaceTint={pageData.profile.surfaceTint}
           faqs={pageData.profile.faqs}
-          policies={pageData.profile.policies}
+          policies={[
+            ...(pageData.business.cancellationPolicy ? [pageData.business.cancellationPolicy] : []),
+            ...pageData.profile.policies,
+          ]}
           whatsappHref={whatsappHref}
           bookingHref={bookingHref}
           instagramHref={instagramHref}

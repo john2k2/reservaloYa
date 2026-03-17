@@ -11,6 +11,7 @@ type BusinessData = {
   phone: string;
   email: string;
   address: string;
+  cancellationPolicy: string;
 };
 
 type EditBusinessTabProps = {
@@ -88,6 +89,25 @@ export function EditBusinessTab({
           validate={validations.address}
           hint="Dirección completa de tu local"
         />
+
+        <div className="space-y-1.5">
+          <label htmlFor="cancellationPolicy" className="block text-sm font-medium text-foreground">
+            Política de cancelación
+          </label>
+          <textarea
+            id="cancellationPolicy"
+            name="cancellationPolicy"
+            rows={3}
+            maxLength={300}
+            placeholder="Ej: Cancelaciones con 24hs de anticipación sin cargo. Cancelaciones tardías pueden tener un cargo del 50%."
+            value={businessData.cancellationPolicy}
+            onChange={(e) => setBusinessData((d) => ({ ...d, cancellationPolicy: e.target.value }))}
+            className="w-full resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <p className="text-xs text-muted-foreground">
+            Se muestra en la página pública de tu negocio. Máx. 300 caracteres.
+          </p>
+        </div>
       </div>
     </article>
   );

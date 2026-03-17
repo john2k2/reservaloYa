@@ -28,6 +28,8 @@ import {
   type DeactivateLocalServiceInput,
   ensureDemoPresetData,
   findReminderCandidatesForBusiness,
+  getBookingTimestamp,
+  getBusinessCommunicationEvents,
   formatBookingStatus,
   formatMoney,
   getAdminBusiness,
@@ -62,6 +64,7 @@ import {
   getAvailableReminderChannels,
   sendBookingReminderEmail,
   sendBookingReminderWhatsApp,
+  sendPostBookingFollowUpEmail,
 } from "@/server/booking-notifications";
 
 const dataDir = path.join(process.cwd(), "data");
@@ -496,6 +499,9 @@ export async function updateLocalBusiness(input: UpdateLocalBusinessInput) {
     business.phone = input.phone;
     business.email = input.email;
     business.address = input.address;
+    if (input.cancellationPolicy !== undefined) {
+      business.cancellationPolicy = input.cancellationPolicy || undefined;
+    }
 
     return business.slug;
   });
@@ -942,6 +948,9 @@ export async function runLocalBookingReminderSweep(input?: {
       }
     }
 
+    const FOLLOWUP_MIN_MS = 60 * 60 * 1000;   // 1h después del servicio
+    const FOLLOWUP_MAX_MS = 25 * 60 * 60 * 1000; // ventana de 24h para enviar
+
     const summary = {
       dryRun,
       reminderWindowHours,
@@ -952,6 +961,8 @@ export async function runLocalBookingReminderSweep(input?: {
       readyWithoutProvider: 0,
       sent: 0,
       failed: 0,
+      followupSent: 0,
+      followupFailed: 0,
     };
 
     for (const business of businesses) {
@@ -1034,6 +1045,58 @@ export async function runLocalBookingReminderSweep(input?: {
                 : candidate.customer?.phone?.trim() ?? "",
             subject: result.subject ?? "Recordatorio de reserva",
             note: (result as { reason?: string }).reason ?? "",
+          });
+        }
+      }
+
+      // Follow-up emails: completed bookings where end time was 1–25h ago
+      if (!dryRun) {
+        const sentFollowupIds = new Set(
+          getBusinessCommunicationEvents(store, business.id)
+            .filter((event) => event.kind === "followup" && event.status === "sent")
+            .map((event) => event.bookingId)
+        );
+
+        const completedBookings = getBusinessBookings(store, business.id).filter(
+          (booking) => booking.status === "completed" && !sentFollowupIds.has(booking.id)
+        );
+
+        for (const booking of completedBookings) {
+          const endMs = getBookingTimestamp(booking.bookingDate, booking.endTime);
+          const elapsed = now.getTime() - endMs;
+
+          if (elapsed < FOLLOWUP_MIN_MS || elapsed > FOLLOWUP_MAX_MS) continue;
+
+          const customer = store.customers.find((c) => c.id === booking.customerId);
+          const service = store.services.find((s) => s.id === booking.serviceId);
+
+          if (!customer?.email) continue;
+
+          const result = await sendPostBookingFollowUpEmail({
+            customerEmail: customer.email,
+            customerName: customer.fullName,
+            businessName: business.name,
+            businessSlug: business.slug,
+            serviceName: service?.name ?? "Servicio",
+            bookingDate: booking.bookingDate,
+          });
+
+          if (result.status === "sent") {
+            summary.followupSent += 1;
+          } else if (result.status === "error") {
+            summary.followupFailed += 1;
+          }
+
+          await recordLocalCommunicationEvent(store, {
+            businessId: business.id,
+            bookingId: booking.id,
+            customerId: customer.id,
+            channel: "email",
+            kind: "followup",
+            status: result.status === "sent" ? "sent" : "failed",
+            recipient: customer.email,
+            subject: `Follow-up: ${service?.name ?? "Servicio"}`,
+            note: result.status === "error" ? result.error : "",
           });
         }
       }
@@ -1352,6 +1415,7 @@ export async function getLocalAdminSettingsData(activeBusinessSlug?: string | nu
     timezone: business.timezone,
     publicUrl: `/${business.slug}`,
     profile,
+    cancellationPolicy: business.cancellationPolicy,
     mpConnected: business.mpConnected ?? false,
     mpCollectorId: business.mpCollectorId,
     mpAccessToken: business.mpAccessToken,

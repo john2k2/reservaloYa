@@ -43,6 +43,7 @@ import {
   hasReminderProviderConfigured,
   sendBookingReminderEmail,
   sendBookingReminderWhatsApp,
+  sendPostBookingFollowUpEmail,
 } from "@/server/booking-notifications";
 
 type PocketBaseListOptions = {
@@ -169,6 +170,7 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
       email: business.email ?? "",
       address: business.address ?? "",
       timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
+      cancellationPolicy: business.cancellationPolicy,
       mpAccessToken: business.mpAccessToken,
     },
     profile: buildBusinessPublicProfile(business),
@@ -1303,6 +1305,7 @@ export async function getPocketBaseAdminSettingsData(businessId: string) {
     timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
     publicUrl: `/${business.slug}`,
     profile: buildBusinessPublicProfile(business),
+    cancellationPolicy: business.cancellationPolicy,
     mpConnected: business.mpConnected ?? false,
     mpCollectorId: business.mpCollectorId,
     mpAccessToken: business.mpAccessToken,
@@ -1582,6 +1585,7 @@ export async function updatePocketBaseBusiness(input: {
   phone: string;
   email: string;
   address: string;
+  cancellationPolicy?: string;
 }) {
   const pb = await getAdminClient();
 
@@ -1590,6 +1594,7 @@ export async function updatePocketBaseBusiness(input: {
     phone: input.phone,
     email: input.email,
     address: input.address,
+    ...(input.cancellationPolicy !== undefined && { cancellationPolicy: input.cancellationPolicy }),
   });
 }
 
@@ -1637,6 +1642,9 @@ export async function runPocketBaseBookingReminderSweep(input?: {
     }
   }
 
+  const FOLLOWUP_MIN_MS = 60 * 60 * 1000;     // 1h después del servicio
+  const FOLLOWUP_MAX_MS = 25 * 60 * 60 * 1000; // ventana de 24h para enviar
+
   const summary = {
     dryRun,
     reminderWindowHours: 24,
@@ -1647,6 +1655,8 @@ export async function runPocketBaseBookingReminderSweep(input?: {
     readyWithoutProvider: 0,
     sent: 0,
     failed: 0,
+    followupSent: 0,
+    followupFailed: 0,
   };
 
   for (const business of businesses) {
@@ -1751,6 +1761,67 @@ export async function runPocketBaseBookingReminderSweep(input?: {
           recipient: channel === "email" ? customer.email : customer.phone,
           subject: result.subject,
           note: (result as { reason?: string }).reason ?? "",
+        });
+      }
+    }
+
+    // Follow-up emails: completed bookings where end time was 1–25h ago
+    if (!dryRun) {
+      const sentFollowupIds = new Set(
+        communications
+          .filter((event) => event.kind === "followup" && event.status === "sent")
+          .map((event) => event.booking)
+      );
+
+      const completedBookings = await listPocketBaseRecords<BookingRecord>("bookings", {
+        expand: "customer,service",
+        filter: pb.filter(
+          "business = {:business} && status = 'completed'",
+          { business: business.id }
+        ),
+      });
+
+      for (const booking of completedBookings) {
+        if (sentFollowupIds.has(booking.id)) continue;
+
+        const endTime = booking.endTime as string | undefined;
+        if (!endTime) continue;
+
+        const endMs = new Date(`${booking.bookingDate}T${endTime}:00`).getTime();
+        const elapsed = now.getTime() - endMs;
+
+        if (elapsed < FOLLOWUP_MIN_MS || elapsed > FOLLOWUP_MAX_MS) continue;
+
+        const followupCustomer = booking.expand?.customer as CustomerRecord | undefined;
+        const followupService = booking.expand?.service as ServiceRecord | undefined;
+
+        if (!followupCustomer?.email) continue;
+
+        const result = await sendPostBookingFollowUpEmail({
+          customerEmail: followupCustomer.email,
+          customerName: followupCustomer.fullName,
+          businessName: business.name,
+          businessSlug: business.slug,
+          serviceName: followupService?.name ?? "Servicio",
+          bookingDate: booking.bookingDate,
+        });
+
+        if (result.status === "sent") {
+          summary.followupSent += 1;
+        } else if (result.status === "error") {
+          summary.followupFailed += 1;
+        }
+
+        await pb.collection("communication_events").create({
+          business: business.id,
+          booking: booking.id,
+          customer: followupCustomer.id,
+          channel: "email",
+          kind: "followup",
+          status: result.status === "sent" ? "sent" : "failed",
+          recipient: followupCustomer.email,
+          subject: `Follow-up: ${followupService?.name ?? "Servicio"}`,
+          note: result.status === "error" ? result.error : "",
         });
       }
     }

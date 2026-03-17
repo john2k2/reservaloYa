@@ -23,6 +23,7 @@ export type BusinessRecord = RecordModel & {
   timezone?: string;
   active?: boolean;
   publicProfileOverrides?: string;
+  cancellationPolicy?: string;
   // MercadoPago OAuth (per-business)
   mpAccessToken?: string;
   mpRefreshToken?: string;
@@ -99,7 +100,7 @@ export type CommunicationRecord = RecordModel & {
   booking: string;
   customer: string;
   channel: string;
-  kind: "confirmation" | "reminder";
+  kind: "confirmation" | "reminder" | "followup";
   status: "sent" | "failed";
   recipient: string;
   subject: string;

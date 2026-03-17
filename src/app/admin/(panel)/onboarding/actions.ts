@@ -93,6 +93,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
+  const cancellationPolicy = String(formData.get("cancellationPolicy") ?? "").trim();
 
   if (!businessSlug || !name || !phone || !address) {
     throw new Error("Completa los datos requeridos del negocio.");
@@ -112,6 +113,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
       phone,
       email,
       address,
+      cancellationPolicy,
     });
   } else {
     await updateLocalBusiness({
@@ -120,6 +122,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
       phone,
       email,
       address,
+      cancellationPolicy,
     });
   }
 
