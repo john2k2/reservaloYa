@@ -94,3 +94,7 @@ skills-lock.json
 
 # email templates (local development only)
 resend.html
+
+# misc local files
+proxy.ts
+*.log
