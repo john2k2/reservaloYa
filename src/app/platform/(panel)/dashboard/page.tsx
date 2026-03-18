@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { getPlatformDashboardData } from "@/server/queries/platform";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Platform Dashboard" };
 
 export default async function PlatformDashboardPage() {

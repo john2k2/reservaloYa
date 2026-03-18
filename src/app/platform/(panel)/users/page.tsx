@@ -2,6 +2,7 @@ import { Users } from "lucide-react";
 
 import { getPlatformUsersList } from "@/server/queries/platform";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Usuarios · Platform" };
 
 const roleLabels: Record<string, string> = {

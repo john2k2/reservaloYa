@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { getPlatformBusinessesList } from "@/server/queries/platform";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Negocios · Platform" };
 
 export default async function PlatformBusinessesPage() {
