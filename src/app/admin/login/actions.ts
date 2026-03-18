@@ -12,6 +12,12 @@ import {
 import { createPocketBaseOwnerAccount } from "@/server/pocketbase-store";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 
+function isSuperAdminEmail(email: string) {
+  const superadminEmail = process.env.PLATFORM_SUPERADMIN_EMAIL;
+  if (!superadminEmail) return false;
+  return email.toLowerCase().trim() === superadminEmail.toLowerCase().trim();
+}
+
 const ADMIN_LOGIN_LIMIT_MAX = 5;
 const ADMIN_LOGIN_LIMIT_WINDOW_MS = 60_000;
 const ADMIN_SIGNUP_LIMIT_MAX = 3;
@@ -80,6 +86,10 @@ export async function loginAction(formData: FormData) {
         error instanceof Error ? error.message : "No pudimos iniciar sesion."
       )}`
     );
+  }
+
+  if (isSuperAdminEmail(email)) {
+    redirect("/platform/dashboard");
   }
 
   redirect("/admin/dashboard");

@@ -199,7 +199,7 @@ async function buildCollections(pb) {
     ...withExistingId(structuredClone(scaffolds.auth)),
     name: "users",
     fields: [
-      relationField("business", idByName.businesses, { required: true }),
+      relationField("business", idByName.businesses, { required: false }),
       selectField("role", ["owner", "admin", "staff", "public_app"]),
       boolField("active"),
     ],

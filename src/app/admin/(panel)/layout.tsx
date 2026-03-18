@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { ToastProvider } from "@/components/ui/toast";
 import { getAdminShellData } from "@/server/queries/admin";
+import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
 
 export default async function AdminPanelLayout({
   children,
@@ -12,6 +13,11 @@ export default async function AdminPanelLayout({
   const shellData = await getAdminShellData();
 
   if (!shellData) {
+    // Si es superadmin sin negocio asignado, mandarlo a su panel
+    const platformAdmin = await getAuthenticatedPlatformAdmin();
+    if (platformAdmin) {
+      redirect("/platform/dashboard");
+    }
     redirect("/admin/login");
   }
 
