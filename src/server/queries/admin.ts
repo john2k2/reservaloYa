@@ -40,6 +40,8 @@ type AdminShellData = {
     name: string;
     templateSlug: string;
   }>;
+  subscriptionStatus?: "trial" | "active" | "cancelled" | "suspended";
+  subscriptionExpired?: boolean;
 };
 
 export async function getAdminShellData(): Promise<AdminShellData | null> {

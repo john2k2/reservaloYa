@@ -21,6 +21,10 @@ export default async function AdminPanelLayout({
     redirect("/admin/login");
   }
 
+  if (shellData.subscriptionExpired) {
+    redirect("/admin/subscription");
+  }
+
   return (
     <ToastProvider>
       <AdminShell

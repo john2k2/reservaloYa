@@ -45,7 +45,7 @@ export default async function PlatformBusinessesPage() {
         {/* Header */}
         <div className="hidden sm:grid grid-cols-[1fr_1fr_auto_auto] gap-4 border-b border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <span>Negocio</span>
-          <span>Owner</span>
+          <span>Responsable</span>
           <span>Estado</span>
           <span>Acciones</span>
         </div>

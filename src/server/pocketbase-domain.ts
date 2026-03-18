@@ -116,6 +116,14 @@ export type UserRecord = RecordModel & {
   verified?: boolean;
 };
 
+export type SubscriptionRecord = RecordModel & {
+  businessId: string;
+  status: "trial" | "active" | "cancelled" | "suspended";
+  trialEndsAt?: string;
+  nextBillingDate?: string;
+  mpSubscriptionId?: string;
+};
+
 export function joinPocketBaseFilters(...filters: Array<string | undefined>) {
   return filters.filter((filter): filter is string => Boolean(filter?.trim())).join(" && ");
 }

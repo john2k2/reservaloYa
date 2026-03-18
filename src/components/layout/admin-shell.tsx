@@ -196,68 +196,71 @@ export function AdminShell({
               </div>
             ) : null}
 
-            {mobileNavOpen ? (
-              <div
-                id="admin-mobile-menu"
-                className="mt-3 space-y-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
-              >
-                <div className="rounded-xl bg-secondary/40 p-3">
-                  <p className="truncate text-sm font-medium">{profileName}</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                    {getAdminRoleLabel(userRole)}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-                </div>
-
-                <nav className="grid grid-cols-2 gap-2">
-                  {visibleNavigation.map((item) => {
-                    const Icon = item.icon;
-                    const active = pathname === item.href;
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                          "flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-                          active
-                            ? "border-foreground bg-foreground text-background"
-                            : "border-border bg-background text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <Icon aria-hidden="true" className="size-4" />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </nav>
-
-                <div className="space-y-2">
-                  <ThemeToggle />
-
-                  <Link
-                    href={`/${businessSlug || demoBusinessSlug}`}
-                    target="_blank"
-                    className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                  >
-                    <ExternalLink className="size-4" />
-                    Ver página pública
-                  </Link>
-
-                  {!demoMode ? (
-                    <form action="/auth/signout" method="post">
-                      <button
-                        type="submit"
-                        className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                      >
-                        <LogOut aria-hidden="true" className="size-4" />
-                        Cerrar sesión
-                      </button>
-                    </form>
-                  ) : null}
-                </div>
+            <div
+              id="admin-mobile-menu"
+              style={{
+                opacity: mobileNavOpen ? 1 : 0,
+                transform: mobileNavOpen ? "scale(1)" : "scale(0.95)",
+                transition: "opacity 300ms ease-out, transform 300ms ease-out",
+                pointerEvents: mobileNavOpen ? "auto" : "none",
+              }}
+            >
+              <div className="rounded-xl bg-secondary/40 p-3">
+                <p className="truncate text-sm font-medium">{profileName}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {getAdminRoleLabel(userRole)}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
               </div>
-            ) : null}
+
+              <nav className="grid grid-cols-2 gap-2">
+                {visibleNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border bg-background text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Icon aria-hidden="true" className="size-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="space-y-2">
+                <ThemeToggle />
+
+                <Link
+                  href={`/${businessSlug || demoBusinessSlug}`}
+                  target="_blank"
+                  className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  <ExternalLink className="size-4" />
+                  Ver página pública
+                </Link>
+
+                {!demoMode ? (
+                  <form action="/auth/signout" method="post">
+                    <button
+                      type="submit"
+                      className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      <LogOut aria-hidden="true" className="size-4" />
+                      Cerrar sesión
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            </div>
           </div>
         </header>
 

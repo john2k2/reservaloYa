@@ -126,6 +126,8 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
 
   const business = await getBusinessById(String(businessId));
 
+  const subscription = await getBusinessSubscription(String(businessId));
+
   return {
     demoMode: false,
     profileName: String(userRecord.name ?? userRecord.email ?? "Owner"),
@@ -135,7 +137,28 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
     userVerified: Boolean((userRecord as { verified?: boolean }).verified),
     userRole: String((userRecord as { role?: string }).role ?? "staff"),
     businessId: business.id,
+    subscriptionStatus: subscription?.status ?? "trial",
+    subscriptionExpired: subscription?.status === "suspended" || 
+      (subscription?.status === "trial" && subscription.trialEndsAt && new Date(subscription.trialEndsAt) < new Date()),
   };
+}
+
+export async function getBusinessSubscription(businessId: string) {
+  const pb = await getAdminClient();
+  
+  try {
+    const subs = await pb.collection("subscriptions").getFullList({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+    
+    if (subs.length === 0) {
+      return null;
+    }
+    
+    return subs[0];
+  } catch {
+    return null;
+  }
 }
 
 export async function getPocketBasePublicBusinessPageData(slug: string) {
@@ -1458,6 +1481,9 @@ export async function createPocketBaseOwnerAccount(input: {
     publicProfileOverrides: "",
   });
 
+  const trialDays = 15;
+  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
   try {
     await seedPocketBaseBusinessTemplate({
       pb,
@@ -1474,6 +1500,12 @@ export async function createPocketBaseOwnerAccount(input: {
       role: "owner",
       active: true,
       verified: false,
+    });
+
+    await pb.collection("subscriptions").create({
+      businessId: business.id,
+      status: "trial",
+      trialEndsAt: trialEndsAt,
     });
   } catch (error) {
     try {

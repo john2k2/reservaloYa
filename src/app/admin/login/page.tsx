@@ -12,6 +12,31 @@ type AdminLoginPageProps = {
   searchParams: Promise<{ error?: string; success?: string }>;
 };
 
+async function isSubscriptionExpired(pb: Awaited<ReturnType<typeof createPocketBaseServerClient>>): Promise<boolean> {
+  if (!pb.authStore.record) return false;
+  
+  const businessId = Array.isArray(pb.authStore.record.business)
+    ? pb.authStore.record.business[0]
+    : pb.authStore.record.business;
+  
+  if (!businessId) return false;
+  
+  try {
+    const filter = pb.filter("businessId = {:businessId}", { businessId });
+    const subs = await pb.collection("subscriptions").getFullList({ filter });
+    if (subs.length === 0) return false;
+    
+    const sub = subs[0];
+    if (sub.status === "suspended") return true;
+    if (sub.status === "trial" && sub.trialEndsAt) {
+      return new Date(sub.trialEndsAt) < new Date();
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
   const params = await searchParams;
   const configured = isPocketBaseConfigured();
@@ -22,6 +47,10 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
     const isAuthenticated = await refreshPocketBaseAuth(pb);
 
     if (isAuthenticated && pb.authStore.record) {
+      const expired = await isSubscriptionExpired(pb);
+      if (expired) {
+        redirect("/admin/subscription");
+      }
       redirect("/admin/dashboard");
     }
   }
@@ -127,7 +156,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                     <p>¿Todavía no tienes cuenta?</p>
                     <Link
                       href="/admin/signup"
-                      className="inline-flex min-h-11 items-center rounded-md px-1 font-medium text-foreground underline underline-offset-4"
+                      className="inline-flex min-h-11 items-center rounded-md font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors"
                     >
                       Crea tu negocio y empieza ahora
                     </Link>

@@ -18,6 +18,10 @@ export async function requireAdminRouteAccess(route: string) {
     redirect(`/admin/dashboard?error=${encodeURIComponent(getAdminRouteAccessError(route))}`);
   }
 
+  if (shellData.subscriptionExpired && route !== "/admin/subscription") {
+    redirect("/admin/subscription");
+  }
+
   return {
     ...shellData,
     userRole: normalizeAdminRole(shellData.userRole),

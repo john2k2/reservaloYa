@@ -105,17 +105,14 @@ function SheetContent({ children, side = "right", className }: SheetContentProps
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Backdrop - más oscuro */}
+      {/* Backdrop */}
       <div
-        className={cn(
-          "fixed inset-0 bg-black/60 transition-opacity duration-300",
-          open ? "opacity-100" : "opacity-0"
-        )}
+        className="fixed inset-0 bg-black/60 transition-opacity duration-300"
         onClick={() => setOpen(false)}
         aria-hidden="true"
       />
       
-      {/* Content - fondo sólido sin transparencia */}
+      {/* Content */}
       <div
         className={cn(
           "fixed bg-background shadow-2xl transition-transform duration-300 ease-out flex flex-col",

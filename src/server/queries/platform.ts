@@ -61,7 +61,7 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [businesses, users, recentBookings] = await Promise.all([
-    pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-created", requestKey: null }).catch(() => [] as BusinessRecord[]),
+    pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-id", requestKey: null }).catch(() => [] as BusinessRecord[]),
     pb.collection("users").getFullList<UserRecord>({ sort: "-created", requestKey: null }).catch(() => [] as UserRecord[]),
     pb.collection("bookings").getFullList<BookingRecord>({
       filter: pb.filter("created >= {:since}", { since: since30d }),
@@ -110,7 +110,7 @@ export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[]
   const pb = await getAdminClient();
 
   const [businesses, users] = await Promise.all([
-    pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-created", requestKey: null }).catch(() => [] as BusinessRecord[]),
+    pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-id", requestKey: null }).catch(() => [] as BusinessRecord[]),
     pb.collection("users").getFullList<UserRecord>({
       filter: "role = 'owner'",
       sort: "email",

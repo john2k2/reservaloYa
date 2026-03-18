@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Usuarios · Platform" };
 
 const roleLabels: Record<string, string> = {
-  owner: "Owner",
+  owner: "Dueño",
   admin: "Admin",
-  staff: "Staff",
+  staff: "Personal",
 };
 
 export default async function PlatformUsersPage() {

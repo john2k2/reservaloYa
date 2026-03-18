@@ -45,8 +45,9 @@ export function LoadingButton({
       aria-busy={isLoading}
       className={cn(
         buttonVariants({ variant, size }),
-        "relative",
+        "relative transition-all duration-200",
         isLoading && "cursor-not-allowed opacity-70",
+        !isLoading && !disabled && "hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]",
         className
       )}
       {...props}

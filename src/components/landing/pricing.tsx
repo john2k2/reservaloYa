@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { demoBusinessSlug } from "@/constants/site";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
+import { getBlueDollarRate } from "@/lib/dollar-rate";
+
+const USD_PRICE = 17;
 
 const pricingItems = [
   "Landing pública profesional del negocio",
@@ -16,6 +19,18 @@ const pricingItems = [
 ];
 
 export function PricingSection() {
+  const [priceArs, setPriceArs] = useState<string>("...");
+
+  useEffect(() => {
+    getBlueDollarRate().then((rate) => {
+      if (rate) {
+        setPriceArs((USD_PRICE * rate).toLocaleString("es-AR"));
+      } else {
+        setPriceArs("24.000");
+      }
+    });
+  }, []);
+
   return (
     <section id="precios" className="mx-auto w-full max-w-6xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
       <AnimatedSection>
@@ -24,10 +39,10 @@ export function PricingSection() {
             Precios
           </p>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tighter text-foreground md:text-4xl">
-            Setup liviano, mensualidad simple.
+            Sin setup. Sin compromisos.
           </h2>
           <p className="mt-3 sm:mt-4 max-w-[600px] text-base sm:text-lg text-muted-foreground">
-            Modelo de facturación directo y transparente. Sin sorpresas ni costos ocultos.
+            Arrancás gratis con 15 días de trial. Después abonás en pesos al tipo de cambio blue.
           </p>
         </div>
       </AnimatedSection>
@@ -36,20 +51,20 @@ export function PricingSection() {
         <div className="mt-8 sm:mt-12 flex justify-center px-2 sm:px-0">
           <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl border border-border/60 bg-gradient-to-b from-background to-secondary/20 p-6 sm:p-8 shadow-lg md:p-10 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-foreground to-gray-700 px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-background shadow-lg">
-              Plan recomendado
+              Plan único
             </div>
 
             <div>
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Plan Inicio</p>
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Mensualidad</p>
               <div className="mt-3 sm:mt-4 flex items-baseline text-4xl sm:text-5xl font-bold tracking-tighter">
-                $150
+                ${priceArs}
                 <span className="ml-2 text-base sm:text-lg font-medium tracking-normal text-muted-foreground">
-                  USD
+                  ARS/mes
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">setup único</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Precio fijo en pesos argentinos</p>
               <div className="mt-3 sm:mt-4 inline-flex items-center rounded-full bg-green-100 px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                + $20 USD / mes
+                15 días gratis para probar
               </div>
             </div>
 
@@ -68,16 +83,16 @@ export function PricingSection() {
 
             <div className="mt-6 sm:mt-8 space-y-3">
               <Link
-                href={`/${demoBusinessSlug}`}
+                href="/admin/signup"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "h-11 sm:h-12 w-full rounded-full font-medium transition-all duration-200 hover:scale-105"
+                  "h-12 sm:h-12 w-full rounded-full font-semibold transition-all duration-200 hover:scale-105"
                 )}
               >
-                Comenzar prueba gratis
+                Comenzar mis 15 días gratis
               </Link>
               <p className="text-center text-[10px] sm:text-xs text-muted-foreground">
-                Primer mes gratis. Cancelás cuando quieras.
+                Sin tarjeta de crédito. Sin compromiso. Cancelás cuando quieras.
               </p>
             </div>
           </div>
