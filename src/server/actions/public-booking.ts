@@ -35,7 +35,7 @@ const PUBLIC_BOOKING_LIMIT_WINDOW_MS = 60_000;
 
 async function enforcePublicBookingRateLimit(input: {
   businessSlug: string;
-  phone: string;
+  email: string;
   bookingDate: string;
   startTime: string;
 }) {
@@ -44,7 +44,7 @@ async function enforcePublicBookingRateLimit(input: {
 
   await assertRateLimit({
     bucket: "public-booking",
-    identifier: `${input.businessSlug}:${clientId}:${input.phone}:${input.bookingDate}:${input.startTime}`,
+    identifier: `${input.businessSlug}:${clientId}:${input.email}:${input.bookingDate}:${input.startTime}`,
     max: PUBLIC_BOOKING_LIMIT_MAX,
     windowMs: PUBLIC_BOOKING_LIMIT_WINDOW_MS,
     message: "Demasiados intentos de reserva. Intenta nuevamente en unos segundos.",
@@ -164,8 +164,8 @@ async function reschedulePocketBaseBooking(input: {
   bookingDate: string;
   startTime: string;
   fullName: string;
-  phone: string;
-  email?: string;
+  phone?: string;
+  email: string;
   notes?: string;
   rescheduleBookingId: string;
   manageToken: string;
@@ -260,7 +260,7 @@ export async function createPublicBookingAction(formData: FormData) {
   try {
     await enforcePublicBookingRateLimit({
       businessSlug: parsed.data.businessSlug,
-      phone: parsed.data.phone,
+      email: parsed.data.email,
       bookingDate: parsed.data.bookingDate,
       startTime: parsed.data.startTime,
     });

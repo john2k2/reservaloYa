@@ -385,8 +385,8 @@ export async function createPocketBasePublicBooking(input: {
   bookingDate: string;
   startTime: string;
   fullName: string;
-  phone: string;
-  email?: string;
+  phone?: string;
+  email: string;
   notes?: string;
   initialStatus?: BookingStatus;
   paymentPreferenceId?: string;
@@ -506,8 +506,8 @@ export async function reschedulePocketBasePublicBooking(input: {
   bookingDate: string;
   startTime: string;
   fullName: string;
-  phone: string;
-  email?: string;
+  phone?: string;
+  email: string;
   notes?: string;
   rescheduleBookingId: string;
 }) {

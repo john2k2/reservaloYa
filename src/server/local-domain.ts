@@ -168,8 +168,8 @@ export type CreateLocalBookingInput = {
   bookingDate: string;
   startTime: string;
   fullName: string;
-  phone: string;
-  email?: string;
+  phone?: string;
+  email: string;
   notes?: string;
   rescheduleBookingId?: string;
   initialStatus?: LocalBookingStatus;

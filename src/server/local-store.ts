@@ -279,7 +279,7 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
         }
 
         let customer = store.customers.find(
-          (candidate) => candidate.businessId === business.id && candidate.phone === input.phone
+          (candidate) => candidate.businessId === business.id && candidate.email === input.email
         );
 
         if (!customer) {
@@ -287,15 +287,15 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
             id: randomUUID(),
             businessId: business.id,
             fullName: input.fullName,
-            phone: input.phone,
-            email: input.email ?? "",
+            phone: input.phone ?? "",
+            email: input.email,
             notes: input.notes ?? "",
             createdAt: new Date().toISOString(),
           };
           store.customers.push(customer);
         } else {
           customer.fullName = input.fullName;
-          customer.email = input.email ?? customer.email;
+          customer.phone = input.phone ?? customer.phone;
           customer.notes = input.notes ?? customer.notes;
         }
 

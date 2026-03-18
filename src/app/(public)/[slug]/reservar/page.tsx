@@ -333,42 +333,14 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                       </div>
                     </div>
 
-                    {/* WhatsApp */}
-                    <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
-                      <label
-                        htmlFor="phone"
-                        className="flex items-center gap-1 text-sm font-medium text-foreground"
-                      >
-                        WhatsApp
-                        <span className="text-destructive">*</span>
-                      </label>
-                      <div className="relative mt-3">
-                        <WhatsAppIcon className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          inputMode="tel"
-                          autoComplete="tel"
-                          placeholder="Ej: 11 5555 5555"
-                          className="minimalist-input pl-7"
-                          defaultValue={rescheduleBooking?.phone ?? ""}
-                          required
-                        />
-                      </div>
-                      <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                        Usaremos este numero si el negocio activa recordatorios o soporte por
-                        WhatsApp.
-                      </p>
-                    </div>
-
                     {/* Email */}
                     <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
-                      <label htmlFor="email" className="text-sm font-medium text-foreground">
+                      <label
+                        htmlFor="email"
+                        className="flex items-center gap-1 text-sm font-medium text-foreground"
+                      >
                         Correo electrónico
-                        <span className="ml-1 text-xs font-normal text-muted-foreground">
-                          opcional
-                        </span>
+                        <span className="text-destructive">*</span>
                       </label>
                       <div className="relative mt-3">
                         <Mail className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -381,8 +353,35 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                           placeholder="Ej: maria@email.com"
                           className="minimalist-input pl-7"
                           defaultValue={rescheduleBooking?.email ?? ""}
+                          required
                         />
                       </div>
+                    </div>
+
+                    {/* WhatsApp */}
+                    <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
+                      <label htmlFor="phone" className="text-sm font-medium text-foreground">
+                        WhatsApp
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">
+                          opcional
+                        </span>
+                      </label>
+                      <div className="relative mt-3">
+                        <WhatsAppIcon className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="Ej: 11 5555 5555"
+                          className="minimalist-input pl-7"
+                          defaultValue={rescheduleBooking?.phone ?? ""}
+                        />
+                      </div>
+                      <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                        Si lo ingresás, el negocio puede enviarte recordatorios por WhatsApp.
+                      </p>
                     </div>
 
                     {/* Notas */}
