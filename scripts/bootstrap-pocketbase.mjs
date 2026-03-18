@@ -330,7 +330,7 @@ async function buildCollections(pb) {
       relationField("booking", idByName.bookings, { required: true }),
       relationField("customer", idByName.customers, { required: true }),
       selectField("channel", ["email", "whatsapp"]),
-      selectField("kind", ["confirmation", "reminder"]),
+      selectField("kind", ["confirmation", "reminder", "followup"]),
       selectField("status", ["sent", "failed"]),
       textField("recipient"),
       textField("subject"),

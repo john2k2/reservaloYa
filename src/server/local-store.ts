@@ -62,10 +62,13 @@ import {
 } from "@/server/local-domain";
 import {
   getAvailableReminderChannels,
+  isTwilioConfigured,
   sendBookingReminderEmail,
   sendBookingReminderWhatsApp,
   sendPostBookingFollowUpEmail,
+  sendPostBookingFollowUpWhatsApp,
 } from "@/server/booking-notifications";
+import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 const dataDir = path.join(process.cwd(), "data");
 const seedPath = path.join(dataDir, "local-store.seed.json");
@@ -737,6 +740,101 @@ export async function removeLocalBlockedSlot(input: RemoveLocalBlockedSlotInput)
   });
 }
 
+export async function createLocalWaitlistEntry(input: {
+  businessSlug: string;
+  serviceId: string;
+  bookingDate: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+}) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio.");
+    }
+
+    // Check for duplicate entry (same email + date + service)
+    const existing = store.waitlistEntries.find(
+      (e) =>
+        e.businessId === business.id &&
+        e.serviceId === input.serviceId &&
+        e.bookingDate === input.bookingDate &&
+        e.email === input.email
+    );
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const entry = {
+      id: randomUUID(),
+      businessId: business.id,
+      serviceId: input.serviceId,
+      bookingDate: input.bookingDate,
+      fullName: input.fullName,
+      email: input.email,
+      phone: input.phone,
+      notified: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    store.waitlistEntries.push(entry);
+
+    return entry.id;
+  });
+}
+
+export async function createLocalReview(input: {
+  businessSlug: string;
+  bookingId: string;
+  serviceId: string;
+  customerName: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment?: string;
+}) {
+  return mutateStore((store) => {
+    const business = getBusinessBySlug(store, input.businessSlug);
+
+    if (!business) {
+      throw new Error("No encontramos el negocio.");
+    }
+
+    // Only one review per booking
+    const existing = store.reviews.find(
+      (r) => r.businessId === business.id && r.bookingId === input.bookingId
+    );
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const booking = store.bookings.find(
+      (b) => b.id === input.bookingId && b.businessId === business.id
+    );
+
+    if (!booking) {
+      throw new Error("No encontramos el turno.");
+    }
+
+    const review = {
+      id: randomUUID(),
+      businessId: business.id,
+      bookingId: input.bookingId,
+      serviceId: input.serviceId,
+      customerName: input.customerName,
+      rating: input.rating,
+      comment: input.comment,
+      createdAt: new Date().toISOString(),
+    };
+
+    store.reviews.push(review);
+
+    return review.id;
+  });
+}
+
 export async function updateLocalAdminBooking(input: UpdateLocalAdminBookingInput) {
   return mutateStore((store) => {
     const business = getBusinessBySlug(store, input.businessSlug);
@@ -1072,6 +1170,10 @@ export async function runLocalBookingReminderSweep(input?: {
 
           if (!customer?.email) continue;
 
+          const manageToken = canGenerateBookingManageLinks()
+            ? createBookingManageToken(business.slug, booking.id)
+            : undefined;
+
           const result = await sendPostBookingFollowUpEmail({
             customerEmail: customer.email,
             customerName: customer.fullName,
@@ -1079,6 +1181,8 @@ export async function runLocalBookingReminderSweep(input?: {
             businessSlug: business.slug,
             serviceName: service?.name ?? "Servicio",
             bookingDate: booking.bookingDate,
+            bookingId: booking.id,
+            manageToken,
           });
 
           if (result.status === "sent") {
@@ -1098,6 +1202,34 @@ export async function runLocalBookingReminderSweep(input?: {
             subject: `Follow-up: ${service?.name ?? "Servicio"}`,
             note: result.status === "error" ? result.error : "",
           });
+
+          // WhatsApp follow-up si el cliente tiene teléfono y Twilio está configurado
+          if (customer.phone && isTwilioConfigured()) {
+            const reviewUrl = manageToken
+              ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/${business.slug}/resena?booking=${booking.id}&token=${manageToken}`
+              : undefined;
+
+            const wpResult = await sendPostBookingFollowUpWhatsApp({
+              customerPhone: customer.phone,
+              customerName: customer.fullName,
+              businessName: business.name,
+              businessSlug: business.slug,
+              serviceName: service?.name ?? "Servicio",
+              reviewUrl,
+            });
+
+            await recordLocalCommunicationEvent(store, {
+              businessId: business.id,
+              bookingId: booking.id,
+              customerId: customer.id,
+              channel: "whatsapp",
+              kind: "followup",
+              status: wpResult.status === "sent" ? "sent" : "failed",
+              recipient: customer.phone,
+              subject: `Follow-up WA: ${service?.name ?? "Servicio"}`,
+              note: wpResult.status === "error" ? wpResult.error : "",
+            });
+          }
         }
       }
     }

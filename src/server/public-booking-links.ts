@@ -111,6 +111,25 @@ export function buildAbsoluteManageBookingUrl(slug: string, bookingId: string) {
   return `${getPublicAppUrl()}${href}`;
 }
 
+export function buildReviewHref(slug: string, bookingId: string) {
+  if (!canGenerateBookingManageLinks()) {
+    return null;
+  }
+
+  const token = createBookingManageToken(slug, bookingId);
+  return `/${slug}/resena?booking=${bookingId}&token=${token}`;
+}
+
+export function buildAbsoluteReviewUrl(slug: string, bookingId: string) {
+  const href = buildReviewHref(slug, bookingId);
+
+  if (!href) {
+    return null;
+  }
+
+  return `${getPublicAppUrl()}${href}`;
+}
+
 export function isValidBookingManageToken(input: {
   slug: string;
   bookingId?: string;

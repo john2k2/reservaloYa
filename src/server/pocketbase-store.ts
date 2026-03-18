@@ -41,10 +41,13 @@ import {
 import {
   getAvailableReminderChannels,
   hasReminderProviderConfigured,
+  isTwilioConfigured,
   sendBookingReminderEmail,
   sendBookingReminderWhatsApp,
   sendPostBookingFollowUpEmail,
+  sendPostBookingFollowUpWhatsApp,
 } from "@/server/booking-notifications";
+import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 type PocketBaseListOptions = {
   sort?: string;
@@ -305,7 +308,7 @@ export async function getPocketBaseBookingConfirmationData(input: {
     return {
       bookingId: booking.id,
       confirmationCode: booking.confirmationCode,
-      customerName: customer?.name ?? "Cliente",
+      customerName: customer?.fullName ?? "Cliente",
       customerEmail: customer?.email ?? undefined,
       customerPhone: customer?.phone ?? undefined,
       businessId: business?.id ?? "",
@@ -1795,34 +1798,76 @@ export async function runPocketBaseBookingReminderSweep(input?: {
         const followupCustomer = booking.expand?.customer as CustomerRecord | undefined;
         const followupService = booking.expand?.service as ServiceRecord | undefined;
 
-        if (!followupCustomer?.email) continue;
+        if (!followupCustomer?.email && !followupCustomer?.phone) continue;
 
-        const result = await sendPostBookingFollowUpEmail({
-          customerEmail: followupCustomer.email,
-          customerName: followupCustomer.fullName,
-          businessName: business.name,
-          businessSlug: business.slug,
-          serviceName: followupService?.name ?? "Servicio",
-          bookingDate: booking.bookingDate,
-        });
+        const manageToken = canGenerateBookingManageLinks()
+          ? createBookingManageToken(business.slug, booking.id)
+          : undefined;
 
-        if (result.status === "sent") {
-          summary.followupSent += 1;
-        } else if (result.status === "error") {
-          summary.followupFailed += 1;
+        const reviewUrl =
+          manageToken
+            ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/${business.slug}/resena?booking=${booking.id}&token=${manageToken}`
+            : undefined;
+
+        if (followupCustomer.email) {
+          const result = await sendPostBookingFollowUpEmail({
+            customerEmail: followupCustomer.email,
+            customerName: followupCustomer.fullName,
+            businessName: business.name,
+            businessSlug: business.slug,
+            serviceName: followupService?.name ?? "Servicio",
+            bookingDate: booking.bookingDate,
+            bookingId: booking.id,
+            manageToken,
+          });
+
+          if (result.status === "sent") {
+            summary.followupSent += 1;
+          } else if (result.status === "error") {
+            summary.followupFailed += 1;
+          }
+
+          await pb.collection("communication_events").create({
+            business: business.id,
+            booking: booking.id,
+            customer: followupCustomer.id,
+            channel: "email",
+            kind: "followup",
+            status: result.status === "sent" ? "sent" : "failed",
+            recipient: followupCustomer.email,
+            subject: `Follow-up: ${followupService?.name ?? "Servicio"}`,
+            note: result.status === "error" ? result.error : "",
+          });
         }
 
-        await pb.collection("communication_events").create({
-          business: business.id,
-          booking: booking.id,
-          customer: followupCustomer.id,
-          channel: "email",
-          kind: "followup",
-          status: result.status === "sent" ? "sent" : "failed",
-          recipient: followupCustomer.email,
-          subject: `Follow-up: ${followupService?.name ?? "Servicio"}`,
-          note: result.status === "error" ? result.error : "",
-        });
+        if (followupCustomer.phone && isTwilioConfigured()) {
+          const wpResult = await sendPostBookingFollowUpWhatsApp({
+            customerPhone: followupCustomer.phone,
+            customerName: followupCustomer.fullName,
+            businessName: business.name,
+            businessSlug: business.slug,
+            serviceName: followupService?.name ?? "Servicio",
+            reviewUrl,
+          });
+
+          if (wpResult.status === "sent") {
+            summary.followupSent += 1;
+          } else if (wpResult.status === "error") {
+            summary.followupFailed += 1;
+          }
+
+          await pb.collection("communication_events").create({
+            business: business.id,
+            booking: booking.id,
+            customer: followupCustomer.id,
+            channel: "whatsapp",
+            kind: "followup",
+            status: wpResult.status === "sent" ? "sent" : "failed",
+            recipient: followupCustomer.phone,
+            subject: `Follow-up WA: ${followupService?.name ?? "Servicio"}`,
+            note: wpResult.status === "error" ? wpResult.error : "",
+          });
+        }
       }
     }
   }

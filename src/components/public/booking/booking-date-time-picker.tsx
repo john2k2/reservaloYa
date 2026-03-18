@@ -360,12 +360,14 @@ export function BookingDateTimePicker({
             ))}
           </fieldset>
         ) : (
-          <div className="mt-4 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/60 px-4 py-8 text-center">
-            <Clock3 className="mb-3 size-5 text-muted-foreground/40" />
-            <p className="text-sm font-medium text-foreground">Sin horarios</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Prueba seleccionando otro día en el calendario.
-            </p>
+          <div className="mt-4 flex flex-1 flex-col">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 px-4 py-6 text-center">
+              <Clock3 className="mb-3 size-5 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">Sin horarios</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Prueba seleccionando otro día en el calendario.
+              </p>
+            </div>
           </div>
         )}
       </div>

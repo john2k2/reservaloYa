@@ -6,7 +6,9 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { formatDateLabel, formatTimeLabel } from "@/lib/bookings/format";
 import { cn } from "@/lib/utils";
 import { cancelPublicBookingAction } from "@/server/actions/public-booking";
-import { getPublicManageBookingData } from "@/server/queries/public";
+import { getPublicManageBookingData, getPublicBusinessPageData } from "@/server/queries/public";
+import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 
 type ManageBookingPageProps = {
   params: Promise<{ slug: string }>;
@@ -19,17 +21,18 @@ export default async function ManageBookingPage({
 }: ManageBookingPageProps) {
   const { slug } = await params;
   const query = await searchParams;
-  const booking = await getPublicManageBookingData({
-    slug,
-    bookingId: query.booking,
-    token: query.token,
-  });
+  const [booking, pageData] = await Promise.all([
+    getPublicManageBookingData({ slug, bookingId: query.booking, token: query.token }),
+    getPublicBusinessPageData(slug),
+  ]);
 
+  const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
   const error = query.error ?? "";
   const status = query.status ?? "";
 
   if (!booking) {
     return (
+      <PublicBusinessPageWrapper profile={profile}>
       <main
         id="main-content"
         className="flex min-h-screen items-center justify-center bg-background p-6 font-sans text-foreground"
@@ -52,6 +55,7 @@ export default async function ManageBookingPage({
           </Link>
         </div>
       </main>
+      </PublicBusinessPageWrapper>
     );
   }
 
@@ -59,6 +63,7 @@ export default async function ManageBookingPage({
   const manageHref = `/${slug}/reservar?service=${booking.serviceId}&date=${booking.bookingDate}&reschedule=${booking.id}&token=${query.token ?? ""}`;
 
   return (
+    <PublicBusinessPageWrapper profile={profile}>
     <main
       id="main-content"
       className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
@@ -171,5 +176,6 @@ export default async function ManageBookingPage({
         </div>
       </div>
     </main>
+    </PublicBusinessPageWrapper>
   );
 }

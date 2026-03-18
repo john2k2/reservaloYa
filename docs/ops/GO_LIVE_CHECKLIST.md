@@ -4,7 +4,7 @@
 
 ---
 
-## Estado actual (2026-03-17)
+## Estado actual (2026-03-18)
 
 | Item | Estado |
 |------|--------|
@@ -13,12 +13,18 @@
 | Tests pasando | ✅ |
 | Emails HTML inline (sin dominio requerido) | ✅ |
 | CRUD admin completo | ✅ |
-| Flujo público de reserva | ✅ |
+| Flujo público de reserva completo | ✅ |
+| Pago online via MercadoPago | ✅ |
+| Follow-up post-turno con link a reseña | ✅ |
+| Lista de espera (waitlist) | ✅ |
+| Reseñas post-turno | ✅ |
+| Páginas legales /privacidad y /terminos | ✅ |
 | Endpoint cron `/api/jobs/booking-reminders` | ✅ |
 | `vercel.json` con cron `0 13 * * *` (1pm UTC) | ✅ |
 | Variables de entorno en Vercel | ⏳ ver abajo |
 | PocketBase en producción | ⏳ pendiente |
 | Cron activo y probado | ⏳ pendiente |
+| Dominio propio en Resend | ⏳ pendiente |
 
 ---
 
@@ -31,7 +37,7 @@ Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variab
 | Variable | Valor | Notas |
 |----------|-------|-------|
 | `NEXT_PUBLIC_APP_URL` | `https://reservaya-kappa.vercel.app` | URL pública de la app |
-| `BOOKING_LINK_SECRET` | (generar 32+ chars aleatorios) | Para tokens de gestión |
+| `BOOKING_LINK_SECRET` | (generar 32+ chars aleatorios) | Tokens de gestión y reseña |
 | `CRON_SECRET` | (generar 32+ chars aleatorios) | Vercel lo envía automáticamente al cron |
 
 > Generar secrets: `openssl rand -hex 32` o https://1password.com/password-generator/
@@ -45,6 +51,24 @@ Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variab
 
 > Con `RESEND_FROM_EMAIL` vacío solo podés enviar a tu propio email verificado en Resend.
 > Para producción real con clientes, necesitás dominio propio.
+
+### Para WhatsApp reminders (opcional)
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `TWILIO_ACCOUNT_SID` | `ACxxxxx` | Desde Twilio Console |
+| `TWILIO_AUTH_TOKEN` | (auth token) | Desde Twilio Console |
+| `TWILIO_WHATSAPP_FROM` | `whatsapp:+14155238886` | Número Sandbox o aprobado |
+
+> Sin estas variables, solo se envían reminders por email. No bloquea ningún flujo.
+
+### Para MercadoPago (pagos online)
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `MP_APP_ID` | ID de la app MP | Desde Mercado Pago Developers |
+| `MP_APP_SECRET` | Secret de la app | Para OAuth por negocio |
+| `MP_ACCESS_TOKEN` | (opcional) | Fallback global si el negocio no conectó MP |
 
 ### Para PocketBase (cuando esté listo)
 
@@ -96,9 +120,10 @@ Respuesta esperada:
 1. Resetear demo si vas a mostrar modo local: `npm run demo:reset`
 2. Abrir https://reservaya-kappa.vercel.app/demo-barberia
 3. Crear una reserva completa con tu email
-4. Verificar que llegue el email de confirmación
+4. Verificar que llegue el email de confirmación (cliente y negocio)
 5. Verificar que el link de "mi turno" permita reprogramar y cancelar
 6. Verificar que el admin refleje los cambios en `/admin/dashboard`
+7. Simular follow-up: llamar al cron con un booking completado y verificar que llega el email con link a `/[slug]/resena`
 
 ---
 
@@ -108,6 +133,7 @@ Respuesta esperada:
 - [ ] Dominio propio comprado y configurado en Resend
 - [ ] `RESEND_FROM_EMAIL` actualizado con dominio verificado
 - [ ] Cron probado con reservas reales en ventana de 24hs
+- [ ] MercadoPago: probar flujo sandbox completo (reserva → pago → confirmación)
 - [ ] WhatsApp Twilio configurado (opcional)
 - [ ] Monitoreo básico activo (Vercel logs + alertas)
 

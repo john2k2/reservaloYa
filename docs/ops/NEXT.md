@@ -2,39 +2,48 @@
 
 ## Bloque actual
 
-Llevar el MVP desde "demo convincente" a "beta publicable" con despliegue, automatizaciones reales y validacion final.
+Llevar ReservaYa desde MVP completo a beta pública real: despliegue productivo, automatizaciones activas y primeros clientes piloto.
 
-## Ultimo avance (2026-03-08)
+## Ultimo avance (2026-03-18)
 
-- Skill `frontend-responsive-ui` instalada y aplicada
-- Responsive revalidado en mobile y desktop sin overflow ni desbordes
-- Targets tactiles ajustados a 44px+ en flujos publicos y admin
-- Onboarding convertido en punto unico para construir la pagina publica
-- Upload local de logo, portada y hasta 3 fotos guiadas desde onboarding
-- Settings simplificado para no duplicar branding y redirigir al editor unico
-- PocketBase estabilizado para updates y listados base
-- `npm run lint`, `npm run build` y `npm run test -- --run` pasando
+- MercadoPago OAuth por negocio: cada negocio conecta su propia cuenta MP desde el admin
+- Campo `cancellationPolicy` por negocio: editable en admin, visible en pagina publica
+- Email post-turno (follow-up) con link a reseña integrado
+- Recordatorios WhatsApp via Twilio (opcional, además de email)
+- Lista de espera (waitlist): cliente se anota si no hay horarios disponibles
+- Sistema de reseñas post-turno: link con token en follow-up email → pagina `/[slug]/resena`
+- Paginas legales `/privacidad` y `/terminos` creadas
+- Pagina de confirmacion y "mi turno" respetan tema dark/light del negocio
+- Loading state del selector de fecha corregido (skeleton inmediato al cambiar fecha)
+- Email requerido, telefono opcional en el formulario de reserva
+- `npm run lint`, `npm run build` y `npm run test -- --run` pasando en verde
 
 ## Siguientes tareas
 
-1. Seguir separando la pagina publica principal y onboarding en componentes mas chicos
-2. Seguir separando operaciones publicas de bajo privilegio frente a mutaciones sensibles
-3. Validar de punta a punta servicios, disponibilidad y turnos
-4. Mejorar manejo de errores y estados sin disponibilidad
-5. Activar envio real de email con credenciales de Resend
-6. Configurar `CRON_SECRET` y cron productivo para recordatorios
+### Prioritarias (para lanzar)
+
+1. Configurar `BOOKING_LINK_SECRET` y `CRON_SECRET` en Vercel (si no están)
+2. Configurar `RESEND_API_KEY` para emails reales
+3. Activar cron real de recordatorios y follow-ups
+4. Validar flujo completo en produccion con reserva real
+
+### Deseables (antes del primer cliente pago)
+
+5. PocketBase deployado con backups y reglas least-privilege completas
+6. Dominio propio en Resend para emails sin restriccion de destinatarios
+7. CI minima: lint + test + build en PRs (RY-018)
+8. Video demo 30-45s para lanzamiento comercial
 
 ## Criterio de cierre de la siguiente iteracion
 
-Un negocio debe poder:
+Un negocio piloto debe poder:
 
-- crear y editar servicios
-- definir horarios base
-- bloquear franjas especiales
-- revisar y mover estados de turnos
-- servir lecturas publicas sin depender del superuser
-- recibir confirmaciones y recordatorios reales
-- usar una URL publica estable para mostrar la demo
+- Recibir reservas reales de sus clientes
+- Recibir email de confirmacion automatico (cliente y negocio)
+- Recibir recordatorio 24hs antes del turno
+- Recibir follow-up post-turno con link para dejar reseña
+- Gestionar turnos desde el admin sin friccion
+- Cobrar online via MercadoPago si lo desea
 
 ## Recordatorio
 

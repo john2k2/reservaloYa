@@ -12,7 +12,9 @@ import {
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { buildManageBookingHref } from "@/server/public-booking-links";
-import { getBookingConfirmationData } from "@/server/queries/public";
+import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
+import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 
 type ConfirmationPageProps = {
   params: Promise<{ slug: string }>;
@@ -73,10 +75,10 @@ export default async function ConfirmationPage({
 }: ConfirmationPageProps) {
   const { slug } = await params;
   const query = await searchParams;
-  const confirmation = await getBookingConfirmationData({
-    slug,
-    bookingId: query.booking,
-  });
+  const [confirmation, pageData] = await Promise.all([
+    getBookingConfirmationData({ slug, bookingId: query.booking }),
+    getPublicBusinessPageData(slug),
+  ]);
 
   if (!confirmation) {
     notFound();
@@ -114,7 +116,10 @@ export default async function ConfirmationPage({
 
   const showPaymentBanner = priceLabel && (isPendingPayment || isPaymentFailed || isPaymentSuccess);
 
+  const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+
   return (
+    <PublicBusinessPageWrapper profile={profile}>
     <main
       id="main-content"
       className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
@@ -253,5 +258,6 @@ export default async function ConfirmationPage({
 
       </div>
     </main>
+    </PublicBusinessPageWrapper>
   );
 }

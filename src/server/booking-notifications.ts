@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
+import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 // Lazy initialization to avoid build-time errors
 let resendInstance: Resend | null = null;
@@ -82,8 +83,13 @@ export async function sendBookingReminderEmail(input: ReminderInput): Promise<Re
 
   const { confirmation } = input;
   const subject = `⏰ Recordatorio: tu reserva en ${confirmation.businessName} es mañana`;
-  const manageUrl = input.manageToken
-    ? `${getBaseUrl()}/${input.businessSlug}/mi-turno?token=${input.manageToken}`
+  const reminderToken =
+    input.manageToken ??
+    (input.bookingId && canGenerateBookingManageLinks()
+      ? createBookingManageToken(input.businessSlug, input.bookingId)
+      : null);
+  const manageUrl = reminderToken && input.bookingId
+    ? `${getBaseUrl()}/${input.businessSlug}/mi-turno?booking=${input.bookingId}&token=${reminderToken}`
     : `${getBaseUrl()}/${input.businessSlug}`;
 
   const startsAt = toISOString(confirmation.bookingDate, confirmation.startTime);
@@ -183,13 +189,12 @@ export async function sendBookingReminderWhatsApp(
     };
 
     if (templateSid) {
-      // Content template API
+      // Content template API - variables match Twilio template:
+      // "Your appointment is coming up on {{1}} at {{2}}."
       body.ContentSid = templateSid;
       body.ContentVariables = JSON.stringify({
-        "1": input.customerName,
-        "2": confirmation.businessName,
-        "3": dateLabel,
-        "4": confirmation.startTime,
+        "1": dateLabel,
+        "2": confirmation.startTime,
       });
     } else {
       body.Body = messageBody;
@@ -269,8 +274,13 @@ export async function sendBookingConfirmationEmail(
       ? `✅ Tu reserva en ${confirmation.businessName} fue reprogramada`
       : `✅ Tu reserva en ${confirmation.businessName} está confirmada`;
 
-  const manageUrl = confirmation.manageToken
-    ? `${getBaseUrl()}/${confirmation.businessSlug}/mi-turno?token=${confirmation.manageToken}`
+  const token =
+    confirmation.manageToken ??
+    (canGenerateBookingManageLinks()
+      ? createBookingManageToken(confirmation.businessSlug, confirmation.bookingId)
+      : null);
+  const manageUrl = token
+    ? `${getBaseUrl()}/${confirmation.businessSlug}/mi-turno?booking=${confirmation.bookingId}&token=${token}`
     : `${getBaseUrl()}/${confirmation.businessSlug}`;
 
   const priceLabel = formatPrice(confirmation.priceAmount, confirmation.currency);
@@ -376,6 +386,8 @@ type FollowUpInput = {
   businessSlug: string;
   serviceName: string;
   bookingDate: string;
+  bookingId?: string;
+  manageToken?: string;
 };
 
 /**
@@ -397,6 +409,10 @@ export async function sendPostBookingFollowUpEmail(input: FollowUpInput): Promis
         serviceName: input.serviceName,
         bookingDate: input.bookingDate,
         bookingUrl: `${getBaseUrl()}/${input.businessSlug}/reservar`,
+        reviewUrl:
+          input.bookingId && input.manageToken
+            ? `${getBaseUrl()}/${input.businessSlug}/resena?booking=${input.bookingId}&token=${input.manageToken}`
+            : undefined,
       }),
       tags: [
         { name: "type", value: "booking_followup" },
@@ -415,6 +431,85 @@ export async function sendPostBookingFollowUpEmail(input: FollowUpInput): Promis
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Failed to send follow-up email:", err);
     return { status: "error", error: message };
+  }
+}
+
+type FollowUpWhatsAppInput = {
+  customerPhone: string;
+  customerName: string;
+  businessName: string;
+  businessSlug: string;
+  serviceName: string;
+  reviewUrl?: string;
+};
+
+/**
+ * Envía WhatsApp de seguimiento post-turno con link a reseña.
+ */
+export async function sendPostBookingFollowUpWhatsApp(
+  input: FollowUpWhatsAppInput
+): Promise<ReminderResult> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_WHATSAPP_FROM;
+
+  if (!accountSid || !authToken || !fromNumber) {
+    return { status: "skipped", reason: "twilio_not_configured" };
+  }
+
+  const subject = `WhatsApp follow-up: ${input.businessName}`;
+
+  try {
+    const toNumber = input.customerPhone.replace(/\s/g, "").startsWith("+")
+      ? input.customerPhone.replace(/\s/g, "")
+      : `+${input.customerPhone.replace(/\s/g, "")}`;
+
+    const fromWhatsApp = fromNumber.startsWith("whatsapp:")
+      ? fromNumber
+      : `whatsapp:${fromNumber}`;
+    const toWhatsApp = `whatsapp:${toNumber}`;
+
+    const lines = [
+      `Hola ${input.customerName} 👋`,
+      `¿Cómo te fue con tu ${input.serviceName} en ${input.businessName}?`,
+    ];
+    if (input.reviewUrl) {
+      lines.push(`Dejanos tu opinión (2 minutos): ${input.reviewUrl}`);
+    }
+    const messageBody = lines.join("\n");
+
+    const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+
+    const formBody = [
+      `From=${encodeURIComponent(fromWhatsApp)}`,
+      `To=${encodeURIComponent(toWhatsApp)}`,
+      `Body=${encodeURIComponent(messageBody)}`,
+    ].join("&");
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formBody,
+    });
+
+    const data = await response.json() as { sid?: string; error_message?: string; message?: string };
+
+    if (!response.ok) {
+      const errMsg = data.error_message ?? data.message ?? `HTTP ${response.status}`;
+      console.error("Twilio follow-up WhatsApp error:", errMsg);
+      return { status: "error", error: errMsg, subject };
+    }
+
+    console.log(`📱 WhatsApp follow-up enviado a ${toNumber} (sid: ${data.sid})`);
+    return { status: "sent", messageId: data.sid ?? "", subject };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Failed to send follow-up WhatsApp:", err);
+    return { status: "error", error: message, subject };
   }
 }
 
@@ -670,8 +765,14 @@ function buildFollowUpEmailHtml(p: {
   serviceName: string;
   bookingDate: string;
   bookingUrl: string;
+  reviewUrl?: string;
 }): string {
   const headline = "¿Cómo estuvo tu visita?";
+  const reviewButton = p.reviewUrl
+    ? `<a href="${p.reviewUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:12px;">
+      ⭐ Dejá tu reseña
+    </a>`
+    : "";
   const content = `
     <h1 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">⭐ ${headline}</h1>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">
@@ -679,11 +780,9 @@ function buildFollowUpEmailHtml(p: {
       <strong>${p.serviceName}</strong> en <strong>${p.businessName}</strong>.
     </p>
 
-    <p style="margin:0 0 24px;color:#374151;font-size:15px;">
-      Si tuviste una buena experiencia, ¡nos encantaría volverte a ver pronto!
-    </p>
+    ${reviewButton}
 
-    <a href="${p.bookingUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+    <a href="${p.bookingUrl}" style="display:block;text-align:center;background:#ffffff;color:#374151;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;border:1px solid #e5e7eb;">
       Reservar nuevo turno
     </a>
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">

@@ -77,12 +77,12 @@ export function Footer() {
             © {new Date().getFullYear()} {productName}. Todos los derechos reservados.
           </p>
           <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-            <a href="#" className="transition-colors hover:text-foreground min-h-8 inline-flex items-center">
+            <Link href="/terminos" className="transition-colors hover:text-foreground min-h-8 inline-flex items-center">
               Términos
-            </a>
-            <a href="#" className="transition-colors hover:text-foreground min-h-8 inline-flex items-center">
+            </Link>
+            <Link href="/privacidad" className="transition-colors hover:text-foreground min-h-8 inline-flex items-center">
               Privacidad
-            </a>
+            </Link>
           </div>
         </div>
       </div>

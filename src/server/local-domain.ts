@@ -142,6 +142,29 @@ export type LocalCommunicationEvent = {
   createdAt: string;
 };
 
+export type LocalReview = {
+  id: string;
+  businessId: string;
+  bookingId: string;
+  serviceId: string;
+  customerName: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment?: string;
+  createdAt: string;
+};
+
+export type LocalWaitlistEntry = {
+  id: string;
+  businessId: string;
+  serviceId: string;
+  bookingDate: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  notified: boolean;
+  createdAt: string;
+};
+
 export type LocalStore = {
   businesses: LocalBusiness[];
   services: LocalService[];
@@ -151,6 +174,8 @@ export type LocalStore = {
   bookings: LocalBooking[];
   analyticsEvents: LocalAnalyticsEvent[];
   communicationEvents: LocalCommunicationEvent[];
+  waitlistEntries: LocalWaitlistEntry[];
+  reviews: LocalReview[];
 };
 
 export type LegacyLocalStore = Omit<
@@ -332,6 +357,8 @@ export function normalizeStore(rawStore: LocalStore | LegacyLocalStore): LocalSt
       bookings: rawStore.bookings,
       analyticsEvents: rawStore.analyticsEvents ?? [],
       communicationEvents: rawStore.communicationEvents ?? [],
+      waitlistEntries: [],
+      reviews: [],
     };
   }
 
@@ -339,6 +366,8 @@ export function normalizeStore(rawStore: LocalStore | LegacyLocalStore): LocalSt
     ...rawStore,
     analyticsEvents: rawStore.analyticsEvents ?? [],
     communicationEvents: rawStore.communicationEvents ?? [],
+    waitlistEntries: rawStore.waitlistEntries ?? [],
+    reviews: rawStore.reviews ?? [],
   };
 }
 
@@ -370,6 +399,8 @@ export function ensureDemoPresetData(store: LocalStore): LocalStore {
     bookings: mergeUniqueById(store.bookings, presetBookings),
     analyticsEvents: store.analyticsEvents,
     communicationEvents: store.communicationEvents,
+    waitlistEntries: store.waitlistEntries,
+    reviews: store.reviews,
   };
 }
 
