@@ -6,7 +6,17 @@ import { getPlatformDashboardData } from "@/server/queries/platform";
 export const metadata = { title: "Platform Dashboard" };
 
 export default async function PlatformDashboardPage() {
-  const data = await getPlatformDashboardData();
+  let data;
+  try {
+    data = await getPlatformDashboardData();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error desconocido";
+    return (
+      <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center text-destructive text-sm">
+        Error al cargar datos: {msg}
+      </div>
+    );
+  }
 
   if (!data) {
     return (

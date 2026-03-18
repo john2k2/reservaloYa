@@ -11,7 +11,17 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function PlatformUsersPage() {
-  const users = await getPlatformUsersList();
+  let users;
+  try {
+    users = await getPlatformUsersList();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error desconocido";
+    return (
+      <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center text-destructive text-sm">
+        Error al cargar datos: {msg}
+      </div>
+    );
+  }
 
   if (!users) {
     return (

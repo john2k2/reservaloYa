@@ -6,7 +6,17 @@ import { getPlatformBusinessesList } from "@/server/queries/platform";
 export const metadata = { title: "Negocios · Platform" };
 
 export default async function PlatformBusinessesPage() {
-  const businesses = await getPlatformBusinessesList();
+  let businesses;
+  try {
+    businesses = await getPlatformBusinessesList();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error desconocido";
+    return (
+      <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center text-destructive text-sm">
+        Error al cargar datos: {msg}
+      </div>
+    );
+  }
 
   if (!businesses) {
     return (
