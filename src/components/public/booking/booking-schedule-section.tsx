@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { formatDateLabel } from "@/lib/bookings/format";
 import { BookingDateTimePicker } from "@/components/public/booking/booking-date-time-picker";
@@ -12,6 +12,11 @@ type BookingScheduleSectionProps = {
   initialSelectedDate: string;
   initialDateOptions: string[];
   rescheduleStartTime?: string;
+};
+
+type SlotsState = {
+  date: string;
+  slots: string[];
 };
 
 type SlotsResponse = {
@@ -28,44 +33,37 @@ export function BookingScheduleSection({
   rescheduleStartTime,
 }: BookingScheduleSectionProps) {
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
-  const [slots, setSlots] = useState<string[]>([]);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  // Tracks which date's slots are loaded — null means "not yet loaded"
+  const [loadedSlots, setLoadedSlots] = useState<SlotsState | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    startTransition(() => {
-      void fetch(
-        `/api/public/booking-slots?slug=${encodeURIComponent(slug)}&serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(selectedDate)}`,
-        {
-          method: "GET",
-          cache: "no-store",
-        }
-      )
-        .then(async (response) => {
-          if (!response.ok) {
-            throw new Error("No se pudieron cargar los horarios.");
-          }
-
-          return (await response.json()) as SlotsResponse;
-        })
-        .then((data) => {
-          if (cancelled) return;
-          setSlots(data.slots);
-          setHasLoaded(true);
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setSlots([]);
-          setHasLoaded(true);
-        });
-    });
+    void fetch(
+      `/api/public/booking-slots?slug=${encodeURIComponent(slug)}&serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(selectedDate)}`,
+      { method: "GET", cache: "no-store" }
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error("No se pudieron cargar los horarios.");
+        return (await response.json()) as SlotsResponse;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setLoadedSlots({ date: selectedDate, slots: data.slots });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadedSlots({ date: selectedDate, slots: [] });
+      });
 
     return () => {
       cancelled = true;
     };
   }, [selectedDate, serviceId, slug]);
+
+  // Show loading skeleton whenever the loaded date doesn't match the selected date
+  const isLoading = loadedSlots === null || loadedSlots.date !== selectedDate;
+  const slots = isLoading ? [] : loadedSlots.slots;
 
   const dateOptions = useMemo(
     () =>
@@ -89,7 +87,7 @@ export function BookingScheduleSection({
           Elige día y hora
         </h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          La página carga primero y los horarios reales aparecen enseguida al elegir una fecha.
+          Solo días con disponibilidad real. Selecciona una fecha y después el horario.
         </p>
       </div>
 
@@ -101,7 +99,7 @@ export function BookingScheduleSection({
         slots={slots}
         rescheduleStartTime={rescheduleStartTime}
         onSelectDate={setSelectedDate}
-        isLoading={!hasLoaded || isPending}
+        isLoading={isLoading}
       />
     </section>
   );
