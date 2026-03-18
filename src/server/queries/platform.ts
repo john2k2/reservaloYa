@@ -1,11 +1,21 @@
 import { unstable_noStore as noStore } from "next/cache";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import { isPocketBaseConfigured, isPocketBaseAdminConfigured } from "@/lib/pocketbase/config";
 import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
 import type { BusinessRecord, BookingRecord, UserRecord } from "@/server/pocketbase-domain";
 
 async function getAdminClient() {
-  return createPocketBaseAdminClient();
+  if (!isPocketBaseAdminConfigured()) {
+    throw new Error(
+      "Faltan variables de entorno: POCKETBASE_ADMIN_EMAIL y/o POCKETBASE_ADMIN_PASSWORD"
+    );
+  }
+  try {
+    return await createPocketBaseAdminClient();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Error autenticando cliente admin de PocketBase: ${msg}`);
+  }
 }
 
 export type PlatformBusinessRow = {
