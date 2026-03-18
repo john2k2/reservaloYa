@@ -66,7 +66,7 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
     pb.collection("bookings").getFullList<BookingRecord>({
       filter: pb.filter("created >= {:since}", { since: since30d }),
       requestKey: null,
-    }),
+    }).catch(() => [] as BookingRecord[]),
   ]);
 
   // Build owner map: businessId -> owner user
