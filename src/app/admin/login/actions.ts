@@ -72,6 +72,9 @@ export async function loginAction(formData: FormData) {
 
     await persistPocketBaseAuth(pb);
   } catch (error) {
+    // Re-throw Next.js redirect/notFound — must not be caught
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+
     redirect(
       `/admin/login?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No pudimos iniciar sesion."
@@ -156,6 +159,8 @@ export async function signupAction(formData: FormData) {
       )}`
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+
     redirect(
       `/admin/signup?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No pudimos crear tu cuenta."
@@ -302,6 +307,8 @@ export async function resendVerificationAction() {
   try {
     await pb.collection("users").requestVerification(email);
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+
     redirect(
       `/admin/dashboard?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No pudimos reenviar la verificacion."
