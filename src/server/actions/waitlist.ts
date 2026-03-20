@@ -38,19 +38,24 @@ export async function joinWaitlistAction(
   }
 
   try {
-    if (isPocketBaseConfigured()) {
+    const pocketBaseConfigured = isPocketBaseConfigured();
+    console.log(`[Waitlist] pocketBaseConfigured=${pocketBaseConfigured}`);
+    if (pocketBaseConfigured) {
+      console.log(`[Waitlist] Using PocketBase mode`);
       await createPocketBaseWaitlistEntry({
         ...parsed.data,
         phone: parsed.data.phone || undefined,
       });
     } else {
+      console.log(`[Waitlist] Using Local mode`);
       await createLocalWaitlistEntry({
         ...parsed.data,
         phone: parsed.data.phone || undefined,
       });
     }
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error(`[Waitlist] Error:`, err);
     return { success: false, error: "No se pudo registrar. Intentá de nuevo." };
   }
 }
