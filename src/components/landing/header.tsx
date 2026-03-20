@@ -88,7 +88,6 @@ export function LandingHeader() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     getSessionInfo().then(setSession);
   }, []);
 

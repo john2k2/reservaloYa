@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { hasPocketBasePublicAuthCredentials } from "@/lib/pocketbase/config";
+import { isDemoModeEnabled } from "@/lib/runtime";
 import { createLocalWaitlistEntry } from "@/server/local-store";
 import { createPocketBaseWaitlistEntry } from "@/server/pocketbase-store";
 
@@ -38,7 +39,7 @@ export async function joinWaitlistAction(
   }
 
   try {
-    const canUsePocketBase = hasPocketBasePublicAuthCredentials();
+    const canUsePocketBase = hasPocketBasePublicAuthCredentials() && !isDemoModeEnabled();
     if (canUsePocketBase) {
       await createPocketBaseWaitlistEntry({
         ...parsed.data,
