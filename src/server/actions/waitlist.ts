@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import { hasPocketBasePublicAuthCredentials } from "@/lib/pocketbase/config";
 import { createLocalWaitlistEntry } from "@/server/local-store";
 import { createPocketBaseWaitlistEntry } from "@/server/pocketbase-store";
 
@@ -38,16 +38,13 @@ export async function joinWaitlistAction(
   }
 
   try {
-    const pocketBaseConfigured = isPocketBaseConfigured();
-    console.log(`[Waitlist] pocketBaseConfigured=${pocketBaseConfigured}`);
-    if (pocketBaseConfigured) {
-      console.log(`[Waitlist] Using PocketBase mode`);
+    const canUsePocketBase = hasPocketBasePublicAuthCredentials();
+    if (canUsePocketBase) {
       await createPocketBaseWaitlistEntry({
         ...parsed.data,
         phone: parsed.data.phone || undefined,
       });
     } else {
-      console.log(`[Waitlist] Using Local mode`);
       await createLocalWaitlistEntry({
         ...parsed.data,
         phone: parsed.data.phone || undefined,
