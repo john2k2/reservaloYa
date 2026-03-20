@@ -18,7 +18,7 @@ export default async function AdminPanelLayout({
     if (platformAdmin) {
       redirect("/platform/dashboard");
     }
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   if (shellData.subscriptionExpired) {

@@ -309,15 +309,15 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         <div className="space-y-6">
           {/* Alertas */}
           {dashboardData.notifications && dashboardData.notifications.length > 0 && (
-            <article className="rounded-xl border border-border/60 bg-foreground p-5 text-background shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider opacity-70">
+            <article className="rounded-xl border border-border/60 bg-secondary/30 p-5 shadow-sm">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Alertas importantes
               </h2>
               <div className="space-y-2">
                 {dashboardData.notifications.map((item, index) => (
                   <div
                     key={index}
-                    className="rounded-md bg-background/10 px-3 py-2.5 text-sm"
+                    className="rounded-md border border-border/40 bg-card px-3 py-2.5 text-sm text-foreground"
                   >
                     {item}
                   </div>

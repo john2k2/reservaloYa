@@ -1,4 +1,4 @@
-import { confirmEmailVerificationAction } from "@/app/admin/login/actions";
+import { confirmEmailVerificationAction } from "@/app/login/actions";
 
 type VerifyEmailPageProps = {
   searchParams: Promise<{ token?: string }>;

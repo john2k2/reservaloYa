@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { productName } from "@/constants/site";
 import { getAdminShellData } from "@/server/queries/admin";
@@ -9,8 +10,16 @@ const USD_PRICE = 17;
 export default async function SubscriptionExpiredPage() {
   const shellData = await getAdminShellData();
 
+  if (!shellData) {
+    redirect("/login");
+  }
+
+  if (!shellData.subscriptionExpired) {
+    redirect("/admin/dashboard");
+  }
+
   const blueRate = await getBlueDollarRate();
-  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1450;
+  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1435;
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   return (

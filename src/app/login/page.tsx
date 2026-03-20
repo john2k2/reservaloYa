@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { loginAction } from "@/app/admin/login/actions";
+import { loginAction } from "@/app/login/actions";
 import { demoBusinessOptions, productName } from "@/constants/site";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";

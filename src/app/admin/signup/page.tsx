@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { signupAction } from "@/app/admin/login/actions";
+import { signupAction } from "@/app/login/actions";
 import { demoBusinessOptions, productName } from "@/constants/site";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
@@ -192,7 +192,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
           <div className="mt-6 space-y-2 text-sm text-muted-foreground">
             <p>¿Ya tienes cuenta?</p>
             <Link
-              href="/admin/login"
+              href="/login"
               className="inline-flex min-h-11 items-center rounded-md px-1 font-medium text-foreground underline underline-offset-4"
             >
               Inicia sesión

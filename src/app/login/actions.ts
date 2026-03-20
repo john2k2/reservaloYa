@@ -45,7 +45,7 @@ export async function loginAction(formData: FormData) {
   } catch (error) {
     if (error instanceof RateLimitError) {
       redirect(
-        `/admin/login?error=${encodeURIComponent(
+        `/login?error=${encodeURIComponent(
           `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
         )}`
       );
@@ -59,11 +59,11 @@ export async function loginAction(formData: FormData) {
       redirect("/admin/dashboard");
     }
 
-    redirect("/admin/login?error=El acceso admin esta deshabilitado hasta conectar la autenticacion real.");
+    redirect("/login?error=El acceso admin esta deshabilitado hasta conectar la autenticacion real.");
   }
 
   if (!email || !password) {
-    redirect("/admin/login?error=Completa%20email%20y%20password");
+    redirect("/login?error=Completa%20email%20y%20password");
   }
 
   const pb = await createPocketBaseServerClient();
@@ -73,7 +73,7 @@ export async function loginAction(formData: FormData) {
 
     if ((pb.authStore.record as { active?: boolean } | null)?.active === false) {
       pb.authStore.clear();
-      redirect("/admin/login?error=Tu usuario esta desactivado.");
+      redirect("/login?error=Tu usuario esta desactivado.");
     }
 
     await persistPocketBaseAuth(pb);
@@ -82,7 +82,7 @@ export async function loginAction(formData: FormData) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
 
     redirect(
-      `/admin/login?error=${encodeURIComponent(
+      `/login?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No pudimos iniciar sesion."
       )}`
     );
@@ -295,7 +295,7 @@ export async function resetPasswordAction(formData: FormData) {
   }
 
   redirect(
-    `/admin/login?success=${encodeURIComponent(
+    `/login?success=${encodeURIComponent(
       "Contrasena actualizada. Ya puedes iniciar sesion con tu nueva clave."
     )}`
   );
@@ -311,7 +311,7 @@ export async function resendVerificationAction() {
   const email = refreshed?.record?.email ? String(refreshed.record.email).trim().toLowerCase() : "";
 
   if (!email) {
-    redirect("/admin/login?error=Necesitas iniciar sesion para reenviar la verificacion.");
+    redirect("/login?error=Necesitas iniciar sesion para reenviar la verificacion.");
   }
 
   try {
@@ -335,11 +335,11 @@ export async function resendVerificationAction() {
 
 export async function confirmEmailVerificationAction(token: string) {
   if (!isPocketBaseConfigured()) {
-    redirect("/admin/login?error=La verificacion requiere PocketBase configurado.");
+    redirect("/login?error=La verificacion requiere PocketBase configurado.");
   }
 
   if (!token) {
-    redirect("/admin/login?error=Falta el token de verificacion.");
+    redirect("/login?error=Falta el token de verificacion.");
   }
 
   const pb = await createPocketBaseServerClient();
@@ -348,14 +348,14 @@ export async function confirmEmailVerificationAction(token: string) {
     await pb.collection("users").confirmVerification(token);
   } catch (error) {
     redirect(
-      `/admin/login?error=${encodeURIComponent(
+      `/login?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No pudimos verificar tu email."
       )}`
     );
   }
 
   redirect(
-    `/admin/login?success=${encodeURIComponent(
+    `/login?success=${encodeURIComponent(
       "Email verificado correctamente. Ya puedes seguir usando tu cuenta."
     )}`
   );

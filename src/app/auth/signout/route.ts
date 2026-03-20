@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     await clearPocketBaseAuth();
   }
 
-  return NextResponse.redirect(new URL("/admin/login", request.url), {
+  return NextResponse.redirect(new URL("/login", request.url), {
     status: 302,
   });
 }

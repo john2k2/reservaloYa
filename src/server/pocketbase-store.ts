@@ -1482,7 +1482,7 @@ export async function createPocketBaseOwnerAccount(input: {
   });
 
   const trialDays = 15;
-  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
   try {
     await seedPocketBaseBusinessTemplate({

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { resetPasswordAction } from "@/app/admin/login/actions";
+import { resetPasswordAction } from "@/app/login/actions";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { productName } from "@/constants/site";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
@@ -102,7 +102,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
 
           <div className="mt-6">
             <Link
-              href="/admin/login"
+              href="/login"
               className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-medium text-foreground underline underline-offset-4"
             >
               Volver al login

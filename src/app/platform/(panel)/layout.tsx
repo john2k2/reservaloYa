@@ -11,13 +11,13 @@ export default async function PlatformPanelLayout({
   children: React.ReactNode;
 }>) {
   if (!isPocketBaseConfigured()) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   const user = await getAuthenticatedPlatformAdmin();
 
   if (!user) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   return (

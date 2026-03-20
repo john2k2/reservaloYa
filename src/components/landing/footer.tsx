@@ -30,7 +30,7 @@ export function Footer() {
                 Demo pública
               </Link>
               <Link
-                href="/admin/login"
+                href="/login"
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 inline-flex min-h-8 items-center"
               >
                 Panel administrador
