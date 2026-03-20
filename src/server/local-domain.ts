@@ -7,6 +7,7 @@ import {
   getAvailableReminderChannels,
   hasReminderProviderConfigured,
 } from "@/server/booking-notifications";
+import { slugify } from "@/lib/utils";
 
 export type LocalBookingStatus =
   | "pending"
@@ -483,7 +484,8 @@ export function getPrimaryBusiness(store: LocalStore) {
 }
 
 export function getBusinessBySlug(store: LocalStore, slug: string) {
-  return store.businesses.find((business) => business.slug === slug) ?? null;
+  const normalizedSlug = slugify(slug);
+  return store.businesses.find((business) => business.slug === normalizedSlug) ?? null;
 }
 
 export function getAdminBusiness(store: LocalStore, businessSlug?: string | null) {
@@ -584,7 +586,9 @@ export function getLocalBookingDetails(store: LocalStore, bookingId?: string) {
 }
 
 export function getBookingTimestamp(bookingDate: string, startTime: string) {
-  return new Date(`${bookingDate}T${startTime}:00`).getTime();
+  const [year, month, day] = bookingDate.split("-").map(Number);
+  const [hours, minutes] = startTime.split(":").map(Number);
+  return new Date(year, month - 1, day, hours, minutes).getTime();
 }
 
 export function findReminderCandidatesForBusiness(

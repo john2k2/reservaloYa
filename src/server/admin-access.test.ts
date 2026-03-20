@@ -26,7 +26,7 @@ describe("requireAdminRouteAccess", () => {
     const { requireAdminRouteAccess } = await import("./admin-access");
 
     await expect(requireAdminRouteAccess("/admin/onboarding")).rejects.toThrow(
-      "REDIRECT:/admin/login?error=Inicia sesión para continuar."
+      "REDIRECT:/login?error=Inicia sesión para continuar."
     );
   });
 

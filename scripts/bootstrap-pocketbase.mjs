@@ -86,6 +86,10 @@ function buildPublicAppActiveRelatedBusinessRule() {
   return "@request.auth.id != '' && @request.auth.role = 'public_app' && business.active = true";
 }
 
+function buildAdminOnlyRule() {
+  return "";
+}
+
 function repairBaseCollectionTimestamps() {
   const dbPath = path.join(rootDir, "pocketbase", "pb_data", "data.db");
   const db = new DatabaseSync(dbPath);
@@ -266,6 +270,41 @@ async function buildCollections(pb) {
     ],
   };
 
+  const waitlistEntries = {
+    ...withExistingId(structuredClone(scaffolds.base)),
+    name: "waitlist_entries",
+    listRule: buildPublicAppActiveRelatedBusinessRule(),
+    viewRule: buildPublicAppActiveRelatedBusinessRule(),
+    createRule: buildPublicAppActiveRelatedBusinessRule(),
+    updateRule: buildPublicAppActiveRelatedBusinessRule(),
+    fields: [
+      relationField("business", idByName.businesses, { required: true }),
+      relationField("service", idByName.services, { required: false }),
+      textField("bookingDate", { required: true }),
+      textField("fullName", { required: true }),
+      textField("email", { required: true }),
+      textField("phone"),
+      boolField("notified"),
+    ],
+  };
+
+  const reviews = {
+    ...withExistingId(structuredClone(scaffolds.base)),
+    name: "reviews",
+    listRule: buildPublicAppActiveRelatedBusinessRule(),
+    viewRule: buildPublicAppActiveRelatedBusinessRule(),
+    createRule: buildPublicAppActiveRelatedBusinessRule(),
+    updateRule: buildPublicAppActiveRelatedBusinessRule(),
+    fields: [
+      relationField("business", idByName.businesses, { required: true }),
+      relationField("booking", idByName.bookings, { required: false }),
+      relationField("service", idByName.services, { required: false }),
+      textField("customerName", { required: true }),
+      numberField("rating", { required: true, min: 1, max: 5 }),
+      textField("comment"),
+    ],
+  };
+
   const bookings = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "bookings",
@@ -303,6 +342,11 @@ async function buildCollections(pb) {
   const rateLimitEvents = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "rate_limit_events",
+    listRule: null,
+    viewRule: null,
+    createRule: buildAdminOnlyRule(),
+    updateRule: null,
+    deleteRule: buildAdminOnlyRule(),
     fields: [
       textField("bucket", { required: true }),
       textField("identifierHash", { required: true }),
@@ -313,6 +357,11 @@ async function buildCollections(pb) {
   const bookingLocks = {
     ...withExistingId(structuredClone(scaffolds.base)),
     name: "booking_locks",
+    listRule: null,
+    viewRule: null,
+    createRule: buildAdminOnlyRule(),
+    updateRule: null,
+    deleteRule: buildAdminOnlyRule(),
     fields: [
       textField("lockKey", { required: true }),
       textField("expiresAt", { required: true }),
@@ -346,6 +395,7 @@ async function buildCollections(pb) {
       availabilityRules,
       blockedSlots,
       customers,
+      waitlistEntries,
       analyticsEvents,
       rateLimitEvents,
       bookingLocks,
@@ -363,6 +413,12 @@ async function buildCollections(pb) {
   bookings.fields[2] = relationField("service", idByName.services, { required: true });
 
   await pb.collections.import([bookings], false);
+
+  reviews.fields[0] = relationField("business", idByName.businesses, { required: true });
+  reviews.fields[1] = relationField("booking", idByName.bookings, { required: false });
+  reviews.fields[2] = relationField("service", idByName.services, { required: false });
+
+  await pb.collections.import([reviews], false);
 
   const stageThreeCollections = await pb.collections.getFullList();
   idByName = Object.fromEntries(

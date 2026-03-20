@@ -1,7 +1,9 @@
 "use server";
 
 import { z } from "zod";
+import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { createLocalWaitlistEntry } from "@/server/local-store";
+import { createPocketBaseWaitlistEntry } from "@/server/pocketbase-store";
 
 const waitlistSchema = z.object({
   businessSlug: z.string().min(2).max(80),
@@ -36,10 +38,17 @@ export async function joinWaitlistAction(
   }
 
   try {
-    await createLocalWaitlistEntry({
-      ...parsed.data,
-      phone: parsed.data.phone || undefined,
-    });
+    if (isPocketBaseConfigured()) {
+      await createPocketBaseWaitlistEntry({
+        ...parsed.data,
+        phone: parsed.data.phone || undefined,
+      });
+    } else {
+      await createLocalWaitlistEntry({
+        ...parsed.data,
+        phone: parsed.data.phone || undefined,
+      });
+    }
     return { success: true };
   } catch {
     return { success: false, error: "No se pudo registrar. Intentá de nuevo." };

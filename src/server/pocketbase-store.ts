@@ -37,6 +37,8 @@ import {
   toMinutes,
   toMoney,
   type UserRecord,
+  type WaitlistEntryRecord,
+  type ReviewRecord,
 } from "@/server/pocketbase-domain";
 import {
   getAvailableReminderChannels,
@@ -93,9 +95,10 @@ async function getPublicMutationClient() {
 
 async function getBusinessBySlug(slug: string) {
   const pb = await getAdminClient();
+  const normalizedSlug = slugify(slug);
   return (await pb
     .collection("businesses")
-    .getFirstListItem<BusinessRecord>(pb.filter("slug = {:slug}", { slug }))) as BusinessRecord;
+    .getFirstListItem<BusinessRecord>(pb.filter("slug = {:slug}", { slug: normalizedSlug }))) as BusinessRecord;
 }
 
 async function getBusinessById(id: string) {
@@ -163,6 +166,7 @@ export async function getBusinessSubscription(businessId: string) {
 
 export async function getPocketBasePublicBusinessPageData(slug: string) {
   const pb = await getPublicReadClient();
+  const normalizedSlug = slugify(slug);
 
   let business: BusinessRecord;
 
@@ -170,7 +174,7 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
     business = await pb
       .collection("businesses")
       .getFirstListItem<BusinessRecord>(
-        pb.filter("slug = {:slug} && active = true", { slug })
+        pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
       );
   } catch {
     return null;
@@ -424,10 +428,11 @@ export async function createPocketBasePublicBooking(input: {
     },
     async () => {
       const pb = await getPublicMutationClient();
+      const normalizedSlug = slugify(input.businessSlug);
       const business = await pb
         .collection("businesses")
         .getFirstListItem<BusinessRecord>(
-          pb.filter("slug = {:slug} && active = true", { slug: input.businessSlug })
+          pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
         );
       const service = await pb.collection("services").getOne<ServiceRecord>(input.serviceId);
 
@@ -524,6 +529,94 @@ export async function createPocketBasePublicBooking(input: {
       return booking.id;
     }
   );
+}
+
+export async function createPocketBaseWaitlistEntry(input: {
+  businessSlug: string;
+  serviceId?: string;
+  bookingDate: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+}) {
+  const pb = await getPublicMutationClient();
+  const normalizedSlug = slugify(input.businessSlug);
+  const business = await pb
+    .collection("businesses")
+    .getFirstListItem<BusinessRecord>(
+      pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
+    );
+
+  const existing = await pb.collection("waitlist_entries").getList(1, 1, {
+    filter: pb.filter(
+      "business = {:business} && service = {:service} && bookingDate = {:bookingDate} && email = {:email}",
+      {
+        business: business.id,
+        service: input.serviceId || "",
+        bookingDate: input.bookingDate,
+        email: input.email,
+      }
+    ),
+    requestKey: null,
+  });
+
+  if (existing.totalItems > 0) {
+    return existing.items[0].id;
+  }
+
+  const entry = await pb.collection("waitlist_entries").create<WaitlistEntryRecord>({
+    business: business.id,
+    service: input.serviceId || undefined,
+    bookingDate: input.bookingDate,
+    fullName: input.fullName,
+    email: input.email,
+    phone: input.phone || undefined,
+    notified: false,
+  });
+
+  return entry.id;
+}
+
+export async function createPocketBaseReview(input: {
+  businessSlug: string;
+  bookingId?: string;
+  serviceId?: string;
+  customerName: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment?: string;
+}) {
+  const pb = await getPublicMutationClient();
+  const normalizedSlug = slugify(input.businessSlug);
+  const business = await pb
+    .collection("businesses")
+    .getFirstListItem<BusinessRecord>(
+      pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
+    );
+
+  if (input.bookingId) {
+    const existing = await pb.collection("reviews").getList(1, 1, {
+      filter: pb.filter("business = {:business} && booking = {:booking}", {
+        business: business.id,
+        booking: input.bookingId,
+      }),
+      requestKey: null,
+    });
+
+    if (existing.totalItems > 0) {
+      return existing.items[0].id;
+    }
+  }
+
+  const review = await pb.collection("reviews").create<ReviewRecord>({
+    business: business.id,
+    booking: input.bookingId || undefined,
+    service: input.serviceId || undefined,
+    customerName: input.customerName,
+    rating: input.rating,
+    comment: input.comment || undefined,
+  });
+
+  return review.id;
 }
 
 export async function reschedulePocketBasePublicBooking(input: {
@@ -656,10 +749,11 @@ export async function trackPocketBaseAnalyticsEvent(input: {
   referrer?: string;
 }) {
   const pb = await getPublicMutationClient();
+  const normalizedSlug = slugify(input.businessSlug);
   const business = await pb
     .collection("businesses")
     .getFirstListItem<BusinessRecord>(
-      pb.filter("slug = {:slug} && active = true", { slug: input.businessSlug })
+      pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
     );
 
   await pb.collection("analytics_events").create({
@@ -721,7 +815,9 @@ export async function getPocketBaseAdminDashboardData(businessId: string) {
   const topSourceLabel =
     Object.entries(topSource).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "direct";
   const remindersPending = businessBookings.filter((booking) => {
-    const bookingTime = new Date(`${booking.bookingDate}T${booking.startTime}:00`).getTime();
+    const [year, month, day] = booking.bookingDate.split("-").map(Number);
+    const [hours, minutes] = booking.startTime.split(":").map(Number);
+    const bookingTime = new Date(year, month - 1, day, hours, minutes).getTime();
     const sent = businessCommunicationEvents.some(
       (event) => event.kind === "reminder" && event.status === "sent" && event.booking === booking.id
     );
@@ -2013,10 +2109,11 @@ export async function clearPocketBaseBusinessMPTokens(businessId: string) {
 export async function getPocketBaseBusinessIdBySlug(slug: string): Promise<string | null> {
   try {
     const pb = await getAdminClient();
+    const normalizedSlug = slugify(slug);
     const business = await pb
       .collection("businesses")
       .getFirstListItem<BusinessRecord>(
-        pb.filter("slug = {:slug}", { slug })
+        pb.filter("slug = {:slug}", { slug: normalizedSlug })
       );
     return business.id;
   } catch {

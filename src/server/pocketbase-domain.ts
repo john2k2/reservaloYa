@@ -124,6 +124,25 @@ export type SubscriptionRecord = RecordModel & {
   mpSubscriptionId?: string;
 };
 
+export type WaitlistEntryRecord = RecordModel & {
+  business: string;
+  service?: string;
+  bookingDate: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  notified?: boolean;
+};
+
+export type ReviewRecord = RecordModel & {
+  business: string;
+  booking?: string;
+  service?: string;
+  customerName: string;
+  rating: number;
+  comment?: string;
+};
+
 export function joinPocketBaseFilters(...filters: Array<string | undefined>) {
   return filters.filter((filter): filter is string => Boolean(filter?.trim())).join(" && ");
 }

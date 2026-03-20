@@ -95,7 +95,7 @@ describe("booking notifications", () => {
 
     fetchMock.mockResolvedValue({
       ok: true,
-      text: async () => "",
+      json: async () => ({ sid: "SM123" }),
     });
 
     const { sendBookingReminderWhatsApp } = await import("./booking-notifications");

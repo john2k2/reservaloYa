@@ -4,10 +4,22 @@ import { redirect } from "next/navigation";
 import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
 import { getBusinessSubscription } from "@/server/pocketbase-store";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
+import { getMPPaymentInfo, isMercadoPagoConfigured } from "@/server/mercadopago";
 
 const USD_PRICE = 17;
 
-export default async function SubscriptionSuccessPage() {
+export const dynamic = "force-dynamic";
+
+interface PageProps {
+  searchParams: Promise<{
+    collection_id?: string;
+    payment_id?: string;
+    status?: string;
+    external_reference?: string;
+  }>;
+}
+
+export default async function SubscriptionSuccessPage({ searchParams }: PageProps) {
   const pb = await createPocketBaseServerClient();
   const refreshed = await refreshPocketBaseAuth(pb);
 
@@ -23,26 +35,46 @@ export default async function SubscriptionSuccessPage() {
     redirect("/login");
   }
 
-  // Verify payment via MP API - in a real scenario you'd verify the payment_id from the callback
-  // For now, we'll assume the payment was successful and activate the subscription
-  
+  const params = await searchParams;
+  const paymentId = params.payment_id;
+  const paymentStatus = params.status;
+
+  let paymentVerified = false;
+
+  if (paymentStatus === "approved") {
+    paymentVerified = true;
+  } else if (paymentId) {
+    try {
+      if (isMercadoPagoConfigured()) {
+        const paymentInfo = await getMPPaymentInfo(paymentId);
+        if (paymentInfo && paymentInfo.status === "approved") {
+          paymentVerified = true;
+        }
+      }
+    } catch (err) {
+      console.error("[Subscription Success] Error verifying payment:", err);
+    }
+  }
+
+  if (!paymentVerified) {
+    redirect("/admin/subscription/pay?error=payment_not_verified");
+  }
+
   const subscription = await getBusinessSubscription(businessId as string);
-  
+
   if (subscription) {
-    // Calculate next billing date (30 days from now)
     const nextBillingDate = new Date();
     nextBillingDate.setDate(nextBillingDate.getDate() + 30);
-    
+
     await pb.collection("subscriptions").update(subscription.id, {
       status: "active",
       trialEndsAt: null,
       nextBillingDate: nextBillingDate.toISOString().split("T")[0],
     });
   } else {
-    // Create new active subscription
     const nextBillingDate = new Date();
     nextBillingDate.setDate(nextBillingDate.getDate() + 30);
-    
+
     await pb.collection("subscriptions").create({
       businessId: businessId,
       status: "active",
@@ -51,7 +83,7 @@ export default async function SubscriptionSuccessPage() {
   }
 
   const blueRate = await getBlueDollarRate();
-  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1500;
+  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1435;
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   return (

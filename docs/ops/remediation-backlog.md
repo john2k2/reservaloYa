@@ -19,29 +19,29 @@
 
 | ID | Titulo | Prioridad | Tipo | Estado | Notas |
 |---|---|---|---|---|---|
-| RY-001 | Retirar superuser de flujos publicos | P0 | Security | ⏳ Pendiente | Solo afecta modo PocketBase |
-| RY-002 | Endurecer reglas PocketBase por coleccion | P0 | Security | ⏳ Pendiente | Solo afecta modo PocketBase |
+| RY-001 | Retirar superuser de flujos publicos | P0 | Security | ✅ Resuelto | Fallback removido de createPocketBasePublicClient |
+| RY-002 | Endurecer reglas PocketBase por coleccion | P0 | Security | ✅ Resuelto | rate_limit_events y booking_locks con reglas admin-only |
 | RY-003 | Mitigar CSV injection en exportaciones admin | P0 | Security | ✅ Resuelto | Sanitizacion aplicada |
 | RY-004 | Rate limiting en creacion/reprogramacion de turnos | P0 | Security | ✅ Resuelto | `assertRateLimit` en `createPublicBookingAction` |
-| RY-005 | Rate limiting en login admin | P0 | Security | ⏳ Pendiente | |
-| RY-006 | Endurecer autenticacion en job de reminders | P0 | Security | ⏳ Pendiente | Hoy usa `CRON_SECRET` header, revisar |
-| RY-007 | Corregir race condition en creacion de turnos | P0 | Bug | ⏳ Pendiente | `withBookingDateLock` existe pero revisar cobertura |
-| RY-008 | Corregir race condition en reprogramacion | P0 | Bug | ⏳ Pendiente | |
+| RY-005 | Rate limiting en login admin | P0 | Security | ✅ Resuelto | Login 5/min, Signup 3/min, Password reset 3/5/min |
+| RY-006 | Endurecer autenticacion en job de reminders | P0 | Security | ✅ Revisado | Soporta BOOKING_JOBS_SECRET y CRON_SECRET. Requiere secret en prod. |
+| RY-007 | Corregir race condition en creacion de turnos | P0 | Bug | ✅ Revisado | `withBookingDateLock` cubre el flujo correctamente |
+| RY-008 | Corregir race condition en reprogramacion | P0 | Bug | ✅ Revisado | Reschedule excluye booking actual del overlap check |
 | RY-009 | Eliminar fecha hardcodeada del flujo local | P1 | Bug | ✅ Resuelto | Fecha dinámica desde `new Date()` |
-| RY-010 | Normalizar timezone en reminders | P1 | Bug | ⏳ Pendiente | |
+| RY-010 | Normalizar timezone en reminders | P1 | Bug | ✅ Resuelto | `getBookingTimestamp` ahora usa constructor Date en vez de ISO string |
 | RY-011 | Corregir fallback enganoso en confirmacion | P1 | Bug | ✅ Resuelto | `PublicBusinessPageWrapper` en confirmacion y mi-turno |
-| RY-012 | Unificar validacion de slug local + PocketBase | P1 | Bug | ⏳ Pendiente | |
-| RY-013 | Reemplazar imports internos `next/dist/*` | P1 | TechDebt | ⏳ Pendiente | |
+| RY-012 | Unificar validacion de slug local + PocketBase | P1 | Bug | ✅ Resuelto | Slug normalizado con `slugify()` antes de query en local y PocketBase |
+| RY-013 | Reemplazar imports internos `next/dist/*` | P1 | TechDebt | ✅ Resuelto | No se encontraron usos de `next/dist/*` en el codigo |
 | RY-014 | Reducir matcher de refresh de sesion | P1 | Perf | ⏳ Pendiente | |
 | RY-015 | Reemplazar `getFullList` por paginacion | P1 | Perf | ⏳ Pendiente | Solo PocketBase |
 | RY-016 | Optimizar agregaciones del panel admin | P1 | Perf | ⏳ Pendiente | |
 | RY-017 | Corregir lint y quality gate local | P1 | DevEx | ✅ Resuelto | `npm run lint` en verde |
-| RY-018 | CI minima obligatoria (lint, test, build) | P1 | DevEx | ⏳ Pendiente | |
+| RY-018 | CI minima obligatoria (lint, test, build) | P1 | DevEx | ✅ Resuelto | CI ya corre `npm run check` (lint + typecheck + test + build) |
 | RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt | ⏳ Pendiente | |
 | RY-020 | Extraer capa de dominio comun entre stores | P2 | TechDebt | ⏳ Pendiente | local-store y pocketbase-store ~4000 LOC combinados |
 | RY-021 | Politica de dependencias runtime seguras | P2 | TechDebt | ⏳ Pendiente | |
-| RY-022 | Implementar waitlist en PocketBase | P2 | Feature | ⏳ Pendiente | Hoy solo local |
-| RY-023 | Implementar reseñas en PocketBase | P2 | Feature | ⏳ Pendiente | Hoy solo local |
+| RY-022 | Implementar waitlist en PocketBase | P2 | Feature | ✅ Resuelto | Coleccion `waitlist_entries` + `createPocketBaseWaitlistEntry` + accion actualizada |
+| RY-023 | Implementar reseñas en PocketBase | P2 | Feature | ✅ Resuelto | Coleccion `reviews` + `createPocketBaseReview` + accion actualizada |
 
 ## Orden sugerido por rol
 

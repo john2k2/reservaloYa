@@ -41,6 +41,11 @@ vi.mock("@/server/booking-notifications", () => ({
 
 vi.mock("@/server/queries/public", () => ({
   getBookingConfirmationData: vi.fn(async () => null),
+  getPublicBusinessPageData: vi.fn(async () => ({
+    business: { name: "Demo Barberia", slug: "demo-barberia" },
+    services: [{ id: "service-1", name: "Corte", price: 500 }],
+    features: { bookingMaxDaysAhead: 30, bookingLockMinutes: 10 },
+  })),
 }));
 
 vi.mock("@/server/public-booking-links", () => ({

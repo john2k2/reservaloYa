@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { isValidBookingManageToken } from "@/server/public-booking-links";
 import { createLocalReview } from "@/server/local-store";
+import { createPocketBaseReview } from "@/server/pocketbase-store";
 
 const reviewSchema = z.object({
   businessSlug: z.string().min(2).max(80),
@@ -51,18 +52,24 @@ export async function submitReviewAction(
 
   try {
     if (isPocketBaseConfigured()) {
-      // PocketBase: future implementation
-      // For now fall through to local store
+      await createPocketBaseReview({
+        businessSlug: parsed.data.businessSlug,
+        bookingId: parsed.data.bookingId,
+        serviceId: parsed.data.serviceId,
+        customerName: parsed.data.customerName,
+        rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
+        comment: parsed.data.comment,
+      });
+    } else {
+      await createLocalReview({
+        businessSlug: parsed.data.businessSlug,
+        bookingId: parsed.data.bookingId,
+        serviceId: parsed.data.serviceId,
+        customerName: parsed.data.customerName,
+        rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
+        comment: parsed.data.comment,
+      });
     }
-
-    await createLocalReview({
-      businessSlug: parsed.data.businessSlug,
-      bookingId: parsed.data.bookingId,
-      serviceId: parsed.data.serviceId,
-      customerName: parsed.data.customerName,
-      rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
-      comment: parsed.data.comment,
-    });
 
     return { success: true };
   } catch (err) {
