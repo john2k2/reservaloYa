@@ -2,13 +2,7 @@ import {
   LandingHeader,
   HeroSection,
   DemoSelector,
-  SocialProof,
   HowItWorksSection,
-  BeforeAfterSection,
-  TimeCalculatorSection,
-  TargetAudienceSection,
-  FeaturesSection,
-  TestimonialsSection,
   PricingSection,
   FAQSection,
   CTASection,
@@ -35,13 +29,7 @@ export default function Home() {
       
       <HeroSection />
       <DemoSelector />
-      <SocialProof />
       <HowItWorksSection />
-      <BeforeAfterSection />
-      <TimeCalculatorSection />
-      <TargetAudienceSection />
-      <FeaturesSection />
-      <TestimonialsSection />
       <PricingSection />
       <FAQSection />
       <CTASection />
