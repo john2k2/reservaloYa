@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { CheckCircle2, Menu, User } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Sheet, SheetContent, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
@@ -88,6 +88,9 @@ export function LandingHeader() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    startTransition(() => {
+      setMounted(true);
+    });
     getSessionInfo().then(setSession);
   }, []);
 
