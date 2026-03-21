@@ -99,3 +99,6 @@ resend.html
 proxy.ts
 *.log
 e2e/.auth/
+
+# browser testing snapshots
+snapshot*.txt
