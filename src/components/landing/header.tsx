@@ -12,8 +12,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
   { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#beneficios", label: "Beneficios" },
   { href: "#precios", label: "Precios" },
+  { href: "#faq", label: "Preguntas" },
 ];
 
 interface SessionInfo {

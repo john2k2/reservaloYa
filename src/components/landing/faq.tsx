@@ -32,7 +32,7 @@ export function FAQSection() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <section className="mx-auto w-full max-w-3xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
+    <section id="faq" className="mx-auto w-full max-w-3xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
       <AnimatedSection>
         <div className="text-center">
           <p className="mb-3 sm:mb-4 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
