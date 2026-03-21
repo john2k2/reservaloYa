@@ -129,17 +129,36 @@ export function BookingFormWithWaitlist({
             />
           </section>
 
-          {/* Paso 3 — Datos */}
-          <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Paso 3
-            </p>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-              Completa tus datos
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Solo pedimos la información justa para confirmar y poder contactarte si hace falta.
-            </p>
+          {/* Waitlist inline when no slots - replaces Paso 3 */}
+          {noSlotsDate ? (
+            <section className="rounded-[1.75rem] border-2 border-warning/40 bg-warning/5 p-5 sm:p-6">
+              <p className="text-center text-sm font-semibold text-foreground">
+                No hay horarios disponibles para {noSlotsDate}
+              </p>
+              <p className="mt-1 text-center text-xs text-muted-foreground">
+                Dejá tu email y te avisamos si alguien cancela
+              </p>
+              <div className="mt-4">
+                <BookingWaitlistForm
+                  businessSlug={slug}
+                  serviceId={service.id}
+                  bookingDate={noSlotsDate}
+                  accentColor={accentColor}
+                />
+              </div>
+            </section>
+          ) : (
+            /* Paso 3 — Datos (solo si hay horarios) */
+            <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                Paso 3
+              </p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                Completa tus datos
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Solo pedimos la información justa para confirmar y poder contactarte si hace falta.
+              </p>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {/* Nombre */}
               <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
@@ -233,10 +252,12 @@ export function BookingFormWithWaitlist({
               </div>
             </div>
           </section>
+          )}
         </div>
 
-        {/* Sidebar */}
-        <aside className="space-y-4 lg:sticky lg:top-6">
+        {/* Sidebar - hidden when no slots */}
+        {!noSlotsDate && (
+          <aside className="space-y-4 lg:sticky lg:top-6">
           <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Resumen del turno
@@ -324,25 +345,8 @@ export function BookingFormWithWaitlist({
           <BookingPolicyCard />
           {whatsappHref && <BookingSupportCard whatsappHref={whatsappHref} />}
         </aside>
+        )}
       </form>
-
-      {/* Waitlist form rendered OUTSIDE <form> to avoid nested forms */}
-      {noSlotsDate && (
-        <div className="mt-6 rounded-2xl border-2 border-warning/30 bg-warning/5 p-5">
-          <div className="mb-4 text-center">
-            <p className="text-sm font-semibold text-foreground">No hay horarios disponibles</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Dejá tu email y te avisamos si alguien cancela
-            </p>
-          </div>
-          <BookingWaitlistForm
-            businessSlug={slug}
-            serviceId={service.id}
-            bookingDate={noSlotsDate}
-            accentColor={accentColor}
-          />
-        </div>
-      )}
     </>
   );
 }
