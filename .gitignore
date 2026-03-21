@@ -102,3 +102,5 @@ e2e/.auth/
 
 # browser testing snapshots
 snapshot*.txt
+
+.env*.local

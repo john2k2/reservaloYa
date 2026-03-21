@@ -41,17 +41,10 @@ export async function joinWaitlistAction(
   try {
     const canUsePocketBase = hasPocketBasePublicAuthCredentials() && !isDemoModeEnabled();
     if (canUsePocketBase) {
-      try {
-        await createPocketBaseWaitlistEntry({
-          ...parsed.data,
-          phone: parsed.data.phone || undefined,
-        });
-      } catch {
-        await createLocalWaitlistEntry({
-          ...parsed.data,
-          phone: parsed.data.phone || undefined,
-        });
-      }
+      await createPocketBaseWaitlistEntry({
+        ...parsed.data,
+        phone: parsed.data.phone || undefined,
+      });
     } else {
       await createLocalWaitlistEntry({
         ...parsed.data,
