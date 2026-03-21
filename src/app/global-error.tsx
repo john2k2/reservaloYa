@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 import "./globals.css";
@@ -15,6 +16,15 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    Sentry.captureException(error, {
+      tags: {
+        boundary: "global-error",
+      },
+      extra: {
+        digest: error.digest,
+      },
+    });
+
     reportClientIssue({
       source: "global-error-boundary",
       message: error.message || "Unexpected application error",
