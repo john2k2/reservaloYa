@@ -184,8 +184,16 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
               </LoadingButton>
             </form>
           ) : (
-            <div className="mt-8 rounded-xl border border-border/70 bg-card p-5 text-sm text-muted-foreground">
-              El registro self-serve estara disponible cuando PocketBase quede conectado en este entorno.
+            <div className="mt-8 space-y-4">
+              <div className="rounded-xl border border-border/70 bg-card p-5 text-sm text-muted-foreground">
+                El registro no está disponible en este entorno. Podés explorar el demo sin crear cuenta.
+              </div>
+              <Link
+                href="/login"
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-foreground font-semibold text-background transition-transform hover:bg-foreground/90 active:scale-[0.98]"
+              >
+                Ir al demo
+              </Link>
             </div>
           )}
 

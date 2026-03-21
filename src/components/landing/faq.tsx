@@ -44,32 +44,35 @@ export function FAQSection() {
         </div>
       </AnimatedSection>
 
-      <div className="mt-8 sm:mt-12 space-y-2 sm:space-y-3">
+      <div className="mt-8 sm:mt-12 space-y-3">
         {faqs.map((faq, index) => (
-          <AnimatedSection key={index} delay={index * 100}>
-            <div className="rounded-xl sm:rounded-2xl border border-border/60 bg-card overflow-hidden transition-all duration-300 hover:border-border">
-              <button
-                onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                className="flex w-full cursor-pointer items-center justify-between p-4 sm:p-6 text-left text-sm sm:text-base font-medium text-foreground transition-colors hover:bg-secondary/30"
-              >
-                <span className="pr-4">{faq.question}</span>
-                <ChevronDown
-                  className={cn(
-                    "size-4 sm:size-5 shrink-0 text-muted-foreground transition-transform duration-300",
-                    openFaq === index && "rotate-180"
-                  )}
-                />
-              </button>
-              <div
+          <div
+            key={index}
+            className="rounded-xl border border-border/60 bg-card overflow-hidden"
+          >
+            <button
+              onClick={() => setOpenFaq(openFaq === index ? null : index)}
+              className="flex w-full cursor-pointer items-center justify-between p-5 text-left text-base font-medium text-foreground transition-colors hover:bg-secondary/20"
+            >
+              <span className="pr-4">{faq.question}</span>
+              <ChevronDown
                 className={cn(
-                  "overflow-hidden transition-all duration-300",
-                  openFaq === index ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                  "size-5 shrink-0 text-muted-foreground transition-transform duration-200",
+                  openFaq === index && "rotate-180"
                 )}
-              >
-                <p className="px-4 sm:px-6 pb-4 sm:pb-6 text-sm text-muted-foreground">{faq.answer}</p>
-              </div>
+              />
+            </button>
+            <div
+              className={cn(
+                "transition-all duration-200 ease-out",
+                openFaq === index ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+              )}
+            >
+              <p className="px-5 pb-5 text-sm text-muted-foreground">
+                {faq.answer}
+              </p>
             </div>
-          </AnimatedSection>
+          </div>
         ))}
       </div>
     </section>

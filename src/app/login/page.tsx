@@ -167,29 +167,21 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
               <div className="space-y-4">
                 <Link
                   href="/admin/dashboard"
-                  className="flex h-12 w-full items-center justify-center rounded-md bg-foreground font-medium text-background transition-transform hover:bg-foreground/90 active:scale-[0.98]"
+                  className="flex h-14 w-full items-center justify-center rounded-xl bg-foreground font-semibold text-background transition-transform hover:bg-foreground/90 active:scale-[0.98] sm:text-lg"
                 >
                   Entrar al panel demo
                 </Link>
-                <Link
-                  href="/admin/onboarding"
-                  className="flex h-12 w-full items-center justify-center rounded-md border border-border/70 bg-card font-medium text-foreground transition-colors hover:bg-secondary/20"
-                >
-                  Crear negocio desde una plantilla
-                </Link>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {demoBusinessOptions.map((option) => (
-                    <Link
-                      key={option.slug}
-                      href={`/${option.slug}`}
-                      className="rounded-xl border border-border/70 bg-card p-4 transition-colors hover:border-foreground/20 hover:bg-secondary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                    >
-                      <p className="text-sm font-semibold text-card-foreground">{option.label}</p>
-                      <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-                        {option.category}
-                      </p>
-                    </Link>
-                  ))}
+                <p className="text-center text-sm text-muted-foreground">
+                  Explorá cómo funciona el sistema sin crear cuenta.
+                </p>
+                <div className="rounded-xl border border-border/60 bg-secondary/20 p-4">
+                  <p className="text-sm font-medium text-foreground">También podés ver una demo pública:</p>
+                  <Link
+                    href="/demo-barberia"
+                    className="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
+                  >
+                    Demo Barbería →
+                  </Link>
                 </div>
               </div>
             ) : (

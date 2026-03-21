@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  AlertCircle,
   BarChart3,
   CalendarClock,
   Clock3,
@@ -307,21 +308,12 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
         {/* Columna 3: Alertas + Accesos */}
         <div className="space-y-6">
-          {/* Alertas */}
-          {dashboardData.notifications && dashboardData.notifications.length > 0 && (
-            <article className="rounded-xl border border-border/60 bg-secondary/30 p-5 shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Alertas importantes
-              </h2>
-              <div className="space-y-2">
-                {dashboardData.notifications.map((item, index) => (
-                  <div
-                    key={index}
-                    className="rounded-md border border-border/40 bg-card px-3 py-2.5 text-sm text-foreground"
-                  >
-                    {item}
-                  </div>
-                ))}
+          {/* Alertas - solo mostrar si hay turnos pendientes */}
+          {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes")) && (
+            <article className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-700">
+                <AlertCircle className="size-4" />
+                Revisá tus turnos pendientes
               </div>
             </article>
           )}

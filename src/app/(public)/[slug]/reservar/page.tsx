@@ -275,29 +275,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               />
 
               <aside className="space-y-4 lg:sticky lg:top-6">
-                <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    Asi funciona
-                  </p>
-                  <div className="mt-5 space-y-3">
-                    {[
-                      "Elige el servicio que quieres reservar.",
-                      "Mira solo horarios reales para ese servicio.",
-                      "Confirma tus datos y recibe tu turno.",
-                    ].map((text, i) => (
-                      <div
-                        key={i}
-                        className="rounded-2xl border border-border/60 bg-background/85 px-4 py-3 text-sm text-muted-foreground"
-                      >
-                        <span className="mr-3 inline-flex size-7 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
-                          {i + 1}
-                        </span>
-                        {text}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
                 <BookingPolicyCard />
                 <BookingSupportCard whatsappHref={whatsappHref} />
               </aside>
