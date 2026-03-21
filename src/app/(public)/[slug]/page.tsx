@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Clock3, Facebook, Instagram, Phone, ShieldCheck } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 
 import { TikTokIcon, WhatsAppIcon } from "@/components/icons";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
@@ -337,34 +337,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           firstActiveDay={firstActiveDay}
           highlightedTestimonial={highlightedTestimonial}
         />
-
-        {/* Benefits Section */}
-        <section className="border-y border-border/40 py-10 sm:py-14 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
-              {pageData.profile.benefits.map((benefit, idx) => (
-                <article
-                  key={benefit}
-                  className="rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-background p-5 sm:p-6 lg:p-8 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <div
-                    className="flex size-10 sm:size-12 items-center justify-center rounded-xl sm:rounded-2xl"
-                    style={{ backgroundColor: pageData.profile.accentSoft }}
-                  >
-                    {idx === 0 ? (
-                      <Clock3 className="size-5 sm:size-6" style={{ color: pageData.profile.accent }} />
-                    ) : idx === 1 ? (
-                      <ShieldCheck className="size-5 sm:size-6" style={{ color: pageData.profile.accent }} />
-                    ) : (
-                      <Phone className="size-5 sm:size-6" style={{ color: pageData.profile.accent }} />
-                    )}
-                  </div>
-                  <p className="mt-3 sm:mt-5 text-base sm:text-lg font-semibold text-card-foreground">{benefit}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Gallery */}
         {pageData.profile.gallery && pageData.profile.gallery.length > 0 && (
