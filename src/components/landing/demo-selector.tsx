@@ -77,10 +77,10 @@ export function DemoSelector() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                  Lo que vas a probar
+                  Lo que vas a ver
                 </p>
                 <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                  Una demo pensada para vender el producto, no para rellenar con mockups.
+                  Ejemplos en vivo pensados para mostrar el producto en uso real.
                 </h3>
               </div>
               <p className="max-w-md text-sm leading-6 text-muted-foreground">

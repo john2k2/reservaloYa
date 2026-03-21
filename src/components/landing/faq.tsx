@@ -7,8 +7,8 @@ import { AnimatedSection } from "./animated-section";
 
 const faqs = [
   {
-    question: "¿Necesito tarjeta de crédito para probar la demo?",
-    answer: "No. La demo es 100% gratuita y sin compromiso. Podés probar todo el flujo de reserva sin crear cuenta.",
+    question: "¿Necesito tarjeta de credito para ver el producto en accion?",
+    answer: "No. Podes revisar el flujo publico completo sin dejar tarjeta y hablar con nosotros antes de activar tu cuenta.",
   },
   {
     question: "¿Cuánto tiempo tarda estar listo mi sistema?",

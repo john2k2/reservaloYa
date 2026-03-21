@@ -2,7 +2,17 @@
  * Verificar si reservaya.app está verificado en Resend
  */
 
-const RESEND_API_KEY = "re_481FzGcB_PCPo4E6CD8jcCGgkNuusshaU";
+function requireEnv(name) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+const RESEND_API_KEY = requireEnv("RESEND_API_KEY");
 
 async function checkDomain() {
   console.log('🔍 Verificando dominios en Resend...\n');

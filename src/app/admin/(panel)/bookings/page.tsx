@@ -68,6 +68,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
   const bookingsExportHref = bookingsExportQuery
     ? `/admin/export/bookings?${bookingsExportQuery}`
     : "/admin/export/bookings";
+  const filtersStatusSelectId = "booking-filters-status";
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -107,9 +108,14 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
             className="h-10 sm:h-9 w-full sm:min-w-[180px] sm:flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
           />
           <div className="flex gap-2">
+            <label htmlFor={filtersStatusSelectId} className="sr-only">
+              Filtrar turnos por estado
+            </label>
             <select
+              id={filtersStatusSelectId}
               name="status"
               defaultValue={activeFilters.status}
+              aria-label="Filtrar turnos por estado"
               className="h-10 sm:h-9 flex-1 sm:w-28 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
             >
               <option value="">Estado</option>
@@ -191,10 +197,14 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                 {/* Formulario de edición */}
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground">Estado</label>
+                    <label htmlFor={`booking-status-${booking.id}`} className="text-xs font-medium text-foreground">
+                      Estado
+                    </label>
                     <select
+                      id={`booking-status-${booking.id}`}
                       name="status"
                       defaultValue={booking.status}
+                      aria-label={`Estado del turno de ${booking.customerName}`}
                       className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
                     >
                       {statusOptions.map((opt) => (

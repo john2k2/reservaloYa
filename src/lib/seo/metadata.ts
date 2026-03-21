@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { getSiteWhatsAppHref } from "@/lib/contact";
 import { getPublicAppUrl } from "@/lib/runtime";
 
 const siteUrl = getPublicAppUrl();
@@ -8,11 +9,11 @@ const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 export const siteConfig = {
   name: "ReservaYa",
   description:
-    "ReservaYa ordena turnos para barberias, peluquerias y centros de estetica con una demo simple, clara y vendible.",
+    "ReservaYa ordena turnos para barberias, peluquerias y centros de estetica con una experiencia simple, clara y lista para cobrar.",
   url: siteUrl,
   ogImage: `${siteUrl}/icon-512x512.png`,
   links: {
-    whatsapp: "https://wa.me/541155550199",
+    whatsapp: getSiteWhatsAppHref(),
   },
   keywords: [
     "turnos online",

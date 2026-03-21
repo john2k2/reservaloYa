@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { demoBusinessSlug } from "@/constants/site";
+import { getSiteWhatsAppHref } from "@/lib/contact";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
 
@@ -16,7 +17,7 @@ export function CTASection() {
               Empezá a ordenar tus turnos hoy.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Probá la demo gratis. Sin tarjeta. Sin compromiso. En 2 minutos ves cómo funciona.
+              Mira un negocio en vivo, revisa el flujo completo y valida si encaja con tu negocio en pocos minutos.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -31,12 +32,12 @@ export function CTASection() {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 )}
               >
-                Probar demo gratis
+                Ver ejemplo en vivo
                 <ArrowRight className="size-4" />
               </Link>
 
               <a
-                href="https://wa.me/541155550199"
+                href={getSiteWhatsAppHref("Hola, quiero hablar sobre ReservaYa.")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
@@ -50,7 +51,7 @@ export function CTASection() {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 )}
               >
-                Hablar por WhatsApp
+                Hablar con ventas
               </a>
             </div>
           </div>

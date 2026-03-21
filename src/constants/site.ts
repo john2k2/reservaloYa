@@ -17,27 +17,27 @@ export const demoBusinessSlug = "demo-barberia";
 export const demoBusinessOptions = [
   {
     slug: "demo-barberia",
-    label: "Demo Barbería",
+    label: "Barberia clasica",
     category: "Barbería y peluquería",
-    description: "Flujo ágil para cortes, barba y servicios rápidos con turnos cortos.",
+    description: "Ejemplo en vivo para cortes, barba y servicios rapidos con turnos cortos.",
   },
   {
     slug: "demo-estetica",
-    label: "Demo Estética",
+    label: "Estetica Aura",
     category: "Estética y skincare",
-    description: "Demo pensada para faciales, lifting y sesiones con mayor tiempo de cabina.",
+    description: "Ejemplo listo para faciales, lifting y sesiones con mayor tiempo de cabina.",
   },
   {
     slug: "demo-nails",
-    label: "Demo Nails",
+    label: "Nails Studio",
     category: "Nails studio",
-    description: "Demo enfocada en manicure, semipermanente y turnos ordenados desde Instagram.",
+    description: "Ejemplo pensado para manicure, semipermanente y turnos ordenados desde Instagram.",
   },
   {
     slug: "demo-consultorio",
-    label: "Demo Consultorio",
+    label: "Consultorio medico",
     category: "Consultorio y salud",
-    description: "Demo orientada a primeras consultas, seguimientos y agenda clara para profesionales.",
+    description: "Ejemplo orientado a primeras consultas, seguimientos y agenda clara para profesionales.",
   },
 ] as const;
 
@@ -81,7 +81,7 @@ export const landingFeatures: Array<{
 
 export const landingSteps = [
   {
-    title: "Mostrar la demo",
+    title: "Mostrar un negocio en vivo",
     description:
       "Entramos a la pagina del negocio, elegimos servicio y reservamos un turno real de ejemplo.",
   },

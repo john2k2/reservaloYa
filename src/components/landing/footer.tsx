@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Phone, Mail, Clock } from "lucide-react";
 import { productName, demoBusinessSlug } from "@/constants/site";
+import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
 
 export function Footer() {
   return (
@@ -27,7 +28,7 @@ export function Footer() {
                 href={`/${demoBusinessSlug}`}
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 inline-flex min-h-8 items-center"
               >
-                Demo pública
+                Ejemplo en vivo
               </Link>
               <Link
                 href="/login"
@@ -49,24 +50,24 @@ export function Footer() {
             <p className="font-semibold text-foreground text-sm sm:text-base">Contacto</p>
             <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
               <a
-                href="https://wa.me/541155550199"
+                href={getSiteWhatsAppHref("Hola, quiero conocer ReservaYa.")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 min-h-8"
               >
                 <Phone className="size-4" />
-                +54 11 5555 0199
+                {siteContact.whatsappLabel}
               </a>
               <a
-                href="mailto:hola@reservaya.demo"
+                href={`mailto:${siteContact.email}`}
                 className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 min-h-8"
               >
                 <Mail className="size-4" />
-                hola@reservaya.demo
+                {siteContact.email}
               </a>
               <p className="flex items-center gap-2 text-sm text-muted-foreground min-h-8">
                 <Clock className="size-4" />
-                Lun-Vie 9:00 a 18:00
+                {siteContact.businessHours}
               </p>
             </div>
           </div>

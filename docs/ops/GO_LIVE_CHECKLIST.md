@@ -69,6 +69,7 @@ Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variab
 | `MP_APP_ID` | ID de la app MP | Desde Mercado Pago Developers |
 | `MP_APP_SECRET` | Secret de la app | Para OAuth por negocio |
 | `MP_ACCESS_TOKEN` | (opcional) | Fallback global si el negocio no conectó MP |
+| `MP_WEBHOOK_SECRET` | Secret del webhook | Validación de firma para `/api/payments/webhook` |
 
 ### Para PocketBase (cuando esté listo)
 
@@ -134,6 +135,7 @@ Respuesta esperada:
 - [ ] `RESEND_FROM_EMAIL` actualizado con dominio verificado
 - [ ] Cron probado con reservas reales en ventana de 24hs
 - [ ] MercadoPago: probar flujo sandbox completo (reserva → pago → confirmación)
+- [ ] MercadoPago: copiar `MP_WEBHOOK_SECRET` desde Developers y verificar que el webhook firme eventos válidos
 - [ ] WhatsApp Twilio configurado (opcional)
 - [ ] Monitoreo básico activo (Vercel logs + alertas)
 

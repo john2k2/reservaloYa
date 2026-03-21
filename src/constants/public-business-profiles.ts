@@ -118,7 +118,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       {
         question: "¿Atienden solo con reserva?",
         answer:
-          "La demo está pensada para priorizar reservas, pero también puede convivir con turnos espontáneos.",
+          "La pagina esta pensada para priorizar reservas, pero tambien puede convivir con turnos espontaneos.",
       },
     ],
     policies: [
@@ -126,10 +126,10 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       "La cancelación sin costo se puede hacer desde el link del turno.",
       "Si llegas muy tarde, el negocio puede ajustar la duración del servicio.",
     ],
-    instagram: "@demo.barberia",
-    facebook: "demo.barberia",
-    tiktok: "@demo.barberia",
-    website: "https://reservaya.app/barberia",
+    instagram: "@barberia.libertador",
+    facebook: "barberia.libertador",
+    tiktok: "@barberia.libertador",
+    website: "https://barberialibertador.com.ar",
     heroImageUrl:
       "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1400&h=900&fit=crop",
     heroImageAlt: "Interior clásico de barbería con sillas vintage y espejos",
@@ -206,10 +206,10 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       "La reprogramación se puede hacer desde el link del turno.",
       "Para tratamientos largos, la tolerancia recomendada es de 10 minutos.",
     ],
-    instagram: "@aura.estetica.demo",
-    facebook: "aura.estetica.demo",
-    tiktok: "@aura.estetica.demo",
-    website: "https://reservaya.app/estetica",
+    instagram: "@aura.estetica.ba",
+    facebook: "aura.estetica.ba",
+    tiktok: "@aura.estetica.ba",
+    website: "https://auraestetica.com.ar",
     heroImageUrl: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1400&h=900&fit=crop",
     heroImageAlt: "Cabina de estética minimalista con tonos suaves",
     gallery: [
@@ -282,9 +282,9 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       "Para nail art complejo conviene dejar una nota breve en la reserva.",
       "Si necesitas cambiar el turno, hazlo desde el link de gestión para no perder el horario.",
     ],
-    instagram: "@demo.nails.studio",
-    tiktok: "@demo.nails.studio",
-    website: "https://reservaya.app/nails",
+    instagram: "@nudenails.studio",
+    tiktok: "@nudenails.studio",
+    website: "https://nudenailsstudio.com",
     heroImageUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=1400&h=900&fit=crop",
     heroImageAlt: "Mesa de manicura con herramientas y tonos suaves",
     gallery: [
@@ -359,8 +359,8 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       "Si traes estudios o análisis, menciónalo en las notas de la reserva.",
       "La reprogramación se puede hacer desde el link del turno sin costo.",
     ],
-    instagram: "@consultorio.norte.demo",
-    website: "https://reservaya.app/consultorio",
+    instagram: "@consultorionorte.ba",
+    website: "https://consultorionorte.com.ar",
     heroImageUrl: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1400&h=900&fit=crop",
     heroImageAlt: "Consultorio moderno con escritorio y luz natural",
     gallery: [

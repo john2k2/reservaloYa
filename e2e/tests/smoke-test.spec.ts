@@ -5,6 +5,8 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("Smoke Tests - Páginas principales", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("Homepage debería cargar", async ({ page }) => {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
@@ -15,7 +17,7 @@ test.describe("Smoke Tests - Páginas principales", () => {
     const response = await page.goto("/demo-barberia");
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
-    await expect(page.locator("[id='main-content']")).toBeVisible();
+    await expect(page.locator("#main-content").first()).toBeVisible();
   });
 
   test("Página de reserva debería cargar", async ({ page }) => {

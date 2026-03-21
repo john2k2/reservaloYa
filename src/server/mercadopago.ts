@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 import MercadoPago, { Preference, Payment } from "mercadopago";
 
 // ─── Client (lazy singleton) ──────────────────────────────────────────────────
@@ -156,6 +158,70 @@ export type MPPaymentInfo = {
   currencyId: string;
   payerEmail?: string;
 };
+
+type MPWebhookSignatureContext = {
+  paymentId?: string | null;
+  requestId?: string | null;
+  signatureHeader?: string | null;
+};
+
+function getMPWebhookSecret() {
+  const secret = process.env.MP_WEBHOOK_SECRET?.trim();
+  return secret ? secret : null;
+}
+
+function parseMPWebhookSignature(signatureHeader: string) {
+  const pairs = signatureHeader.split(",");
+  const parsed = new Map<string, string>();
+
+  for (const pair of pairs) {
+    const [rawKey, ...rawValueParts] = pair.trim().split("=");
+    const key = rawKey?.trim().toLowerCase();
+    const value = rawValueParts.join("=").trim();
+
+    if (key && value) {
+      parsed.set(key, value);
+    }
+  }
+
+  return {
+    timestamp: parsed.get("ts") ?? null,
+    hash: parsed.get("v1") ?? null,
+  };
+}
+
+export function shouldVerifyMPWebhookSignature() {
+  return Boolean(getMPWebhookSecret());
+}
+
+export function isValidMPWebhookSignature({
+  paymentId,
+  requestId,
+  signatureHeader,
+}: MPWebhookSignatureContext) {
+  const secret = getMPWebhookSecret();
+
+  if (!secret) {
+    return true;
+  }
+
+  if (!paymentId || !requestId || !signatureHeader) {
+    return false;
+  }
+
+  const { timestamp, hash } = parseMPWebhookSignature(signatureHeader);
+
+  if (!timestamp || !hash) {
+    return false;
+  }
+
+  const manifest = `id:${paymentId};request-id:${requestId};ts:${timestamp};`;
+  const expectedHash = createHmac("sha256", secret).update(manifest).digest("hex");
+  const received = Buffer.from(hash, "utf8");
+  const expected = Buffer.from(expectedHash, "utf8");
+
+  return received.length === expected.length && timingSafeEqual(received, expected);
+}
 
 /**
  * Obtiene la info de un pago de MP a partir de su ID.

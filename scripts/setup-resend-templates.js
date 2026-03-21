@@ -8,7 +8,17 @@
  *   - RESEND_API_KEY en variables de entorno
  */
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_481FzGcB_PCPo4E6CD8jcCGgkNuusshaU";
+function requireEnv(name) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+const RESEND_API_KEY = requireEnv("RESEND_API_KEY");
 
 // Plantilla HTML para confirmación de reserva al cliente
 const customerConfirmationTemplate = `<!DOCTYPE html>

@@ -17,6 +17,7 @@ import {
   LocalBusinessJsonLd,
   WebPageJsonLd,
 } from "@/lib/seo/business-json-ld";
+import { getSiteWhatsAppHref } from "@/lib/contact";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
@@ -113,10 +114,14 @@ function buildWebsiteHref(value?: string) {
 }
 
 function buildWhatsAppHref(phone?: string, businessName?: string) {
-  const normalizedPhone = (phone ?? "5491155550199").replace(/\D/g, "");
+  const normalizedPhone = phone?.replace(/\D/g, "");
   const message = businessName
     ? `Hola ${businessName}, quiero reservar un turno.`
     : "Hola, quiero reservar un turno.";
+
+  if (!normalizedPhone) {
+    return getSiteWhatsAppHref(message);
+  }
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }

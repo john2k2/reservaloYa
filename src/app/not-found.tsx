@@ -28,7 +28,7 @@ export default function NotFoundPage() {
         {/* Descripción */}
         <p className="mb-8 max-w-md mx-auto text-lg text-muted-foreground">
           La página que buscás no existe o fue movida.
-          Volvé al inicio o probá con una de nuestras demos.
+          Volvé al inicio o explorá uno de nuestros negocios de ejemplo.
         </p>
 
         {/* Acciones */}
@@ -53,26 +53,26 @@ export default function NotFoundPage() {
         {/* Demos disponibles */}
         <div className="mt-12">
           <p className="mb-4 text-sm text-muted-foreground">
-            O probá una de nuestras demos:
+            O explorá un ejemplo en vivo:
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link
               href="/demo-barberia"
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
             >
-              Demo Barbería
+              Barberia clasica
             </Link>
             <Link
               href="/demo-estetica"
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
             >
-              Demo Estética
+              Estetica Aura
             </Link>
             <Link
               href="/demo-nails"
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
             >
-              Demo Nails
+              Nails Studio
             </Link>
           </div>
         </div>

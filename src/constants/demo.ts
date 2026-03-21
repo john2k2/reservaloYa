@@ -70,11 +70,11 @@ export type DemoPreset = {
 
 export const demoBusiness = {
   id: "11111111-1111-1111-1111-111111111111",
-  name: "Demo Barbería",
+  name: "Barberia Libertador",
   slug: "demo-barberia",
   templateSlug: "demo-barberia",
   phone: "+54 11 5555 0199",
-  email: "hola@reservaya.app",
+  email: "turnos@barberialibertador.com.ar",
   notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Av. del Libertador 214, Palermo",
   timezone: "America/Argentina/Buenos_Aires",
@@ -106,11 +106,11 @@ export const demoServices = [
 
 export const estheticsDemoBusiness = {
   id: "aaaaaaaa-1111-1111-1111-111111111111",
-  name: "Demo Estética Aura",
+  name: "Aura Estetica",
   slug: "demo-estetica",
   templateSlug: "demo-estetica",
   phone: "+54 11 5555 0288",
-  email: "hola@aura-estetica.demo",
+  email: "turnos@auraestetica.com.ar",
   notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Honduras 4821, Palermo",
   timezone: "America/Argentina/Buenos_Aires",
@@ -142,11 +142,11 @@ export const estheticsDemoServices = [
 
 export const nailsDemoBusiness = {
   id: "bbbbbbbb-1111-1111-1111-111111111111",
-  name: "Demo Nails Studio",
+  name: "Nude Nails Studio",
   slug: "demo-nails",
   templateSlug: "demo-nails",
   phone: "+54 11 5555 0377",
-  email: "hola@nails-demo.estudio",
+  email: "turnos@nudenailsstudio.com",
   notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Gorriti 5172, Palermo",
   timezone: "America/Argentina/Buenos_Aires",
@@ -178,11 +178,11 @@ export const nailsDemoServices = [
 
 export const consultorioDemoBusiness = {
   id: "cccccccc-1111-1111-1111-111111111111",
-  name: "Demo Consultorio Norte",
+  name: "Consultorio Norte",
   slug: "demo-consultorio",
   templateSlug: "demo-consultorio",
   phone: "+54 11 5555 0466",
-  email: "hola@consultorio-demo.med",
+  email: "turnos@consultorionorte.com.ar",
   notificationEmail: "ortiz.jonathan2k@gmail.com",
   address: "Av. Cabildo 1847, Belgrano",
   timezone: "America/Argentina/Buenos_Aires",
@@ -563,7 +563,7 @@ export const demoSlots = ["10:00", "10:45", "11:30", "16:00", "16:45", "17:30"];
 
 export const demoDashboardData = {
   profileName: "Demo Owner",
-  businessName: "Demo Barbería",
+  businessName: "Barberia Libertador",
   businessSlug: "demo-barberia",
   userEmail: "demo@reservaya.app",
   metrics: [

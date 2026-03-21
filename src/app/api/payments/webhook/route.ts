@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import {
   getMPPaymentInfo,
+  isValidMPWebhookSignature,
   mapMPStatusToPaymentStatus,
   type MPWebhookPayload,
+  shouldVerifyMPWebhookSignature,
 } from "@/server/mercadopago";
 import {
   updateLocalBookingPayment,
@@ -27,33 +29,43 @@ import { getBookingConfirmationData } from "@/server/queries/public";
  * 2. Pagos de suscripciones (external_reference = businessId)
  *
  * MP puede enviar el mismo evento más de una vez → el handler es idempotente.
- * Siempre responde 200 para que MP no reintente; errores internos se loguean.
+ * Responde 401 si la firma configurada no valida; errores internos se loguean y responden 200.
  */
 export async function POST(request: Request) {
-  let body: MPWebhookPayload;
-
-  try {
-    body = (await request.json()) as MPWebhookPayload;
-  } catch {
-    return NextResponse.json({ ok: true }, { status: 200 });
-  }
+  const url = new URL(request.url);
+  const body = (await request.json().catch(() => null)) as MPWebhookPayload | null;
 
   const isPaymentEvent =
-    body.type === "payment" ||
-    body.action === "payment.created" ||
-    body.action === "payment.updated";
+    body?.type === "payment" ||
+    body?.action === "payment.created" ||
+    body?.action === "payment.updated" ||
+    url.searchParams.get("type") === "payment";
 
   if (!isPaymentEvent) {
     return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
   }
 
   const paymentId =
-    (body.data?.id ? String(body.data.id) : null) ??
-    (body.id ? String(body.id) : null);
+    (body?.data?.id ? String(body.data.id) : null) ??
+    (body?.id ? String(body.id) : null) ??
+    url.searchParams.get("data.id") ??
+    url.searchParams.get("id");
 
   if (!paymentId) {
     console.warn("[MP Webhook] Sin payment ID en el payload:", body);
     return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
+  }
+
+  if (
+    shouldVerifyMPWebhookSignature() &&
+    !isValidMPWebhookSignature({
+      paymentId,
+      requestId: request.headers.get("x-request-id"),
+      signatureHeader: request.headers.get("x-signature"),
+    })
+  ) {
+    console.warn("[MP Webhook] Firma inválida o incompleta para payment ID:", paymentId);
+    return NextResponse.json({ ok: false, error: "Invalid webhook signature" }, { status: 401 });
   }
 
   try {

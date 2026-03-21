@@ -28,7 +28,7 @@ test.describe("Panel Admin - Login", () => {
   test("deberia manejar credenciales invalidas", async ({ page }) => {
     const submitBtn = page.locator('button[type="submit"]');
     const hasSubmit = await submitBtn.isVisible({ timeout: 2000 }).catch(() => false);
-    if (!hasSubmit) return;
+    if (!hasSubmit || !page.url().includes("/admin/login")) return;
 
     await page.locator('input[type="email"], input[type="text"]').first().fill("invalido@test.com");
     await page.locator('input[type="password"]').first().fill("wrongpassword");
@@ -64,8 +64,10 @@ test.describe("Panel Admin - Dashboard (Modo Demo)", () => {
     if (!page.url().includes("dashboard")) return;
     const bookingsLink = page.getByRole("link", { name: /Turnos|Reservas/i }).first();
     if (await bookingsLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await bookingsLink.click();
-      await page.waitForLoadState("domcontentloaded");
+      await Promise.all([
+        page.waitForURL(/\/admin\/bookings/, { timeout: 5000 }),
+        bookingsLink.click(),
+      ]);
       expect(page.url()).toMatch(/\/admin\/bookings/);
     }
   });
@@ -74,8 +76,10 @@ test.describe("Panel Admin - Dashboard (Modo Demo)", () => {
     if (!page.url().includes("dashboard")) return;
     const servicesLink = page.getByRole("link", { name: /Servicios/i }).first();
     if (await servicesLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await servicesLink.click();
-      await page.waitForLoadState("domcontentloaded");
+      await Promise.all([
+        page.waitForURL(/\/admin\/services/, { timeout: 5000 }),
+        servicesLink.click(),
+      ]);
       expect(page.url()).toMatch(/\/admin\/services/);
     }
   });

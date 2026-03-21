@@ -175,19 +175,19 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                   Explorá cómo funciona el sistema sin crear cuenta.
                 </p>
                 <div className="rounded-xl border border-border/60 bg-secondary/20 p-4">
-                  <p className="text-sm font-medium text-foreground">También podés ver una demo pública:</p>
+                  <p className="text-sm font-medium text-foreground">Tambien podes ver un negocio de ejemplo:</p>
                   <Link
                     href="/demo-barberia"
                     className="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
                   >
-                    Demo Barbería →
+                    Barberia clasica →
                   </Link>
                 </div>
               </div>
             ) : (
               <div className="space-y-4 rounded-xl border border-border/70 bg-card p-5 text-sm text-muted-foreground">
                 <p>El panel interno no se expone por defecto mientras seguimos con el modo local.</p>
-                <p>Puedes seguir probando la parte pública desde las demos.</p>
+                <p>Puedes seguir probando la parte publica desde los ejemplos en vivo.</p>
               </div>
             )}
           </div>

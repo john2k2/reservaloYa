@@ -3,14 +3,30 @@
  * Ejecutar: node scripts/test-email-template.js
  */
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_481FzGcB_PCPo4E6CD8jcCGgkNuusshaU";
+function requireEnv(name) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+const RESEND_API_KEY = requireEnv("RESEND_API_KEY");
+const TEST_EMAIL_TO = process.env.TEST_EMAIL_TO || process.env.RESEND_FROM_EMAIL;
+const TEST_EMAIL_FROM = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
 async function sendTestEmail() {
   console.log('🚀 Enviando email de prueba...\n');
 
+  if (!TEST_EMAIL_TO) {
+    throw new Error("Define TEST_EMAIL_TO o RESEND_FROM_EMAIL antes de ejecutar el script.");
+  }
+
   const testData = {
-    from: "ReservaYa <ortiz.jonathan2k@gmail.com>",
-    to: ["johnmarket36@gmail.com"],
+    from: `ReservaYa <${TEST_EMAIL_FROM}>`,
+    to: [TEST_EMAIL_TO],
     subject: "✅ Tu reserva en Demo Barbería está confirmada",
     template: {
       id: "reservation-confirmation",
@@ -51,7 +67,7 @@ async function sendTestEmail() {
     console.log('✅ Email enviado exitosamente!');
     console.log('📧 ID:', data.id);
     console.log('\n📋 Detalles:');
-    console.log('  Para: johnmarket36@gmail.com');
+    console.log(`  Para: ${TEST_EMAIL_TO}`);
     console.log('  Plantilla: customer-booking-confirmation');
     console.log('  Variables usadas:');
     console.log('    - Negocio: Demo Barbería');

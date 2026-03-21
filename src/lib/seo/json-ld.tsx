@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { getSiteWhatsAppPhoneForSchema, siteContact } from "@/lib/contact";
 import { siteConfig } from "@/lib/seo/metadata";
 
 type OpeningHoursInput = Array<{
@@ -18,7 +19,8 @@ export function OrganizationJsonLd(): ReactElement {
     description: siteConfig.description,
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+54-11-5555-0199",
+      email: siteContact.email,
+      telephone: getSiteWhatsAppPhoneForSchema(),
       contactType: "customer service",
       availableLanguage: ["Spanish"],
     },

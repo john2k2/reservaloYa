@@ -5,7 +5,8 @@ import { useEffect, useState, startTransition } from "react";
 import { CheckCircle2, Menu, User } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Sheet, SheetContent, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
-import { productName, demoBusinessSlug } from "@/constants/site";
+import { productName } from "@/constants/site";
+import { getSiteWhatsAppHref } from "@/lib/contact";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -222,7 +223,7 @@ export function HeroSection() {
             Comenzar mis 15 días gratis
           </Link>
           <a
-            href="https://wa.me/541155550199"
+            href={getSiteWhatsAppHref("Hola, quiero conocer ReservaYa.")}
             target="_blank"
             rel="noopener noreferrer"
             className={cn(

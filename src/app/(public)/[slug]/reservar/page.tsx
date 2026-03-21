@@ -9,6 +9,7 @@ import { BookingStepsHeader } from "@/components/public/booking/booking-steps-he
 import { BookingSupportCard } from "@/components/public/booking/booking-support-card";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { getSiteWhatsAppHref } from "@/lib/contact";
 import { BreadcrumbJsonLd, WebPageJsonLd } from "@/lib/seo/business-json-ld";
 import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
@@ -103,7 +104,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const accentColor = pageData.profile?.accent || "#111111";
   const selectedService =
     pageData.services.find((service) => service.id === effectiveServiceId) ?? null;
-  const whatsappHref = `https://wa.me/${(pageData.business.phone ?? "5491155550199").replace(/\D/g, "")}`;
+  const whatsappHref = pageData.business.phone
+    ? `https://wa.me/${pageData.business.phone.replace(/\D/g, "")}`
+    : getSiteWhatsAppHref(`Hola, quiero reservar un turno en ${pageData.business.name}.`);
   const activeDays = pageData.weeklyHours
     .map((slot, index) => ({ slot, index }))
     .filter(({ slot }) => !slot.hoursLabel.toLocaleLowerCase("es-AR").includes("cerrado"))
