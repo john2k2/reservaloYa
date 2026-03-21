@@ -438,7 +438,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         )}
 
         <FaqContactSection
-          slug={slug}
           accentColor={pageData.profile.accent}
           surfaceTint={pageData.profile.surfaceTint}
           faqs={pageData.profile.faqs}
@@ -447,7 +446,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
             ...pageData.profile.policies,
           ]}
           whatsappHref={whatsappHref}
-          bookingHref={bookingHref}
           instagramHref={instagramHref}
           facebookHref={facebookHref}
           tiktokHref={tiktokHref}

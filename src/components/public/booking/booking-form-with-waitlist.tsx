@@ -328,7 +328,13 @@ export function BookingFormWithWaitlist({
 
       {/* Waitlist form rendered OUTSIDE <form> to avoid nested forms */}
       {noSlotsDate && (
-        <div className="mt-6">
+        <div className="mt-6 rounded-2xl border-2 border-warning/30 bg-warning/5 p-5">
+          <div className="mb-4 text-center">
+            <p className="text-sm font-semibold text-foreground">No hay horarios disponibles</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Dejá tu email y te avisamos si alguien cancela
+            </p>
+          </div>
           <BookingWaitlistForm
             businessSlug={slug}
             serviceId={service.id}

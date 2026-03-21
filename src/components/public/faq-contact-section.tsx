@@ -1,7 +1,6 @@
-﻿import { Calendar, CheckCircle2, Facebook, Instagram } from "lucide-react";
+﻿import { CheckCircle2, Facebook, Instagram } from "lucide-react";
 
 import { TikTokIcon, WhatsAppIcon } from "@/components/icons";
-import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
@@ -11,13 +10,11 @@ type FaqItem = {
 };
 
 type FaqContactSectionProps = {
-  slug: string;
   accentColor: string;
   surfaceTint: string;
   faqs: FaqItem[];
   policies: string[];
   whatsappHref: string;
-  bookingHref: string;
   instagramHref: string | null;
   facebookHref: string | null;
   tiktokHref: string | null;
@@ -26,13 +23,11 @@ type FaqContactSectionProps = {
 };
 
 export function FaqContactSection({
-  slug,
   accentColor,
   surfaceTint,
   faqs,
   policies,
   whatsappHref,
-  bookingHref,
   instagramHref,
   facebookHref,
   tiktokHref,
@@ -85,31 +80,21 @@ export function FaqContactSection({
 
           <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:rounded-3xl sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-widest sm:text-sm" style={{ color: accentColor }}>
-              Cierre rápido
+              Contacto y soporte
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Reserva online o resuelve una duda puntual sin salir del mismo flujo.
+              Escribinos o seguinos sin salir de la página.
             </p>
             <div className="mt-4 flex flex-col gap-3">
-              <PublicTrackedLink
-                businessSlug={slug}
-                eventName="booking_cta_clicked"
-                href={bookingHref}
-                pagePath={`/${slug}`}
-                className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-12 rounded-full font-semibold")}
-                style={{ backgroundColor: accentColor, borderColor: accentColor }}
-              >
-                <Calendar className="mr-2 size-5" />
-                Reservar online
-              </PublicTrackedLink>
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-12 rounded-full font-semibold")}
+                className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-12 rounded-full font-semibold")}
+                style={{ backgroundColor: accentColor, borderColor: accentColor }}
               >
                 <WhatsAppIcon className="mr-2 size-5" />
-                Soporte por WhatsApp
+                Escribinos al WhatsApp
               </a>
             </div>
 
