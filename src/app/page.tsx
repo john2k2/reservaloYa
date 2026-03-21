@@ -26,14 +26,14 @@ export default function Home() {
       <div className="pointer-events-none absolute -right-40 top-1/3 h-80 w-80 rounded-full bg-gradient-to-bl from-gray-200/40 to-transparent blur-3xl animate-float delay-500" />
 
       <LandingHeader />
-      
+
       <HeroSection />
       <DemoSelector />
       <HowItWorksSection />
       <PricingSection />
       <FAQSection />
       <CTASection />
-      
+
       <Footer />
     </main>
   );

@@ -133,6 +133,7 @@
 }
 
 @layer base {
+
   /* 
    * CORRECCIÓN: Border solo en elementos que lo necesitan
    * En lugar de aplicar a todos los elementos (*), aplicamos solo a:
@@ -166,6 +167,7 @@
    * Si el usuario prefiere reducir movimiento, desactivamos transiciones y animaciones
    */
   @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -182,7 +184,8 @@
 
   body {
     min-height: 100vh;
-    min-height: 100dvh; /* Soporte para viewport dinámico en móvil */
+    min-height: 100dvh;
+    /* Soporte para viewport dinámico en móvil */
     background: var(--background);
     @apply text-foreground;
     line-height: 1.5;
@@ -229,6 +232,7 @@
 }
 
 @layer components {
+
   /* 
    * SISTEMA DE CARDS ESTANDARIZADO
    * Uso: className="card card-hover" o className="card card-lg"
@@ -387,22 +391,55 @@
 }
 
 @layer utilities {
+
   /*
    * UTILIDADES DE COLOR SUCCESS
    * Tailwind v4 no puede resolver var() en @theme inline en runtime.
    * Se definen como utilidades directas para que funcionen con opacidad.
    */
-  .text-success { color: var(--success); }
-  .bg-success { background-color: var(--success); }
-  .border-success { border-color: var(--success); }
-  .bg-success\/5 { background-color: color-mix(in srgb, var(--success) 5%, transparent); }
-  .bg-success\/10 { background-color: color-mix(in srgb, var(--success) 10%, transparent); }
-  .bg-success\/15 { background-color: color-mix(in srgb, var(--success) 15%, transparent); }
-  .border-success\/20 { border-color: color-mix(in srgb, var(--success) 20%, transparent); }
-  .border-success\/30 { border-color: color-mix(in srgb, var(--success) 30%, transparent); }
-  .border-success\/40 { border-color: color-mix(in srgb, var(--success) 40%, transparent); }
-  .ring-success\/20 { --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent); }
-  .focus-visible\:ring-success\/20:focus-visible { --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent); }
+  .text-success {
+    color: var(--success);
+  }
+
+  .bg-success {
+    background-color: var(--success);
+  }
+
+  .border-success {
+    border-color: var(--success);
+  }
+
+  .bg-success\/5 {
+    background-color: color-mix(in srgb, var(--success) 5%, transparent);
+  }
+
+  .bg-success\/10 {
+    background-color: color-mix(in srgb, var(--success) 10%, transparent);
+  }
+
+  .bg-success\/15 {
+    background-color: color-mix(in srgb, var(--success) 15%, transparent);
+  }
+
+  .border-success\/20 {
+    border-color: color-mix(in srgb, var(--success) 20%, transparent);
+  }
+
+  .border-success\/30 {
+    border-color: color-mix(in srgb, var(--success) 30%, transparent);
+  }
+
+  .border-success\/40 {
+    border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  }
+
+  .ring-success\/20 {
+    --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent);
+  }
+
+  .focus-visible\:ring-success\/20:focus-visible {
+    --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent);
+  }
 
   /*
    * SCROLLBAR HIDE - Para carruseles y scroll horizontal
@@ -411,7 +448,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -428,6 +465,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+
     .animate-fade-in,
     .animate-slide-up {
       animation: none;
@@ -438,6 +476,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -448,6 +487,7 @@
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);

@@ -120,13 +120,13 @@ export function LandingHeader() {
         {/* Right side actions */}
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          
+
           {/* Desktop CTA */}
           {mounted && <UserButton session={session} />}
           {!mounted && (
             <div className="hidden h-10 w-20 animate-pulse rounded-lg bg-secondary lg:inline-flex" />
           )}
-          
+
           <Link
             href="/admin/signup"
             className={cn(

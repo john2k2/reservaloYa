@@ -72,6 +72,16 @@ export function BookingFormWithWaitlist({
 }: BookingFormWithWaitlistProps) {
   const [noSlotsDate, setNoSlotsDate] = useState<string | null>(null);
 
+  const formatDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString("es-AR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <>
       <form
@@ -133,7 +143,7 @@ export function BookingFormWithWaitlist({
           {noSlotsDate ? (
             <section className="rounded-[1.75rem] border-2 border-warning/40 bg-warning/5 p-5 sm:p-6">
               <p className="text-center text-sm font-semibold text-foreground">
-                No hay horarios disponibles para {noSlotsDate}
+                No hay horarios disponibles para el {formatDate(noSlotsDate)}
               </p>
               <p className="mt-1 text-center text-xs text-muted-foreground">
                 Dejá tu email y te avisamos si alguien cancela
@@ -170,12 +180,12 @@ export function BookingFormWithWaitlist({
                   <span className="text-destructive">*</span>
                 </label>
                 <div className="relative mt-3">
-                  <User className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <User aria-hidden="true" className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="fullName"
                     name="fullName"
                     autoComplete="name"
-                    placeholder="Ej: Maria Gonzalez"
+                    placeholder="Ej: Maria Gonzalez…"
                     className="minimalist-input pl-7"
                     defaultValue={defaultFullName}
                     required
@@ -193,14 +203,14 @@ export function BookingFormWithWaitlist({
                   <span className="text-destructive">*</span>
                 </label>
                 <div className="relative mt-3">
-                  <Mail className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Mail aria-hidden="true" className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="email"
                     name="email"
                     type="email"
                     autoComplete="email"
                     spellCheck={false}
-                    placeholder="Ej: maria@email.com"
+                    placeholder="Ej: maria@email.com…"
                     className="minimalist-input pl-7"
                     defaultValue={defaultEmail}
                     required
@@ -215,14 +225,14 @@ export function BookingFormWithWaitlist({
                   <span className="ml-1 text-xs font-normal text-muted-foreground">opcional</span>
                 </label>
                 <div className="relative mt-3">
-                  <WhatsAppIcon className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <WhatsAppIcon aria-hidden="true" className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="phone"
                     name="phone"
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel"
-                    placeholder="Ej: 11 5555 5555"
+                    placeholder="Ej: 11 5555 5555…"
                     className="minimalist-input pl-7"
                     defaultValue={defaultPhone}
                   />
@@ -239,12 +249,12 @@ export function BookingFormWithWaitlist({
                   <span className="ml-1 text-xs font-normal text-muted-foreground">opcional</span>
                 </label>
                 <div className="relative mt-3">
-                  <FileText className="absolute left-0 top-3 size-4 text-muted-foreground" />
+                  <FileText aria-hidden="true" className="absolute left-0 top-3 size-4 text-muted-foreground" />
                   <textarea
                     id="notes"
                     name="notes"
                     autoComplete="off"
-                    placeholder="Ej: prefiero puntualidad, tengo una indicacion especial o quiero dejar un detalle rapido..."
+                    placeholder="Ej: prefiero puntualidad, tengo una indicacion especial o quiero dejar un detalle rapido…"
                     className="minimalist-input min-h-[110px] resize-none pl-7 pt-0"
                     defaultValue={defaultNotes}
                   />

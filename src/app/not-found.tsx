@@ -27,7 +27,7 @@ export default function NotFoundPage() {
 
         {/* Descripción */}
         <p className="mb-8 max-w-md mx-auto text-lg text-muted-foreground">
-          La página que buscás no existe o fue movida. 
+          La página que buscás no existe o fue movida.
           Volvé al inicio o probá con una de nuestras demos.
         </p>
 
@@ -40,7 +40,7 @@ export default function NotFoundPage() {
             <Home className="h-4 w-4" />
             Volver al inicio
           </Link>
-          
+
           <button
             onClick={() => window.history.back()}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"

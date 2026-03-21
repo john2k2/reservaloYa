@@ -14,18 +14,18 @@ type AdminLoginPageProps = {
 
 async function isSubscriptionExpired(pb: Awaited<ReturnType<typeof createPocketBaseServerClient>>): Promise<boolean> {
   if (!pb.authStore.record) return false;
-  
+
   const businessId = Array.isArray(pb.authStore.record.business)
     ? pb.authStore.record.business[0]
     : pb.authStore.record.business;
-  
+
   if (!businessId) return false;
-  
+
   try {
     const filter = pb.filter("businessId = {:businessId}", { businessId });
     const subs = await pb.collection("subscriptions").getFullList({ filter });
     if (subs.length === 0) return false;
-    
+
     const sub = subs[0];
     if (sub.status === "suspended") return true;
     if (sub.status === "trial" && sub.trialEndsAt) {

@@ -58,13 +58,13 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
   const notice = buildNotice(params);
   const savedBookingId = params.saved ?? "";
   const hasActiveFilters = Boolean(activeFilters.status || activeFilters.date || activeFilters.q);
-  
+
   const bookingsExportQuery = new URLSearchParams({
     ...(activeFilters.status ? { status: activeFilters.status } : {}),
     ...(activeFilters.date ? { date: activeFilters.date } : {}),
     ...(activeFilters.q ? { q: activeFilters.q } : {}),
   }).toString();
-  
+
   const bookingsExportHref = bookingsExportQuery
     ? `/admin/export/bookings?${bookingsExportQuery}`
     : "/admin/export/bookings";
