@@ -15,6 +15,11 @@ const { getBlueDollarRateMock } = vi.hoisted(() => ({
   getBlueDollarRateMock: vi.fn(),
 }));
 
+const { createSubscriptionPreferenceMock, isMercadoPagoConfiguredMock } = vi.hoisted(() => ({
+  createSubscriptionPreferenceMock: vi.fn(),
+  isMercadoPagoConfiguredMock: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
@@ -28,10 +33,13 @@ vi.mock("@/lib/dollar-rate", () => ({
   getBlueDollarRate: getBlueDollarRateMock,
 }));
 
+vi.mock("@/server/mercadopago", () => ({
+  createSubscriptionPreference: createSubscriptionPreferenceMock,
+  isMercadoPagoConfigured: isMercadoPagoConfiguredMock,
+}));
+
 describe("create preference route", () => {
-  const originalFetch = global.fetch;
   const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const originalToken = process.env.MP_ACCESS_TOKEN;
 
   beforeEach(() => {
     vi.resetModules();
@@ -39,16 +47,15 @@ describe("create preference route", () => {
     createPocketBaseServerClientMock.mockReset();
     refreshPocketBaseAuthMock.mockReset();
     getBlueDollarRateMock.mockReset();
+    createSubscriptionPreferenceMock.mockReset();
+    isMercadoPagoConfiguredMock.mockReset();
 
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.test";
-    process.env.MP_ACCESS_TOKEN = "test-token";
-    global.fetch = vi.fn();
+    isMercadoPagoConfiguredMock.mockReturnValue(true);
   });
 
   afterEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = originalAppUrl;
-    process.env.MP_ACCESS_TOKEN = originalToken;
-    global.fetch = originalFetch;
   });
 
   function createPb(record: { business?: string | string[] } | null) {
@@ -67,11 +74,10 @@ describe("create preference route", () => {
     await expect(GET()).rejects.toThrow("REDIRECT:/admin/login");
   });
 
-  it("redirects to subscription pay when MP token is missing", async () => {
+  it("redirects to subscription pay when MP is not configured", async () => {
     createPocketBaseServerClientMock.mockResolvedValue(createPb({ business: "biz-1" }));
     refreshPocketBaseAuthMock.mockResolvedValue(true);
-    getBlueDollarRateMock.mockResolvedValue(1200);
-    process.env.MP_ACCESS_TOKEN = "   ";
+    isMercadoPagoConfiguredMock.mockReturnValue(false);
     const { GET } = await import("./route");
 
     const response = await GET();
@@ -82,28 +88,42 @@ describe("create preference route", () => {
     );
   });
 
-  it("creates a subscription preference and redirects to init_point", async () => {
+  it("creates a subscription preference and redirects to checkout", async () => {
     createPocketBaseServerClientMock.mockResolvedValue(createPb({ business: ["biz-1"] }));
     refreshPocketBaseAuthMock.mockResolvedValue(true);
     getBlueDollarRateMock.mockResolvedValue(1200);
-    vi.mocked(global.fetch).mockResolvedValue({
+    createSubscriptionPreferenceMock.mockResolvedValue({
       ok: true,
-      json: async () => ({ init_point: "https://mp.test/checkout/123" }),
-    } as Response);
+      preferenceId: "pref-123",
+      checkoutUrl: "https://mp.test/checkout/123",
+    });
     const { GET } = await import("./route");
 
     const response = await GET();
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "https://api.mercadopago.com/checkout/preferences",
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token",
-        }),
-      })
-    );
+    expect(createSubscriptionPreferenceMock).toHaveBeenCalledWith({
+      businessId: "biz-1",
+      priceAmount: 17 * 1200,
+    });
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("https://mp.test/checkout/123");
+  });
+
+  it("redirects to error page when preference creation fails", async () => {
+    createPocketBaseServerClientMock.mockResolvedValue(createPb({ business: "biz-1" }));
+    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    getBlueDollarRateMock.mockResolvedValue(1200);
+    createSubscriptionPreferenceMock.mockResolvedValue({
+      ok: false,
+      error: "MP error",
+    });
+    const { GET } = await import("./route");
+
+    const response = await GET();
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://reservaya.test/admin/subscription/pay?error=preference_failed"
+    );
   });
 });

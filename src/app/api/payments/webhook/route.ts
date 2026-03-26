@@ -65,8 +65,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
   }
 
-  if (
-    shouldVerifyMPWebhookSignature() &&
+  if (!shouldVerifyMPWebhookSignature()) {
+    logger.warn("MP_WEBHOOK_SECRET no configurado: webhook sin verificacion de firma");
+  } else if (
     !isValidMPWebhookSignature({
       paymentId,
       requestId: request.headers.get("x-request-id"),

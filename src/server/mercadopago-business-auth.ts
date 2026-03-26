@@ -2,6 +2,9 @@ import {
   isMercadoPagoConfiguredForBusiness,
   refreshMercadoPagoAccessToken,
 } from "@/server/mercadopago";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("MercadoPago OAuth");
 
 export type BusinessMercadoPagoSettings = {
   businessId: string;
@@ -59,9 +62,7 @@ export async function getUsableBusinessMercadoPagoAccessToken(
   const refreshed = await refreshMercadoPagoAccessToken(currentRefreshToken);
 
   if (!refreshed.ok) {
-    console.error(
-      `[MercadoPago OAuth] No se pudo renovar el token para ${settings.businessSlug}: ${refreshed.error}`
-    );
+    logger.error(`No se pudo renovar el token para ${settings.businessSlug}: ${refreshed.error}`);
     return null;
   }
 

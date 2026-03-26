@@ -3,6 +3,9 @@ import {
   isPocketBaseAdminConfigured,
   isPocketBaseConfigured,
 } from "@/lib/pocketbase/config";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("booking-lock");
 
 const bookingLocks = new Map<string, Promise<void>>();
 const SHARED_LOCK_COLLECTION = "booking_locks";
@@ -182,9 +185,7 @@ export async function withBookingDateLock<T>(
     }
   } catch (error) {
     if (isPocketBaseCollectionMissingError(error)) {
-      console.error(
-        "[booking-lock] booking_locks collection is missing, falling back to memory lock"
-      );
+      logger.error("booking_locks collection is missing, falling back to memory lock");
       return withMemoryBookingDateLock(input, operation);
     }
 

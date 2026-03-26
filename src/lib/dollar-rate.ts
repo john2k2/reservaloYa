@@ -24,7 +24,3 @@ export async function getBlueDollarRate(): Promise<number | null> {
     return null;
   }
 }
-
-export function calculateSubscriptionPrice(usdPrice: number): number {
-  return usdPrice * 1435;
-}

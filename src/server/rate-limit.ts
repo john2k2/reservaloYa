@@ -5,6 +5,9 @@ import {
   isPocketBaseAdminConfigured,
   isPocketBaseConfigured,
 } from "@/lib/pocketbase/config";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("rate-limit");
 
 type RateLimitBucketConfig = {
   bucket: string;
@@ -195,7 +198,7 @@ export async function consumeRateLimit(
   try {
     return await consumePocketBaseRateLimit(input);
   } catch (error) {
-    console.error("[rate-limit] Falling back to memory store", {
+    logger.error("Falling back to memory store", {
       bucket: input.bucket,
       message: error instanceof Error ? error.message : String(error),
     });

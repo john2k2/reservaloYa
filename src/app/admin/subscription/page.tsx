@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import { productName } from "@/constants/site";
 import { getAdminShellData } from "@/server/queries/admin";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
-
-const USD_PRICE = 17;
+import { getSubscriptionArsPrice } from "@/server/payments-domain";
 
 export default async function SubscriptionExpiredPage() {
   const shellData = await getAdminShellData();
@@ -19,7 +18,7 @@ export default async function SubscriptionExpiredPage() {
   }
 
   const blueRate = await getBlueDollarRate();
-  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1435;
+  const arsPrice = getSubscriptionArsPrice(blueRate);
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   return (
