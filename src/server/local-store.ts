@@ -1,9 +1,7 @@
 import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { CalendarClock, ChartColumnBig, Percent } from "lucide-react";
-
-import { dashboardHighlights, demoBusinessOptions } from "@/constants/site";
+import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import {
   addMinutes,
@@ -84,6 +82,14 @@ import {
   buildAdminServicesView,
   buildAdminSettingsView,
 } from "@/server/admin-views-domain";
+import {
+  buildAdminBusinessOptionsView,
+  buildAdminDashboardBookingPreview,
+  buildAdminDashboardMetrics,
+  buildAdminDashboardNotifications,
+  buildAdminDashboardView,
+  buildAdminShellView,
+} from "@/server/admin-dashboard-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 const dataDir = path.join(process.cwd(), "data");
@@ -1344,21 +1350,20 @@ export async function getLocalAdminShellData(activeBusinessSlug?: string | null)
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return {
+  return buildAdminShellView({
     demoMode: true,
     profileName: "Demo Owner",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "demo@reservaya.app",
-    businessOptions: store.businesses
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((item) => ({
+    businessOptions: buildAdminBusinessOptionsView(
+      store.businesses.map((item) => ({
         slug: item.slug,
         name: item.name,
-        templateSlug: item.templateSlug ?? item.slug,
-      })),
-  };
+        templateSlug: item.templateSlug,
+      }))
+    ),
+  });
 }
 
 export async function getLocalAdminDashboardData(activeBusinessSlug?: string | null) {
@@ -1367,87 +1372,58 @@ export async function getLocalAdminDashboardData(activeBusinessSlug?: string | n
   const customers = getBusinessCustomers(store, business.id);
   const analytics = buildLocalAnalyticsSummary(store, business.id);
   const reminders = buildLocalReminderSummary(store, business.id);
-  const bookings = getBusinessBookings(store, business.id)
-    .slice()
-    .sort((a, b) => {
-      const left = `${a.bookingDate}T${a.startTime}`;
-      const right = `${b.bookingDate}T${b.startTime}`;
-      return left.localeCompare(right);
-    })
-    .slice(0, 5)
-    .map((booking) => {
+
+  const pendingBookings = getBusinessBookings(store, business.id).filter(
+    (booking) => booking.status === "pending"
+  ).length;
+  const bookings = buildAdminDashboardBookingPreview(
+    getBusinessBookings(store, business.id).map((booking) => {
       const customer = customers.find((candidate) => candidate.id === booking.customerId);
       const service = store.services.find((candidate) => candidate.id === booking.serviceId);
 
       return {
         id: booking.id,
-        name: customer?.fullName ?? "Cliente",
-        service: service?.name ?? "Servicio",
-        date: booking.bookingDate,
-        time: booking.startTime,
-        status: formatBookingStatus(booking.status),
+        customerName: customer?.fullName,
+        serviceName: service?.name,
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+        status: booking.status,
       };
-    });
+    }),
+    formatBookingStatus
+  );
+  const notifications = buildAdminDashboardNotifications({
+    pendingBookings,
+    remindersPending: reminders.pending,
+    remindersProviderReady: reminders.providerReady,
+    bookingsCreated: analytics.bookingsCreated,
+    visits: analytics.visits,
+    topSource: analytics.topSource,
+  });
+  const metrics = buildAdminDashboardMetrics({
+    visits: analytics.visits,
+    ctaClicks: analytics.ctaClicks,
+    bookingsCreated: analytics.bookingsCreated,
+    conversionRate: analytics.conversionRate,
+    pendingBookings,
+    customersCount: customers.length,
+    customersHint: "Clientes guardados en modo local",
+    topCampaignLabel: analytics.topCampaign,
+    hasVisits: analytics.visits > 0,
+  });
 
-  const pendingBookings = getBusinessBookings(store, business.id).filter(
-    (booking) => booking.status === "pending"
-  ).length;
-  const notifications = [
-    pendingBookings > 0
-      ? `${pendingBookings} turnos pendientes de confirmar`
-      : "Sin turnos pendientes de confirmar",
-      reminders.pending > 0
-        ? reminders.providerReady
-          ? `${reminders.pending} recordatorios listos para enviar`
-          : `${reminders.pending} recordatorios listos cuando actives email o WhatsApp`
-        : "Sin recordatorios pendientes en las proximas 24 hs",
-    analytics.bookingsCreated > 0
-      ? `${analytics.bookingsCreated} reservas llegaron desde la web`
-      : "Todavia no se registran reservas web",
-    analytics.visits > 0
-      ? `Canal principal: ${analytics.topSource}`
-      : "Todavia no hay visitas registradas",
-  ];
-
-  return {
+  return buildAdminDashboardView({
     profileName: "Demo Owner",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "demo@reservaya.app",
     demoMode: true,
-    metrics: [
-      {
-        label: "Visitas publicas",
-        value: String(analytics.visits),
-        hint: `${analytics.ctaClicks} clics en reservar`,
-        icon: ChartColumnBig,
-      },
-      {
-        label: "Reservas creadas",
-        value: String(analytics.bookingsCreated),
-        hint: `${pendingBookings} pendientes de confirmar`,
-        icon: CalendarClock,
-      },
-      {
-        label: "Conversion web",
-        value: `${analytics.conversionRate}%`,
-        hint:
-          analytics.visits > 0
-            ? `Campana principal: ${analytics.topCampaign}`
-            : "Todavia sin visitas registradas",
-        icon: Percent,
-      },
-      {
-        ...dashboardHighlights[1],
-        value: String(customers.length),
-        hint: "Clientes guardados en modo local",
-      },
-    ],
+    metrics,
     bookings,
     analytics,
     reminders,
     notifications,
-  };
+  });
 }
 
 export async function getLocalAdminBookingsData(

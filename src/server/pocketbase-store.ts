@@ -1,8 +1,7 @@
-import { CalendarClock, ChartColumnBig, Percent } from "lucide-react";
 import type { RecordModel } from "pocketbase";
 
 import type { PublicBusinessProfile } from "@/constants/public-business-profiles";
-import { dashboardHighlights, demoBusinessOptions } from "@/constants/site";
+import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import {
   addMinutes,
@@ -65,6 +64,13 @@ import {
   buildAdminServicesView,
   buildAdminSettingsView,
 } from "@/server/admin-views-domain";
+import {
+  buildAdminDashboardBookingPreview,
+  buildAdminDashboardMetrics,
+  buildAdminDashboardNotifications,
+  buildAdminDashboardView,
+  buildAdminShellView,
+} from "@/server/admin-dashboard-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 type PocketBaseListOptions = {
@@ -147,7 +153,7 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
 
   const subscription = await getBusinessSubscription(String(businessId));
 
-  return {
+  return buildAdminShellView({
     demoMode: false,
     profileName: String(userRecord.name ?? userRecord.email ?? "Owner"),
     businessName: business.name,
@@ -159,7 +165,7 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
     subscriptionStatus: subscription?.status ?? "trial",
     subscriptionExpired: subscription?.status === "suspended" || 
       (subscription?.status === "trial" && subscription.trialEndsAt && new Date(subscription.trialEndsAt) < new Date()),
-  };
+  });
 }
 
 export async function getBusinessSubscription(businessId: string) {
@@ -860,6 +866,7 @@ export async function getPocketBaseAdminDashboardData(businessId: string) {
     );
   const topSourceLabel =
     Object.entries(topSource).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "direct";
+  const pendingBookings = businessBookings.filter((booking) => booking.status === "pending").length;
   const remindersPending = businessBookings.filter((booking) => {
     const [year, month, day] = booking.bookingDate.split("-").map(Number);
     const [hours, minutes] = booking.startTime.split(":").map(Number);
@@ -874,103 +881,89 @@ export async function getPocketBaseAdminDashboardData(businessId: string) {
       bookingTime <= Date.now() + 24 * 60 * 60 * 1000
     );
   }).length;
+  const analytics = {
+    visits: publicPageViews.length,
+    ctaClicks: bookingCtaClicks.length,
+    bookingIntents: bookingPageViews.length,
+    bookingsCreated: bookingCreated.length,
+    clickThroughRate:
+      publicPageViews.length > 0
+        ? Math.round((bookingCtaClicks.length / publicPageViews.length) * 100)
+        : 0,
+    bookingIntentRate:
+      publicPageViews.length > 0
+        ? Math.round((bookingPageViews.length / publicPageViews.length) * 100)
+        : 0,
+    conversionRate:
+      publicPageViews.length > 0
+        ? Math.round((bookingCreated.length / publicPageViews.length) * 100)
+        : 0,
+    topSource: topSourceLabel,
+    topSourceCount: topSource[topSourceLabel] ?? 0,
+    topCampaign:
+      businessAnalyticsEvents.find((event) => event.campaign)?.campaign ?? "Sin campana",
+    channels: [],
+  };
+  const reminders = {
+    reminderWindowHours: 24,
+    pending: remindersPending,
+    missingEmail: businessBookings.filter(
+      (booking) =>
+        getAvailableReminderChannels({
+          customerEmail: (booking.expand?.customer as CustomerRecord | undefined)?.email,
+          customerPhone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
+        }).length === 0
+    ).length,
+    sentRecently: businessCommunicationEvents.filter((event) => event.kind === "reminder").length,
+    providerReady: hasReminderProviderConfigured(),
+    nextBookingAt:
+      businessBookings[0] != null
+        ? `${businessBookings[0].bookingDate} ${businessBookings[0].startTime}`
+        : null,
+  };
+  const notifications = buildAdminDashboardNotifications({
+    pendingBookings,
+    remindersPending,
+    remindersProviderReady: reminders.providerReady,
+    bookingsCreated: analytics.bookingsCreated,
+    visits: analytics.visits,
+    topSource: analytics.topSource,
+  });
+  const metrics = buildAdminDashboardMetrics({
+    visits: analytics.visits,
+    ctaClicks: analytics.ctaClicks,
+    bookingsCreated: analytics.bookingsCreated,
+    conversionRate: analytics.conversionRate,
+    pendingBookings,
+    customersCount: businessCustomers.length,
+    customersHint: "Clientes registrados en PocketBase",
+    topCampaignLabel: analytics.topCampaign,
+    hasVisits: analytics.visits > 0,
+  });
+  const bookingPreview = buildAdminDashboardBookingPreview(
+    businessBookings.map((booking) => ({
+      id: booking.id,
+      customerName: (booking.expand?.customer as CustomerRecord | undefined)?.fullName,
+      serviceName: (booking.expand?.service as ServiceRecord | undefined)?.name,
+      bookingDate: booking.bookingDate,
+      startTime: booking.startTime,
+      status: booking.status,
+    })),
+    formatStatus
+  );
 
-  return {
+  return buildAdminDashboardView({
     profileName: "PocketBase Owner",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "",
     demoMode: false,
-    analytics: {
-      visits: publicPageViews.length,
-      ctaClicks: bookingCtaClicks.length,
-      bookingIntents: bookingPageViews.length,
-      bookingsCreated: bookingCreated.length,
-      clickThroughRate:
-        publicPageViews.length > 0
-          ? Math.round((bookingCtaClicks.length / publicPageViews.length) * 100)
-          : 0,
-      bookingIntentRate:
-        publicPageViews.length > 0
-          ? Math.round((bookingPageViews.length / publicPageViews.length) * 100)
-          : 0,
-      conversionRate:
-        publicPageViews.length > 0
-          ? Math.round((bookingCreated.length / publicPageViews.length) * 100)
-          : 0,
-      topSource: topSourceLabel,
-      topSourceCount: topSource[topSourceLabel] ?? 0,
-      topCampaign:
-        businessAnalyticsEvents.find((event) => event.campaign)?.campaign ?? "Sin campana",
-      channels: [],
-    },
-    reminders: {
-        reminderWindowHours: 24,
-        pending: remindersPending,
-        missingEmail: businessBookings.filter(
-          (booking) =>
-            getAvailableReminderChannels({
-              customerEmail: (booking.expand?.customer as CustomerRecord | undefined)?.email,
-              customerPhone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
-            }).length === 0
-        ).length,
-        sentRecently: businessCommunicationEvents.filter((event) => event.kind === "reminder").length,
-        providerReady: hasReminderProviderConfigured(),
-        nextBookingAt:
-          businessBookings[0] != null
-            ? `${businessBookings[0].bookingDate} ${businessBookings[0].startTime}`
-          : null,
-    },
-    notifications: [
-      `${businessBookings.filter((booking) => booking.status === "pending").length} turnos pendientes de confirmar`,
-      remindersPending > 0
-        ? `${remindersPending} recordatorios listos para enviar`
-        : "Sin recordatorios pendientes en las proximas 24 hs",
-      bookingCreated.length > 0
-        ? `${bookingCreated.length} reservas llegaron desde la web`
-        : "Todavia no se registran reservas web",
-      publicPageViews.length > 0
-        ? `Canal principal: ${topSourceLabel}`
-        : "Todavia no hay visitas registradas",
-    ],
-    metrics: [
-      {
-        label: "Visitas publicas",
-        value: String(publicPageViews.length),
-        hint: `${bookingCtaClicks.length} clics en reservar`,
-        icon: ChartColumnBig,
-      },
-      {
-        label: "Reservas creadas",
-        value: String(bookingCreated.length),
-        hint: `${bookings.filter((booking) => booking.status === "pending").length} pendientes de confirmar`,
-        icon: CalendarClock,
-      },
-      {
-        label: "Conversion web",
-        value: `${
-          publicPageViews.length > 0
-            ? Math.round((bookingCreated.length / publicPageViews.length) * 100)
-            : 0
-        }%`,
-        hint: publicPageViews.length > 0 ? `Canal principal: ${topSourceLabel}` : "Todavia sin visitas registradas",
-        icon: Percent,
-      },
-      {
-        ...dashboardHighlights[1],
-        value: String(businessCustomers.length),
-        hint: "Clientes registrados en PocketBase",
-      },
-    ],
-    bookings: businessBookings.slice(0, 5).map((booking) => ({
-      id: booking.id,
-      name: ((booking.expand?.customer as CustomerRecord | undefined)?.fullName ?? "Cliente"),
-      service: ((booking.expand?.service as ServiceRecord | undefined)?.name ?? "Servicio"),
-      date: booking.bookingDate,
-      time: booking.startTime,
-      status: formatStatus(booking.status),
-    })),
-  };
+    analytics,
+    reminders,
+    notifications,
+    metrics,
+    bookings: bookingPreview,
+  });
 }
 
 export async function getPocketBaseAdminBookingsData(
