@@ -19,7 +19,9 @@ async function loadEnvFile() {
         process.env[key] = value;
       }
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 await loadEnvFile();
@@ -46,18 +48,24 @@ async function main() {
   const phone = "+541111111111";
   const address = "Calle Falsa 123, Buenos Aires";
 
-  const existingUser = await pb.collection("users").getList(1, 1, {
-    filter: pb.filter("email = {:email}", { email: ownerEmail }),
-  }).catch(() => null);
+  const existingUser = await pb
+    .collection("users")
+    .getList(1, 1, {
+      filter: pb.filter("email = {:email}", { email: ownerEmail }),
+    })
+    .catch(() => null);
 
   if (existingUser && existingUser.totalItems > 0) {
     console.log("Ya existe un usuario con ese email:", ownerEmail);
     return;
   }
 
-  const existingBusiness = await pb.collection("businesses").getList(1, 1, {
-    filter: pb.filter("slug = {:slug}", { slug: businessSlug }),
-  }).catch(() => null);
+  const existingBusiness = await pb
+    .collection("businesses")
+    .getList(1, 1, {
+      filter: pb.filter("slug = {:slug}", { slug: businessSlug }),
+    })
+    .catch(() => null);
 
   if (existingBusiness && existingBusiness.totalItems > 0) {
     console.log("Ya existe un negocio con ese slug:", businessSlug);
@@ -78,7 +86,7 @@ async function main() {
   console.log("Negocio creado:", business.name, "- ID:", business.id);
 
   const services = [
-    { name: "Corte de pelo", description: "Corte clásico", durationMinutes: 30, price: 1500 },
+    { name: "Corte de pelo", description: "Corte clasico", durationMinutes: 30, price: 1500 },
     { name: "Barba", description: "Arreglo de barba", durationMinutes: 20, price: 800 },
     { name: "Corte + Barba", description: "Paquete completo", durationMinutes: 50, price: 2000 },
   ];
@@ -109,9 +117,6 @@ async function main() {
   }
   console.log("Horarios creados");
 
-  const trialDays = 15;
-  const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-
   await pb.collection("users").create({
     email: ownerEmail,
     password: ownerPassword,
@@ -129,7 +134,7 @@ async function main() {
   console.log("Negocio:", businessName);
   console.log("Slug:", businessSlug);
   console.log("========================\n");
-  console.log("Podés iniciar sesión en:", PB_URL, "/_/");
+  console.log("Podes iniciar sesion en:", PB_URL, "/_/");
 }
 
 main().catch((err) => {

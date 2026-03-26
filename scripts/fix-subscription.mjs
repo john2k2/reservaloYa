@@ -31,32 +31,32 @@ console.log("Business ID:", business.id);
 
 // Buscar subscription trial que no tiene business linkeado
 const subs = await pb.collection("subscriptions").getFullList({ requestKey: null });
-const trialSub = subs.find(s => s.status === "trial" && s.trialEndsAt === "2026-03-01");
+const trialSub = subs.find((s) => s.status === "trial" && s.trialEndsAt === "2026-03-01");
 
 if (trialSub) {
   console.log("Subscription trial ID:", trialSub.id);
   console.log("Actual business link:", trialSub.business || trialSub.businessId);
-  
+
   // Intentar actualizar linkeando al negocio
   try {
     await pb.collection("subscriptions").update(trialSub.id, {
       business: business.id,
     });
-    console.log("✓ Subscription linkeada al negocio");
-  } catch (e) {
+    console.log("OK: Subscription linkeada al negocio");
+  } catch {
     console.log("No se pudo linkear con 'business', probando 'businessId'...");
     try {
       await pb.collection("subscriptions").update(trialSub.id, {
         businessId: business.id,
       });
-      console.log("✓ Subscription linkeada con businessId");
+      console.log("OK: Subscription linkeada con businessId");
     } catch (e2) {
       console.log("Error:", e2.message);
     }
   }
 }
 
-console.log("\nSubí a Vercel y después:");
-console.log("1. Hacé logout si estás logueado");
+console.log("\nSubi a Vercel y despues:");
+console.log("1. Hace logout si estas logueado");
 console.log("2. Logueate en /admin con negocio@ejemplo.com / Password123!");
-console.log("3. Debería redirigirte a /admin/subscription");
+console.log("3. Deberia redirigirte a /admin/subscription");

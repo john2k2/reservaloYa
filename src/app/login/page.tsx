@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { loginAction } from "@/app/login/actions";
-import { demoBusinessOptions, productName } from "@/constants/site";
+import { productName } from "@/constants/site";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
 import { isDemoModeEnabled } from "@/lib/runtime";
@@ -70,10 +70,10 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
             <h1 className="text-3xl font-bold tracking-tight">Ingresar a tu negocio</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {configured
-                ? "Iniciá sesión con tu correo electrónico para gestionar tu negocio."
+                ? "Inicia sesion con tu correo electronico para gestionar tu negocio."
                 : demoModeEnabled
-                  ? "Modo demo activo. Explora el panel de administración sin necesidad de crear una cuenta."
-                  : "El acceso admin está deshabilitado hasta conectar la autenticación real."}
+                  ? "Modo demo activo. Explora el panel de administracion sin necesidad de crear una cuenta."
+                  : "El acceso admin esta deshabilitado hasta conectar la autenticacion real."}
             </p>
           </div>
 
@@ -104,7 +104,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                 <form action={loginAction} className="space-y-6">
                   <div className="space-y-2">
                     <label htmlFor="email" className="text-sm font-medium text-foreground">
-                      Correo electrónico
+                      Correo electronico
                     </label>
                     <input
                       id="email"
@@ -121,14 +121,14 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="password" className="text-sm font-medium text-foreground">
-                      Contraseña
+                      Contrasena
                     </label>
                     <input
                       id="password"
                       name="password"
                       type="password"
                       autoComplete="current-password"
-                      placeholder="Tu contraseña"
+                      placeholder="Tu contrasena"
                       className="minimalist-input"
                       required
                       aria-invalid={params.error ? "true" : undefined}
@@ -140,23 +140,23 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                       href="/admin/forgot-password"
                       className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-medium text-foreground underline underline-offset-4"
                     >
-                      Olvidé mi contraseña
+                      Olvide mi contrasena
                     </Link>
                   </div>
                   <LoadingButton
-                    pendingLabel="Iniciando sesión..."
+                    pendingLabel="Iniciando sesion..."
                     className="h-12 w-full rounded-md bg-foreground font-medium text-background"
                   >
-                    Iniciar sesión
+                    Iniciar sesion
                   </LoadingButton>
                 </form>
 
                 <div className="rounded-xl border border-border/70 bg-card p-4 text-sm text-muted-foreground">
                   <div className="space-y-2">
-                    <p>¿Todavía no tienes cuenta?</p>
+                    <p>Todavia no tienes cuenta?</p>
                     <Link
                       href="/admin/signup"
-                      className="inline-flex min-h-11 items-center rounded-md font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors"
+                      className="inline-flex min-h-11 items-center rounded-md font-medium text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
                     >
                       Crea tu negocio y empieza ahora
                     </Link>
@@ -172,7 +172,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                   Entrar al panel demo
                 </Link>
                 <p className="text-center text-sm text-muted-foreground">
-                  Explorá cómo funciona el sistema sin crear cuenta.
+                  Explora como funciona el sistema sin crear cuenta.
                 </p>
                 <div className="rounded-xl border border-border/60 bg-secondary/20 p-4">
                   <p className="text-sm font-medium text-foreground">Tambien podes ver un negocio de ejemplo:</p>
@@ -180,7 +180,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                     href="/demo-barberia"
                     className="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
                   >
-                    Barberia clasica →
+                    Barberia clasica -&gt;
                   </Link>
                 </div>
               </div>
@@ -197,10 +197,10 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
         <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
         <div className="relative max-w-lg p-12">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestión sin complicaciones</h2>
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestion sin complicaciones</h2>
           <p className="text-lg text-muted-foreground">
             Una herramienta pensada para que administres turnos, servicios y clientes con claridad
-            desde el primer día.
+            desde el primer dia.
           </p>
 
           <div className="mt-12 grid grid-cols-2 gap-4">
