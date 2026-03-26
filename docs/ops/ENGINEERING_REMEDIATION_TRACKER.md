@@ -76,6 +76,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [x] Se valido en GitHub Actions real el workflow con el job `coverage-thresholds` en verde para la rama `codex/eng-03-ci-smoke`, cerrando ENG-04.
 - [x] Se extrajo `src/server/admin-views-domain.ts` para compartir entre `local-store` y `pocketbase-store` las proyecciones admin de bookings, customers, services, availability y settings, con tests dedicados en `src/server/admin-views-domain.test.ts`.
 - [x] Se extrajo `src/server/admin-dashboard-domain.ts` para compartir entre `local-store` y `pocketbase-store` la proyeccion de admin shell, preview de bookings, metricas y notificaciones del dashboard, con tests dedicados en `src/server/admin-dashboard-domain.test.ts`.
+- [x] Se reforzo `src/server/payments-domain.ts` con helpers compartidos para normalizar `collectorId` y construir patches de persistencia / limpieza de tokens Mercado Pago por negocio, reutilizados por `local-store` y `pocketbase-store`.
 
 ---
 

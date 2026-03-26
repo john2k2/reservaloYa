@@ -50,7 +50,10 @@ import {
 } from "@/server/booking-notifications";
 import {
   buildBookingPaymentPatch,
+  buildBusinessMercadoPagoTokenClearPatch,
+  buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
+  normalizeMercadoPagoCollectorId,
   type BookingPaymentUpdateInput,
 } from "@/server/payments-domain";
 import {
@@ -254,7 +257,7 @@ export async function getPocketBaseBusinessPaymentSettingsBySlug(slug: string) {
 }
 
 export async function getPocketBaseBusinessPaymentSettingsByCollectorId(collectorId: string) {
-  const normalizedCollectorId = collectorId.trim();
+  const normalizedCollectorId = normalizeMercadoPagoCollectorId(collectorId);
 
   if (!normalizedCollectorId) {
     return null;
@@ -2067,13 +2070,7 @@ export async function updatePocketBaseBusinessMPTokens(input: {
   mpTokenExpiresAt: string;
 }) {
   const pb = await getAdminClient();
-  await pb.collection("businesses").update(input.businessId, {
-    mpAccessToken: input.mpAccessToken,
-    mpRefreshToken: input.mpRefreshToken,
-    mpCollectorId: input.mpCollectorId,
-    mpTokenExpiresAt: input.mpTokenExpiresAt,
-    mpConnected: true,
-  });
+  await pb.collection("businesses").update(input.businessId, buildBusinessMercadoPagoTokenPatch(input));
 }
 
 /**
@@ -2081,13 +2078,7 @@ export async function updatePocketBaseBusinessMPTokens(input: {
  */
 export async function clearPocketBaseBusinessMPTokens(businessId: string) {
   const pb = await getAdminClient();
-  await pb.collection("businesses").update(businessId, {
-    mpAccessToken: "",
-    mpRefreshToken: "",
-    mpCollectorId: "",
-    mpTokenExpiresAt: "",
-    mpConnected: false,
-  });
+  await pb.collection("businesses").update(businessId, buildBusinessMercadoPagoTokenClearPatch(""));
 }
 
 /**

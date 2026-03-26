@@ -37,6 +37,42 @@ export function buildBusinessPaymentSettings(
   };
 }
 
+export type BusinessMercadoPagoTokenUpdateInput = {
+  mpAccessToken: string;
+  mpRefreshToken: string;
+  mpCollectorId: string;
+  mpTokenExpiresAt: string;
+};
+
+export function normalizeMercadoPagoCollectorId(collectorId: string) {
+  const normalized = collectorId.trim();
+  return normalized ? normalized : null;
+}
+
+export function buildBusinessMercadoPagoTokenPatch(
+  input: BusinessMercadoPagoTokenUpdateInput
+) {
+  return {
+    mpAccessToken: input.mpAccessToken,
+    mpRefreshToken: input.mpRefreshToken,
+    mpCollectorId: input.mpCollectorId,
+    mpTokenExpiresAt: input.mpTokenExpiresAt,
+    mpConnected: true,
+  };
+}
+
+export function buildBusinessMercadoPagoTokenClearPatch<TEmpty extends string | undefined>(
+  emptyValue: TEmpty
+) {
+  return {
+    mpAccessToken: emptyValue,
+    mpRefreshToken: emptyValue,
+    mpCollectorId: emptyValue,
+    mpTokenExpiresAt: emptyValue,
+    mpConnected: false,
+  };
+}
+
 export type BookingPaymentUpdateInput = {
   bookingId: string;
   paymentStatus: PaymentStatus;

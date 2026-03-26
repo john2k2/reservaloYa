@@ -68,7 +68,10 @@ import {
 } from "@/server/booking-notifications";
 import {
   buildBookingPaymentPatch,
+  buildBusinessMercadoPagoTokenClearPatch,
+  buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
+  normalizeMercadoPagoCollectorId,
   type BookingPaymentUpdateInput,
 } from "@/server/payments-domain";
 import {
@@ -205,7 +208,7 @@ export async function getLocalBusinessPaymentSettings(slug: string) {
 }
 
 export async function getLocalBusinessPaymentSettingsByCollectorId(collectorId: string) {
-  const normalizedCollectorId = collectorId.trim();
+  const normalizedCollectorId = normalizeMercadoPagoCollectorId(collectorId);
 
   if (!normalizedCollectorId) {
     return null;
@@ -1607,11 +1610,7 @@ export async function updateLocalBusinessMPTokens(
     const business = getBusinessBySlug(store, input.businessSlug);
     if (!business) throw new Error("No encontramos el negocio.");
 
-    business.mpAccessToken = input.mpAccessToken;
-    business.mpRefreshToken = input.mpRefreshToken;
-    business.mpCollectorId = input.mpCollectorId;
-    business.mpTokenExpiresAt = input.mpTokenExpiresAt;
-    business.mpConnected = true;
+    Object.assign(business, buildBusinessMercadoPagoTokenPatch(input));
 
     return business.slug;
   });
@@ -1625,11 +1624,7 @@ export async function clearLocalBusinessMPTokens(businessSlug: string) {
     const business = getBusinessBySlug(store, businessSlug);
     if (!business) throw new Error("No encontramos el negocio.");
 
-    business.mpAccessToken = undefined;
-    business.mpRefreshToken = undefined;
-    business.mpCollectorId = undefined;
-    business.mpTokenExpiresAt = undefined;
-    business.mpConnected = false;
+    Object.assign(business, buildBusinessMercadoPagoTokenClearPatch(undefined));
 
     return business.slug;
   });
