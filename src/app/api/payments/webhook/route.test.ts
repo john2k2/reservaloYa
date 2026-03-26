@@ -135,6 +135,23 @@ describe("mercadopago webhook route", () => {
     expect(getMPPaymentInfoMock).not.toHaveBeenCalled();
   });
 
+  it("skips payment events without a payment id", async () => {
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: {} }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(getMPPaymentInfoMock).not.toHaveBeenCalled();
+  });
+
   it("returns 401 when signature verification fails", async () => {
     shouldVerifyMPWebhookSignatureMock.mockReturnValue(true);
     isValidMPWebhookSignatureMock.mockReturnValue(false);
@@ -155,6 +172,49 @@ describe("mercadopago webhook route", () => {
 
     expect(response.status).toBe(401);
     expect(body).toEqual({ ok: false, error: "Invalid webhook signature" });
+  });
+
+  it("returns ok when Mercado Pago payment info cannot be retrieved", async () => {
+    getMPPaymentInfoMock.mockResolvedValue(null);
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true });
+    expect(updateLocalBookingPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("returns ok when payment has no external reference", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+    });
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true });
+    expect(updateLocalBookingPaymentMock).not.toHaveBeenCalled();
   });
 
   it("updates local booking payment and sends confirmation email when approved", async () => {

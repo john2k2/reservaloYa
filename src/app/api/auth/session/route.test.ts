@@ -119,6 +119,26 @@ describe("auth session route", () => {
     });
   });
 
+  it("marks owner as expired when trial has already ended", async () => {
+    const pb = createPbMock({
+      record: { email: "owner@demo.com", role: "owner", business: "biz-1" },
+      subscriptions: [{ status: "trial", trialEndsAt: "2020-01-01" }],
+    });
+    createPocketBaseServerClientMock.mockResolvedValue(pb);
+    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    const { GET } = await import("./route");
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body).toEqual({
+      loggedIn: false,
+      isPlatformAdmin: false,
+      displayName: "",
+      subscriptionExpired: true,
+    });
+  });
+
   it("returns business name for active owners", async () => {
     const pb = createPbMock({
       record: { email: "owner@demo.com", role: "owner", business: ["biz-1"] },
@@ -136,6 +156,60 @@ describe("auth session route", () => {
       loggedIn: true,
       isPlatformAdmin: false,
       displayName: "Demo Barberia",
+      subscriptionExpired: false,
+    });
+  });
+
+  it("falls back to user identity when owner business lookup fails", async () => {
+    const pb = createPbMock({
+      record: { email: "owner@demo.com", name: "Owner Demo", role: "owner", business: ["biz-1"] },
+      subscriptions: [{ status: "active" }],
+    });
+    pb.collection = vi.fn((name: string) => {
+      if (name === "subscriptions") {
+        return {
+          getFullList: vi.fn().mockResolvedValue([{ status: "active" }]),
+        };
+      }
+
+      if (name === "businesses") {
+        return {
+          getOne: vi.fn().mockRejectedValue(new Error("missing business")),
+        };
+      }
+
+      throw new Error(`Unexpected collection: ${name}`);
+    });
+    createPocketBaseServerClientMock.mockResolvedValue(pb);
+    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    const { GET } = await import("./route");
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body).toEqual({
+      loggedIn: true,
+      isPlatformAdmin: false,
+      displayName: "Owner Demo",
+      subscriptionExpired: false,
+    });
+  });
+
+  it("returns the user name for non-owner sessions", async () => {
+    const pb = createPbMock({
+      record: { email: "staff@demo.com", name: "Staff Demo", role: "staff", business: "biz-1" },
+    });
+    createPocketBaseServerClientMock.mockResolvedValue(pb);
+    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    const { GET } = await import("./route");
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body).toEqual({
+      loggedIn: true,
+      isPlatformAdmin: false,
+      displayName: "Staff Demo",
       subscriptionExpired: false,
     });
   });
