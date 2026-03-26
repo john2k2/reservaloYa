@@ -12,20 +12,20 @@ Producto-servicio para vender turnos online a negocios chicos que hoy operan por
 
 Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persistente como fallback para demo comercial.
 
-## Estado actual (2026-03-18)
+## Estado actual (2026-03-26)
 
 ### Flujo publico de reserva
 
 - Landing personalizada por negocio y vertical (barberia, estetica, etc.)
 - Selector de servicio con precio, duracion y etiqueta destacada
 - Calendario interactivo con disponibilidad real (solo dias con horarios)
-- Selector de hora agrupado por franja (Mañana / Tarde / Noche)
+- Selector de hora agrupado por franja (Manana / Tarde / Noche)
 - Skeleton loading inmediato al cambiar fecha
 - Formulario con email requerido, telefono opcional
 - Pago online via MercadoPago si el servicio tiene precio (por negocio o global)
 - Pagina de confirmacion con link a calendario y gestion del turno
 - Pagina "mi turno": reprogramar y cancelar desde link firmado
-- Pagina de reseña post-turno (`/[slug]/resena`) con rating y comentario
+- Pagina de resena post-turno (`/[slug]/resena`) con rating y comentario
 - Lista de espera (waitlist) cuando no hay horarios disponibles
 - Politica de cancelacion visible por negocio
 - Tema dark/light coherente en todas las paginas publicas
@@ -35,7 +35,7 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 
 - Email de confirmacion al cliente y al negocio (Resend, HTML inline)
 - Email de recordatorio 24hs antes del turno
-- Email de seguimiento post-turno (~1h despues) con link a reseña
+- Email de seguimiento post-turno (~1h despues) con link a resena
 - WhatsApp recordatorio via Twilio (opcional, complementa email)
 - Historial de comunicaciones por booking en el store
 
@@ -56,66 +56,56 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 - Modo local (archivo JSON, sin dependencias externas) para demo
 - Modo PocketBase para produccion multi-tenant real
 - Rate limiting en creacion de turnos
-- Tokens HMAC firmados para links de gestion y reseña
+- Tokens HMAC firmados para links de gestion y resena
 - Endpoint de cron `/api/jobs/booking-reminders` para Vercel
-- Analytics de embudo: page_view → cta_click → booking_page → booking_created
+- Analytics de embudo: page_view -> cta_click -> booking_page -> booking_created
 - Tracking UTM en toda la cadena de reserva
 - Deploy en Vercel, PocketBase via Docker local
+- CI: lint + typecheck + test + build + coverage thresholds + smoke E2E
 
-## Ya validado
-
-- Crear reserva local desde demo publica
-- Ver confirmacion del turno y recibir email
-- Reprogramar un turno desde su link publico
-- Cancelar un turno desde su link publico
-- Ver impacto del turno en el panel admin
-- Analytics y conversion visibles en dashboard
-- Editar branding y ver cambio reflejado en pagina publica
-- Detectar recordatorios pendientes en ventana de 24hs
-- Conectar MercadoPago OAuth por negocio desde admin
-- Enviar follow-up post-turno con link a reseña
-- Dejar reseña con rating y comentario desde link firmado
+---
 
 ## Lo que falta para produccion real
 
-### 1. Activacion de infraestructura
+### Prioritario (para lanzar)
 
-- Configurar `RESEND_API_KEY` para emails reales a cualquier destinatario
-- Activar `CRON_SECRET` en Vercel y verificar el cron de recordatorios
-- Deployar PocketBase en VPS o PaaS con backups diarios
-- Configurar dominio propio en Resend para emails sin restriccion
+1. Configurar `RESEND_API_KEY` para emails reales
+2. Configurar `BOOKING_LINK_SECRET` y `CRON_SECRET` en Vercel
+3. Activar cron real de recordatorios y follow-ups
+4. Validar flujo completo en produccion con reserva real
 
-### 2. Seguridad y hardening
+### Antes del primer cliente pago
 
-- Completar rules least-privilege en PocketBase para flujos publicos (RY-001, RY-002)
-- Rate limiting en login admin (RY-005)
-- Endurecer autenticacion en endpoint de cron (RY-006)
-- Revisar race condition en creacion concurrente de turnos (RY-007)
+5. PocketBase deployado con backups y reglas least-privilege completas
+6. Dominio propio en Resend para emails sin restriccion de destinatarios
+7. Video demo 30-45s para lanzamiento comercial
 
-### 3. Operacion
-
-- CI minima: lint + test + build en PRs (RY-018)
-- Monitoreo y alertas basicas (Vercel logs + PocketBase health)
-- Backups automaticos de PocketBase
-
-### 4. Crecimiento (post-lanzamiento)
+### Post-lanzamiento
 
 - Implementar lista de espera en PocketBase (hoy solo modo local)
-- Implementar reseñas en PocketBase (hoy solo modo local)
+- Implementar resenas en PocketBase (hoy solo modo local)
 - Seleccion de profesional/staff por parte del cliente
 - GA4 o PostHog para analytics avanzado
 - SEO: meta tags y OG por pagina de negocio
 
+---
+
+## Criterio de cierre de la siguiente iteracion
+
+Un negocio piloto debe poder:
+
+- Recibir reservas reales de sus clientes
+- Recibir email de confirmacion automatico (cliente y negocio)
+- Recibir recordatorio 24hs antes del turno
+- Recibir follow-up post-turno con link para dejar resena
+- Gestionar turnos desde el admin sin friccion
+- Cobrar online via MercadoPago si lo desea
+
+---
+
 ## Riesgo principal
 
 Que el producto ya haga mucho, pero el operador no active los servicios clave (email, cron, dominio) y los clientes no reciban confirmaciones reales.
-
-## Prioridad recomendada
-
-1. Activar Resend con dominio y validar emails reales
-2. Activar cron de recordatorios en Vercel
-3. Deployar PocketBase en produccion
-4. Validar end-to-end con primer cliente piloto real
 
 ## Regla operativa
 

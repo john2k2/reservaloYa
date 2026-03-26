@@ -6,27 +6,6 @@ Ultima actualizacion: 2026-03-26
 
 Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaciones, refactors, validaciones y criterios de cierre.
 
-> Este archivo reemplaza el seguimiento disperso entre notas sueltas. El backlog historico sigue en `docs/ops/remediation-backlog.md`, pero este documento es el tablero operativo vivo.
-
----
-
-## Estado base del proyecto
-
-### Lo ya validado
-- Produccion estable en [reservaya-kappa.vercel.app](https://reservaya-kappa.vercel.app)
-- Reserva publica funcionando
-- Fallback a pago en efectivo funcionando
-- OAuth de Mercado Pago por negocio implementado a nivel de codigo
-- Inicio del flujo de conexion a Mercado Pago funcionando desde onboarding
-
-### Riesgos abiertos principales
-1. Cobertura baja en backend critico
-2. Duplicacion grande entre `local-store` y `pocketbase-store`
-3. Mojibake / textos con encoding roto en varias pantallas y docs
-4. CI sin Playwright
-5. Rutas API sensibles sin tests dedicados
-6. Observabilidad todavia muy basica
-
 ---
 
 ## Tablero de trabajo
@@ -45,40 +24,18 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 
 ---
 
-## Trabajo realizado hoy
+## Backlog tecnico pendiente
 
-### 2026-03-25
-- [x] Se creo este tracker para centralizar seguimiento tecnico.
-- [x] Se limpio el `README.md`:
-  - encoding corregido
-  - version de PocketBase alineada con `package.json`
-  - link al nuevo tracker agregado
-- [x] Se empezo la normalizacion de copy visible en `src/app/login/page.tsx`.
-- [x] Se eliminaron warnings de lint triviales en scripts y login.
-- [x] Se agregaron tests de rutas API para `booking-slots`, `auth/session`, callback OAuth y webhook de Mercado Pago.
-- [x] Se definieron thresholds minimos de coverage en Vitest.
-- [x] Se agrego job de smoke E2E en GitHub Actions.
-- [x] Se mejoro `api/payments/create-preference` para usar token normalizado, redirigir a `/admin/login` y tener tests dedicados.
-- [x] Se extrajo `src/server/payments-domain.ts` para compartir mapeo de settings de pago y patches de actualizacion entre `local-store` y `pocketbase-store`.
-- [x] Se extrajo `src/server/bookings-domain.ts` para compartir el armado de vistas de confirmacion y gestion de turnos entre `local-store` y `pocketbase-store`.
-- [x] Se normalizo copy visible en `src/app/(public)/[slug]/mi-turno/page.tsx` para evitar mojibake en la pagina publica de gestion.
-- [x] Se creo `src/server/logger.ts` como logger comun incremental, con `info` silenciado en tests para bajar ruido de CI.
-- [x] Se migraron `api/payments/webhook`, `api/auth/mercadopago/callback`, `api/payments/create-preference`, `server/actions/public-booking`, `server/booking-notifications` y `server/mercadopago` al logger comun.
-- [x] Se endurecio ENG-02 con casos adicionales para webhook, callback OAuth y auth/session, cubriendo errores de credenciales, payloads invalidos, referencias faltantes y fallbacks de sesion.
+Issues del backlog original que siguen abiertos:
 
-### 2026-03-26
-- [x] Se reescribio `e2e/tests/smoke-test.spec.ts` para que el smoke cubra de forma mas realista homepage, demo publica, reserva, login/admin shell, onboarding, bookings, services, availability y 404.
-- [x] Se cambio el proyecto `ci-smoke` de Playwright a Firefox porque Chrome/Chromium fallaba localmente con un error del runtime ICU en Windows.
-- [x] El smoke local `npm run test:e2e:smoke` quedo pasando con 10/10 tests.
-- [x] Se actualizo `.github/workflows/ci.yml` para instalar Firefox, alineando CI con el navegador real del smoke.
-- [x] Se valido el workflow real en GitHub Actions para la rama `codex/eng-03-ci-smoke`, cerrando ENG-03 con evidencia de ejecucion remota en verde.
-- [x] Se revalido `npm run test:coverage` localmente con thresholds en verde y se agrego un job `coverage-thresholds` en GitHub Actions para que la cobertura minima falle en remoto si se degrada.
-- [x] Se valido en GitHub Actions real el workflow con el job `coverage-thresholds` en verde para la rama `codex/eng-03-ci-smoke`, cerrando ENG-04.
-- [x] Se extrajo `src/server/admin-views-domain.ts` para compartir entre `local-store` y `pocketbase-store` las proyecciones admin de bookings, customers, services, availability y settings, con tests dedicados en `src/server/admin-views-domain.test.ts`.
-- [x] Se extrajo `src/server/admin-dashboard-domain.ts` para compartir entre `local-store` y `pocketbase-store` la proyeccion de admin shell, preview de bookings, metricas y notificaciones del dashboard, con tests dedicados en `src/server/admin-dashboard-domain.test.ts`.
-- [x] Se reforzo `src/server/payments-domain.ts` con helpers compartidos para normalizar `collectorId` y construir patches de persistencia / limpieza de tokens Mercado Pago por negocio, reutilizados por `local-store` y `pocketbase-store`.
-- [x] Se creo `src/server/booking-mutations-domain.ts` para compartir entre `local-store` y `pocketbase-store` la logica interna de ventanas horarias, validacion de disponibilidad/bloqueos/conflictos, payloads de customers y campos comunes de mutacion de bookings, con tests dedicados en `src/server/booking-mutations-domain.test.ts`.
-- [x] Con estas extracciones (`payments-domain`, `bookings-domain`, `admin-views-domain`, `admin-dashboard-domain` y `booking-mutations-domain`) se dio por cerrado el alcance planificado de ENG-05 sin forzar un refactor heroico de persistencia.
+| ID | Titulo | Prioridad | Tipo |
+|----|--------|-----------|------|
+| RY-014 | Reducir matcher de refresh de sesion | P1 | Perf |
+| RY-015 | Reemplazar `getFullList` por paginacion | P1 | Perf (solo PocketBase) |
+| RY-016 | Optimizar agregaciones del panel admin | P1 | Perf |
+| RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt |
+| RY-020 | Extraer capa de dominio comun entre stores | P2 | TechDebt |
+| RY-021 | Politica de dependencias runtime seguras | P2 | TechDebt |
 
 ---
 
@@ -88,16 +45,16 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production
 
 ### Bloque 2 - hardening
-- [ ] Seguir extrayendo helpers compartidos de bookings, customers y availability fuera de `local-store` y `pocketbase-store`
+- [ ] Seguir extrayendo helpers compartidos fuera de `local-store` y `pocketbase-store`
 - [ ] Empezar ENG-06 unificando el criterio de Mercado Pago entre bookings y subscription
-- [ ] Seguir migrando `console.*` de callbacks, notificaciones y pagos al logger comun
+- [ ] Seguir migrando `console.*` al logger comun
 
 ---
 
 ## Criterios de cierre por frente
 
 ### ENG-01 - Textos y encoding
-- Sin artefactos tipo `Ã`, `â`, `ðŸ`, `�` mal decodificados en pantallas visibles
+- Sin artefactos tipo `A`, `a`, `ðŸ`, `�` mal decodificados en pantallas visibles
 - README y docs operativas legibles
 - Nuevos archivos guardados consistentemente en UTF-8
 
@@ -107,30 +64,19 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - Callback MP cubre state invalido y success path
 
 ### ENG-03 - CI con smoke E2E
-- Workflow separado o job adicional
+- Job adicional en CI con Firefox
 - Corre al menos login/admin/public booking smoke
 - Falla el PR si rompe UX principal
 
 ### ENG-04 - Coverage thresholds
-- Minimos iniciales realistas
+- Minimos: 35% statements/functions/lines, 20% branches
 - Se pueden subir por etapas
 - El objetivo no es "100%", sino evitar regresion silenciosa
 
 ### ENG-05 - Refactor stores
 - Extraer dominio compartido antes de mover persistencia
 - Reducir duplicacion en bookings, customers, payments y availability
-- Evitar cambio masivo sin tests previos
-
----
-
-## Comandos de verificacion
-
-```bash
-npm run lint
-npm run check
-npm run test:coverage
-npm run test:e2e
-```
+- Modulos extraidos: `payments-domain`, `bookings-domain`, `admin-views-domain`, `admin-dashboard-domain`, `booking-mutations-domain`
 
 ---
 
@@ -139,4 +85,3 @@ npm run test:e2e
 - No cerrar un frente solo porque "anda"; debe quedar mantenible.
 - No mezclar refactor grande con fix productivo urgente en el mismo commit.
 - Cuando algo impacte produccion (pagos, auth, webhook), probar primero local y luego Vercel.
-
