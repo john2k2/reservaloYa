@@ -36,7 +36,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 | ENG-01 | Normalizar textos y encoding | P0 | Hecho | Sin mojibake en UI ni docs criticas |
 | ENG-02 | Tests de rutas API criticas | P0 | Hecho | Webhook, callback MP, booking-slots y auth cubiertos |
 | ENG-03 | CI con smoke E2E | P1 | Hecho | PRs bloquean regresiones visibles |
-| ENG-04 | Thresholds de coverage | P1 | En curso | La cobertura no puede degradarse silenciosamente |
+| ENG-04 | Thresholds de coverage | P1 | Hecho | La cobertura no puede degradarse silenciosamente |
 | ENG-05 | Refactor stores compartidos | P1 | En curso | Menos duplicacion entre local y PocketBase |
 | ENG-06 | Unificar integracion Mercado Pago | P1 | En curso | Mismo criterio para bookings y subscription |
 | ENG-07 | Logging / observabilidad | P1 | En curso | Logger consistente + secretos/config completos |
@@ -73,6 +73,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [x] Se actualizo `.github/workflows/ci.yml` para instalar Firefox, alineando CI con el navegador real del smoke.
 - [x] Se valido el workflow real en GitHub Actions para la rama `codex/eng-03-ci-smoke`, cerrando ENG-03 con evidencia de ejecucion remota en verde.
 - [x] Se revalido `npm run test:coverage` localmente con thresholds en verde y se agrego un job `coverage-thresholds` en GitHub Actions para que la cobertura minima falle en remoto si se degrada.
+- [x] Se valido en GitHub Actions real el workflow con el job `coverage-thresholds` en verde para la rama `codex/eng-03-ci-smoke`, cerrando ENG-04.
 
 ---
 
@@ -80,7 +81,6 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 
 ### Bloque 1 - impacto alto / riesgo bajo
 - [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production
-- [ ] Validar el nuevo job `coverage-thresholds` en GitHub Actions real
 
 ### Bloque 2 - hardening
 - [ ] Seguir extrayendo helpers compartidos de bookings, customers y availability fuera de `local-store` y `pocketbase-store`
