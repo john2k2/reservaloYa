@@ -23,7 +23,8 @@
     "pb:up": "docker compose up -d pocketbase",
     "pb:down": "docker compose down",
     "pb:logs": "docker compose logs -f pocketbase",
-    "pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs"
+    "pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs",
+    "test:e2e:smoke": "playwright test e2e/tests/smoke-test.spec.ts --project=ci-smoke"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

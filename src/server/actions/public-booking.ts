@@ -7,15 +7,18 @@ import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
+import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
   cancelLocalPublicBooking,
   createLocalPublicBooking,
+  updateLocalBusinessMPTokens,
 } from "@/server/local-store";
 import { isValidBookingManageToken } from "@/server/public-booking-links";
 import {
   cancelPocketBasePublicBooking,
   createPocketBasePublicBooking,
   reschedulePocketBasePublicBooking,
+  updatePocketBaseBusinessMPTokens,
 } from "@/server/pocketbase-store";
 import { getBookingConfirmationData } from "@/server/queries/public";
 import {
@@ -23,15 +26,17 @@ import {
   assertRateLimit,
   getRateLimitIdentifier,
 } from "@/server/rate-limit";
+import { createLogger } from "@/server/logger";
 import {
-  isMercadoPagoConfigured,
-  isMercadoPagoConfiguredForBusiness,
-  createPaymentPreference,
   createPaymentPreferenceForBusiness,
 } from "@/server/mercadopago";
 
+const logger = createLogger("Public Booking");
+
 const PUBLIC_BOOKING_LIMIT_MAX = 8;
 const PUBLIC_BOOKING_LIMIT_WINDOW_MS = 60_000;
+const PAYMENT_INIT_ERROR_MESSAGE =
+  "No pudimos iniciar el pago online. Intenta nuevamente en unos minutos o contacta al negocio.";
 
 async function enforcePublicBookingRateLimit(input: {
   businessSlug: string;
@@ -142,7 +147,7 @@ async function sendConfirmationEmailIfPossible(input: {
   });
 
   if (!confirmation) {
-    console.error("No se pudo obtener datos de confirmación para:", input.bookingId);
+    logger.info("No se pudo obtener datos de confirmacion", { bookingId: input.bookingId });
     return;
   }
 
@@ -240,20 +245,48 @@ export async function createPublicBookingAction(formData: FormData) {
   }
 
   // Cargar datos del negocio/servicio antes de crear el booking
-  // para poder determinar si se requiere pago
+  // para determinar si el cobro ser? online o en efectivo
   const { getPublicBusinessPageData: getPageDataEarly } = await import("@/server/queries/public");
   const pageDataEarly = await getPageDataEarly(parsed.data.businessSlug);
-  const serviceEarly = pageDataEarly?.services.find(s => s.id === parsed.data.serviceId);
+  const serviceEarly = pageDataEarly?.services.find((s) => s.id === parsed.data.serviceId);
 
-  // Token MP del negocio (OAuth por negocio) o fallback al token global
-  const businessMPAccessToken = (pageDataEarly as { business?: { mpAccessToken?: string } } | null)
-    ?.business?.mpAccessToken;
+  const businessPaymentSettings = !parsed.data.rescheduleBookingId
+    ? isPocketBaseConfigured()
+      ? await (async () => {
+          const { getPocketBaseBusinessPaymentSettingsBySlug } = await import(
+            "@/server/pocketbase-store"
+          );
+          return getPocketBaseBusinessPaymentSettingsBySlug(parsed.data.businessSlug);
+        })()
+      : await (async () => {
+          const { getLocalBusinessPaymentSettings } = await import("@/server/local-store");
+          return getLocalBusinessPaymentSettings(parsed.data.businessSlug);
+        })()
+    : null;
 
-  const requiresPayment =
-    !parsed.data.rescheduleBookingId &&
-    serviceEarly?.price != null &&
-    serviceEarly.price > 0 &&
-    (isMercadoPagoConfiguredForBusiness(businessMPAccessToken) || isMercadoPagoConfigured());
+  const serviceHasPrice =
+    !parsed.data.rescheduleBookingId && serviceEarly?.price != null && serviceEarly.price > 0;
+  const businessMPAccessToken = businessPaymentSettings
+    ? await getUsableBusinessMercadoPagoAccessToken(
+        businessPaymentSettings,
+        async (tokens) => {
+          if (isPocketBaseConfigured()) {
+            await updatePocketBaseBusinessMPTokens({
+              businessId: businessPaymentSettings.businessId,
+              ...tokens,
+            });
+            return;
+          }
+
+          await updateLocalBusinessMPTokens({
+            businessSlug: businessPaymentSettings.businessSlug,
+            ...tokens,
+          });
+        }
+      )
+    : null;
+  const businessHasMercadoPago = Boolean(businessMPAccessToken);
+  const requiresPayment = serviceHasPrice && businessHasMercadoPago;
 
   let bookingId: string;
 
@@ -267,7 +300,7 @@ export async function createPublicBookingAction(formData: FormData) {
 
     const bookingInput = {
       ...parsed.data,
-      initialStatus: requiresPayment ? ("pending_payment" as const) : ("pending" as const),
+      initialStatus: requiresPayment ? ("pending_payment" as const) : ("confirmed" as const),
     };
 
     if (!isPocketBaseConfigured()) {
@@ -324,8 +357,8 @@ export async function createPublicBookingAction(formData: FormData) {
 
   const isReschedule = !!parsed.data.rescheduleBookingId;
 
-  // Si el servicio tiene precio y MercadoPago está configurado → redirigir a pago
-  if (requiresPayment && serviceEarly) {
+  // Si el negocio tiene Mercado Pago conectado, redirigir al checkout online.
+  if (requiresPayment && serviceEarly && businessMPAccessToken) {
     const businessName =
       (pageDataEarly as { profile?: { businessName?: string } } | null)?.profile?.businessName ||
       parsed.data.businessSlug;
@@ -340,9 +373,10 @@ export async function createPublicBookingAction(formData: FormData) {
       priceAmount: serviceEarly.price!,
     };
 
-    const preferenceResult = businessMPAccessToken
-      ? await createPaymentPreferenceForBusiness(preferenceInput, businessMPAccessToken)
-      : await createPaymentPreference(preferenceInput);
+    const preferenceResult = await createPaymentPreferenceForBusiness(
+      preferenceInput,
+      businessMPAccessToken
+    );
 
     if (preferenceResult.ok) {
       // Actualizar el booking con el preferenceId antes de redirigir
@@ -368,19 +402,36 @@ export async function createPublicBookingAction(formData: FormData) {
 
       redirect(preferenceResult.checkoutUrl);
     }
-    // Si falla la creación de preferencia → revertir a pending y continuar sin pago
-    console.error("[MP] No se pudo crear la preferencia de pago, revirtiendo a pending");
+
+    logger.error("No se pudo crear la preferencia de pago", preferenceResult.error);
+
     try {
       if (!isPocketBaseConfigured()) {
-        const { revertLocalBookingFromPendingPayment } = await import("@/server/local-store");
-        await revertLocalBookingFromPendingPayment(bookingId);
+        await cancelLocalPublicBooking({
+          businessSlug: parsed.data.businessSlug,
+          bookingId,
+        });
       } else {
-        const { revertPocketBaseBookingFromPendingPayment } = await import("@/server/pocketbase-store");
-        await revertPocketBaseBookingFromPendingPayment(bookingId);
+        await cancelPocketBasePublicBooking({
+          businessSlug: parsed.data.businessSlug,
+          bookingId,
+        });
       }
     } catch (revertErr) {
-      console.error("[MP] No se pudo revertir el booking:", revertErr);
+      logger.error("No se pudo cancelar el booking tras fallar el pago", revertErr);
     }
+
+    redirect(
+      buildBookingPageHref({
+        businessSlug: parsed.data.businessSlug,
+        serviceId: parsed.data.serviceId,
+        bookingDate: parsed.data.bookingDate,
+        source: raw.source,
+        medium: raw.medium,
+        campaign: raw.campaign,
+        error: PAYMENT_INIT_ERROR_MESSAGE,
+      })
+    );
   }
 
   await sendConfirmationEmailIfPossible({

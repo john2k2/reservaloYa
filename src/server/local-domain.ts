@@ -91,7 +91,7 @@ export type LocalCustomer = {
   id: string;
   businessId: string;
   fullName: string;
-  phone: string;
+  phone?: string;
   email: string;
   notes: string;
   createdAt: string;

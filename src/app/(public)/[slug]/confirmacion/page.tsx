@@ -100,9 +100,12 @@ export default async function ConfirmationPage({
   // Estado de pago desde query param (MP back_url) o desde el booking guardado
   const paymentParam = query.payment; // "success" | "failure" | "pending" | undefined
   const paymentStatus = (confirmation as { paymentStatus?: string }).paymentStatus;
+  const paymentProvider = (confirmation as { paymentProvider?: string }).paymentProvider;
+  const storedPaymentAmount = (confirmation as { paymentAmount?: number }).paymentAmount;
+  const hasExplicitPaymentContext = Boolean(paymentParam || paymentStatus || paymentProvider);
   const priceLabel = formatPrice(
-    (confirmation as { paymentAmount?: number }).paymentAmount ?? confirmation.priceAmount,
-    (confirmation as { paymentCurrency?: string }).paymentCurrency
+    hasExplicitPaymentContext ? storedPaymentAmount ?? confirmation.priceAmount : confirmation.priceAmount,
+    (confirmation as { paymentCurrency?: string }).paymentCurrency ?? confirmation.currency
   );
 
   const isPendingPayment =
@@ -112,9 +115,18 @@ export default async function ConfirmationPage({
 
   const isPaymentFailed = paymentParam === "failure" || paymentStatus === "rejected";
   const isPaymentSuccess =
-    paymentParam === "success" || paymentStatus === "approved" || confirmation.status === "confirmed";
+    paymentParam === "success" ||
+    paymentStatus === "approved" ||
+    (paymentProvider === "mercadopago" && confirmation.status === "confirmed");
+  const isCashPayment =
+    Boolean(priceLabel) &&
+    !paymentParam &&
+    !paymentStatus &&
+    paymentProvider !== "mercadopago" &&
+    !isPendingPayment;
 
-  const showPaymentBanner = priceLabel && (isPendingPayment || isPaymentFailed || isPaymentSuccess);
+  const showPaymentBanner =
+    priceLabel && (isPendingPayment || isPaymentFailed || isPaymentSuccess || isCashPayment);
 
   const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
 
@@ -144,6 +156,8 @@ export default async function ConfirmationPage({
             ? "Pago no completado"
             : isPendingPayment
             ? "Reserva registrada"
+            : isCashPayment
+            ? "Reserva confirmada"
             : "Reserva confirmada"}
         </h1>
         <p className="max-w-sm text-base sm:text-lg text-muted-foreground">
@@ -151,6 +165,8 @@ export default async function ConfirmationPage({
             ? "No se pudo procesar el pago. Tu reserva está guardada pero pendiente de pago."
             : isPendingPayment
             ? "Tu reserva está registrada. Quedará confirmada cuando se acredite el pago."
+            : isCashPayment
+            ? "Tu turno ya quedó reservado. El pago se realiza presencialmente en el negocio."
             : "Ya podés guardar los detalles y gestionar el turno cuando quieras."}
         </p>
 
@@ -168,12 +184,19 @@ export default async function ConfirmationPage({
               {isPaymentFailed
                 ? "Pago rechazado"
                 : isPaymentSuccess
-                ? `Pago aprobado${priceLabel ? ` · ${priceLabel}` : ""}`
-                : `Pago pendiente${priceLabel ? ` · ${priceLabel}` : ""}`}
+                ? `Pago aprobado${priceLabel ? ` - ${priceLabel}` : ""}`
+                : isCashPayment
+                ? `Pago en efectivo en el local${priceLabel ? ` - ${priceLabel}` : ""}`
+                : `Pago pendiente${priceLabel ? ` - ${priceLabel}` : ""}`}
             </p>
             {isPendingPayment && !isPaymentFailed && (
               <p className="mt-1 text-xs opacity-80">
                 MercadoPago puede demorar unos minutos en confirmar el pago.
+              </p>
+            )}
+            {isCashPayment && (
+              <p className="mt-1 text-xs opacity-80">
+                Tu turno quedo reservado. El cobro se realiza presencialmente en el negocio.
               </p>
             )}
           </div>

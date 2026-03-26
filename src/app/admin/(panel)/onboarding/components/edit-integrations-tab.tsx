@@ -47,7 +47,7 @@ export function EditIntegrationsTab({
         <div>
           <h3 className="text-xl font-semibold text-card-foreground">Integraciones</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Conectá tu cuenta de MercadoPago para que tus clientes paguen al reservar.
+            Conectá tu cuenta de Mercado Pago para cobrar online. Si no la conectas, tus clientes igualmente pueden reservar y pagar en efectivo en el local.
           </p>
         </div>
       </div>
@@ -67,7 +67,7 @@ export function EditIntegrationsTab({
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  No conectado — los clientes no pueden pagar online
+                  No conectado - las reservas siguen activas y el cobro queda en efectivo
                 </p>
               )}
             </div>
@@ -113,7 +113,7 @@ export function EditIntegrationsTab({
             </a>
           ) : (
             <p className="text-sm text-muted-foreground">
-              MP_APP_ID no configurado. Revisá las variables de entorno.
+              MP_APP_ID o MP_APP_SECRET no configurados. Revisá las variables de entorno.
             </p>
           )}
         </div>
@@ -122,8 +122,7 @@ export function EditIntegrationsTab({
       {/* Info banner */}
       <div className="mt-4 rounded-2xl border border-blue-200/60 bg-blue-50/60 p-4 dark:border-blue-800/30 dark:bg-blue-950/20">
         <p className="text-xs text-blue-800 dark:text-blue-200">
-          Al conectar tu cuenta, los pagos de tus clientes van directo a tu MercadoPago.
-          ReservaYa no tiene acceso a tu dinero ni cobra comisión por los pagos.
+          Al conectar tu cuenta, los pagos online van directo a tu Mercado Pago. Si prefieres no conectarlo todavía, ReservaYa mantiene el flujo de reservas y muestra el pago en efectivo como alternativa.
         </p>
       </div>
 

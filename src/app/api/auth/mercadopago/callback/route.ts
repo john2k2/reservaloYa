@@ -2,19 +2,23 @@ import { NextResponse } from "next/server";
 
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { updateLocalBusinessMPTokens } from "@/server/local-store";
+import { createLogger } from "@/server/logger";
+import { parseMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
 import {
-  updatePocketBaseBusinessMPTokens,
   getPocketBaseBusinessIdBySlug,
+  updatePocketBaseBusinessMPTokens,
 } from "@/server/pocketbase-store";
+
+const logger = createLogger("MP OAuth");
 
 /**
  * Callback OAuth de MercadoPago.
- * MP redirige aquí con ?code=XXX&state=businessSlug después de que el negocio autoriza.
+ * MercadoPago redirige aqui con ?code=...&state=...
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state"); // = businessSlug
+  const state = searchParams.get("state");
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const errorRedirect = `${appUrl}/admin/onboarding?tab=integraciones&mp=error`;
@@ -23,15 +27,21 @@ export async function GET(request: Request) {
     return NextResponse.redirect(errorRedirect);
   }
 
-  const mpAppId = process.env.MP_APP_ID;
-  const mpAppSecret = process.env.MP_APP_SECRET;
+  const mpAppId = process.env.MP_APP_ID?.trim();
+  const mpAppSecret = process.env.MP_APP_SECRET?.trim();
 
   if (!mpAppId || !mpAppSecret) {
-    console.error("[MP OAuth] MP_APP_ID o MP_APP_SECRET no configurados");
+    logger.error("MP_APP_ID o MP_APP_SECRET no configurados");
     return NextResponse.redirect(errorRedirect);
   }
 
-  // Intercambiar code por tokens
+  const parsedState = parseMercadoPagoOAuthState(state);
+
+  if (!parsedState) {
+    logger.warn("State invalido o vencido");
+    return NextResponse.redirect(errorRedirect);
+  }
+
   let tokenData: {
     access_token: string;
     refresh_token: string;
@@ -56,49 +66,46 @@ export async function GET(request: Request) {
 
     if (!res.ok) {
       const errorBody = await res.text();
-      console.error("[MP OAuth] Error al intercambiar code por tokens:", errorBody);
+      logger.error("Error al intercambiar code por tokens", errorBody);
       return NextResponse.redirect(errorRedirect);
     }
 
-    tokenData = await res.json() as typeof tokenData;
+    tokenData = (await res.json()) as typeof tokenData;
   } catch (err) {
-    console.error("[MP OAuth] Error en token exchange:", err);
+    logger.error("Error en token exchange", err);
     return NextResponse.redirect(errorRedirect);
   }
-
-  const mpTokenExpiresAt = new Date(
-    Date.now() + tokenData.expires_in * 1000
-  ).toISOString();
 
   const tokens = {
     mpAccessToken: tokenData.access_token,
     mpRefreshToken: tokenData.refresh_token,
     mpCollectorId: String(tokenData.user_id),
-    mpTokenExpiresAt,
+    mpTokenExpiresAt: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
   };
 
-  // Guardar tokens en el negocio
   try {
     if (isPocketBaseConfigured()) {
-      // En PocketBase mode, state = businessSlug → buscar el ID primero
-      const businessId = await getPocketBaseBusinessIdBySlug(state);
+      const businessId =
+        parsedState.businessId ?? (await getPocketBaseBusinessIdBySlug(parsedState.businessSlug));
+
       if (!businessId) {
-        console.error("[MP OAuth] No se encontró el negocio con slug:", state);
+        logger.error("No se encontro el negocio", parsedState.businessSlug);
         return NextResponse.redirect(errorRedirect);
       }
+
       await updatePocketBaseBusinessMPTokens({ businessId, ...tokens });
     } else {
-      // En local mode, state = businessSlug
-      await updateLocalBusinessMPTokens({ businessSlug: state, ...tokens });
+      await updateLocalBusinessMPTokens({
+        businessSlug: parsedState.businessSlug,
+        ...tokens,
+      });
     }
   } catch (err) {
-    console.error("[MP OAuth] Error guardando tokens:", err);
+    logger.error("Error guardando tokens", err);
     return NextResponse.redirect(errorRedirect);
   }
 
-  console.log(`[MP OAuth] Tokens guardados para negocio: ${state}`);
+  logger.info(`Tokens guardados para negocio: ${parsedState.businessSlug}`);
 
-  return NextResponse.redirect(
-    `${appUrl}/admin/onboarding?tab=integraciones&mp=connected`
-  );
+  return NextResponse.redirect(`${appUrl}/admin/onboarding?tab=integraciones&mp=connected`);
 }

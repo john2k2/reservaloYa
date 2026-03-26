@@ -2,6 +2,9 @@ import { Resend } from "resend";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("Booking Notifications");
 
 // Lazy initialization to avoid build-time errors
 let resendInstance: Resend | null = null;
@@ -111,15 +114,15 @@ export async function sendBookingReminderEmail(input: ReminderInput): Promise<Re
     });
 
     if (error) {
-      console.error("Resend reminder error:", error);
+      logger.error("Resend reminder error", error);
       return { status: "error", error: error.message, subject };
     }
 
-    console.log(`📧 Recordatorio enviado a ${input.customerEmail}`);
+    logger.info(`Recordatorio enviado a ${input.customerEmail}`);
     return { status: "sent", messageId: data?.id ?? "", subject };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Failed to send reminder email:", err);
+    logger.error("Failed to send reminder email", err);
     return { status: "error", error: message, subject };
   }
 }
@@ -217,15 +220,15 @@ export async function sendBookingReminderWhatsApp(
 
     if (!response.ok) {
       const errMsg = data.error_message ?? data.message ?? `HTTP ${response.status}`;
-      console.error("Twilio WhatsApp error:", errMsg);
+      logger.error("Twilio WhatsApp error", errMsg);
       return { status: "error", error: errMsg, subject };
     }
 
-    console.log(`📱 WhatsApp recordatorio enviado a ${toNumber} (sid: ${data.sid})`);
+    logger.info(`WhatsApp recordatorio enviado a ${toNumber} (sid: ${data.sid})`);
     return { status: "sent", messageId: data.sid ?? "", subject };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Failed to send WhatsApp reminder:", err);
+    logger.error("Failed to send WhatsApp reminder", err);
     return { status: "error", error: message, subject };
   }
 }
@@ -310,15 +313,15 @@ export async function sendBookingConfirmationEmail(
     });
 
     if (error) {
-      console.error("Resend error:", error);
+      logger.error("Resend error", error);
       return { status: "error", error: error.message };
     }
 
-    console.log(`📧 Email de confirmación enviado a ${confirmation.customerEmail}`);
+    logger.info(`Email de confirmacion enviado a ${confirmation.customerEmail}`);
     return { status: "sent", messageId: data?.id ?? "" };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Failed to send booking confirmation:", err);
+    logger.error("Failed to send booking confirmation", err);
     return { status: "error", error: message };
   }
 }
@@ -366,15 +369,15 @@ export async function sendBusinessNotificationEmail(
     });
 
     if (error) {
-      console.error("Resend error:", error);
+      logger.error("Resend error", error);
       return { status: "error", error: error.message };
     }
 
-    console.log(`📧 Notificación enviada a ${confirmation.businessNotificationEmail}`);
+    logger.info(`Notificacion enviada a ${confirmation.businessNotificationEmail}`);
     return { status: "sent", messageId: data?.id ?? "" };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Failed to send business notification:", err);
+    logger.error("Failed to send business notification", err);
     return { status: "error", error: message };
   }
 }
@@ -421,15 +424,15 @@ export async function sendPostBookingFollowUpEmail(input: FollowUpInput): Promis
     });
 
     if (error) {
-      console.error("Resend followup error:", error);
+      logger.error("Resend followup error", error);
       return { status: "error", error: error.message };
     }
 
-    console.log(`📧 Follow-up enviado a ${input.customerEmail}`);
+    logger.info(`Follow-up enviado a ${input.customerEmail}`);
     return { status: "sent", messageId: data?.id ?? "" };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Failed to send follow-up email:", err);
+    logger.error("Failed to send follow-up email", err);
     return { status: "error", error: message };
   }
 }
@@ -500,15 +503,15 @@ export async function sendPostBookingFollowUpWhatsApp(
 
     if (!response.ok) {
       const errMsg = data.error_message ?? data.message ?? `HTTP ${response.status}`;
-      console.error("Twilio follow-up WhatsApp error:", errMsg);
+      logger.error("Twilio follow-up WhatsApp error", errMsg);
       return { status: "error", error: errMsg, subject };
     }
 
-    console.log(`📱 WhatsApp follow-up enviado a ${toNumber} (sid: ${data.sid})`);
+    logger.info(`WhatsApp follow-up enviado a ${toNumber} (sid: ${data.sid})`);
     return { status: "sent", messageId: data.sid ?? "", subject };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Failed to send follow-up WhatsApp:", err);
+    logger.error("Failed to send follow-up WhatsApp", err);
     return { status: "error", error: message, subject };
   }
 }

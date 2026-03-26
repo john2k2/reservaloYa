@@ -46,7 +46,7 @@ export type ServiceRecord = RecordModel & {
 export type CustomerRecord = RecordModel & {
   business: string;
   fullName: string;
-  phone: string;
+  phone?: string;
   email?: string;
   notes?: string;
 };

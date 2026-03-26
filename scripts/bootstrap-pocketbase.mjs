@@ -264,7 +264,7 @@ async function buildCollections(pb) {
     fields: [
       relationField("business", idByName.businesses, { required: true }),
       textField("fullName", { required: true }),
-      textField("phone", { required: true }),
+      textField("phone"),
       textField("email"),
       textField("notes"),
     ],
@@ -319,8 +319,21 @@ async function buildCollections(pb) {
       textField("bookingDate", { required: true }),
       textField("startTime", { required: true }),
       textField("endTime", { required: true }),
-      selectField("status", ["pending", "confirmed", "completed", "cancelled", "no_show"]),
+      selectField("status", [
+        "pending",
+        "pending_payment",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ]),
       textField("notes"),
+      textField("paymentStatus"),
+      numberField("paymentAmount"),
+      textField("paymentCurrency"),
+      textField("paymentProvider"),
+      textField("paymentPreferenceId"),
+      textField("paymentExternalId"),
     ],
   };
 
@@ -491,13 +504,20 @@ async function seedData(pb) {
   }
 
   for (const customer of store.customers) {
+    const customerFilter = customer.phone
+      ? pb.filter("business = {:business} && phone = {:phone}", {
+          business: businessIdMap.get(customer.businessId),
+          phone: customer.phone,
+        })
+      : pb.filter("business = {:business} && email = {:email}", {
+          business: businessIdMap.get(customer.businessId),
+          email: customer.email ?? "",
+        });
+
     const created = await upsertByFilter(
       pb,
       "customers",
-      pb.filter("business = {:business} && phone = {:phone}", {
-        business: businessIdMap.get(customer.businessId),
-        phone: customer.phone,
-      }),
+      customerFilter,
       {
         business: businessIdMap.get(customer.businessId),
         fullName: customer.fullName,

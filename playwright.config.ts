@@ -79,6 +79,11 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], channel: "chrome" },
       testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
     },
+    {
+      name: "ci-smoke",
+      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      testMatch: /smoke-test\.spec\.ts/,
+    },
   ],
 
   /* Local dev server */
@@ -89,3 +94,4 @@ export default defineConfig({
     timeout: 120000,
   },
 });
+

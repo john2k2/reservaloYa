@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
   if (!slug || !serviceId || !bookingDate) {
     return NextResponse.json(
-      { error: "Faltan parámetros para cargar horarios." },
+      { error: "Faltan parametros para cargar horarios." },
       { status: 400 }
     );
   }
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   if (!flow) {
     return NextResponse.json(
-      { error: "No se encontró disponibilidad para este negocio." },
+      { error: "No se encontro disponibilidad para este negocio." },
       { status: 404 }
     );
   }

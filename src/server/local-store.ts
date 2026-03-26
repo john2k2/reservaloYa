@@ -68,6 +68,15 @@ import {
   sendPostBookingFollowUpEmail,
   sendPostBookingFollowUpWhatsApp,
 } from "@/server/booking-notifications";
+import {
+  buildBookingPaymentPatch,
+  buildBusinessPaymentSettings,
+  type BookingPaymentUpdateInput,
+} from "@/server/payments-domain";
+import {
+  buildBookingConfirmationView,
+  buildManageBookingView,
+} from "@/server/bookings-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 const dataDir = path.join(process.cwd(), "data");
@@ -138,7 +147,17 @@ export async function getLocalPublicBusinessPageData(slug: string) {
   );
 
   return {
-    business,
+    business: {
+      id: business.id,
+      name: business.name,
+      slug: business.slug,
+      phone: business.phone,
+      email: business.email,
+      address: business.address,
+      timezone: business.timezone,
+      cancellationPolicy: business.cancellationPolicy,
+      mpConnected: business.mpConnected ?? false,
+    },
     profile,
     weeklyHours,
     services: getBusinessServices(store, business.id)
@@ -159,6 +178,36 @@ export async function getLocalPublicBusinessPageData(slug: string) {
       })),
     source: "local" as const,
   };
+}
+
+export async function getLocalBusinessPaymentSettings(slug: string) {
+  const store = await readStore();
+  const business = getBusinessBySlug(store, slug);
+
+  if (!business) {
+    return null;
+  }
+
+  return buildBusinessPaymentSettings(business);
+}
+
+export async function getLocalBusinessPaymentSettingsByCollectorId(collectorId: string) {
+  const normalizedCollectorId = collectorId.trim();
+
+  if (!normalizedCollectorId) {
+    return null;
+  }
+
+  const store = await readStore();
+  const business = store.businesses.find(
+    (item) => item.mpCollectorId?.trim() === normalizedCollectorId
+  );
+
+  if (!business) {
+    return null;
+  }
+
+  return buildBusinessPaymentSettings(business);
 }
 
 export async function getLocalPublicBookingFlowData({
@@ -369,42 +418,34 @@ export async function getLocalBookingConfirmationData(bookingId?: string) {
   const service = store.services.find((candidate) => candidate.id === booking.serviceId);
   const business = store.businesses.find((candidate) => candidate.id === booking.businessId);
   const customer = store.customers.find((candidate) => candidate.id === booking.customerId);
-
-  // Construir fecha ISO completa
-  const [year, month, day] = booking.bookingDate.split("-").map(Number);
-  const [hours, minutes] = booking.startTime.split(":").map(Number);
-  const startsAt = new Date(year, month - 1, day, hours, minutes).toISOString();
   const timezone = business?.timezone ?? fallbackBusiness.timezone;
 
-  return {
+  return buildBookingConfirmationView({
     bookingId: booking.id,
-    confirmationCode: (booking as { confirmationCode?: string }).confirmationCode ?? booking.id.slice(0, 8).toUpperCase(),
-    customerName: customer?.fullName ?? "Cliente",
-    customerEmail: customer?.email || undefined,
-    customerPhone: customer?.phone || undefined,
+    confirmationCode: (booking as { confirmationCode?: string }).confirmationCode,
+    customerName: customer?.fullName,
+    customerEmail: customer?.email,
+    customerPhone: customer?.phone,
     businessId: business?.id ?? fallbackBusiness.id,
     businessName: business?.name ?? fallbackBusiness.name,
     businessSlug: business?.slug ?? fallbackBusiness.slug,
     businessAddress: business?.address ?? fallbackBusiness.address,
     businessTimezone: timezone,
     businessNotificationEmail: business?.notificationEmail ?? business?.email,
-    serviceId: service?.id ?? "",
-    serviceName: service?.name ?? "Servicio",
-    durationMinutes: service?.durationMinutes ?? 60,
+    serviceId: service?.id,
+    serviceName: service?.name,
+    durationMinutes: service?.durationMinutes,
     priceAmount: service?.price ?? null,
-    currency: "ARS",
-    // Compatibilidad hacia atrás para UI
     bookingDate: booking.bookingDate,
     startTime: booking.startTime,
-    startsAt,
-    timezone,
     status: booking.status,
     manageToken: (booking as { manageToken?: string }).manageToken,
-    source: "local" as const,
+    source: "local",
     paymentStatus: booking.paymentStatus,
     paymentAmount: booking.paymentAmount,
     paymentCurrency: booking.paymentCurrency,
-  };
+    paymentProvider: booking.paymentProvider,
+  });
 }
 
 export async function getLocalOnboardingData() {
@@ -1246,24 +1287,25 @@ export async function getLocalPublicManageBookingData(bookingId?: string) {
     return null;
   }
 
-  return {
+  return buildManageBookingView({
     id: details.booking.id,
     businessSlug: details.business.slug,
     businessName: details.business.name,
     businessAddress: details.business.address,
     businessTimezone: details.business.timezone,
-    serviceId: details.service?.id ?? "",
-    serviceName: details.service?.name ?? "Servicio",
-    durationMinutes: details.service?.durationMinutes ?? 60,
+    serviceId: details.service?.id,
+    serviceName: details.service?.name,
+    durationMinutes: details.service?.durationMinutes,
     bookingDate: details.booking.bookingDate,
     startTime: details.booking.startTime,
     status: details.booking.status,
     statusLabel: formatBookingStatus(details.booking.status),
-    fullName: details.customer?.fullName ?? "",
-    phone: details.customer?.phone ?? "",
-    email: details.customer?.email ?? "",
+    fullName: details.customer?.fullName,
+    phone: details.customer?.phone,
+    email: details.customer?.email,
     notes: details.booking.notes ?? details.customer?.notes ?? "",
-  };
+    source: "local",
+  });
 }
 
 export async function cancelLocalPublicBooking(input: {
@@ -1550,7 +1592,6 @@ export async function getLocalAdminSettingsData(activeBusinessSlug?: string | nu
     cancellationPolicy: business.cancellationPolicy,
     mpConnected: business.mpConnected ?? false,
     mpCollectorId: business.mpCollectorId,
-    mpAccessToken: business.mpAccessToken,
   };
 }
 
@@ -1566,15 +1607,7 @@ export async function getLocalBookingBusinessSlug(bookingId: string): Promise<st
   return business?.slug ?? null;
 }
 
-export type UpdateLocalBookingPaymentInput = {
-  bookingId: string;
-  paymentStatus: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
-  paymentAmount?: number;
-  paymentCurrency?: string;
-  paymentProvider?: "mercadopago";
-  paymentPreferenceId?: string;
-  paymentExternalId?: string;
-};
+export type UpdateLocalBookingPaymentInput = BookingPaymentUpdateInput;
 
 /**
  * Actualiza los campos de pago de una reserva.
@@ -1588,17 +1621,7 @@ export async function updateLocalBookingPayment(input: UpdateLocalBookingPayment
       throw new Error("No encontramos el turno para actualizar el pago.");
     }
 
-    booking.paymentStatus = input.paymentStatus;
-
-    if (input.paymentAmount !== undefined) booking.paymentAmount = input.paymentAmount;
-    if (input.paymentCurrency !== undefined) booking.paymentCurrency = input.paymentCurrency;
-    if (input.paymentProvider !== undefined) booking.paymentProvider = input.paymentProvider;
-    if (input.paymentPreferenceId !== undefined) booking.paymentPreferenceId = input.paymentPreferenceId;
-    if (input.paymentExternalId !== undefined) booking.paymentExternalId = input.paymentExternalId;
-
-    if (input.paymentStatus === "approved") {
-      booking.status = "confirmed";
-    }
+    Object.assign(booking, buildBookingPaymentPatch(input));
 
     return booking.id;
   });

@@ -2,27 +2,43 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import MercadoPago, { Preference, Payment } from "mercadopago";
 
+import { createLogger } from "@/server/logger";
+
 // ─── Client (lazy singleton) ──────────────────────────────────────────────────
+
+const logger = createLogger("MercadoPago");
 
 let mpClient: MercadoPago | null = null;
 
-function getMPClient(): MercadoPago {
-  if (!mpClient) {
-    const accessToken = process.env.MP_ACCESS_TOKEN;
-    if (!accessToken) {
-      throw new Error("MP_ACCESS_TOKEN is not configured");
-    }
-    mpClient = new MercadoPago({ accessToken });
+function normalizeAccessToken(accessToken?: string | null) {
+  const normalized = accessToken?.trim();
+  return normalized ? normalized : null;
+}
+
+function getMPClient(accessToken?: string): MercadoPago {
+  if (accessToken) {
+    return new MercadoPago({ accessToken });
   }
+
+  const globalAccessToken = normalizeAccessToken(process.env.MP_ACCESS_TOKEN);
+
+  if (!globalAccessToken) {
+    throw new Error("MP_ACCESS_TOKEN is not configured");
+  }
+
+  if (!mpClient) {
+    mpClient = new MercadoPago({ accessToken: globalAccessToken });
+  }
+
   return mpClient;
 }
 
 export function isMercadoPagoConfigured(): boolean {
-  return !!process.env.MP_ACCESS_TOKEN;
+  return Boolean(normalizeAccessToken(process.env.MP_ACCESS_TOKEN));
 }
 
 export function isMercadoPagoConfiguredForBusiness(mpAccessToken?: string): boolean {
-  return Boolean(mpAccessToken);
+  return Boolean(normalizeAccessToken(mpAccessToken));
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,6 +56,16 @@ export type CreatePaymentPreferenceInput = {
 
 export type PaymentPreferenceResult =
   | { ok: true; preferenceId: string; checkoutUrl: string }
+  | { ok: false; error: string };
+
+export type RefreshMercadoPagoTokenResult =
+  | {
+      ok: true;
+      accessToken: string;
+      refreshToken: string;
+      collectorId?: string;
+      expiresAt: string;
+    }
   | { ok: false; error: string };
 
 // ─── Create Preference ────────────────────────────────────────────────────────
@@ -103,7 +129,7 @@ async function createPreferenceWithClient(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error desconocido";
-    console.error("[MercadoPago] createPaymentPreference error:", err);
+    logger.error("createPaymentPreference error", err);
     return { ok: false, error: message };
   }
 }
@@ -126,7 +152,64 @@ export async function createPaymentPreferenceForBusiness(
   input: CreatePaymentPreferenceInput,
   accessToken: string
 ): Promise<PaymentPreferenceResult> {
-  return createPreferenceWithClient(new MercadoPago({ accessToken }), input);
+  return createPreferenceWithClient(getMPClient(accessToken), input);
+}
+
+export async function refreshMercadoPagoAccessToken(
+  refreshToken: string
+): Promise<RefreshMercadoPagoTokenResult> {
+  const clientId = process.env.MP_APP_ID?.trim();
+  const clientSecret = process.env.MP_APP_SECRET?.trim();
+  const normalizedRefreshToken = refreshToken.trim();
+
+  if (!clientId || !clientSecret) {
+    return { ok: false, error: "Mercado Pago OAuth no esta configurado en el servidor." };
+  }
+
+  if (!normalizedRefreshToken) {
+    return { ok: false, error: "El refresh token de Mercado Pago no es valido." };
+  }
+
+  try {
+    const response = await fetch("https://api.mercadopago.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: "refresh_token",
+        refresh_token: normalizedRefreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      logger.error("refresh token error", errorBody);
+      return { ok: false, error: "No se pudo renovar el acceso a Mercado Pago." };
+    }
+
+    const data = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      user_id?: string | number;
+      expires_in?: number;
+    };
+
+    if (!data.access_token || !data.refresh_token || !data.expires_in) {
+      return { ok: false, error: "Mercado Pago devolvio una respuesta incompleta." };
+    }
+
+    return {
+      ok: true,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      collectorId: data.user_id != null ? String(data.user_id) : undefined,
+      expiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+    };
+  } catch (error) {
+    logger.error("refresh token exception", error);
+    return { ok: false, error: "No se pudo renovar el acceso a Mercado Pago." };
+  }
 }
 
 // ─── Webhook payload types ────────────────────────────────────────────────────
@@ -136,6 +219,7 @@ export type MPWebhookPayload = {
   type?: string;          // "payment"
   data?: { id?: string }; // payment ID
   id?: string | number;   // también puede venir aquí
+  user_id?: string | number;
 };
 
 export type MPPaymentStatus =
@@ -227,9 +311,12 @@ export function isValidMPWebhookSignature({
  * Obtiene la info de un pago de MP a partir de su ID.
  * Usado en el webhook para obtener el estado real del pago.
  */
-export async function getMPPaymentInfo(paymentId: string): Promise<MPPaymentInfo | null> {
+export async function getMPPaymentInfo(
+  paymentId: string,
+  accessToken?: string
+): Promise<MPPaymentInfo | null> {
   try {
-    const payment = new Payment(getMPClient());
+    const payment = new Payment(getMPClient(accessToken));
     const response = await payment.get({ id: paymentId });
 
     if (!response) return null;
@@ -244,7 +331,7 @@ export async function getMPPaymentInfo(paymentId: string): Promise<MPPaymentInfo
       payerEmail: response.payer?.email ?? undefined,
     };
   } catch (err) {
-    console.error("[MercadoPago] getMPPaymentInfo error:", err);
+    logger.error("getMPPaymentInfo error", err);
     return null;
   }
 }

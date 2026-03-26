@@ -9,31 +9,40 @@ import {
   shouldVerifyMPWebhookSignature,
 } from "@/server/mercadopago";
 import {
-  updateLocalBookingPayment,
+  getLocalBusinessPaymentSettingsByCollectorId,
   getLocalBookingBusinessSlug,
+  updateLocalBookingPayment,
+  updateLocalBusinessMPTokens,
 } from "@/server/local-store";
+import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
-  updatePocketBaseBookingPayment,
-  getPocketBaseBookingBusinessSlug,
   getBusinessSubscription,
+  getPocketBaseBookingBusinessSlug,
+  getPocketBaseBusinessPaymentSettingsByCollectorId,
+  updatePocketBaseBookingPayment,
+  updatePocketBaseBusinessMPTokens,
 } from "@/server/pocketbase-store";
+import { createLogger } from "@/server/logger";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
 import { getBookingConfirmationData } from "@/server/queries/public";
 
+const logger = createLogger("MP Webhook");
+
 /**
- * Webhook de MercadoPago — se llama cuando hay cambios en un pago.
+ * Webhook de MercadoPago: se llama cuando hay cambios en un pago.
  * Docs: https://www.mercadopago.com.ar/developers/es/docs/notifications/webhooks
  *
  * Maneja dos tipos de pagos:
  * 1. Pagos de bookings (external_reference = bookingId)
  * 2. Pagos de suscripciones (external_reference = businessId)
  *
- * MP puede enviar el mismo evento más de una vez → el handler es idempotente.
+ * MP puede enviar el mismo evento mas de una vez, por eso el handler es idempotente.
  * Responde 401 si la firma configurada no valida; errores internos se loguean y responden 200.
  */
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const body = (await request.json().catch(() => null)) as MPWebhookPayload | null;
+  const isPocketBase = isPocketBaseConfigured();
 
   const isPaymentEvent =
     body?.type === "payment" ||
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
     url.searchParams.get("id");
 
   if (!paymentId) {
-    console.warn("[MP Webhook] Sin payment ID en el payload:", body);
+    logger.warn("Sin payment ID en el payload", body);
     return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
   }
 
@@ -64,33 +73,62 @@ export async function POST(request: Request) {
       signatureHeader: request.headers.get("x-signature"),
     })
   ) {
-    console.warn("[MP Webhook] Firma inválida o incompleta para payment ID:", paymentId);
+    logger.warn("Firma invalida o incompleta para payment ID", paymentId);
     return NextResponse.json({ ok: false, error: "Invalid webhook signature" }, { status: 401 });
   }
 
   try {
-    const paymentInfo = await getMPPaymentInfo(paymentId);
+    const collectorId =
+      (body?.user_id != null ? String(body.user_id) : null) ?? url.searchParams.get("user_id");
+
+    const businessPaymentSettings = collectorId
+      ? isPocketBase
+        ? await getPocketBaseBusinessPaymentSettingsByCollectorId(collectorId)
+        : await getLocalBusinessPaymentSettingsByCollectorId(collectorId)
+      : null;
+
+    const businessAccessToken = businessPaymentSettings
+      ? await getUsableBusinessMercadoPagoAccessToken(
+          businessPaymentSettings,
+          async (tokens) => {
+            if (isPocketBase) {
+              await updatePocketBaseBusinessMPTokens({
+                businessId: businessPaymentSettings.businessId,
+                ...tokens,
+              });
+              return;
+            }
+
+            await updateLocalBusinessMPTokens({
+              businessSlug: businessPaymentSettings.businessSlug,
+              ...tokens,
+            });
+          }
+        )
+      : null;
+
+    const paymentInfo = await getMPPaymentInfo(paymentId, businessAccessToken ?? undefined);
 
     if (!paymentInfo) {
-      console.warn("[MP Webhook] No se pudo obtener info del pago:", paymentId);
+      logger.warn("No se pudo obtener info del pago", paymentId);
       return NextResponse.json({ ok: true }, { status: 200 });
     }
 
     const { externalReference, status, transactionAmount, currencyId } = paymentInfo;
 
     if (!externalReference) {
-      console.warn("[MP Webhook] Pago sin external_reference:", paymentId);
+      logger.warn("Pago sin external_reference", paymentId);
       return NextResponse.json({ ok: true }, { status: 200 });
     }
 
     const paymentStatus = mapMPStatusToPaymentStatus(status);
 
-    // Check if this is a subscription payment (businessId) or booking payment
-    const subscription = await getBusinessSubscription(externalReference);
+    const subscription = isPocketBase ? await getBusinessSubscription(externalReference) : null;
 
     if (subscription) {
-      // This is a subscription payment
-      console.log(`[MP Webhook] Procesando pago de suscripción ${paymentId} → ${paymentStatus} para business ${externalReference}`);
+      logger.info(
+        `Procesando pago de suscripcion ${paymentId} -> ${paymentStatus} para business ${externalReference}`
+      );
 
       if (paymentStatus === "approved") {
         const nextBillingDate = new Date();
@@ -102,16 +140,14 @@ export async function POST(request: Request) {
           nextBillingDate: nextBillingDate.toISOString().split("T")[0],
         });
 
-        console.log(`[MP Webhook] Suscripción ${subscription.id} activada para business ${externalReference}`);
+        logger.info(`Suscripcion ${subscription.id} activada para business ${externalReference}`);
       } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
-        // Keep trial or suspend - don't change status on rejection
-        console.log(`[MP Webhook] Pago rechazado/cancelado para suscripción ${subscription.id}`);
+        logger.info(`Pago rechazado/cancelado para suscripcion ${subscription.id}`);
       }
 
       return NextResponse.json({ ok: true }, { status: 200 });
     }
 
-    // This is a booking payment (original logic)
     const paymentData = {
       bookingId: externalReference,
       paymentStatus,
@@ -121,7 +157,7 @@ export async function POST(request: Request) {
       paymentExternalId: paymentId,
     };
 
-    if (isPocketBaseConfigured()) {
+    if (isPocketBase) {
       await updatePocketBaseBookingPayment(paymentData);
     } else {
       await updateLocalBookingPayment(paymentData);
@@ -129,7 +165,7 @@ export async function POST(request: Request) {
 
     if (paymentStatus === "approved") {
       try {
-        const slug = isPocketBaseConfigured()
+        const slug = isPocketBase
           ? await getPocketBaseBookingBusinessSlug(externalReference).catch(() => null)
           : await getLocalBookingBusinessSlug(externalReference).catch(() => null);
 
@@ -140,16 +176,14 @@ export async function POST(request: Request) {
           }
         }
       } catch (emailErr) {
-        console.error("[MP Webhook] Error enviando email de confirmación:", emailErr);
+        logger.error("Error enviando email de confirmacion", emailErr);
       }
     }
 
-    console.log(
-      `[MP Webhook] Pago ${paymentId} → ${paymentStatus} para booking ${externalReference}`
-    );
+    logger.info(`Pago ${paymentId} -> ${paymentStatus} para booking ${externalReference}`);
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
-    console.error("[MP Webhook] Error procesando pago:", err);
+    logger.error("Error procesando pago", err);
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 }

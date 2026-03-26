@@ -233,6 +233,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 durationMinutes: selectedService.durationMinutes,
                 priceLabel: selectedService.priceLabel,
               }}
+              paymentMode={
+                selectedService.price != null && selectedService.price > 0
+                  ? pageData.business.mpConnected
+                    ? "mercadopago"
+                    : "cash"
+                  : "none"
+              }
               initialSelectedDate={selectedDate}
               initialDateOptions={datePickerOptions}
               changeHref={buildBookingHref({

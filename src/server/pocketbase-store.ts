@@ -49,6 +49,15 @@ import {
   sendPostBookingFollowUpEmail,
   sendPostBookingFollowUpWhatsApp,
 } from "@/server/booking-notifications";
+import {
+  buildBookingPaymentPatch,
+  buildBusinessPaymentSettings,
+  type BookingPaymentUpdateInput,
+} from "@/server/payments-domain";
+import {
+  buildBookingConfirmationView,
+  buildManageBookingView,
+} from "@/server/bookings-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 type PocketBaseListOptions = {
@@ -201,7 +210,7 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
       address: business.address ?? "",
       timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
       cancellationPolicy: business.cancellationPolicy,
-      mpAccessToken: business.mpAccessToken,
+      mpConnected: business.mpConnected ?? false,
     },
     profile: buildBusinessPublicProfile(business),
     weeklyHours: buildWeeklySchedule(
@@ -223,6 +232,34 @@ export async function getPocketBasePublicBusinessPageData(slug: string) {
     })),
     source: "pocketbase" as const,
   };
+}
+
+export async function getPocketBaseBusinessPaymentSettingsBySlug(slug: string) {
+  const business = await getBusinessBySlug(slug);
+
+  return buildBusinessPaymentSettings(business);
+}
+
+export async function getPocketBaseBusinessPaymentSettingsByCollectorId(collectorId: string) {
+  const normalizedCollectorId = collectorId.trim();
+
+  if (!normalizedCollectorId) {
+    return null;
+  }
+
+  const pb = await getAdminClient();
+  const business = await pb
+    .collection("businesses")
+    .getFirstListItem<BusinessRecord>(
+      pb.filter("mpCollectorId = {:collectorId}", { collectorId: normalizedCollectorId })
+    )
+    .catch(() => null);
+
+  if (!business) {
+    return null;
+  }
+
+  return buildBusinessPaymentSettings(business);
 }
 
 export async function getPocketBasePublicBookingFlowData(
@@ -325,39 +362,34 @@ export async function getPocketBaseBookingConfirmationData(input: {
     const business = booking.expand?.business as BusinessRecord | undefined;
     const service = booking.expand?.service as ServiceRecord | undefined;
     const customer = booking.expand?.customer as CustomerRecord | undefined;
-
-    // Construir fecha ISO completa
-    const [year, month, day] = booking.bookingDate.split("-").map(Number);
-    const [hours, minutes] = booking.startTime.split(":").map(Number);
-    const startsAt = new Date(year, month - 1, day, hours, minutes).toISOString();
     const timezone = business?.timezone ?? "America/Argentina/Buenos_Aires";
 
-    return {
+    return buildBookingConfirmationView({
       bookingId: booking.id,
       confirmationCode: booking.confirmationCode,
-      customerName: customer?.fullName ?? "Cliente",
-      customerEmail: customer?.email ?? undefined,
-      customerPhone: customer?.phone ?? undefined,
+      customerName: customer?.fullName,
+      customerEmail: customer?.email,
+      customerPhone: customer?.phone,
       businessId: business?.id ?? "",
       businessName: business?.name ?? input.slug,
       businessSlug: business?.slug ?? input.slug,
       businessAddress: business?.address ?? null,
       businessTimezone: timezone,
       businessNotificationEmail: business?.notificationEmail ?? business?.email,
-      serviceId: service?.id ?? "",
-      serviceName: service?.name ?? "Servicio",
+      serviceId: service?.id,
+      serviceName: service?.name,
       durationMinutes: Number(service?.durationMinutes ?? 60),
-      priceAmount: service?.priceAmount ?? null,
-      currency: service?.currency ?? "ARS",
-      // Compatibilidad hacia atrás para UI
+      priceAmount: service?.price ?? null,
       bookingDate: booking.bookingDate,
       startTime: booking.startTime,
-      startsAt,
-      timezone,
       status: booking.status,
       manageToken: booking.manageToken,
-      source: "pocketbase" as const,
-    };
+      paymentStatus: booking.paymentStatus,
+      paymentAmount: booking.paymentAmount,
+      paymentCurrency: booking.paymentCurrency,
+      paymentProvider: booking.paymentProvider,
+      source: "pocketbase",
+    });
   } catch {
     return null;
   }
@@ -385,25 +417,25 @@ export async function getPocketBaseManageBookingData(input: {
       return null;
     }
 
-    return {
+    return buildManageBookingView({
       id: booking.id,
       businessSlug: business.slug,
       businessName: business.name,
-      businessAddress: business.address ?? "",
+      businessAddress: business.address,
       businessTimezone: business.timezone ?? "America/Argentina/Buenos_Aires",
-      serviceId: service?.id ?? "",
-      serviceName: service?.name ?? "Servicio",
+      serviceId: service?.id,
+      serviceName: service?.name,
       durationMinutes: Number(service?.durationMinutes ?? 60),
       bookingDate: booking.bookingDate,
       startTime: booking.startTime,
       status: booking.status,
       statusLabel: formatStatus(booking.status),
-      fullName: customer?.fullName ?? "",
-      phone: customer?.phone ?? "",
-      email: customer?.email ?? "",
+      fullName: customer?.fullName,
+      phone: customer?.phone,
+      email: customer?.email,
       notes: booking.notes ?? "",
-      source: "pocketbase" as const,
-    };
+      source: "pocketbase",
+    });
   } catch {
     return null;
   }
@@ -459,10 +491,15 @@ export async function createPocketBasePublicBooking(input: {
         }),
         listPocketBaseRecordsWithClient<CustomerRecord>(pb, "customers", {
           sort: "fullName",
-          filter: joinPocketBaseFilters(
-            pb.filter("business = {:business}", { business: business.id }),
-            pb.filter("phone = {:phone}", { phone: input.phone })
-          ),
+          filter: input.phone
+            ? joinPocketBaseFilters(
+                pb.filter("business = {:business}", { business: business.id }),
+                pb.filter("phone = {:phone}", { phone: input.phone })
+              )
+            : joinPocketBaseFilters(
+                pb.filter("business = {:business}", { business: business.id }),
+                input.email ? pb.filter("email = {:email}", { email: input.email }) : undefined
+              ),
         }),
       ]);
       const businessBlockedSlots = blockedSlots.filter(
@@ -471,7 +508,9 @@ export async function createPocketBasePublicBooking(input: {
       const businessBookings = bookings.filter((booking) =>
         ["pending", "pending_payment", "confirmed"].includes(booking.status)
       );
-      const businessCustomers = customers.filter((customer) => customer.phone === input.phone);
+      const businessCustomers = customers.filter((customer) =>
+        input.phone ? customer.phone === input.phone : customer.email === input.email
+      );
 
       if (
         businessBlockedSlots.some((slot) =>
@@ -495,14 +534,14 @@ export async function createPocketBasePublicBooking(input: {
         customer = await pb.collection("customers").create<CustomerRecord>({
           business: business.id,
           fullName: input.fullName,
-          phone: input.phone,
+          phone: input.phone ?? "",
           email: input.email ?? "",
           notes: input.notes ?? "",
         });
       } else {
         customer = await pb.collection("customers").update<CustomerRecord>(customer.id, {
           fullName: input.fullName,
-          phone: input.phone,
+          phone: input.phone ?? customer.phone ?? "",
           email: input.email ?? "",
           notes: input.notes ?? customer.notes ?? "",
         });
@@ -1430,7 +1469,6 @@ export async function getPocketBaseAdminSettingsData(businessId: string) {
     cancellationPolicy: business.cancellationPolicy,
     mpConnected: business.mpConnected ?? false,
     mpCollectorId: business.mpCollectorId,
-    mpAccessToken: business.mpAccessToken,
   };
 }
 
@@ -2030,15 +2068,7 @@ export async function getPocketBaseBookingBusinessSlug(bookingId: string): Promi
   return business?.slug ?? null;
 }
 
-export type UpdatePocketBaseBookingPaymentInput = {
-  bookingId: string;
-  paymentStatus: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
-  paymentAmount?: number;
-  paymentCurrency?: string;
-  paymentProvider?: "mercadopago";
-  paymentPreferenceId?: string;
-  paymentExternalId?: string;
-};
+export type UpdatePocketBaseBookingPaymentInput = BookingPaymentUpdateInput;
 
 /**
  * Actualiza los campos de pago de una reserva en PocketBase.
@@ -2049,19 +2079,7 @@ export async function updatePocketBaseBookingPayment(
 ) {
   const pb = await getAdminClient();
 
-  const data: Record<string, unknown> = {
-    paymentStatus: input.paymentStatus,
-  };
-
-  if (input.paymentAmount !== undefined) data.paymentAmount = input.paymentAmount;
-  if (input.paymentCurrency !== undefined) data.paymentCurrency = input.paymentCurrency;
-  if (input.paymentProvider !== undefined) data.paymentProvider = input.paymentProvider;
-  if (input.paymentPreferenceId !== undefined) data.paymentPreferenceId = input.paymentPreferenceId;
-  if (input.paymentExternalId !== undefined) data.paymentExternalId = input.paymentExternalId;
-
-  if (input.paymentStatus === "approved") {
-    data.status = "confirmed";
-  }
+  const data: Record<string, unknown> = buildBookingPaymentPatch(input);
 
   await pb.collection("bookings").update(input.bookingId, data);
 

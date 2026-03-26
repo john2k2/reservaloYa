@@ -31,6 +31,7 @@ interface BookingFormWithWaitlistProps {
   slug: string;
   accentColor: string;
   service: ServiceInfo;
+  paymentMode: "mercadopago" | "cash" | "none";
   initialSelectedDate: string;
   initialDateOptions: string[];
   changeHref: string;
@@ -53,6 +54,7 @@ export function BookingFormWithWaitlist({
   slug,
   accentColor,
   service,
+  paymentMode,
   initialSelectedDate,
   initialDateOptions,
   changeHref,
@@ -81,6 +83,30 @@ export function BookingFormWithWaitlist({
       year: "numeric",
     });
   };
+
+  const paymentSummary =
+    paymentMode === "mercadopago"
+      ? {
+          title: "Pago online",
+          badge: "Cobro online con Mercado Pago",
+          description:
+            "Al confirmar te redirigimos a Mercado Pago. El turno queda confirmado cuando el pago se acredita.",
+          buttonLabel: isReschedule ? "Guardar nuevo horario" : "Continuar al pago",
+        }
+      : paymentMode === "cash"
+        ? {
+            title: "Pago en el local",
+            badge: "Cobro presencial en efectivo",
+            description: "Reservás ahora y abonás en efectivo cuando llegues al negocio.",
+            buttonLabel: isReschedule ? "Guardar nuevo horario" : "Confirmar reserva",
+          }
+        : {
+            title: "Confirmación",
+            badge: "Sin cobro online",
+            description:
+              "La confirmación llega al instante y después puedes gestionar el turno desde tu link.",
+            buttonLabel: isReschedule ? "Guardar nuevo horario" : "Confirmar reserva",
+          };
 
   return (
     <>
@@ -318,16 +344,30 @@ export function BookingFormWithWaitlist({
                   </p>
                 </div>
               </div>
+
+              {paymentMode !== "none" && (
+                <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/85 px-4 py-3">
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0" style={{ color: accentColor }} />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      {paymentSummary.title}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">{paymentSummary.badge}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {paymentSummary.description}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-5 rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
               <p className="text-sm font-semibold text-foreground">
-                Elige la hora y después envía tus datos.
+                {paymentMode === "mercadopago"
+                  ? "Elige la hora y despues continua al pago."
+                  : "Elige la hora y despues envia tus datos."}
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                La confirmación llega al instante y después puedes gestionar el turno desde tu
-                link.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{paymentSummary.description}</p>
             </div>
 
             <div className="mt-6">
@@ -335,7 +375,7 @@ export function BookingFormWithWaitlist({
                 className="h-12 rounded-2xl text-sm font-semibold sm:text-base"
                 style={{ backgroundColor: accentColor, borderColor: accentColor }}
               >
-                {isReschedule ? "Guardar nuevo horario" : "Confirmar reserva"}
+                {paymentSummary.buttonLabel}
               </PublicSubmitButton>
               <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
                 Al confirmar aceptás las{" "}
