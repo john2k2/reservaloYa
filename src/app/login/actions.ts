@@ -62,7 +62,7 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=El acceso admin esta deshabilitado hasta conectar la autenticacion real.");
   }
 
-  if (!email || !password) {
+  if (!email || !password || password.length > 256 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     redirect("/login?error=Completa%20email%20y%20password");
   }
 
@@ -132,8 +132,15 @@ export async function signupAction(formData: FormData) {
     redirect("/admin/signup?error=El registro self-serve requiere PocketBase configurado.");
   }
 
-  if (!ownerName || !businessName || !templateSlug || !phone || !address || !email || !password) {
+  if (
+    !ownerName || !businessName || !templateSlug || !phone || !address || !email || !password ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
     redirect("/admin/signup?error=Completa todos los campos obligatorios.");
+  }
+
+  if (password.length > 256) {
+    redirect("/admin/signup?error=La contrasena es demasiado larga.");
   }
 
   if (password.length < 8) {

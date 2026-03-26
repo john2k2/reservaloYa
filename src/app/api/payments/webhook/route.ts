@@ -37,7 +37,9 @@ const logger = createLogger("MP Webhook");
  * 2. Pagos de suscripciones (external_reference = businessId)
  *
  * MP puede enviar el mismo evento mas de una vez, por eso el handler es idempotente.
- * Responde 401 si la firma configurada no valida; errores internos se loguean y responden 200.
+ * Responde 401 si la firma configurada no valida.
+ * Responde 500 ante errores de infraestructura para que MP reintente el evento.
+ * Responde 200 en todos los casos donde el evento fue procesado (exito, rechazo, skip).
  */
 export async function POST(request: Request) {
   const url = new URL(request.url);
@@ -66,7 +68,11 @@ export async function POST(request: Request) {
   }
 
   if (!shouldVerifyMPWebhookSignature()) {
-    logger.warn("MP_WEBHOOK_SECRET no configurado: webhook sin verificacion de firma");
+    if (process.env.NODE_ENV === "production") {
+      logger.error("MP_WEBHOOK_SECRET no configurado en produccion: rechazando webhook");
+      return NextResponse.json({ ok: false, error: "Webhook signature required" }, { status: 500 });
+    }
+    logger.warn("MP_WEBHOOK_SECRET no configurado: webhook sin verificacion de firma (solo dev)");
   } else if (
     !isValidMPWebhookSignature({
       paymentId,
@@ -185,7 +191,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
     logger.error("Error procesando pago", err);
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
   }
 }
 

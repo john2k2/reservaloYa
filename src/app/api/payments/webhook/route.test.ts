@@ -256,6 +256,45 @@ describe("mercadopago webhook route", () => {
     expect(sendBookingConfirmationEmailMock).toHaveBeenCalledWith({ bookingId: "booking-1" }, "created");
   });
 
+  it("returns 500 when MP_WEBHOOK_SECRET is not configured in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    shouldVerifyMPWebhookSignatureMock.mockReturnValue(false);
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    vi.unstubAllEnvs();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ ok: false, error: "Webhook signature required" });
+    expect(getMPPaymentInfoMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 when an internal error occurs during payment processing", async () => {
+    getMPPaymentInfoMock.mockRejectedValue(new Error("DB connection failed"));
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ ok: false, error: "Internal error" });
+    expect(updateLocalBookingPaymentMock).not.toHaveBeenCalled();
+  });
+
   it("activates PocketBase subscriptions on approved subscription payments", async () => {
     const subscriptionUpdateMock = vi.fn().mockResolvedValue(undefined);
     isPocketBaseConfiguredMock.mockReturnValue(true);

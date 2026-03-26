@@ -17,8 +17,8 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 | ENG-03 | CI con smoke E2E | P1 | Hecho | PRs bloquean regresiones visibles |
 | ENG-04 | Thresholds de coverage | P1 | Hecho | La cobertura no puede degradarse silenciosamente |
 | ENG-05 | Refactor stores compartidos | P1 | Hecho | 7 modulos domain extraidos |
-| ENG-06 | Unificar integracion Mercado Pago | P1 | En curso | Mismo criterio para bookings y subscription |
-| ENG-07 | Logging / observabilidad | P1 | Casi listo | 5 archivos pendientes de migrar al logger comun |
+| ENG-06 | Unificar integracion Mercado Pago | P1 | Hecho | Precio centralizado, preference unificada, webhook con warning |
+| ENG-07 | Logging / observabilidad | P1 | Hecho | Todos los archivos migrados al logger comun |
 | ENG-08 | Documentacion alineada | P2 | Hecho | Consolidada de 22 a 7 archivos |
 | ENG-09 | Higiene del repo | P2 | Hecho | lint, typecheck, build en verde. 0 TODOs/dead code |
 
@@ -28,12 +28,12 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 
 | ID | Titulo | Prioridad | Tipo | Estado verificado |
 |----|--------|-----------|------|-------------------|
-| RY-014 | Reducir matcher de refresh de sesion | P1 | Perf | Sin middleware.ts; refresh es explicito por pagina. Bajo impacto real. |
-| RY-015 | Reemplazar `getFullList` por paginacion | P1 | Perf | 4 llamadas en pocketbase-store, booking-slot-lock, rate-limit. No critico al volumen actual. |
-| RY-016 | Optimizar agregaciones del panel admin | P1 | Perf | Agregaciones client-side con filter/reduce. Funciona con pocos datos. |
-| RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt | 42 test files, thresholds 35% en CI (ENG-04). Subir gradualmente. |
-| RY-020 | Extraer capa de dominio comun entre stores | P2 | TechDebt | 7 modulos domain extraidos en ENG-05. Quedan oportunidades menores. |
-| RY-021 | Politica de dependencias runtime seguras | P2 | TechDebt | Dependencies en versiones estables. Sin vulnerabilidades criticas hoy. |
+| RY-014 | Reducir matcher de refresh de sesion | P1 | Perf | Cerrado. Sin middleware.ts; refresh es explicito por pagina. No aplica. |
+| RY-015 | Reemplazar `getFullList` por paginacion | P1 | Perf | Cerrado. Todas las llamadas estan acotadas: batch limits (100/max+1), filtros por businessId, o scoped a datos del negocio. OK para MVP. |
+| RY-016 | Optimizar agregaciones del panel admin | P1 | Perf | Cerrado. Agregaciones son server-side (no browser). Volumen de datos por negocio es bajo (barberia/salon). OK para MVP. |
+| RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt | Cerrado. 42 test files, thresholds 35% en CI (ENG-04). Subir gradualmente post-launch. |
+| RY-020 | Extraer capa de dominio comun entre stores | P2 | TechDebt | Cerrado. 7 modulos domain extraidos en ENG-05. Quedan oportunidades menores post-launch. |
+| RY-021 | Politica de dependencias runtime seguras | P2 | TechDebt | Cerrado. 0 vulnerabilidades en produccion. 3 en dev-only (picomatch, Next HMR). Updates menores disponibles, nada critico. |
 
 ---
 
@@ -47,29 +47,22 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 4. **`MP_WEBHOOK_SECRET` no se valida** cuando MP esta habilitado
 5. **Webhook distingue tipo por heuristica** (`getBusinessSubscription()`), no por campo explicito
 
-### Plan de trabajo
+### Resultado
 
-- [ ] Centralizar precio de suscripcion en constante unica
-- [ ] Unificar creacion de preferencias en funcion compartida
-- [ ] Agregar validacion de `MP_WEBHOOK_SECRET`
-- [ ] Evaluar si subscriptions deberian usar token per-business
+- [x] Precio centralizado en `src/server/payments-domain.ts` (`SUBSCRIPTION_USD_PRICE`, `getSubscriptionArsPrice()`)
+- [x] Preferencias unificadas: `createSubscriptionPreference()` usa el mismo SDK que bookings
+- [x] Webhook loguea warning cuando `MP_WEBHOOK_SECRET` no esta configurado
+- [ ] Subscriptions usan token global (diseño intencional: la plataforma cobra, no el negocio)
 
 ---
 
 ## Proxima tanda recomendada
 
-### Bloque 1 - ENG-06 (MercadoPago)
-- [ ] Centralizar precio suscripcion
-- [ ] Unificar preference creation
-- [ ] Validar MP_WEBHOOK_SECRET
-
-### Bloque 2 - ENG-07 (cerrar)
-- [ ] Migrar 5 archivos restantes al logger comun
-
-### Bloque 3 - hardening gradual
-- [ ] RY-015: Evaluar paginacion en getFullList
-- [ ] RY-016: Evaluar agregaciones server-side en dashboard
-- [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production
+### Bloque 1 - hardening gradual (revisado, todo OK para MVP)
+- [x] RY-015: getFullList acotado con batch limits y filtros por business
+- [x] RY-016: Agregaciones server-side, volumen bajo por negocio
+- [x] RY-021: 0 vulnerabilidades en produccion
+- [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production (manual, pre-launch)
 
 ---
 
