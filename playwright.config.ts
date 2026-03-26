@@ -81,7 +81,7 @@ export default defineConfig({
     },
     {
       name: "ci-smoke",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      use: { ...devices["Desktop Firefox"] },
       testMatch: /smoke-test\.spec\.ts/,
     },
   ],

@@ -1,6 +1,6 @@
 # Engineering Remediation Tracker
 
-Ultima actualizacion: 2026-03-25
+Ultima actualizacion: 2026-03-26
 
 ## Objetivo
 
@@ -64,21 +64,23 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [x] Se normalizo copy visible en `src/app/(public)/[slug]/mi-turno/page.tsx` para evitar mojibake en la pagina publica de gestion.
 - [x] Se creo `src/server/logger.ts` como logger comun incremental, con `info` silenciado en tests para bajar ruido de CI.
 - [x] Se migraron `api/payments/webhook`, `api/auth/mercadopago/callback`, `api/payments/create-preference`, `server/actions/public-booking`, `server/booking-notifications` y `server/mercadopago` al logger comun.
+- [x] Se endurecio ENG-02 con casos adicionales para webhook, callback OAuth y auth/session, cubriendo errores de credenciales, payloads invalidos, referencias faltantes y fallbacks de sesion.
+
+### 2026-03-26
+- [x] Se reescribio `e2e/tests/smoke-test.spec.ts` para que el smoke cubra de forma mas realista homepage, demo publica, reserva, login/admin shell, onboarding, bookings, services, availability y 404.
+- [x] Se cambio el proyecto `ci-smoke` de Playwright a Firefox porque Chrome/Chromium fallaba localmente con un error del runtime ICU en Windows.
+- [x] El smoke local `npm run test:e2e:smoke` quedo pasando con 10/10 tests.
+- [x] Se actualizo `.github/workflows/ci.yml` para instalar Firefox, alineando CI con el navegador real del smoke.
 
 ---
 
 ## Proxima tanda recomendada
 
 ### Bloque 1 - impacto alto / riesgo bajo
-- [ ] Completar cobertura de rutas API criticas restante:
-  - `src/app/api/payments/webhook/route.ts`
-  - ampliar casos de error/seguridad en `src/app/api/auth/mercadopago/callback/route.ts`
-  - ampliar casos en `src/app/api/auth/session/route.ts`
 - [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production
-- [ ] Validar el nuevo smoke E2E tambien en GitHub Actions con un PR real
+- [ ] Pushear una rama y validar el job `e2e-smoke` en GitHub Actions real
 
 ### Bloque 2 - hardening
-- [ ] Validar el smoke Playwright nuevo dentro de GitHub Actions real
 - [ ] Seguir extrayendo helpers compartidos de bookings, customers y availability fuera de `local-store` y `pocketbase-store`
 - [ ] Seguir migrando `console.*` de callbacks, notificaciones y pagos al logger comun
 
