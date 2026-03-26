@@ -37,7 +37,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 | ENG-02 | Tests de rutas API criticas | P0 | Hecho | Webhook, callback MP, booking-slots y auth cubiertos |
 | ENG-03 | CI con smoke E2E | P1 | Hecho | PRs bloquean regresiones visibles |
 | ENG-04 | Thresholds de coverage | P1 | Hecho | La cobertura no puede degradarse silenciosamente |
-| ENG-05 | Refactor stores compartidos | P1 | En curso | Menos duplicacion entre local y PocketBase |
+| ENG-05 | Refactor stores compartidos | P1 | Hecho | Menos duplicacion entre local y PocketBase |
 | ENG-06 | Unificar integracion Mercado Pago | P1 | En curso | Mismo criterio para bookings y subscription |
 | ENG-07 | Logging / observabilidad | P1 | En curso | Logger consistente + secretos/config completos |
 | ENG-08 | Documentacion alineada | P2 | En curso | README y docs criticas sincronizadas con el codigo |
@@ -77,6 +77,8 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [x] Se extrajo `src/server/admin-views-domain.ts` para compartir entre `local-store` y `pocketbase-store` las proyecciones admin de bookings, customers, services, availability y settings, con tests dedicados en `src/server/admin-views-domain.test.ts`.
 - [x] Se extrajo `src/server/admin-dashboard-domain.ts` para compartir entre `local-store` y `pocketbase-store` la proyeccion de admin shell, preview de bookings, metricas y notificaciones del dashboard, con tests dedicados en `src/server/admin-dashboard-domain.test.ts`.
 - [x] Se reforzo `src/server/payments-domain.ts` con helpers compartidos para normalizar `collectorId` y construir patches de persistencia / limpieza de tokens Mercado Pago por negocio, reutilizados por `local-store` y `pocketbase-store`.
+- [x] Se creo `src/server/booking-mutations-domain.ts` para compartir entre `local-store` y `pocketbase-store` la logica interna de ventanas horarias, validacion de disponibilidad/bloqueos/conflictos, payloads de customers y campos comunes de mutacion de bookings, con tests dedicados en `src/server/booking-mutations-domain.test.ts`.
+- [x] Con estas extracciones (`payments-domain`, `bookings-domain`, `admin-views-domain`, `admin-dashboard-domain` y `booking-mutations-domain`) se dio por cerrado el alcance planificado de ENG-05 sin forzar un refactor heroico de persistencia.
 
 ---
 
@@ -87,8 +89,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 
 ### Bloque 2 - hardening
 - [ ] Seguir extrayendo helpers compartidos de bookings, customers y availability fuera de `local-store` y `pocketbase-store`
-- [ ] Seguir extrayendo slices compartidas del dashboard/admin shell o persistencia de Mercado Pago para acercar el cierre de ENG-05
-- [ ] Extraer la persistencia / helpers de Mercado Pago por negocio entre `local-store` y `pocketbase-store`
+- [ ] Empezar ENG-06 unificando el criterio de Mercado Pago entre bookings y subscription
 - [ ] Seguir migrando `console.*` de callbacks, notificaciones y pagos al logger comun
 
 ---
@@ -113,7 +114,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 ### ENG-04 - Coverage thresholds
 - Minimos iniciales realistas
 - Se pueden subir por etapas
-- El objetivo no es “100%”, sino evitar regresion silenciosa
+- El objetivo no es "100%", sino evitar regresion silenciosa
 
 ### ENG-05 - Refactor stores
 - Extraer dominio compartido antes de mover persistencia
@@ -135,7 +136,7 @@ npm run test:e2e
 
 ## Notas de criterio
 
-- No cerrar un frente solo porque “anda”; debe quedar mantenible.
+- No cerrar un frente solo porque "anda"; debe quedar mantenible.
 - No mezclar refactor grande con fix productivo urgente en el mismo commit.
 - Cuando algo impacte produccion (pagos, auth, webhook), probar primero local y luego Vercel.
 

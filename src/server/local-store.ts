@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import {
-  addMinutes,
   buildBookingDateOptions,
   findNextBookingDate,
   getDayOfWeek,
@@ -38,7 +37,6 @@ import {
   getBusinessServices,
   getLocalBookingDetails,
   getPrimaryBusiness,
-  fromMinutes,
   type LegacyLocalStore,
   type LocalAnalyticsEventName,
   type LocalBooking,
@@ -47,9 +45,7 @@ import {
   type LocalStore,
   normalizeServiceName,
   normalizeStore,
-  overlaps,
   type RemoveLocalBlockedSlotInput,
-  toMinutes,
   type UpdateLocalAdminBookingInput,
   type UpdateLocalBusinessBrandingInput,
   type UpdateLocalBusinessInput,
@@ -78,6 +74,14 @@ import {
   buildBookingConfirmationView,
   buildManageBookingView,
 } from "@/server/bookings-domain";
+import {
+  buildBookingCustomerDetails,
+  buildBookingMutationFields,
+  buildBookingTimeWindow,
+  fitsBookingWithinAvailability,
+  hasBlockedSlotConflict,
+  hasBookingConflict,
+} from "@/server/booking-mutations-domain";
 import {
   buildAdminAvailabilityView,
   buildAdminBookingsView,
@@ -311,35 +315,29 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           throw new Error("Service not found");
         }
 
-        const startMinutes = toMinutes(input.startTime);
-        const endMinutes = startMinutes + service.durationMinutes;
-        const endTime = fromMinutes(endMinutes);
+        const bookingWindow = buildBookingTimeWindow(input.startTime, service.durationMinutes);
 
-        const blockedConflict = store.blockedSlots.some(
-          (slot) =>
-            slot.businessId === business.id &&
-            slot.blockedDate === input.bookingDate &&
-            overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+        const blockedConflict = hasBlockedSlotConflict(
+          store.blockedSlots.filter(
+            (slot) => slot.businessId === business.id && slot.blockedDate === input.bookingDate
+          ),
+          bookingWindow
         );
 
         if (blockedConflict) {
           throw new Error("Ese horario esta bloqueado.");
         }
 
-        const bookingConflict = store.bookings.some(
-          (booking) =>
-            booking.id !== input.rescheduleBookingId &&
-            booking.businessId === business.id &&
-            booking.bookingDate === input.bookingDate &&
-            (booking.status === "pending" ||
-              booking.status === "pending_payment" ||
-              booking.status === "confirmed") &&
-            overlaps(
-              startMinutes,
-              endMinutes,
-              toMinutes(booking.startTime),
-              toMinutes(booking.endTime)
-            )
+        const bookingConflict = hasBookingConflict(
+          store.bookings.filter(
+            (booking) =>
+              booking.businessId === business.id && booking.bookingDate === input.bookingDate
+          ),
+          {
+            ...bookingWindow,
+            excludeBookingId: input.rescheduleBookingId,
+            allowedStatuses: ["pending", "pending_payment", "confirmed"],
+          }
         );
 
         if (bookingConflict) {
@@ -354,17 +352,12 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           customer = {
             id: randomUUID(),
             businessId: business.id,
-            fullName: input.fullName,
-            phone: input.phone ?? "",
-            email: input.email,
-            notes: input.notes ?? "",
+            ...buildBookingCustomerDetails(input),
             createdAt: new Date().toISOString(),
           };
           store.customers.push(customer);
         } else {
-          customer.fullName = input.fullName;
-          customer.phone = input.phone ?? customer.phone;
-          customer.notes = input.notes ?? customer.notes;
+          Object.assign(customer, buildBookingCustomerDetails(input, customer));
         }
 
         const existingBooking = input.rescheduleBookingId
@@ -381,11 +374,16 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
         if (existingBooking) {
           existingBooking.customerId = customer.id;
           existingBooking.serviceId = service.id;
-          existingBooking.bookingDate = input.bookingDate;
-          existingBooking.startTime = input.startTime;
-          existingBooking.endTime = endTime;
-          existingBooking.status = "pending";
-          existingBooking.notes = input.notes ?? "";
+          Object.assign(
+            existingBooking,
+            buildBookingMutationFields({
+              bookingDate: input.bookingDate,
+              startTime: input.startTime,
+              durationMinutes: service.durationMinutes,
+              status: "pending",
+              notes: input.notes,
+            })
+          );
 
           return existingBooking.id;
         }
@@ -395,19 +393,15 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           businessId: business.id,
           customerId: customer.id,
           serviceId: service.id,
-          bookingDate: input.bookingDate,
-          startTime: input.startTime,
-          endTime,
-          status: input.initialStatus ?? "pending",
-          notes: input.notes ?? "",
+          ...buildBookingMutationFields({
+            bookingDate: input.bookingDate,
+            startTime: input.startTime,
+            durationMinutes: service.durationMinutes,
+            status: input.initialStatus,
+            notes: input.notes,
+            paymentPreferenceId: input.paymentPreferenceId,
+          }),
           createdAt: new Date().toISOString(),
-          ...(input.paymentPreferenceId
-            ? {
-                paymentProvider: "mercadopago" as const,
-                paymentPreferenceId: input.paymentPreferenceId,
-                paymentStatus: "pending" as const,
-              }
-            : {}),
         };
 
         store.bookings.unshift(booking);
@@ -917,58 +911,56 @@ export async function updateLocalAdminBooking(input: UpdateLocalAdminBookingInpu
     }
 
     const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-    const startMinutes = toMinutes(input.startTime);
-    const endTime = addMinutes(input.startTime, service.durationMinutes);
-    const endMinutes = toMinutes(endTime);
+    const bookingWindow = buildBookingTimeWindow(input.startTime, service.durationMinutes);
     const activeRules = store.availabilityRules.filter(
       (rule) =>
         rule.businessId === business.id &&
         rule.active &&
         rule.dayOfWeek === selectedDayOfWeek
     );
-    const fitsWithinAvailability = activeRules.some(
-      (rule) =>
-        startMinutes >= toMinutes(rule.startTime) && endMinutes <= toMinutes(rule.endTime)
-    );
+    const fitsWithinAvailability = fitsBookingWithinAvailability(activeRules, bookingWindow);
 
     if (!fitsWithinAvailability) {
       throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
     }
 
-    const blockedConflict = store.blockedSlots.some(
-      (slot) =>
-        slot.businessId === business.id &&
-        slot.blockedDate === input.bookingDate &&
-        overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+    const blockedConflict = hasBlockedSlotConflict(
+      store.blockedSlots.filter(
+        (slot) => slot.businessId === business.id && slot.blockedDate === input.bookingDate
+      ),
+      bookingWindow
     );
 
     if (blockedConflict) {
       throw new Error("Ese horario esta bloqueado.");
     }
 
-    const bookingConflict = store.bookings.some(
-      (candidate) =>
-        candidate.id !== booking.id &&
-        candidate.businessId === business.id &&
-        candidate.bookingDate === input.bookingDate &&
-        (candidate.status === "pending" || candidate.status === "confirmed") &&
-        overlaps(
-          startMinutes,
-          endMinutes,
-          toMinutes(candidate.startTime),
-          toMinutes(candidate.endTime)
-        )
+    const bookingConflict = hasBookingConflict(
+      store.bookings.filter(
+        (candidate) =>
+          candidate.businessId === business.id && candidate.bookingDate === input.bookingDate
+      ),
+      {
+        ...bookingWindow,
+        excludeBookingId: booking.id,
+        allowedStatuses: ["pending", "confirmed"],
+      }
     );
 
     if (bookingConflict) {
       throw new Error("Ese horario ya no esta disponible.");
     }
 
-    booking.bookingDate = input.bookingDate;
-    booking.startTime = input.startTime;
-    booking.endTime = endTime;
-    booking.status = input.status;
-    booking.notes = input.notes;
+    Object.assign(
+      booking,
+      buildBookingMutationFields({
+        bookingDate: input.bookingDate,
+        startTime: input.startTime,
+        durationMinutes: service.durationMinutes,
+        status: input.status,
+        notes: input.notes,
+      })
+    );
 
     return booking.id;
   });

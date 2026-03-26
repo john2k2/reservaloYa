@@ -4,7 +4,6 @@ import type { PublicBusinessProfile } from "@/constants/public-business-profiles
 import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import {
-  addMinutes,
   buildBookingDateOptions,
   findNextBookingDate,
   getDayOfWeek,
@@ -30,10 +29,8 @@ import {
   formatStatus,
   isActiveRecord,
   joinPocketBaseFilters,
-  overlaps,
   parseProfileOverrides,
   type ServiceRecord,
-  toMinutes,
   toMoney,
   type UserRecord,
   type WaitlistEntryRecord,
@@ -60,6 +57,14 @@ import {
   buildBookingConfirmationView,
   buildManageBookingView,
 } from "@/server/bookings-domain";
+import {
+  buildBookingCustomerDetails,
+  buildBookingMutationFields,
+  buildBookingTimeWindow,
+  fitsBookingWithinAvailability,
+  hasBlockedSlotConflict,
+  hasBookingConflict,
+} from "@/server/booking-mutations-domain";
 import {
   buildAdminAvailabilityView,
   buildAdminBookingsView,
@@ -488,9 +493,7 @@ export async function createPocketBasePublicBooking(input: {
         throw new Error("Servicio no encontrado.");
       }
 
-      const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-      const startMinutes = toMinutes(input.startTime);
-      const endMinutes = toMinutes(endTime);
+      const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
 
       const [blockedSlots, bookings, customers] = await Promise.all([
         listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
@@ -528,18 +531,15 @@ export async function createPocketBasePublicBooking(input: {
         input.phone ? customer.phone === input.phone : customer.email === input.email
       );
 
-      if (
-        businessBlockedSlots.some((slot) =>
-          overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-        )
-      ) {
+      if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
         throw new Error("Ese horario esta bloqueado.");
       }
 
       if (
-        businessBookings.some((booking) =>
-          overlaps(startMinutes, endMinutes, toMinutes(booking.startTime), toMinutes(booking.endTime))
-        )
+        hasBookingConflict(businessBookings, {
+          ...bookingWindow,
+          allowedStatuses: ["pending", "pending_payment", "confirmed"],
+        })
       ) {
         throw new Error("Ese horario ya no esta disponible.");
       }
@@ -549,17 +549,11 @@ export async function createPocketBasePublicBooking(input: {
       if (!customer) {
         customer = await pb.collection("customers").create<CustomerRecord>({
           business: business.id,
-          fullName: input.fullName,
-          phone: input.phone ?? "",
-          email: input.email ?? "",
-          notes: input.notes ?? "",
+          ...buildBookingCustomerDetails(input),
         });
       } else {
         customer = await pb.collection("customers").update<CustomerRecord>(customer.id, {
-          fullName: input.fullName,
-          phone: input.phone ?? customer.phone ?? "",
-          email: input.email ?? "",
-          notes: input.notes ?? customer.notes ?? "",
+          ...buildBookingCustomerDetails(input, customer),
         });
       }
 
@@ -567,18 +561,14 @@ export async function createPocketBasePublicBooking(input: {
         business: business.id,
         customer: customer.id,
         service: service.id,
-        bookingDate: input.bookingDate,
-        startTime: input.startTime,
-        endTime,
-        status: input.initialStatus ?? "pending",
-        notes: input.notes ?? "",
-        ...(input.paymentPreferenceId
-          ? {
-              paymentProvider: "mercadopago",
-              paymentPreferenceId: input.paymentPreferenceId,
-              paymentStatus: "pending",
-            }
-          : {}),
+        ...buildBookingMutationFields({
+          bookingDate: input.bookingDate,
+          startTime: input.startTime,
+          durationMinutes: Number(service.durationMinutes),
+          status: input.initialStatus,
+          notes: input.notes,
+          paymentPreferenceId: input.paymentPreferenceId,
+        }),
       });
 
       return booking.id;
@@ -711,9 +701,7 @@ export async function reschedulePocketBasePublicBooking(input: {
         throw new Error("Servicio no encontrado.");
       }
 
-      const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-      const startMinutes = toMinutes(input.startTime);
-      const endMinutes = toMinutes(endTime);
+      const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
       const [blockedSlots, bookings] = await Promise.all([
         listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
           filter: joinPocketBaseFilters(
@@ -738,36 +726,32 @@ export async function reschedulePocketBasePublicBooking(input: {
           candidate.id !== booking.id
       );
 
-      if (
-        businessBlockedSlots.some((slot) =>
-          overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-        )
-      ) {
+      if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
         throw new Error("Ese horario esta bloqueado.");
       }
 
       if (
-        businessBookings.some((candidate) =>
-          overlaps(startMinutes, endMinutes, toMinutes(candidate.startTime), toMinutes(candidate.endTime))
-        )
+        hasBookingConflict(businessBookings, {
+          ...bookingWindow,
+          allowedStatuses: ["pending", "confirmed"],
+        })
       ) {
         throw new Error("Ese horario ya no esta disponible.");
       }
 
       await pb.collection("customers").update(booking.customer, {
-        fullName: input.fullName,
-        phone: input.phone,
-        email: input.email ?? "",
-        notes: input.notes ?? "",
+        ...buildBookingCustomerDetails(input),
       });
 
       await pb.collection("bookings").update(booking.id, {
         service: service.id,
-        bookingDate: input.bookingDate,
-        startTime: input.startTime,
-        endTime,
-        status: "pending",
-        notes: input.notes ?? "",
+        ...buildBookingMutationFields({
+          bookingDate: input.bookingDate,
+          startTime: input.startTime,
+          durationMinutes: Number(service.durationMinutes),
+          status: "pending",
+          notes: input.notes,
+        }),
       });
 
       return booking.id;
@@ -1025,9 +1009,7 @@ export async function updatePocketBaseAdminBooking(input: {
   }
 
   const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-  const startMinutes = toMinutes(input.startTime);
-  const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-  const endMinutes = toMinutes(endTime);
+  const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
   const [rules, blockedSlots, bookings] = await Promise.all([
     listPocketBaseRecords<AvailabilityRuleRecord>("availability_rules", {
       filter: joinPocketBaseFilters(
@@ -1049,45 +1031,36 @@ export async function updatePocketBaseAdminBooking(input: {
     }),
   ]);
   const activeRules = rules.filter(isActiveRecord);
-  const fitsWithinAvailability = activeRules.some(
-    (rule) =>
-      startMinutes >= toMinutes(rule.startTime) && endMinutes <= toMinutes(rule.endTime)
-  );
+  const fitsWithinAvailability = fitsBookingWithinAvailability(activeRules, bookingWindow);
 
   if (!fitsWithinAvailability) {
     throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
   }
 
-  const blockedConflict = blockedSlots.some((slot) =>
-    overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-  );
+  const blockedConflict = hasBlockedSlotConflict(blockedSlots, bookingWindow);
 
   if (blockedConflict) {
     throw new Error("Ese horario esta bloqueado.");
   }
 
-  const bookingConflict = bookings.some(
-    (candidate) =>
-      candidate.id !== booking.id &&
-      (candidate.status === "pending" || candidate.status === "confirmed") &&
-      overlaps(
-        startMinutes,
-        endMinutes,
-        toMinutes(candidate.startTime),
-        toMinutes(candidate.endTime)
-      )
-  );
+  const bookingConflict = hasBookingConflict(bookings, {
+    ...bookingWindow,
+    excludeBookingId: booking.id,
+    allowedStatuses: ["pending", "confirmed"],
+  });
 
   if (bookingConflict) {
     throw new Error("Ese horario ya no esta disponible.");
   }
 
   await pb.collection("bookings").update(input.bookingId, {
-    bookingDate: input.bookingDate,
-    startTime: input.startTime,
-    endTime,
-    status: input.status,
-    notes: input.notes,
+    ...buildBookingMutationFields({
+      bookingDate: input.bookingDate,
+      startTime: input.startTime,
+      durationMinutes: Number(service.durationMinutes),
+      status: input.status,
+      notes: input.notes,
+    }),
   });
 
   return input.bookingId;
