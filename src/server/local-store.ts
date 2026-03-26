@@ -77,6 +77,13 @@ import {
   buildBookingConfirmationView,
   buildManageBookingView,
 } from "@/server/bookings-domain";
+import {
+  buildAdminAvailabilityView,
+  buildAdminBookingsView,
+  buildAdminCustomersView,
+  buildAdminServicesView,
+  buildAdminSettingsView,
+} from "@/server/admin-views-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 const dataDir = path.join(process.cwd(), "data");
@@ -1453,47 +1460,26 @@ export async function getLocalAdminBookingsData(
 ) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
-  const query = filters?.q?.trim().toLocaleLowerCase("es-AR") ?? "";
 
-  return getBusinessBookings(store, business.id)
-    .slice()
-    .sort((a, b) => `${a.bookingDate}T${a.startTime}`.localeCompare(`${b.bookingDate}T${b.startTime}`))
-    .map((booking) => {
+  return buildAdminBookingsView(
+    getBusinessBookings(store, business.id).map((booking) => {
       const customer = store.customers.find((candidate) => candidate.id === booking.customerId);
       const service = store.services.find((candidate) => candidate.id === booking.serviceId);
 
       return {
         id: booking.id,
-        customerName: customer?.fullName ?? "Cliente",
-        phone: customer?.phone ?? "",
-        serviceName: service?.name ?? "Servicio",
+        customerName: customer?.fullName,
+        phone: customer?.phone,
+        serviceName: service?.name,
         bookingDate: booking.bookingDate,
         startTime: booking.startTime,
         status: booking.status,
-        statusLabel: formatBookingStatus(booking.status),
         notes: booking.notes,
       };
-    })
-    .filter((booking) => {
-      if (filters?.status && booking.status !== filters.status) {
-        return false;
-      }
-
-      if (filters?.date && booking.bookingDate !== filters.date) {
-        return false;
-      }
-
-      if (
-        query &&
-        !`${booking.customerName} ${booking.phone} ${booking.serviceName}`
-          .toLocaleLowerCase("es-AR")
-          .includes(query)
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+    }),
+    filters,
+    formatBookingStatus
+  );
 }
 
 export async function getLocalAdminCustomersData(
@@ -1502,76 +1488,71 @@ export async function getLocalAdminCustomersData(
 ) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
-  const search = query?.trim().toLocaleLowerCase("es-AR") ?? "";
 
-  return getBusinessCustomers(store, business.id)
-    .slice()
-    .filter((customer) => {
-      if (!search) {
-        return true;
-      }
-
-      return [customer.fullName, customer.phone, customer.email]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase("es-AR").includes(search));
-    })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((customer) => {
-      const customerBookings = store.bookings.filter((booking) => booking.customerId === customer.id);
-      const lastBooking = customerBookings
-        .slice()
-        .sort((a, b) => `${b.bookingDate}T${b.startTime}`.localeCompare(`${a.bookingDate}T${a.startTime}`))[0];
-
-      return {
-        id: customer.id,
-        fullName: customer.fullName,
-        phone: customer.phone,
-        email: customer.email,
-        notes: customer.notes,
-        bookingsCount: customerBookings.length,
-        lastBookingDate: lastBooking?.bookingDate ?? null,
-      };
-    });
+  return buildAdminCustomersView(
+    getBusinessCustomers(store, business.id).map((customer) => ({
+      id: customer.id,
+      fullName: customer.fullName,
+      phone: customer.phone,
+      email: customer.email,
+      notes: customer.notes,
+      createdAt: customer.createdAt,
+    })),
+    store.bookings
+      .filter((booking) => booking.businessId === business.id)
+      .map((booking) => ({
+        customerId: booking.customerId,
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+      })),
+    query
+  );
 }
 
 export async function getLocalAdminServicesData(activeBusinessSlug?: string | null) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return getBusinessServices(store, business.id)
-    .slice()
-    .sort((a, b) => {
-      const featuredDelta = Number(Boolean(b.featured)) - Number(Boolean(a.featured));
-      if (featuredDelta !== 0) {
-        return featuredDelta;
-      }
-
-      return a.name.localeCompare(b.name);
-    })
-    .map((service) => ({
+  return buildAdminServicesView(
+    getBusinessServices(store, business.id).map((service) => ({
       id: service.id,
       name: service.name,
       description: service.description,
       durationMinutes: service.durationMinutes,
       price: service.price,
-      featured: Boolean(service.featured),
-      featuredLabel: service.featuredLabel ?? "",
-      priceLabel: formatMoney(service.price),
-    }));
+      featured: service.featured,
+      featuredLabel: service.featuredLabel,
+    })),
+    formatMoney
+  );
 }
 
 export async function getLocalAdminAvailabilityData(activeBusinessSlug?: string | null) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return {
-    rules: store.availabilityRules
+  return buildAdminAvailabilityView(
+    store.availabilityRules
       .filter((rule) => rule.businessId === business.id)
-      .sort((a, b) => a.dayOfWeek - b.dayOfWeek),
-    blockedSlots: store.blockedSlots
+      .map((rule) => ({
+        id: rule.id,
+        businessId: rule.businessId,
+        dayOfWeek: rule.dayOfWeek,
+        startTime: rule.startTime,
+        endTime: rule.endTime,
+        active: rule.active,
+      })),
+    store.blockedSlots
       .filter((slot) => slot.businessId === business.id)
-      .sort((a, b) => `${a.blockedDate}T${a.startTime}`.localeCompare(`${b.blockedDate}T${b.startTime}`)),
-  };
+      .map((slot) => ({
+        id: slot.id,
+        businessId: slot.businessId,
+        blockedDate: slot.blockedDate,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        reason: slot.reason,
+      }))
+  );
 }
 
 export async function getLocalAdminSettingsData(activeBusinessSlug?: string | null) {
@@ -1579,20 +1560,21 @@ export async function getLocalAdminSettingsData(activeBusinessSlug?: string | nu
   const business = getAdminBusiness(store, activeBusinessSlug);
   const profile = buildBusinessPublicProfile(business);
 
-  return {
-    businessName: business.name,
-    businessSlug: business.slug,
-    templateSlug: business.templateSlug ?? business.slug,
-    phone: business.phone,
-    email: business.email,
-    address: business.address,
-    timezone: business.timezone,
-    publicUrl: `/${business.slug}`,
-    profile,
-    cancellationPolicy: business.cancellationPolicy,
-    mpConnected: business.mpConnected ?? false,
-    mpCollectorId: business.mpCollectorId,
-  };
+  return buildAdminSettingsView(
+    {
+      name: business.name,
+      slug: business.slug,
+      templateSlug: business.templateSlug,
+      phone: business.phone,
+      email: business.email,
+      address: business.address,
+      timezone: business.timezone,
+      cancellationPolicy: business.cancellationPolicy,
+      mpConnected: business.mpConnected,
+      mpCollectorId: business.mpCollectorId,
+    },
+    profile
+  );
 }
 
 /**

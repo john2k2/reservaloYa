@@ -74,6 +74,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [x] Se valido el workflow real en GitHub Actions para la rama `codex/eng-03-ci-smoke`, cerrando ENG-03 con evidencia de ejecucion remota en verde.
 - [x] Se revalido `npm run test:coverage` localmente con thresholds en verde y se agrego un job `coverage-thresholds` en GitHub Actions para que la cobertura minima falle en remoto si se degrada.
 - [x] Se valido en GitHub Actions real el workflow con el job `coverage-thresholds` en verde para la rama `codex/eng-03-ci-smoke`, cerrando ENG-04.
+- [x] Se extrajo `src/server/admin-views-domain.ts` para compartir entre `local-store` y `pocketbase-store` las proyecciones admin de bookings, customers, services, availability y settings, con tests dedicados en `src/server/admin-views-domain.test.ts`.
 
 ---
 
@@ -84,6 +85,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 
 ### Bloque 2 - hardening
 - [ ] Seguir extrayendo helpers compartidos de bookings, customers y availability fuera de `local-store` y `pocketbase-store`
+- [ ] Seguir extrayendo slices compartidas del dashboard/admin shell o persistencia de Mercado Pago para acercar el cierre de ENG-05
 - [ ] Seguir migrando `console.*` de callbacks, notificaciones y pagos al logger comun
 
 ---

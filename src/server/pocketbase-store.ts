@@ -58,6 +58,13 @@ import {
   buildBookingConfirmationView,
   buildManageBookingView,
 } from "@/server/bookings-domain";
+import {
+  buildAdminAvailabilityView,
+  buildAdminBookingsView,
+  buildAdminCustomersView,
+  buildAdminServicesView,
+  buildAdminSettingsView,
+} from "@/server/admin-views-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 type PocketBaseListOptions = {
@@ -975,46 +982,26 @@ export async function getPocketBaseAdminBookingsData(
   }
 ) {
   const pb = await getAdminClient();
-  const query = filters?.q?.trim().toLocaleLowerCase("es-AR") ?? "";
   const bookings = await listPocketBaseRecords<BookingRecord>("bookings", {
     expand: "customer,service",
     sort: "bookingDate,startTime",
     filter: pb.filter("business = {:business}", { business: businessId }),
   });
 
-  return bookings
-    .map((booking) => ({
+  return buildAdminBookingsView(
+    bookings.map((booking) => ({
       id: booking.id,
-      customerName:
-        (booking.expand?.customer as CustomerRecord | undefined)?.fullName ?? "Cliente",
-      phone: (booking.expand?.customer as CustomerRecord | undefined)?.phone ?? "",
-      serviceName: (booking.expand?.service as ServiceRecord | undefined)?.name ?? "Servicio",
+      customerName: (booking.expand?.customer as CustomerRecord | undefined)?.fullName,
+      phone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
+      serviceName: (booking.expand?.service as ServiceRecord | undefined)?.name,
       bookingDate: booking.bookingDate,
       startTime: booking.startTime,
       status: booking.status,
-      statusLabel: formatStatus(booking.status),
-      notes: booking.notes ?? "",
-    }))
-    .filter((booking) => {
-      if (filters?.status && booking.status !== filters.status) {
-        return false;
-      }
-
-      if (filters?.date && booking.bookingDate !== filters.date) {
-        return false;
-      }
-
-      if (
-        query &&
-        !`${booking.customerName} ${booking.phone} ${booking.serviceName}`
-          .toLocaleLowerCase("es-AR")
-          .includes(query)
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+      notes: booking.notes,
+    })),
+    filters,
+    formatStatus
+  );
 }
 
 export async function updatePocketBaseAdminBooking(input: {
@@ -1112,7 +1099,6 @@ export async function updatePocketBaseAdminBooking(input: {
 
 export async function getPocketBaseAdminCustomersData(businessId: string, query?: string) {
   const pb = await getAdminClient();
-  const normalizedQuery = query?.trim().toLocaleLowerCase("es-AR") ?? "";
   const [customers, bookings] = await Promise.all([
     listPocketBaseRecords<CustomerRecord>("customers", {
       sort: "fullName",
@@ -1122,33 +1108,23 @@ export async function getPocketBaseAdminCustomersData(businessId: string, query?
       filter: pb.filter("business = {:business}", { business: businessId }),
     }),
   ]);
-  const businessCustomers = customers.filter((customer) => {
-    if (!normalizedQuery) {
-      return true;
-    }
 
-    return [customer.fullName, customer.phone, customer.email]
-      .filter(Boolean)
-      .some((value) => String(value).toLocaleLowerCase("es-AR").includes(normalizedQuery));
-  });
-  const businessBookings = bookings;
-
-  return businessCustomers.map((customer) => {
-    const customerBookings = businessBookings.filter((booking) => booking.customer === customer.id);
-    const lastBooking = customerBookings
-      .slice()
-      .sort((a, b) => `${b.bookingDate}T${b.startTime}`.localeCompare(`${a.bookingDate}T${a.startTime}`))[0];
-
-    return {
+  return buildAdminCustomersView(
+    customers.map((customer) => ({
       id: customer.id,
       fullName: customer.fullName,
       phone: customer.phone,
-      email: customer.email ?? "",
-      notes: customer.notes ?? "",
-      bookingsCount: customerBookings.length,
-      lastBookingDate: lastBooking?.bookingDate ?? null,
-    };
-  });
+      email: customer.email,
+      notes: customer.notes,
+      createdAt: customer.created,
+    })),
+    bookings.map((booking) => ({
+      customerId: booking.customer,
+      bookingDate: booking.bookingDate,
+      startTime: booking.startTime,
+    })),
+    query
+  );
 }
 
 export async function getPocketBaseAdminServicesData(businessId: string) {
@@ -1158,16 +1134,18 @@ export async function getPocketBaseAdminServicesData(businessId: string) {
     filter: pb.filter("business = {:business}", { business: businessId }),
   })).filter(isActiveRecord);
 
-  return services.map((service) => ({
-    id: service.id,
-    name: service.name,
-    description: service.description ?? "",
-    durationMinutes: Number(service.durationMinutes),
-    price: service.price ?? null,
-    featured: Boolean(service.featured),
-    featuredLabel: service.featuredLabel ?? "",
-    priceLabel: toMoney(service.price),
-  }));
+  return buildAdminServicesView(
+    services.map((service) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      durationMinutes: Number(service.durationMinutes),
+      price: service.price ?? null,
+      featured: service.featured,
+      featuredLabel: service.featuredLabel,
+    })),
+    toMoney
+  );
 }
 
 export async function upsertPocketBaseService(input: {
@@ -1266,11 +1244,9 @@ export async function getPocketBaseAdminAvailabilityData(businessId: string) {
       filter: pb.filter("business = {:business}", { business: businessId }),
     }),
   ]);
-  const businessRules = rules;
-  const businessBlockedSlots = blockedSlots;
 
-  return {
-    rules: businessRules.map((rule) => ({
+  return buildAdminAvailabilityView(
+    rules.map((rule) => ({
       id: rule.id,
       businessId: rule.business,
       dayOfWeek: rule.dayOfWeek,
@@ -1278,15 +1254,15 @@ export async function getPocketBaseAdminAvailabilityData(businessId: string) {
       endTime: rule.endTime,
       active: Boolean(rule.active),
     })),
-    blockedSlots: businessBlockedSlots.map((slot) => ({
+    blockedSlots.map((slot) => ({
       id: slot.id,
       businessId: slot.business,
       blockedDate: slot.blockedDate,
       startTime: slot.startTime,
       endTime: slot.endTime,
-      reason: slot.reason ?? "",
-    })),
-  };
+      reason: slot.reason,
+    }))
+  );
 }
 
 export async function upsertPocketBaseAvailabilityRule(input: {
@@ -1456,20 +1432,21 @@ export async function removePocketBaseBlockedSlot(input: {
 export async function getPocketBaseAdminSettingsData(businessId: string) {
   const business = await getBusinessById(businessId);
 
-  return {
-    businessName: business.name,
-    businessSlug: business.slug,
-    templateSlug: business.templateSlug ?? business.slug,
-    phone: business.phone ?? "",
-    email: business.email ?? "",
-    address: business.address ?? "",
-    timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
-    publicUrl: `/${business.slug}`,
-    profile: buildBusinessPublicProfile(business),
-    cancellationPolicy: business.cancellationPolicy,
-    mpConnected: business.mpConnected ?? false,
-    mpCollectorId: business.mpCollectorId,
-  };
+  return buildAdminSettingsView(
+    {
+      name: business.name,
+      slug: business.slug,
+      templateSlug: business.templateSlug,
+      phone: business.phone,
+      email: business.email,
+      address: business.address,
+      timezone: business.timezone,
+      cancellationPolicy: business.cancellationPolicy,
+      mpConnected: business.mpConnected,
+      mpCollectorId: business.mpCollectorId,
+    },
+    buildBusinessPublicProfile(business)
+  );
 }
 
 export async function getPocketBaseOnboardingData(businessId?: string) {
