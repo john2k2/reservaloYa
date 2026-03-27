@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBookingPaymentPatch, buildBusinessPaymentSettings } from "@/server/payments-domain";
+import {
+  buildBookingPaymentPatch,
+  buildBusinessMercadoPagoTokenClearPatch,
+  buildBusinessMercadoPagoTokenPatch,
+  buildBusinessPaymentSettings,
+  normalizeMercadoPagoCollectorId,
+} from "@/server/payments-domain";
 
 describe("payments domain helpers", () => {
   it("builds normalized business payment settings", () => {
@@ -40,6 +46,42 @@ describe("payments domain helpers", () => {
       paymentProvider: "mercadopago",
       paymentExternalId: "pay-1",
       status: "confirmed",
+    });
+  });
+
+  it("normalizes collector ids and builds Mercado Pago token patches", () => {
+    expect(normalizeMercadoPagoCollectorId(" collector-1 ")).toBe("collector-1");
+    expect(normalizeMercadoPagoCollectorId("   ")).toBeNull();
+
+    expect(
+      buildBusinessMercadoPagoTokenPatch({
+        mpAccessToken: "access-1",
+        mpRefreshToken: "refresh-1",
+        mpCollectorId: "collector-1",
+        mpTokenExpiresAt: "2026-03-27T12:00:00.000Z",
+      })
+    ).toEqual({
+      mpAccessToken: "access-1",
+      mpRefreshToken: "refresh-1",
+      mpCollectorId: "collector-1",
+      mpTokenExpiresAt: "2026-03-27T12:00:00.000Z",
+      mpConnected: true,
+    });
+
+    expect(buildBusinessMercadoPagoTokenClearPatch(undefined)).toEqual({
+      mpAccessToken: undefined,
+      mpRefreshToken: undefined,
+      mpCollectorId: undefined,
+      mpTokenExpiresAt: undefined,
+      mpConnected: false,
+    });
+
+    expect(buildBusinessMercadoPagoTokenClearPatch("")).toEqual({
+      mpAccessToken: "",
+      mpRefreshToken: "",
+      mpCollectorId: "",
+      mpTokenExpiresAt: "",
+      mpConnected: false,
     });
   });
 });

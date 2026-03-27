@@ -50,6 +50,7 @@ export type CreatePaymentPreferenceInput = {
   serviceName: string;
   customerEmail?: string;
   customerName: string;
+  customerPhone?: string;
   priceAmount: number;  // ARS
   currency?: string;    // default: ARS
 };
@@ -82,6 +83,9 @@ async function createPreferenceWithClient(
 
     const preference = new Preference(client);
 
+    const [firstName, ...rest] = input.customerName.trim().split(" ");
+    const lastName = rest.join(" ") || firstName;
+
     const response = await preference.create({
       body: {
         items: [
@@ -89,6 +93,7 @@ async function createPreferenceWithClient(
             id: input.bookingId,
             title: `${input.serviceName} – ${input.businessName}`,
             description: `Reserva para ${input.customerName}`,
+            category_id: "services",
             quantity: 1,
             unit_price: input.priceAmount,
             currency_id: currency,
@@ -96,8 +101,12 @@ async function createPreferenceWithClient(
         ],
         payer: input.customerEmail
           ? {
-              name: input.customerName,
+              name: firstName,
+              surname: lastName,
               email: input.customerEmail,
+              ...(input.customerPhone
+                ? { phone: { number: input.customerPhone } }
+                : {}),
             }
           : undefined,
         back_urls: {
@@ -154,6 +163,68 @@ export async function createPaymentPreferenceForBusiness(
 ): Promise<PaymentPreferenceResult> {
   return createPreferenceWithClient(getMPClient(accessToken), input);
 }
+
+// ─── Subscription Preference ─────────────────────────────────────────────────
+
+export type CreateSubscriptionPreferenceInput = {
+  businessId: string;
+  priceAmount: number; // ARS
+};
+
+/**
+ * Crea una preferencia de pago para la suscripcion de la plataforma.
+ * Usa el token global de MP (la plataforma cobra, no el negocio).
+ */
+export async function createSubscriptionPreference(
+  input: CreateSubscriptionPreferenceInput
+): Promise<PaymentPreferenceResult> {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const client = getMPClient();
+    const preference = new Preference(client);
+
+    const response = await preference.create({
+      body: {
+        items: [
+          {
+            id: `sub-${input.businessId}`,
+            title: "ReservaYa - Suscripcion mensual",
+            description: "Acceso al panel de gestion de turnos",
+            quantity: 1,
+            unit_price: input.priceAmount,
+            currency_id: "ARS",
+          },
+        ],
+        back_urls: {
+          success: `${appUrl}/admin/subscription/success`,
+          failure: `${appUrl}/admin/subscription/pay?error=payment_failed`,
+          pending: `${appUrl}/admin/subscription/pay?error=payment_pending`,
+        },
+        auto_return: "approved",
+        external_reference: input.businessId,
+        notification_url: `${appUrl}/api/payments/webhook`,
+      },
+    });
+
+    if (!response.id) {
+      return { ok: false, error: "MercadoPago no devolvio preferencia valida" };
+    }
+
+    const checkoutUrl = response.init_point ?? response.sandbox_init_point ?? "";
+
+    return {
+      ok: true,
+      preferenceId: response.id,
+      checkoutUrl,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error desconocido";
+    logger.error("createSubscriptionPreference error", err);
+    return { ok: false, error: message };
+  }
+}
+
+// ─── Token Refresh ───────────────────────────────────────────────────────────
 
 export async function refreshMercadoPagoAccessToken(
   refreshToken: string

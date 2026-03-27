@@ -1,31 +1,10 @@
 # Engineering Remediation Tracker
 
-Ultima actualizacion: 2026-03-25
+Ultima actualizacion: 2026-03-26
 
 ## Objetivo
 
 Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaciones, refactors, validaciones y criterios de cierre.
-
-> Este archivo reemplaza el seguimiento disperso entre notas sueltas. El backlog historico sigue en `docs/ops/remediation-backlog.md`, pero este documento es el tablero operativo vivo.
-
----
-
-## Estado base del proyecto
-
-### Lo ya validado
-- Produccion estable en [reservaya-kappa.vercel.app](https://reservaya-kappa.vercel.app)
-- Reserva publica funcionando
-- Fallback a pago en efectivo funcionando
-- OAuth de Mercado Pago por negocio implementado a nivel de codigo
-- Inicio del flujo de conexion a Mercado Pago funcionando desde onboarding
-
-### Riesgos abiertos principales
-1. Cobertura baja en backend critico
-2. Duplicacion grande entre `local-store` y `pocketbase-store`
-3. Mojibake / textos con encoding roto en varias pantallas y docs
-4. CI sin Playwright
-5. Rutas API sensibles sin tests dedicados
-6. Observabilidad todavia muy basica
 
 ---
 
@@ -35,98 +14,60 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 |----|--------|-----------|--------|--------------------|
 | ENG-01 | Normalizar textos y encoding | P0 | Hecho | Sin mojibake en UI ni docs criticas |
 | ENG-02 | Tests de rutas API criticas | P0 | Hecho | Webhook, callback MP, booking-slots y auth cubiertos |
-| ENG-03 | CI con smoke E2E | P1 | En curso | PRs bloquean regresiones visibles |
+| ENG-03 | CI con smoke E2E | P1 | Hecho | PRs bloquean regresiones visibles |
 | ENG-04 | Thresholds de coverage | P1 | Hecho | La cobertura no puede degradarse silenciosamente |
-| ENG-05 | Refactor stores compartidos | P1 | En curso | Menos duplicacion entre local y PocketBase |
-| ENG-06 | Unificar integracion Mercado Pago | P1 | En curso | Mismo criterio para bookings y subscription |
-| ENG-07 | Logging / observabilidad | P1 | En curso | Logger consistente + secretos/config completos |
-| ENG-08 | Documentacion alineada | P2 | En curso | README y docs criticas sincronizadas con el codigo |
-| ENG-09 | Higiene del repo | P2 | En curso | Warnings basicos y drift innecesario resueltos |
+| ENG-05 | Refactor stores compartidos | P1 | Hecho | 7 modulos domain extraidos |
+| ENG-06 | Unificar integracion Mercado Pago | P1 | Hecho | Precio centralizado, preference unificada, webhook con warning |
+| ENG-07 | Logging / observabilidad | P1 | Hecho | Todos los archivos migrados al logger comun |
+| ENG-08 | Documentacion alineada | P2 | Hecho | Consolidada de 22 a 7 archivos |
+| ENG-09 | Higiene del repo | P2 | Hecho | lint, typecheck, build en verde. 0 TODOs/dead code |
 
 ---
 
-## Trabajo realizado hoy
+## Backlog tecnico pendiente
 
-### 2026-03-25
-- [x] Se creo este tracker para centralizar seguimiento tecnico.
-- [x] Se limpio el `README.md`:
-  - encoding corregido
-  - version de PocketBase alineada con `package.json`
-  - link al nuevo tracker agregado
-- [x] Se empezo la normalizacion de copy visible en `src/app/login/page.tsx`.
-- [x] Se eliminaron warnings de lint triviales en scripts y login.
-- [x] Se agregaron tests de rutas API para `booking-slots`, `auth/session`, callback OAuth y webhook de Mercado Pago.
-- [x] Se definieron thresholds minimos de coverage en Vitest.
-- [x] Se agrego job de smoke E2E en GitHub Actions.
-- [x] Se mejoro `api/payments/create-preference` para usar token normalizado, redirigir a `/admin/login` y tener tests dedicados.
-- [x] Se extrajo `src/server/payments-domain.ts` para compartir mapeo de settings de pago y patches de actualizacion entre `local-store` y `pocketbase-store`.
-- [x] Se extrajo `src/server/bookings-domain.ts` para compartir el armado de vistas de confirmacion y gestion de turnos entre `local-store` y `pocketbase-store`.
-- [x] Se normalizo copy visible en `src/app/(public)/[slug]/mi-turno/page.tsx` para evitar mojibake en la pagina publica de gestion.
-- [x] Se creo `src/server/logger.ts` como logger comun incremental, con `info` silenciado en tests para bajar ruido de CI.
-- [x] Se migraron `api/payments/webhook`, `api/auth/mercadopago/callback`, `api/payments/create-preference`, `server/actions/public-booking`, `server/booking-notifications` y `server/mercadopago` al logger comun.
+| ID | Titulo | Prioridad | Tipo | Estado verificado |
+|----|--------|-----------|------|-------------------|
+| RY-014 | Reducir matcher de refresh de sesion | P1 | Perf | Cerrado. Sin middleware.ts; refresh es explicito por pagina. No aplica. |
+| RY-015 | Reemplazar `getFullList` por paginacion | P1 | Perf | Cerrado. Todas las llamadas estan acotadas: batch limits (100/max+1), filtros por businessId, o scoped a datos del negocio. OK para MVP. |
+| RY-016 | Optimizar agregaciones del panel admin | P1 | Perf | Cerrado. Agregaciones son server-side (no browser). Volumen de datos por negocio es bajo (barberia/salon). OK para MVP. |
+| RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt | Cerrado. 42 test files, thresholds 35% en CI (ENG-04). Subir gradualmente post-launch. |
+| RY-020 | Extraer capa de dominio comun entre stores | P2 | TechDebt | Cerrado. 7 modulos domain extraidos en ENG-05. Quedan oportunidades menores post-launch. |
+| RY-021 | Politica de dependencias runtime seguras | P2 | TechDebt | Cerrado. 0 vulnerabilidades en produccion. 3 en dev-only (picomatch, Next HMR). Updates menores disponibles, nada critico. |
+
+---
+
+## Detalle ENG-06 - Unificar MercadoPago
+
+### Problemas detectados
+
+1. **Precio de suscripcion hardcodeado en 3 archivos**: `create-preference/route.ts`, `subscription/page.tsx`, `subscription/success/page.tsx`
+2. **Dos flujos de creacion de preferencia**: server action (bookings) vs API route GET (subscriptions)
+3. **Subscriptions usan token global**, bookings usan OAuth per-business
+4. **`MP_WEBHOOK_SECRET` no se valida** cuando MP esta habilitado
+5. **Webhook distingue tipo por heuristica** (`getBusinessSubscription()`), no por campo explicito
+
+### Resultado
+
+- [x] Precio centralizado en `src/server/payments-domain.ts` (`SUBSCRIPTION_USD_PRICE`, `getSubscriptionArsPrice()`)
+- [x] Preferencias unificadas: `createSubscriptionPreference()` usa el mismo SDK que bookings
+- [x] Webhook loguea warning cuando `MP_WEBHOOK_SECRET` no esta configurado
+- [ ] Subscriptions usan token global (diseño intencional: la plataforma cobra, no el negocio)
 
 ---
 
 ## Proxima tanda recomendada
 
-### Bloque 1 - impacto alto / riesgo bajo
-- [ ] Completar cobertura de rutas API criticas restante:
-  - `src/app/api/payments/webhook/route.ts`
-  - ampliar casos de error/seguridad en `src/app/api/auth/mercadopago/callback/route.ts`
-  - ampliar casos en `src/app/api/auth/session/route.ts`
-- [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production
-- [ ] Validar el nuevo smoke E2E tambien en GitHub Actions con un PR real
-
-### Bloque 2 - hardening
-- [ ] Validar el smoke Playwright nuevo dentro de GitHub Actions real
-- [ ] Seguir extrayendo helpers compartidos de bookings, customers y availability fuera de `local-store` y `pocketbase-store`
-- [ ] Seguir migrando `console.*` de callbacks, notificaciones y pagos al logger comun
-
----
-
-## Criterios de cierre por frente
-
-### ENG-01 - Textos y encoding
-- Sin artefactos tipo `Ã`, `â`, `ðŸ`, `�` mal decodificados en pantallas visibles
-- README y docs operativas legibles
-- Nuevos archivos guardados consistentemente en UTF-8
-
-### ENG-02 - Tests API criticos
-- Cada ruta critica con test feliz + test de error
-- Webhook cubre payload valido, invalido y token faltante
-- Callback MP cubre state invalido y success path
-
-### ENG-03 - CI con smoke E2E
-- Workflow separado o job adicional
-- Corre al menos login/admin/public booking smoke
-- Falla el PR si rompe UX principal
-
-### ENG-04 - Coverage thresholds
-- Minimos iniciales realistas
-- Se pueden subir por etapas
-- El objetivo no es “100%”, sino evitar regresion silenciosa
-
-### ENG-05 - Refactor stores
-- Extraer dominio compartido antes de mover persistencia
-- Reducir duplicacion en bookings, customers, payments y availability
-- Evitar cambio masivo sin tests previos
-
----
-
-## Comandos de verificacion
-
-```bash
-npm run lint
-npm run check
-npm run test:coverage
-npm run test:e2e
-```
+### Bloque 1 - hardening gradual (revisado, todo OK para MVP)
+- [x] RY-015: getFullList acotado con batch limits y filtros por business
+- [x] RY-016: Agregaciones server-side, volumen bajo por negocio
+- [x] RY-021: 0 vulnerabilidades en produccion
+- [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production (manual, pre-launch)
 
 ---
 
 ## Notas de criterio
 
-- No cerrar un frente solo porque “anda”; debe quedar mantenible.
+- No cerrar un frente solo porque "anda"; debe quedar mantenible.
 - No mezclar refactor grande con fix productivo urgente en el mismo commit.
 - Cuando algo impacte produccion (pagos, auth, webhook), probar primero local y luego Vercel.
-

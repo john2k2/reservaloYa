@@ -5,8 +5,10 @@ import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocke
 import { getBusinessSubscription } from "@/server/pocketbase-store";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getMPPaymentInfo, isMercadoPagoConfigured } from "@/server/mercadopago";
+import { getSubscriptionArsPrice } from "@/server/payments-domain";
+import { createLogger } from "@/server/logger";
 
-const USD_PRICE = 17;
+const logger = createLogger("Subscription Success");
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +54,7 @@ export default async function SubscriptionSuccessPage({ searchParams }: PageProp
         }
       }
     } catch (err) {
-      console.error("[Subscription Success] Error verifying payment:", err);
+      logger.error("Error verifying payment", err);
     }
   }
 
@@ -83,7 +85,7 @@ export default async function SubscriptionSuccessPage({ searchParams }: PageProp
   }
 
   const blueRate = await getBlueDollarRate();
-  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1435;
+  const arsPrice = getSubscriptionArsPrice(blueRate);
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   return (

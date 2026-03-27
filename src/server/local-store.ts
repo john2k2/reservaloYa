@@ -1,12 +1,9 @@
 import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { CalendarClock, ChartColumnBig, Percent } from "lucide-react";
-
-import { dashboardHighlights, demoBusinessOptions } from "@/constants/site";
+import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import {
-  addMinutes,
   buildBookingDateOptions,
   findNextBookingDate,
   getDayOfWeek,
@@ -40,7 +37,6 @@ import {
   getBusinessServices,
   getLocalBookingDetails,
   getPrimaryBusiness,
-  fromMinutes,
   type LegacyLocalStore,
   type LocalAnalyticsEventName,
   type LocalBooking,
@@ -49,9 +45,7 @@ import {
   type LocalStore,
   normalizeServiceName,
   normalizeStore,
-  overlaps,
   type RemoveLocalBlockedSlotInput,
-  toMinutes,
   type UpdateLocalAdminBookingInput,
   type UpdateLocalBusinessBrandingInput,
   type UpdateLocalBusinessInput,
@@ -70,13 +64,39 @@ import {
 } from "@/server/booking-notifications";
 import {
   buildBookingPaymentPatch,
+  buildBusinessMercadoPagoTokenClearPatch,
+  buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
+  normalizeMercadoPagoCollectorId,
   type BookingPaymentUpdateInput,
 } from "@/server/payments-domain";
 import {
   buildBookingConfirmationView,
   buildManageBookingView,
 } from "@/server/bookings-domain";
+import {
+  buildBookingCustomerDetails,
+  buildBookingMutationFields,
+  buildBookingTimeWindow,
+  fitsBookingWithinAvailability,
+  hasBlockedSlotConflict,
+  hasBookingConflict,
+} from "@/server/booking-mutations-domain";
+import {
+  buildAdminAvailabilityView,
+  buildAdminBookingsView,
+  buildAdminCustomersView,
+  buildAdminServicesView,
+  buildAdminSettingsView,
+} from "@/server/admin-views-domain";
+import {
+  buildAdminBusinessOptionsView,
+  buildAdminDashboardBookingPreview,
+  buildAdminDashboardMetrics,
+  buildAdminDashboardNotifications,
+  buildAdminDashboardView,
+  buildAdminShellView,
+} from "@/server/admin-dashboard-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 const dataDir = path.join(process.cwd(), "data");
@@ -192,7 +212,7 @@ export async function getLocalBusinessPaymentSettings(slug: string) {
 }
 
 export async function getLocalBusinessPaymentSettingsByCollectorId(collectorId: string) {
-  const normalizedCollectorId = collectorId.trim();
+  const normalizedCollectorId = normalizeMercadoPagoCollectorId(collectorId);
 
   if (!normalizedCollectorId) {
     return null;
@@ -295,35 +315,29 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           throw new Error("Service not found");
         }
 
-        const startMinutes = toMinutes(input.startTime);
-        const endMinutes = startMinutes + service.durationMinutes;
-        const endTime = fromMinutes(endMinutes);
+        const bookingWindow = buildBookingTimeWindow(input.startTime, service.durationMinutes);
 
-        const blockedConflict = store.blockedSlots.some(
-          (slot) =>
-            slot.businessId === business.id &&
-            slot.blockedDate === input.bookingDate &&
-            overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+        const blockedConflict = hasBlockedSlotConflict(
+          store.blockedSlots.filter(
+            (slot) => slot.businessId === business.id && slot.blockedDate === input.bookingDate
+          ),
+          bookingWindow
         );
 
         if (blockedConflict) {
           throw new Error("Ese horario esta bloqueado.");
         }
 
-        const bookingConflict = store.bookings.some(
-          (booking) =>
-            booking.id !== input.rescheduleBookingId &&
-            booking.businessId === business.id &&
-            booking.bookingDate === input.bookingDate &&
-            (booking.status === "pending" ||
-              booking.status === "pending_payment" ||
-              booking.status === "confirmed") &&
-            overlaps(
-              startMinutes,
-              endMinutes,
-              toMinutes(booking.startTime),
-              toMinutes(booking.endTime)
-            )
+        const bookingConflict = hasBookingConflict(
+          store.bookings.filter(
+            (booking) =>
+              booking.businessId === business.id && booking.bookingDate === input.bookingDate
+          ),
+          {
+            ...bookingWindow,
+            excludeBookingId: input.rescheduleBookingId,
+            allowedStatuses: ["pending", "pending_payment", "confirmed"],
+          }
         );
 
         if (bookingConflict) {
@@ -338,17 +352,12 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           customer = {
             id: randomUUID(),
             businessId: business.id,
-            fullName: input.fullName,
-            phone: input.phone ?? "",
-            email: input.email,
-            notes: input.notes ?? "",
+            ...buildBookingCustomerDetails(input),
             createdAt: new Date().toISOString(),
           };
           store.customers.push(customer);
         } else {
-          customer.fullName = input.fullName;
-          customer.phone = input.phone ?? customer.phone;
-          customer.notes = input.notes ?? customer.notes;
+          Object.assign(customer, buildBookingCustomerDetails(input, customer));
         }
 
         const existingBooking = input.rescheduleBookingId
@@ -365,11 +374,16 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
         if (existingBooking) {
           existingBooking.customerId = customer.id;
           existingBooking.serviceId = service.id;
-          existingBooking.bookingDate = input.bookingDate;
-          existingBooking.startTime = input.startTime;
-          existingBooking.endTime = endTime;
-          existingBooking.status = "pending";
-          existingBooking.notes = input.notes ?? "";
+          Object.assign(
+            existingBooking,
+            buildBookingMutationFields({
+              bookingDate: input.bookingDate,
+              startTime: input.startTime,
+              durationMinutes: service.durationMinutes,
+              status: "pending",
+              notes: input.notes,
+            })
+          );
 
           return existingBooking.id;
         }
@@ -379,19 +393,15 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
           businessId: business.id,
           customerId: customer.id,
           serviceId: service.id,
-          bookingDate: input.bookingDate,
-          startTime: input.startTime,
-          endTime,
-          status: input.initialStatus ?? "pending",
-          notes: input.notes ?? "",
+          ...buildBookingMutationFields({
+            bookingDate: input.bookingDate,
+            startTime: input.startTime,
+            durationMinutes: service.durationMinutes,
+            status: input.initialStatus,
+            notes: input.notes,
+            paymentPreferenceId: input.paymentPreferenceId,
+          }),
           createdAt: new Date().toISOString(),
-          ...(input.paymentPreferenceId
-            ? {
-                paymentProvider: "mercadopago" as const,
-                paymentPreferenceId: input.paymentPreferenceId,
-                paymentStatus: "pending" as const,
-              }
-            : {}),
         };
 
         store.bookings.unshift(booking);
@@ -901,58 +911,56 @@ export async function updateLocalAdminBooking(input: UpdateLocalAdminBookingInpu
     }
 
     const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-    const startMinutes = toMinutes(input.startTime);
-    const endTime = addMinutes(input.startTime, service.durationMinutes);
-    const endMinutes = toMinutes(endTime);
+    const bookingWindow = buildBookingTimeWindow(input.startTime, service.durationMinutes);
     const activeRules = store.availabilityRules.filter(
       (rule) =>
         rule.businessId === business.id &&
         rule.active &&
         rule.dayOfWeek === selectedDayOfWeek
     );
-    const fitsWithinAvailability = activeRules.some(
-      (rule) =>
-        startMinutes >= toMinutes(rule.startTime) && endMinutes <= toMinutes(rule.endTime)
-    );
+    const fitsWithinAvailability = fitsBookingWithinAvailability(activeRules, bookingWindow);
 
     if (!fitsWithinAvailability) {
       throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
     }
 
-    const blockedConflict = store.blockedSlots.some(
-      (slot) =>
-        slot.businessId === business.id &&
-        slot.blockedDate === input.bookingDate &&
-        overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
+    const blockedConflict = hasBlockedSlotConflict(
+      store.blockedSlots.filter(
+        (slot) => slot.businessId === business.id && slot.blockedDate === input.bookingDate
+      ),
+      bookingWindow
     );
 
     if (blockedConflict) {
       throw new Error("Ese horario esta bloqueado.");
     }
 
-    const bookingConflict = store.bookings.some(
-      (candidate) =>
-        candidate.id !== booking.id &&
-        candidate.businessId === business.id &&
-        candidate.bookingDate === input.bookingDate &&
-        (candidate.status === "pending" || candidate.status === "confirmed") &&
-        overlaps(
-          startMinutes,
-          endMinutes,
-          toMinutes(candidate.startTime),
-          toMinutes(candidate.endTime)
-        )
+    const bookingConflict = hasBookingConflict(
+      store.bookings.filter(
+        (candidate) =>
+          candidate.businessId === business.id && candidate.bookingDate === input.bookingDate
+      ),
+      {
+        ...bookingWindow,
+        excludeBookingId: booking.id,
+        allowedStatuses: ["pending", "confirmed"],
+      }
     );
 
     if (bookingConflict) {
       throw new Error("Ese horario ya no esta disponible.");
     }
 
-    booking.bookingDate = input.bookingDate;
-    booking.startTime = input.startTime;
-    booking.endTime = endTime;
-    booking.status = input.status;
-    booking.notes = input.notes;
+    Object.assign(
+      booking,
+      buildBookingMutationFields({
+        bookingDate: input.bookingDate,
+        startTime: input.startTime,
+        durationMinutes: service.durationMinutes,
+        status: input.status,
+        notes: input.notes,
+      })
+    );
 
     return booking.id;
   });
@@ -1337,21 +1345,20 @@ export async function getLocalAdminShellData(activeBusinessSlug?: string | null)
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return {
+  return buildAdminShellView({
     demoMode: true,
     profileName: "Demo Owner",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "demo@reservaya.app",
-    businessOptions: store.businesses
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((item) => ({
+    businessOptions: buildAdminBusinessOptionsView(
+      store.businesses.map((item) => ({
         slug: item.slug,
         name: item.name,
-        templateSlug: item.templateSlug ?? item.slug,
-      })),
-  };
+        templateSlug: item.templateSlug,
+      }))
+    ),
+  });
 }
 
 export async function getLocalAdminDashboardData(activeBusinessSlug?: string | null) {
@@ -1360,87 +1367,58 @@ export async function getLocalAdminDashboardData(activeBusinessSlug?: string | n
   const customers = getBusinessCustomers(store, business.id);
   const analytics = buildLocalAnalyticsSummary(store, business.id);
   const reminders = buildLocalReminderSummary(store, business.id);
-  const bookings = getBusinessBookings(store, business.id)
-    .slice()
-    .sort((a, b) => {
-      const left = `${a.bookingDate}T${a.startTime}`;
-      const right = `${b.bookingDate}T${b.startTime}`;
-      return left.localeCompare(right);
-    })
-    .slice(0, 5)
-    .map((booking) => {
+
+  const pendingBookings = getBusinessBookings(store, business.id).filter(
+    (booking) => booking.status === "pending"
+  ).length;
+  const bookings = buildAdminDashboardBookingPreview(
+    getBusinessBookings(store, business.id).map((booking) => {
       const customer = customers.find((candidate) => candidate.id === booking.customerId);
       const service = store.services.find((candidate) => candidate.id === booking.serviceId);
 
       return {
         id: booking.id,
-        name: customer?.fullName ?? "Cliente",
-        service: service?.name ?? "Servicio",
-        date: booking.bookingDate,
-        time: booking.startTime,
-        status: formatBookingStatus(booking.status),
+        customerName: customer?.fullName,
+        serviceName: service?.name,
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+        status: booking.status,
       };
-    });
+    }),
+    formatBookingStatus
+  );
+  const notifications = buildAdminDashboardNotifications({
+    pendingBookings,
+    remindersPending: reminders.pending,
+    remindersProviderReady: reminders.providerReady,
+    bookingsCreated: analytics.bookingsCreated,
+    visits: analytics.visits,
+    topSource: analytics.topSource,
+  });
+  const metrics = buildAdminDashboardMetrics({
+    visits: analytics.visits,
+    ctaClicks: analytics.ctaClicks,
+    bookingsCreated: analytics.bookingsCreated,
+    conversionRate: analytics.conversionRate,
+    pendingBookings,
+    customersCount: customers.length,
+    customersHint: "Clientes guardados en modo local",
+    topCampaignLabel: analytics.topCampaign,
+    hasVisits: analytics.visits > 0,
+  });
 
-  const pendingBookings = getBusinessBookings(store, business.id).filter(
-    (booking) => booking.status === "pending"
-  ).length;
-  const notifications = [
-    pendingBookings > 0
-      ? `${pendingBookings} turnos pendientes de confirmar`
-      : "Sin turnos pendientes de confirmar",
-      reminders.pending > 0
-        ? reminders.providerReady
-          ? `${reminders.pending} recordatorios listos para enviar`
-          : `${reminders.pending} recordatorios listos cuando actives email o WhatsApp`
-        : "Sin recordatorios pendientes en las proximas 24 hs",
-    analytics.bookingsCreated > 0
-      ? `${analytics.bookingsCreated} reservas llegaron desde la web`
-      : "Todavia no se registran reservas web",
-    analytics.visits > 0
-      ? `Canal principal: ${analytics.topSource}`
-      : "Todavia no hay visitas registradas",
-  ];
-
-  return {
+  return buildAdminDashboardView({
     profileName: "Demo Owner",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "demo@reservaya.app",
     demoMode: true,
-    metrics: [
-      {
-        label: "Visitas publicas",
-        value: String(analytics.visits),
-        hint: `${analytics.ctaClicks} clics en reservar`,
-        icon: ChartColumnBig,
-      },
-      {
-        label: "Reservas creadas",
-        value: String(analytics.bookingsCreated),
-        hint: `${pendingBookings} pendientes de confirmar`,
-        icon: CalendarClock,
-      },
-      {
-        label: "Conversion web",
-        value: `${analytics.conversionRate}%`,
-        hint:
-          analytics.visits > 0
-            ? `Campana principal: ${analytics.topCampaign}`
-            : "Todavia sin visitas registradas",
-        icon: Percent,
-      },
-      {
-        ...dashboardHighlights[1],
-        value: String(customers.length),
-        hint: "Clientes guardados en modo local",
-      },
-    ],
+    metrics,
     bookings,
     analytics,
     reminders,
     notifications,
-  };
+  });
 }
 
 export async function getLocalAdminBookingsData(
@@ -1453,47 +1431,26 @@ export async function getLocalAdminBookingsData(
 ) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
-  const query = filters?.q?.trim().toLocaleLowerCase("es-AR") ?? "";
 
-  return getBusinessBookings(store, business.id)
-    .slice()
-    .sort((a, b) => `${a.bookingDate}T${a.startTime}`.localeCompare(`${b.bookingDate}T${b.startTime}`))
-    .map((booking) => {
+  return buildAdminBookingsView(
+    getBusinessBookings(store, business.id).map((booking) => {
       const customer = store.customers.find((candidate) => candidate.id === booking.customerId);
       const service = store.services.find((candidate) => candidate.id === booking.serviceId);
 
       return {
         id: booking.id,
-        customerName: customer?.fullName ?? "Cliente",
-        phone: customer?.phone ?? "",
-        serviceName: service?.name ?? "Servicio",
+        customerName: customer?.fullName,
+        phone: customer?.phone,
+        serviceName: service?.name,
         bookingDate: booking.bookingDate,
         startTime: booking.startTime,
         status: booking.status,
-        statusLabel: formatBookingStatus(booking.status),
         notes: booking.notes,
       };
-    })
-    .filter((booking) => {
-      if (filters?.status && booking.status !== filters.status) {
-        return false;
-      }
-
-      if (filters?.date && booking.bookingDate !== filters.date) {
-        return false;
-      }
-
-      if (
-        query &&
-        !`${booking.customerName} ${booking.phone} ${booking.serviceName}`
-          .toLocaleLowerCase("es-AR")
-          .includes(query)
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+    }),
+    filters,
+    formatBookingStatus
+  );
 }
 
 export async function getLocalAdminCustomersData(
@@ -1502,76 +1459,71 @@ export async function getLocalAdminCustomersData(
 ) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
-  const search = query?.trim().toLocaleLowerCase("es-AR") ?? "";
 
-  return getBusinessCustomers(store, business.id)
-    .slice()
-    .filter((customer) => {
-      if (!search) {
-        return true;
-      }
-
-      return [customer.fullName, customer.phone, customer.email]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase("es-AR").includes(search));
-    })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((customer) => {
-      const customerBookings = store.bookings.filter((booking) => booking.customerId === customer.id);
-      const lastBooking = customerBookings
-        .slice()
-        .sort((a, b) => `${b.bookingDate}T${b.startTime}`.localeCompare(`${a.bookingDate}T${a.startTime}`))[0];
-
-      return {
-        id: customer.id,
-        fullName: customer.fullName,
-        phone: customer.phone,
-        email: customer.email,
-        notes: customer.notes,
-        bookingsCount: customerBookings.length,
-        lastBookingDate: lastBooking?.bookingDate ?? null,
-      };
-    });
+  return buildAdminCustomersView(
+    getBusinessCustomers(store, business.id).map((customer) => ({
+      id: customer.id,
+      fullName: customer.fullName,
+      phone: customer.phone,
+      email: customer.email,
+      notes: customer.notes,
+      createdAt: customer.createdAt,
+    })),
+    store.bookings
+      .filter((booking) => booking.businessId === business.id)
+      .map((booking) => ({
+        customerId: booking.customerId,
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+      })),
+    query
+  );
 }
 
 export async function getLocalAdminServicesData(activeBusinessSlug?: string | null) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return getBusinessServices(store, business.id)
-    .slice()
-    .sort((a, b) => {
-      const featuredDelta = Number(Boolean(b.featured)) - Number(Boolean(a.featured));
-      if (featuredDelta !== 0) {
-        return featuredDelta;
-      }
-
-      return a.name.localeCompare(b.name);
-    })
-    .map((service) => ({
+  return buildAdminServicesView(
+    getBusinessServices(store, business.id).map((service) => ({
       id: service.id,
       name: service.name,
       description: service.description,
       durationMinutes: service.durationMinutes,
       price: service.price,
-      featured: Boolean(service.featured),
-      featuredLabel: service.featuredLabel ?? "",
-      priceLabel: formatMoney(service.price),
-    }));
+      featured: service.featured,
+      featuredLabel: service.featuredLabel,
+    })),
+    formatMoney
+  );
 }
 
 export async function getLocalAdminAvailabilityData(activeBusinessSlug?: string | null) {
   const store = await readStore();
   const business = getAdminBusiness(store, activeBusinessSlug);
 
-  return {
-    rules: store.availabilityRules
+  return buildAdminAvailabilityView(
+    store.availabilityRules
       .filter((rule) => rule.businessId === business.id)
-      .sort((a, b) => a.dayOfWeek - b.dayOfWeek),
-    blockedSlots: store.blockedSlots
+      .map((rule) => ({
+        id: rule.id,
+        businessId: rule.businessId,
+        dayOfWeek: rule.dayOfWeek,
+        startTime: rule.startTime,
+        endTime: rule.endTime,
+        active: rule.active,
+      })),
+    store.blockedSlots
       .filter((slot) => slot.businessId === business.id)
-      .sort((a, b) => `${a.blockedDate}T${a.startTime}`.localeCompare(`${b.blockedDate}T${b.startTime}`)),
-  };
+      .map((slot) => ({
+        id: slot.id,
+        businessId: slot.businessId,
+        blockedDate: slot.blockedDate,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        reason: slot.reason,
+      }))
+  );
 }
 
 export async function getLocalAdminSettingsData(activeBusinessSlug?: string | null) {
@@ -1579,20 +1531,21 @@ export async function getLocalAdminSettingsData(activeBusinessSlug?: string | nu
   const business = getAdminBusiness(store, activeBusinessSlug);
   const profile = buildBusinessPublicProfile(business);
 
-  return {
-    businessName: business.name,
-    businessSlug: business.slug,
-    templateSlug: business.templateSlug ?? business.slug,
-    phone: business.phone,
-    email: business.email,
-    address: business.address,
-    timezone: business.timezone,
-    publicUrl: `/${business.slug}`,
-    profile,
-    cancellationPolicy: business.cancellationPolicy,
-    mpConnected: business.mpConnected ?? false,
-    mpCollectorId: business.mpCollectorId,
-  };
+  return buildAdminSettingsView(
+    {
+      name: business.name,
+      slug: business.slug,
+      templateSlug: business.templateSlug,
+      phone: business.phone,
+      email: business.email,
+      address: business.address,
+      timezone: business.timezone,
+      cancellationPolicy: business.cancellationPolicy,
+      mpConnected: business.mpConnected,
+      mpCollectorId: business.mpCollectorId,
+    },
+    profile
+  );
 }
 
 /**
@@ -1649,11 +1602,7 @@ export async function updateLocalBusinessMPTokens(
     const business = getBusinessBySlug(store, input.businessSlug);
     if (!business) throw new Error("No encontramos el negocio.");
 
-    business.mpAccessToken = input.mpAccessToken;
-    business.mpRefreshToken = input.mpRefreshToken;
-    business.mpCollectorId = input.mpCollectorId;
-    business.mpTokenExpiresAt = input.mpTokenExpiresAt;
-    business.mpConnected = true;
+    Object.assign(business, buildBusinessMercadoPagoTokenPatch(input));
 
     return business.slug;
   });
@@ -1667,11 +1616,7 @@ export async function clearLocalBusinessMPTokens(businessSlug: string) {
     const business = getBusinessBySlug(store, businessSlug);
     if (!business) throw new Error("No encontramos el negocio.");
 
-    business.mpAccessToken = undefined;
-    business.mpRefreshToken = undefined;
-    business.mpCollectorId = undefined;
-    business.mpTokenExpiresAt = undefined;
-    business.mpConnected = false;
+    Object.assign(business, buildBusinessMercadoPagoTokenClearPatch(undefined));
 
     return business.slug;
   });

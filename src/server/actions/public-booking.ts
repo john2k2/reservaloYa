@@ -370,6 +370,7 @@ export async function createPublicBookingAction(formData: FormData) {
       serviceName: serviceEarly.name,
       customerEmail: parsed.data.email || undefined,
       customerName: parsed.data.fullName,
+      customerPhone: parsed.data.phone || undefined,
       priceAmount: serviceEarly.price!,
     };
 

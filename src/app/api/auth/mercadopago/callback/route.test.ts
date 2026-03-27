@@ -84,6 +84,42 @@ describe("mercadopago oauth callback route", () => {
     );
   });
 
+  it("redirects with error when OAuth app credentials are missing", async () => {
+    process.env.MP_APP_ID = "   ";
+    process.env.MP_APP_SECRET = "";
+    const { GET } = await import("./route");
+
+    const response = await GET(
+      new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
+    );
+
+    expect(response.status).toBe(307);
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe(
+      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=error"
+    );
+  });
+
+  it("redirects with error when token exchange fails", async () => {
+    parseMercadoPagoOAuthStateMock.mockReturnValue({ businessSlug: "demo-barberia" });
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: false,
+      text: async () => "mp error",
+    } as Response);
+    const { GET } = await import("./route");
+
+    const response = await GET(
+      new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
+    );
+
+    expect(response.status).toBe(307);
+    expect(updateLocalBusinessMPTokensMock).not.toHaveBeenCalled();
+    expect(updatePocketBaseBusinessMPTokensMock).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe(
+      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=error"
+    );
+  });
+
   it("stores tokens in local mode and redirects to connected", async () => {
     parseMercadoPagoOAuthStateMock.mockReturnValue({ businessSlug: "demo-barberia" });
     isPocketBaseConfiguredMock.mockReturnValue(false);
@@ -143,6 +179,32 @@ describe("mercadopago oauth callback route", () => {
     });
     expect(response.headers.get("location")).toBe(
       "https://reservaya.test/admin/onboarding?tab=integraciones&mp=connected"
+    );
+  });
+
+  it("redirects with error when PocketBase business id cannot be resolved", async () => {
+    parseMercadoPagoOAuthStateMock.mockReturnValue({ businessSlug: "demo-barberia" });
+    isPocketBaseConfiguredMock.mockReturnValue(true);
+    getPocketBaseBusinessIdBySlugMock.mockResolvedValue(null);
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        access_token: "token-123",
+        refresh_token: "refresh-123",
+        user_id: 998877,
+        expires_in: 3600,
+      }),
+    } as Response);
+    const { GET } = await import("./route");
+
+    const response = await GET(
+      new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
+    );
+
+    expect(updatePocketBaseBusinessMPTokensMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=error"
     );
   });
 });

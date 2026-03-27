@@ -5,6 +5,9 @@ import { hasPocketBasePublicAuthCredentials } from "@/lib/pocketbase/config";
 import { isDemoModeEnabled } from "@/lib/runtime";
 import { createLocalWaitlistEntry } from "@/server/local-store";
 import { createPocketBaseWaitlistEntry } from "@/server/pocketbase-store";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("Waitlist");
 
 const waitlistSchema = z.object({
   businessSlug: z.string().min(2).max(80),
@@ -53,7 +56,7 @@ export async function joinWaitlistAction(
     }
     return { success: true };
   } catch (err) {
-    console.error(`[Waitlist] Error:`, err);
+    logger.error("Error registrando en waitlist", err);
     return { success: false, error: "No se pudo registrar. Intentá de nuevo." };
   }
 }

@@ -1,11 +1,9 @@
-import { CalendarClock, ChartColumnBig, Percent } from "lucide-react";
 import type { RecordModel } from "pocketbase";
 
 import type { PublicBusinessProfile } from "@/constants/public-business-profiles";
-import { dashboardHighlights, demoBusinessOptions } from "@/constants/site";
+import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import {
-  addMinutes,
   buildBookingDateOptions,
   findNextBookingDate,
   getDayOfWeek,
@@ -31,10 +29,8 @@ import {
   formatStatus,
   isActiveRecord,
   joinPocketBaseFilters,
-  overlaps,
   parseProfileOverrides,
   type ServiceRecord,
-  toMinutes,
   toMoney,
   type UserRecord,
   type WaitlistEntryRecord,
@@ -51,13 +47,38 @@ import {
 } from "@/server/booking-notifications";
 import {
   buildBookingPaymentPatch,
+  buildBusinessMercadoPagoTokenClearPatch,
+  buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
+  normalizeMercadoPagoCollectorId,
   type BookingPaymentUpdateInput,
 } from "@/server/payments-domain";
 import {
   buildBookingConfirmationView,
   buildManageBookingView,
 } from "@/server/bookings-domain";
+import {
+  buildBookingCustomerDetails,
+  buildBookingMutationFields,
+  buildBookingTimeWindow,
+  fitsBookingWithinAvailability,
+  hasBlockedSlotConflict,
+  hasBookingConflict,
+} from "@/server/booking-mutations-domain";
+import {
+  buildAdminAvailabilityView,
+  buildAdminBookingsView,
+  buildAdminCustomersView,
+  buildAdminServicesView,
+  buildAdminSettingsView,
+} from "@/server/admin-views-domain";
+import {
+  buildAdminDashboardBookingPreview,
+  buildAdminDashboardMetrics,
+  buildAdminDashboardNotifications,
+  buildAdminDashboardView,
+  buildAdminShellView,
+} from "@/server/admin-dashboard-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
 type PocketBaseListOptions = {
@@ -140,7 +161,7 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
 
   const subscription = await getBusinessSubscription(String(businessId));
 
-  return {
+  return buildAdminShellView({
     demoMode: false,
     profileName: String(userRecord.name ?? userRecord.email ?? "Owner"),
     businessName: business.name,
@@ -152,7 +173,7 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
     subscriptionStatus: subscription?.status ?? "trial",
     subscriptionExpired: subscription?.status === "suspended" || 
       (subscription?.status === "trial" && subscription.trialEndsAt && new Date(subscription.trialEndsAt) < new Date()),
-  };
+  });
 }
 
 export async function getBusinessSubscription(businessId: string) {
@@ -241,7 +262,7 @@ export async function getPocketBaseBusinessPaymentSettingsBySlug(slug: string) {
 }
 
 export async function getPocketBaseBusinessPaymentSettingsByCollectorId(collectorId: string) {
-  const normalizedCollectorId = collectorId.trim();
+  const normalizedCollectorId = normalizeMercadoPagoCollectorId(collectorId);
 
   if (!normalizedCollectorId) {
     return null;
@@ -472,9 +493,7 @@ export async function createPocketBasePublicBooking(input: {
         throw new Error("Servicio no encontrado.");
       }
 
-      const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-      const startMinutes = toMinutes(input.startTime);
-      const endMinutes = toMinutes(endTime);
+      const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
 
       const [blockedSlots, bookings, customers] = await Promise.all([
         listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
@@ -512,18 +531,15 @@ export async function createPocketBasePublicBooking(input: {
         input.phone ? customer.phone === input.phone : customer.email === input.email
       );
 
-      if (
-        businessBlockedSlots.some((slot) =>
-          overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-        )
-      ) {
+      if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
         throw new Error("Ese horario esta bloqueado.");
       }
 
       if (
-        businessBookings.some((booking) =>
-          overlaps(startMinutes, endMinutes, toMinutes(booking.startTime), toMinutes(booking.endTime))
-        )
+        hasBookingConflict(businessBookings, {
+          ...bookingWindow,
+          allowedStatuses: ["pending", "pending_payment", "confirmed"],
+        })
       ) {
         throw new Error("Ese horario ya no esta disponible.");
       }
@@ -533,17 +549,11 @@ export async function createPocketBasePublicBooking(input: {
       if (!customer) {
         customer = await pb.collection("customers").create<CustomerRecord>({
           business: business.id,
-          fullName: input.fullName,
-          phone: input.phone ?? "",
-          email: input.email ?? "",
-          notes: input.notes ?? "",
+          ...buildBookingCustomerDetails(input),
         });
       } else {
         customer = await pb.collection("customers").update<CustomerRecord>(customer.id, {
-          fullName: input.fullName,
-          phone: input.phone ?? customer.phone ?? "",
-          email: input.email ?? "",
-          notes: input.notes ?? customer.notes ?? "",
+          ...buildBookingCustomerDetails(input, customer),
         });
       }
 
@@ -551,18 +561,14 @@ export async function createPocketBasePublicBooking(input: {
         business: business.id,
         customer: customer.id,
         service: service.id,
-        bookingDate: input.bookingDate,
-        startTime: input.startTime,
-        endTime,
-        status: input.initialStatus ?? "pending",
-        notes: input.notes ?? "",
-        ...(input.paymentPreferenceId
-          ? {
-              paymentProvider: "mercadopago",
-              paymentPreferenceId: input.paymentPreferenceId,
-              paymentStatus: "pending",
-            }
-          : {}),
+        ...buildBookingMutationFields({
+          bookingDate: input.bookingDate,
+          startTime: input.startTime,
+          durationMinutes: Number(service.durationMinutes),
+          status: input.initialStatus,
+          notes: input.notes,
+          paymentPreferenceId: input.paymentPreferenceId,
+        }),
       });
 
       return booking.id;
@@ -695,9 +701,7 @@ export async function reschedulePocketBasePublicBooking(input: {
         throw new Error("Servicio no encontrado.");
       }
 
-      const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-      const startMinutes = toMinutes(input.startTime);
-      const endMinutes = toMinutes(endTime);
+      const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
       const [blockedSlots, bookings] = await Promise.all([
         listPocketBaseRecordsWithClient<BlockedSlotRecord>(pb, "blocked_slots", {
           filter: joinPocketBaseFilters(
@@ -722,36 +726,32 @@ export async function reschedulePocketBasePublicBooking(input: {
           candidate.id !== booking.id
       );
 
-      if (
-        businessBlockedSlots.some((slot) =>
-          overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-        )
-      ) {
+      if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
         throw new Error("Ese horario esta bloqueado.");
       }
 
       if (
-        businessBookings.some((candidate) =>
-          overlaps(startMinutes, endMinutes, toMinutes(candidate.startTime), toMinutes(candidate.endTime))
-        )
+        hasBookingConflict(businessBookings, {
+          ...bookingWindow,
+          allowedStatuses: ["pending", "confirmed"],
+        })
       ) {
         throw new Error("Ese horario ya no esta disponible.");
       }
 
       await pb.collection("customers").update(booking.customer, {
-        fullName: input.fullName,
-        phone: input.phone,
-        email: input.email ?? "",
-        notes: input.notes ?? "",
+        ...buildBookingCustomerDetails(input),
       });
 
       await pb.collection("bookings").update(booking.id, {
         service: service.id,
-        bookingDate: input.bookingDate,
-        startTime: input.startTime,
-        endTime,
-        status: "pending",
-        notes: input.notes ?? "",
+        ...buildBookingMutationFields({
+          bookingDate: input.bookingDate,
+          startTime: input.startTime,
+          durationMinutes: Number(service.durationMinutes),
+          status: "pending",
+          notes: input.notes,
+        }),
       });
 
       return booking.id;
@@ -853,6 +853,7 @@ export async function getPocketBaseAdminDashboardData(businessId: string) {
     );
   const topSourceLabel =
     Object.entries(topSource).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "direct";
+  const pendingBookings = businessBookings.filter((booking) => booking.status === "pending").length;
   const remindersPending = businessBookings.filter((booking) => {
     const [year, month, day] = booking.bookingDate.split("-").map(Number);
     const [hours, minutes] = booking.startTime.split(":").map(Number);
@@ -867,103 +868,89 @@ export async function getPocketBaseAdminDashboardData(businessId: string) {
       bookingTime <= Date.now() + 24 * 60 * 60 * 1000
     );
   }).length;
+  const analytics = {
+    visits: publicPageViews.length,
+    ctaClicks: bookingCtaClicks.length,
+    bookingIntents: bookingPageViews.length,
+    bookingsCreated: bookingCreated.length,
+    clickThroughRate:
+      publicPageViews.length > 0
+        ? Math.round((bookingCtaClicks.length / publicPageViews.length) * 100)
+        : 0,
+    bookingIntentRate:
+      publicPageViews.length > 0
+        ? Math.round((bookingPageViews.length / publicPageViews.length) * 100)
+        : 0,
+    conversionRate:
+      publicPageViews.length > 0
+        ? Math.round((bookingCreated.length / publicPageViews.length) * 100)
+        : 0,
+    topSource: topSourceLabel,
+    topSourceCount: topSource[topSourceLabel] ?? 0,
+    topCampaign:
+      businessAnalyticsEvents.find((event) => event.campaign)?.campaign ?? "Sin campana",
+    channels: [],
+  };
+  const reminders = {
+    reminderWindowHours: 24,
+    pending: remindersPending,
+    missingEmail: businessBookings.filter(
+      (booking) =>
+        getAvailableReminderChannels({
+          customerEmail: (booking.expand?.customer as CustomerRecord | undefined)?.email,
+          customerPhone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
+        }).length === 0
+    ).length,
+    sentRecently: businessCommunicationEvents.filter((event) => event.kind === "reminder").length,
+    providerReady: hasReminderProviderConfigured(),
+    nextBookingAt:
+      businessBookings[0] != null
+        ? `${businessBookings[0].bookingDate} ${businessBookings[0].startTime}`
+        : null,
+  };
+  const notifications = buildAdminDashboardNotifications({
+    pendingBookings,
+    remindersPending,
+    remindersProviderReady: reminders.providerReady,
+    bookingsCreated: analytics.bookingsCreated,
+    visits: analytics.visits,
+    topSource: analytics.topSource,
+  });
+  const metrics = buildAdminDashboardMetrics({
+    visits: analytics.visits,
+    ctaClicks: analytics.ctaClicks,
+    bookingsCreated: analytics.bookingsCreated,
+    conversionRate: analytics.conversionRate,
+    pendingBookings,
+    customersCount: businessCustomers.length,
+    customersHint: "Clientes registrados en PocketBase",
+    topCampaignLabel: analytics.topCampaign,
+    hasVisits: analytics.visits > 0,
+  });
+  const bookingPreview = buildAdminDashboardBookingPreview(
+    businessBookings.map((booking) => ({
+      id: booking.id,
+      customerName: (booking.expand?.customer as CustomerRecord | undefined)?.fullName,
+      serviceName: (booking.expand?.service as ServiceRecord | undefined)?.name,
+      bookingDate: booking.bookingDate,
+      startTime: booking.startTime,
+      status: booking.status,
+    })),
+    formatStatus
+  );
 
-  return {
+  return buildAdminDashboardView({
     profileName: "PocketBase Owner",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "",
     demoMode: false,
-    analytics: {
-      visits: publicPageViews.length,
-      ctaClicks: bookingCtaClicks.length,
-      bookingIntents: bookingPageViews.length,
-      bookingsCreated: bookingCreated.length,
-      clickThroughRate:
-        publicPageViews.length > 0
-          ? Math.round((bookingCtaClicks.length / publicPageViews.length) * 100)
-          : 0,
-      bookingIntentRate:
-        publicPageViews.length > 0
-          ? Math.round((bookingPageViews.length / publicPageViews.length) * 100)
-          : 0,
-      conversionRate:
-        publicPageViews.length > 0
-          ? Math.round((bookingCreated.length / publicPageViews.length) * 100)
-          : 0,
-      topSource: topSourceLabel,
-      topSourceCount: topSource[topSourceLabel] ?? 0,
-      topCampaign:
-        businessAnalyticsEvents.find((event) => event.campaign)?.campaign ?? "Sin campana",
-      channels: [],
-    },
-    reminders: {
-        reminderWindowHours: 24,
-        pending: remindersPending,
-        missingEmail: businessBookings.filter(
-          (booking) =>
-            getAvailableReminderChannels({
-              customerEmail: (booking.expand?.customer as CustomerRecord | undefined)?.email,
-              customerPhone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
-            }).length === 0
-        ).length,
-        sentRecently: businessCommunicationEvents.filter((event) => event.kind === "reminder").length,
-        providerReady: hasReminderProviderConfigured(),
-        nextBookingAt:
-          businessBookings[0] != null
-            ? `${businessBookings[0].bookingDate} ${businessBookings[0].startTime}`
-          : null,
-    },
-    notifications: [
-      `${businessBookings.filter((booking) => booking.status === "pending").length} turnos pendientes de confirmar`,
-      remindersPending > 0
-        ? `${remindersPending} recordatorios listos para enviar`
-        : "Sin recordatorios pendientes en las proximas 24 hs",
-      bookingCreated.length > 0
-        ? `${bookingCreated.length} reservas llegaron desde la web`
-        : "Todavia no se registran reservas web",
-      publicPageViews.length > 0
-        ? `Canal principal: ${topSourceLabel}`
-        : "Todavia no hay visitas registradas",
-    ],
-    metrics: [
-      {
-        label: "Visitas publicas",
-        value: String(publicPageViews.length),
-        hint: `${bookingCtaClicks.length} clics en reservar`,
-        icon: ChartColumnBig,
-      },
-      {
-        label: "Reservas creadas",
-        value: String(bookingCreated.length),
-        hint: `${bookings.filter((booking) => booking.status === "pending").length} pendientes de confirmar`,
-        icon: CalendarClock,
-      },
-      {
-        label: "Conversion web",
-        value: `${
-          publicPageViews.length > 0
-            ? Math.round((bookingCreated.length / publicPageViews.length) * 100)
-            : 0
-        }%`,
-        hint: publicPageViews.length > 0 ? `Canal principal: ${topSourceLabel}` : "Todavia sin visitas registradas",
-        icon: Percent,
-      },
-      {
-        ...dashboardHighlights[1],
-        value: String(businessCustomers.length),
-        hint: "Clientes registrados en PocketBase",
-      },
-    ],
-    bookings: businessBookings.slice(0, 5).map((booking) => ({
-      id: booking.id,
-      name: ((booking.expand?.customer as CustomerRecord | undefined)?.fullName ?? "Cliente"),
-      service: ((booking.expand?.service as ServiceRecord | undefined)?.name ?? "Servicio"),
-      date: booking.bookingDate,
-      time: booking.startTime,
-      status: formatStatus(booking.status),
-    })),
-  };
+    analytics,
+    reminders,
+    notifications,
+    metrics,
+    bookings: bookingPreview,
+  });
 }
 
 export async function getPocketBaseAdminBookingsData(
@@ -975,46 +962,26 @@ export async function getPocketBaseAdminBookingsData(
   }
 ) {
   const pb = await getAdminClient();
-  const query = filters?.q?.trim().toLocaleLowerCase("es-AR") ?? "";
   const bookings = await listPocketBaseRecords<BookingRecord>("bookings", {
     expand: "customer,service",
     sort: "bookingDate,startTime",
     filter: pb.filter("business = {:business}", { business: businessId }),
   });
 
-  return bookings
-    .map((booking) => ({
+  return buildAdminBookingsView(
+    bookings.map((booking) => ({
       id: booking.id,
-      customerName:
-        (booking.expand?.customer as CustomerRecord | undefined)?.fullName ?? "Cliente",
-      phone: (booking.expand?.customer as CustomerRecord | undefined)?.phone ?? "",
-      serviceName: (booking.expand?.service as ServiceRecord | undefined)?.name ?? "Servicio",
+      customerName: (booking.expand?.customer as CustomerRecord | undefined)?.fullName,
+      phone: (booking.expand?.customer as CustomerRecord | undefined)?.phone,
+      serviceName: (booking.expand?.service as ServiceRecord | undefined)?.name,
       bookingDate: booking.bookingDate,
       startTime: booking.startTime,
       status: booking.status,
-      statusLabel: formatStatus(booking.status),
-      notes: booking.notes ?? "",
-    }))
-    .filter((booking) => {
-      if (filters?.status && booking.status !== filters.status) {
-        return false;
-      }
-
-      if (filters?.date && booking.bookingDate !== filters.date) {
-        return false;
-      }
-
-      if (
-        query &&
-        !`${booking.customerName} ${booking.phone} ${booking.serviceName}`
-          .toLocaleLowerCase("es-AR")
-          .includes(query)
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+      notes: booking.notes,
+    })),
+    filters,
+    formatStatus
+  );
 }
 
 export async function updatePocketBaseAdminBooking(input: {
@@ -1042,9 +1009,7 @@ export async function updatePocketBaseAdminBooking(input: {
   }
 
   const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-  const startMinutes = toMinutes(input.startTime);
-  const endTime = addMinutes(input.startTime, Number(service.durationMinutes));
-  const endMinutes = toMinutes(endTime);
+  const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
   const [rules, blockedSlots, bookings] = await Promise.all([
     listPocketBaseRecords<AvailabilityRuleRecord>("availability_rules", {
       filter: joinPocketBaseFilters(
@@ -1066,45 +1031,36 @@ export async function updatePocketBaseAdminBooking(input: {
     }),
   ]);
   const activeRules = rules.filter(isActiveRecord);
-  const fitsWithinAvailability = activeRules.some(
-    (rule) =>
-      startMinutes >= toMinutes(rule.startTime) && endMinutes <= toMinutes(rule.endTime)
-  );
+  const fitsWithinAvailability = fitsBookingWithinAvailability(activeRules, bookingWindow);
 
   if (!fitsWithinAvailability) {
     throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
   }
 
-  const blockedConflict = blockedSlots.some((slot) =>
-    overlaps(startMinutes, endMinutes, toMinutes(slot.startTime), toMinutes(slot.endTime))
-  );
+  const blockedConflict = hasBlockedSlotConflict(blockedSlots, bookingWindow);
 
   if (blockedConflict) {
     throw new Error("Ese horario esta bloqueado.");
   }
 
-  const bookingConflict = bookings.some(
-    (candidate) =>
-      candidate.id !== booking.id &&
-      (candidate.status === "pending" || candidate.status === "confirmed") &&
-      overlaps(
-        startMinutes,
-        endMinutes,
-        toMinutes(candidate.startTime),
-        toMinutes(candidate.endTime)
-      )
-  );
+  const bookingConflict = hasBookingConflict(bookings, {
+    ...bookingWindow,
+    excludeBookingId: booking.id,
+    allowedStatuses: ["pending", "confirmed"],
+  });
 
   if (bookingConflict) {
     throw new Error("Ese horario ya no esta disponible.");
   }
 
   await pb.collection("bookings").update(input.bookingId, {
-    bookingDate: input.bookingDate,
-    startTime: input.startTime,
-    endTime,
-    status: input.status,
-    notes: input.notes,
+    ...buildBookingMutationFields({
+      bookingDate: input.bookingDate,
+      startTime: input.startTime,
+      durationMinutes: Number(service.durationMinutes),
+      status: input.status,
+      notes: input.notes,
+    }),
   });
 
   return input.bookingId;
@@ -1112,7 +1068,6 @@ export async function updatePocketBaseAdminBooking(input: {
 
 export async function getPocketBaseAdminCustomersData(businessId: string, query?: string) {
   const pb = await getAdminClient();
-  const normalizedQuery = query?.trim().toLocaleLowerCase("es-AR") ?? "";
   const [customers, bookings] = await Promise.all([
     listPocketBaseRecords<CustomerRecord>("customers", {
       sort: "fullName",
@@ -1122,33 +1077,23 @@ export async function getPocketBaseAdminCustomersData(businessId: string, query?
       filter: pb.filter("business = {:business}", { business: businessId }),
     }),
   ]);
-  const businessCustomers = customers.filter((customer) => {
-    if (!normalizedQuery) {
-      return true;
-    }
 
-    return [customer.fullName, customer.phone, customer.email]
-      .filter(Boolean)
-      .some((value) => String(value).toLocaleLowerCase("es-AR").includes(normalizedQuery));
-  });
-  const businessBookings = bookings;
-
-  return businessCustomers.map((customer) => {
-    const customerBookings = businessBookings.filter((booking) => booking.customer === customer.id);
-    const lastBooking = customerBookings
-      .slice()
-      .sort((a, b) => `${b.bookingDate}T${b.startTime}`.localeCompare(`${a.bookingDate}T${a.startTime}`))[0];
-
-    return {
+  return buildAdminCustomersView(
+    customers.map((customer) => ({
       id: customer.id,
       fullName: customer.fullName,
       phone: customer.phone,
-      email: customer.email ?? "",
-      notes: customer.notes ?? "",
-      bookingsCount: customerBookings.length,
-      lastBookingDate: lastBooking?.bookingDate ?? null,
-    };
-  });
+      email: customer.email,
+      notes: customer.notes,
+      createdAt: customer.created,
+    })),
+    bookings.map((booking) => ({
+      customerId: booking.customer,
+      bookingDate: booking.bookingDate,
+      startTime: booking.startTime,
+    })),
+    query
+  );
 }
 
 export async function getPocketBaseAdminServicesData(businessId: string) {
@@ -1158,16 +1103,18 @@ export async function getPocketBaseAdminServicesData(businessId: string) {
     filter: pb.filter("business = {:business}", { business: businessId }),
   })).filter(isActiveRecord);
 
-  return services.map((service) => ({
-    id: service.id,
-    name: service.name,
-    description: service.description ?? "",
-    durationMinutes: Number(service.durationMinutes),
-    price: service.price ?? null,
-    featured: Boolean(service.featured),
-    featuredLabel: service.featuredLabel ?? "",
-    priceLabel: toMoney(service.price),
-  }));
+  return buildAdminServicesView(
+    services.map((service) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      durationMinutes: Number(service.durationMinutes),
+      price: service.price ?? null,
+      featured: service.featured,
+      featuredLabel: service.featuredLabel,
+    })),
+    toMoney
+  );
 }
 
 export async function upsertPocketBaseService(input: {
@@ -1266,11 +1213,9 @@ export async function getPocketBaseAdminAvailabilityData(businessId: string) {
       filter: pb.filter("business = {:business}", { business: businessId }),
     }),
   ]);
-  const businessRules = rules;
-  const businessBlockedSlots = blockedSlots;
 
-  return {
-    rules: businessRules.map((rule) => ({
+  return buildAdminAvailabilityView(
+    rules.map((rule) => ({
       id: rule.id,
       businessId: rule.business,
       dayOfWeek: rule.dayOfWeek,
@@ -1278,15 +1223,15 @@ export async function getPocketBaseAdminAvailabilityData(businessId: string) {
       endTime: rule.endTime,
       active: Boolean(rule.active),
     })),
-    blockedSlots: businessBlockedSlots.map((slot) => ({
+    blockedSlots.map((slot) => ({
       id: slot.id,
       businessId: slot.business,
       blockedDate: slot.blockedDate,
       startTime: slot.startTime,
       endTime: slot.endTime,
-      reason: slot.reason ?? "",
-    })),
-  };
+      reason: slot.reason,
+    }))
+  );
 }
 
 export async function upsertPocketBaseAvailabilityRule(input: {
@@ -1456,20 +1401,21 @@ export async function removePocketBaseBlockedSlot(input: {
 export async function getPocketBaseAdminSettingsData(businessId: string) {
   const business = await getBusinessById(businessId);
 
-  return {
-    businessName: business.name,
-    businessSlug: business.slug,
-    templateSlug: business.templateSlug ?? business.slug,
-    phone: business.phone ?? "",
-    email: business.email ?? "",
-    address: business.address ?? "",
-    timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
-    publicUrl: `/${business.slug}`,
-    profile: buildBusinessPublicProfile(business),
-    cancellationPolicy: business.cancellationPolicy,
-    mpConnected: business.mpConnected ?? false,
-    mpCollectorId: business.mpCollectorId,
-  };
+  return buildAdminSettingsView(
+    {
+      name: business.name,
+      slug: business.slug,
+      templateSlug: business.templateSlug,
+      phone: business.phone,
+      email: business.email,
+      address: business.address,
+      timezone: business.timezone,
+      cancellationPolicy: business.cancellationPolicy,
+      mpConnected: business.mpConnected,
+      mpCollectorId: business.mpCollectorId,
+    },
+    buildBusinessPublicProfile(business)
+  );
 }
 
 export async function getPocketBaseOnboardingData(businessId?: string) {
@@ -2097,13 +2043,7 @@ export async function updatePocketBaseBusinessMPTokens(input: {
   mpTokenExpiresAt: string;
 }) {
   const pb = await getAdminClient();
-  await pb.collection("businesses").update(input.businessId, {
-    mpAccessToken: input.mpAccessToken,
-    mpRefreshToken: input.mpRefreshToken,
-    mpCollectorId: input.mpCollectorId,
-    mpTokenExpiresAt: input.mpTokenExpiresAt,
-    mpConnected: true,
-  });
+  await pb.collection("businesses").update(input.businessId, buildBusinessMercadoPagoTokenPatch(input));
 }
 
 /**
@@ -2111,13 +2051,7 @@ export async function updatePocketBaseBusinessMPTokens(input: {
  */
 export async function clearPocketBaseBusinessMPTokens(businessId: string) {
   const pb = await getAdminClient();
-  await pb.collection("businesses").update(businessId, {
-    mpAccessToken: "",
-    mpRefreshToken: "",
-    mpCollectorId: "",
-    mpTokenExpiresAt: "",
-    mpConnected: false,
-  });
+  await pb.collection("businesses").update(businessId, buildBusinessMercadoPagoTokenClearPatch(""));
 }
 
 /**

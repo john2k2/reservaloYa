@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { consumeRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("monitoring");
 
 const MONITORING_LIMIT_MAX = 20;
 const MONITORING_LIMIT_WINDOW_MS = 60_000;
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  console.error("[monitoring] Client-side error captured", parsed.data);
+  logger.error("Client-side error captured", parsed.data);
 
   return new NextResponse(null, {
     status: 204,

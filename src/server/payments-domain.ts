@@ -1,5 +1,19 @@
 import type { PaymentStatus } from "@/types/domain";
 
+// ─── Subscription pricing ────────────────────────────────────────────────────
+
+/** Precio mensual de suscripcion en USD */
+export const SUBSCRIPTION_USD_PRICE = 17;
+
+/** Tasa ARS/USD de fallback si la API de dolar blue no responde */
+export const SUBSCRIPTION_FALLBACK_ARS_RATE = 1435;
+
+/** Calcula el precio de suscripcion en ARS dado un rate de dolar blue (o usa fallback) */
+export function getSubscriptionArsPrice(blueRate: number | null): number {
+  const rate = blueRate ?? SUBSCRIPTION_FALLBACK_ARS_RATE;
+  return SUBSCRIPTION_USD_PRICE * rate;
+}
+
 export type BusinessPaymentSettings = {
   businessId: string;
   businessSlug: string;
@@ -34,6 +48,42 @@ export function buildBusinessPaymentSettings(
     mpAccessToken: business.mpAccessToken,
     mpRefreshToken: business.mpRefreshToken,
     mpTokenExpiresAt: business.mpTokenExpiresAt,
+  };
+}
+
+export type BusinessMercadoPagoTokenUpdateInput = {
+  mpAccessToken: string;
+  mpRefreshToken: string;
+  mpCollectorId: string;
+  mpTokenExpiresAt: string;
+};
+
+export function normalizeMercadoPagoCollectorId(collectorId: string) {
+  const normalized = collectorId.trim();
+  return normalized ? normalized : null;
+}
+
+export function buildBusinessMercadoPagoTokenPatch(
+  input: BusinessMercadoPagoTokenUpdateInput
+) {
+  return {
+    mpAccessToken: input.mpAccessToken,
+    mpRefreshToken: input.mpRefreshToken,
+    mpCollectorId: input.mpCollectorId,
+    mpTokenExpiresAt: input.mpTokenExpiresAt,
+    mpConnected: true,
+  };
+}
+
+export function buildBusinessMercadoPagoTokenClearPatch<TEmpty extends string | undefined>(
+  emptyValue: TEmpty
+) {
+  return {
+    mpAccessToken: emptyValue,
+    mpRefreshToken: emptyValue,
+    mpCollectorId: emptyValue,
+    mpTokenExpiresAt: emptyValue,
+    mpConnected: false,
   };
 }
 

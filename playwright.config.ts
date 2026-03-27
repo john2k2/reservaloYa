@@ -42,6 +42,11 @@ export default defineConfig({
 
     /* Grabar video en fallos */
     video: "on-first-retry",
+
+    /* Usar Chromium completo en lugar del headless shell (fix ICU error en Windows) */
+    launchOptions: {
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+    },
   },
 
   /* Configure projects for major browsers */
@@ -50,13 +55,13 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /auth\.setup\.ts/,
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      use: { ...devices["Desktop Chrome"] },
     },
 
     // 2. Tests sin autenticación (páginas públicas + login page)
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      use: { ...devices["Desktop Chrome"] },
       testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
     },
 
@@ -65,7 +70,6 @@ export default defineConfig({
       name: "authenticated",
       use: {
         ...devices["Desktop Chrome"],
-        channel: "chrome",
         storageState: authFile,
       },
       testMatch: /admin-authenticated\.spec\.ts/,
@@ -76,13 +80,20 @@ export default defineConfig({
     /* Mobile tests */
     {
       name: "Mobile Chrome",
-      use: { ...devices["Pixel 5"], channel: "chrome" },
+      use: { ...devices["Pixel 5"] },
       testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
     },
     {
       name: "ci-smoke",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      use: { ...devices["Desktop Firefox"] },
       testMatch: /smoke-test\.spec\.ts/,
+    },
+
+    // Firefox completo para todos los tests (fallback cuando Chrome/Chromium falla en Windows)
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
     },
   ],
 
