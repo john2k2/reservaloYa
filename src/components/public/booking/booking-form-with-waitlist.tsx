@@ -138,49 +138,21 @@ export function BookingFormWithWaitlist({
           <BookingSelectedServiceCard
             accentColor={accentColor}
             service={service}
+            paymentMode={paymentMode}
             changeHref={changeHref}
           />
 
-          {/* Fecha y hora */}
-          <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-3 shadow-sm sm:p-4">
-            <div className="mb-4 px-2 pt-2 sm:px-3">
-              <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                Elige día y hora
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Solo días con disponibilidad real. Selecciona una fecha y después el horario.
-              </p>
-            </div>
-            <BookingScheduleSection
-              slug={slug}
-              serviceId={service.id}
-              accentColor={accentColor}
-              initialSelectedDate={initialSelectedDate}
-              initialDateOptions={initialDateOptions}
-              rescheduleStartTime={rescheduleStartTime}
-              onNoSlots={setNoSlotsDate}
-            />
-          </section>
+          <BookingScheduleSection
+            slug={slug}
+            serviceId={service.id}
+            accentColor={accentColor}
+            initialSelectedDate={initialSelectedDate}
+            initialDateOptions={initialDateOptions}
+            rescheduleStartTime={rescheduleStartTime}
+            onNoSlots={setNoSlotsDate}
+          />
 
-          {/* Waitlist inline when no slots - replaces Paso 3 */}
-          {noSlotsDate ? (
-            <section className="rounded-[1.75rem] border-2 border-warning/40 bg-warning/5 p-5 sm:p-6">
-              <p className="text-center text-sm font-semibold text-foreground">
-                No hay horarios disponibles para el {formatDate(noSlotsDate)}
-              </p>
-              <p className="mt-1 text-center text-xs text-muted-foreground">
-                Dejá tu email y te avisamos si alguien cancela
-              </p>
-              <div className="mt-4">
-                <BookingWaitlistForm
-                  businessSlug={slug}
-                  serviceId={service.id}
-                  bookingDate={noSlotsDate}
-                  accentColor={accentColor}
-                />
-              </div>
-            </section>
-          ) : (
+          {!noSlotsDate && (
             /* Datos del cliente */
             <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
               <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -285,16 +257,13 @@ export function BookingFormWithWaitlist({
           )}
         </div>
 
-        {/* Sidebar - hidden when no slots */}
+        {/* Sidebar */}
         {!noSlotsDate && (
           <aside className="space-y-4 lg:sticky lg:top-6">
           <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Resumen del turno
             </p>
-            <h3 className="mt-2 text-lg font-semibold text-foreground">
-              Todo listo para confirmar
-            </h3>
 
             <div className="mt-5 space-y-3">
               <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/85 px-4 py-3">
@@ -369,6 +338,26 @@ export function BookingFormWithWaitlist({
         </aside>
         )}
       </form>
+
+      {/* Waitlist fuera del form principal para evitar <form> anidados */}
+      {noSlotsDate && (
+        <section className="mt-6 rounded-[1.75rem] border-2 border-warning/40 bg-warning/5 p-5 sm:p-6">
+          <p className="text-center text-sm font-semibold text-foreground">
+            No hay horarios disponibles para el {formatDate(noSlotsDate)}
+          </p>
+          <p className="mt-1 text-center text-xs text-muted-foreground">
+            Dejá tu email y te avisamos si alguien cancela
+          </p>
+          <div className="mt-4">
+            <BookingWaitlistForm
+              businessSlug={slug}
+              serviceId={service.id}
+              bookingDate={noSlotsDate}
+              accentColor={accentColor}
+            />
+          </div>
+        </section>
+      )}
     </>
   );
 }

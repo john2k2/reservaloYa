@@ -89,10 +89,7 @@ export function BookingScheduleSection({
       <input type="hidden" name="bookingDate" value={selectedDate} />
 
       <div className="mb-4 px-2 pt-2 sm:px-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-          Paso 2
-        </p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+        <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Elige día y hora
         </h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">

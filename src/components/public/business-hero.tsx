@@ -11,7 +11,6 @@ import {
   Instagram,
   MapPin,
   Quote,
-  Scissors,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -134,12 +133,11 @@ function SocialLinksDesktop({
 function SocialLinksMobile({
   websiteHref,
   instagramHref,
-  whatsappHref,
 }: {
   websiteHref: SocialHref;
   instagramHref: SocialHref;
-  whatsappHref: string;
 }) {
+  if (!websiteHref && !instagramHref) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 lg:hidden">
       {websiteHref && (
@@ -159,17 +157,9 @@ function SocialLinksMobile({
           rel="noopener noreferrer"
           className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
         >
-          IG
+          Instagram
         </a>
       )}
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-      >
-        WhatsApp
-      </a>
     </div>
   );
 }
@@ -236,7 +226,7 @@ export function BusinessHero({
             tiktokHref={tiktokHref}
             whatsappHref={whatsappHref}
           />
-          <SocialLinksMobile websiteHref={websiteHref} instagramHref={instagramHref} whatsappHref={whatsappHref} />
+          <SocialLinksMobile websiteHref={websiteHref} instagramHref={instagramHref} />
         </div>
 
         <div className="grid gap-5 py-3 sm:py-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-8 lg:py-8">
@@ -287,7 +277,7 @@ export function BusinessHero({
                 )}
               >
                 <WhatsAppIcon className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
-                <span className="sm:hidden">Soporte por WhatsApp</span>
+                <span className="sm:hidden">Consultar por WhatsApp</span>
                 <span className="hidden sm:inline">{profile.secondaryCta}</span>
               </a>
             </div>
@@ -299,31 +289,23 @@ export function BusinessHero({
               style={heroImageStyle}
             />
 
-            <div className="mt-4 grid grid-cols-3 gap-3 sm:hidden">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Calendar className="size-3" style={{ color: profile.accent }} />
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Calendar className="size-3.5" style={{ color: profile.accent }} />
                   Próximo turno
                 </div>
-                <p className="mt-2 text-base font-bold text-foreground">{nextAvailableSlot.title}</p>
+                <p className="mt-2 text-lg font-bold text-foreground">{nextAvailableSlot.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{nextAvailableSlot.detail}</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Scissors className="size-3" style={{ color: profile.accent }} />
-                  Servicios
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Clock className="size-3.5" style={{ color: profile.accent }} />
+                  Precios desde
                 </div>
-                <p className="mt-2 text-base font-bold text-foreground">{servicesCount} opciones</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">Precios visibles</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="size-3" style={{ color: profile.accent }} />
-                  Desde
-                </div>
-                <p className="mt-2 text-base font-bold text-foreground">{startingPriceLabel}</p>
+                <p className="mt-2 text-lg font-bold text-foreground">{startingPriceLabel}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {firstActiveDay ? `${firstActiveDay.dayLabel} ${firstActiveDay.hoursLabel}` : "Agenda activa"}
+                  {firstActiveDay ? `${firstActiveDay.dayLabel} · ${firstActiveDay.hoursLabel}` : "Agenda activa"}
                 </p>
               </div>
             </div>

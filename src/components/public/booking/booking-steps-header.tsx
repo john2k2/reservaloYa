@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 const bookingSteps = [
   { id: 1, label: "Servicio", helper: "Que quieres reservar" },
-  { id: 2, label: "Fecha y hora", helper: "Solo horarios reales" },
-  { id: 3, label: "Tus datos", helper: "Confirmacion final" },
+  { id: 2, label: "Fecha y datos", helper: "Horario y tus datos" },
+  { id: 3, label: "Confirmación", helper: "Reserva lista" },
 ] as const;
 
 type BookingStepsHeaderProps = {

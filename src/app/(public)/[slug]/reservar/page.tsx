@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarDays, Clock3, MapPin, RefreshCcw } from "lucide-react";
+import { CalendarDays, MapPin, RefreshCcw } from "lucide-react";
 
 import { BookingFormWithWaitlist } from "@/components/public/booking/booking-form-with-waitlist";
 import { BookingPolicyCard } from "@/components/public/booking/booking-policy-card";
@@ -155,20 +155,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           />
 
           {/* Hero section */}
-          <section className="mb-6 grid gap-6 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur sm:mb-8 sm:p-8 lg:grid-cols-[1.15fr_0.85fr]">
-            <div>
+          {selectedService ? (
+            <section className="mb-6 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur sm:mb-8 sm:p-8">
               <span className="inline-flex min-h-11 items-center rounded-full border border-border/60 bg-background/80 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                 {rescheduleBooking ? "Reprogramación" : "Reserva online"}
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {selectedService
-                  ? `Reserva tu turno para ${selectedService.name}.`
-                  : "Elige un servicio y después tu turno."}
+                Reserva tu turno para {selectedService.name}.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                {selectedService
-                  ? "Ya tenés el servicio elegido. Ahora seleccioná día y hora para confirmar tu turno."
-                  : "Primero elegí qué querés reservar. Cuando lo hagas, vas a ver los horarios disponibles."}
+                Elegí fecha y horario, completá tus datos y listo.
               </p>
               {rescheduleBooking && (
                 <div className="mt-5 flex items-start gap-3 rounded-[1.5rem] border border-border/60 bg-background/85 p-4 text-sm text-muted-foreground">
@@ -177,51 +173,51 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   {rescheduleBooking.startTime}.
                 </div>
               )}
-            </div>
-
-            <div className="space-y-3 rounded-[1.5rem] border border-border/60 bg-background/85 p-5">
-              <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card/90 px-4 py-3">
-                <MapPin className="mt-0.5 size-4 shrink-0 text-foreground" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Negocio
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    {pageData.business.name}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {pageData.business.address ?? "Dirección a confirmar"}
-                  </p>
-                </div>
+            </section>
+          ) : (
+            <section className="mb-6 grid gap-6 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur sm:mb-8 sm:p-8 lg:grid-cols-[1.15fr_0.85fr]">
+              <div>
+                <span className="inline-flex min-h-11 items-center rounded-full border border-border/60 bg-background/80 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  Reserva online
+                </span>
+                <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  Elige un servicio y después tu turno.
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                  Primero elegí qué querés reservar. Cuando lo hagas, vas a ver los horarios disponibles.
+                </p>
               </div>
 
-              <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card/90 px-4 py-3">
-                <Clock3 className="mt-0.5 size-4 shrink-0 text-foreground" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Horarios
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    Los horarios visibles son los que atienden
-                  </p>
+              <div className="space-y-3 rounded-[1.5rem] border border-border/60 bg-background/85 p-5">
+                <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card/90 px-4 py-3">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-foreground" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Negocio
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-foreground">
+                      {pageData.business.name}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {pageData.business.address ?? "Dirección a confirmar"}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card/90 px-4 py-3">
-                <CalendarDays className="mt-0.5 size-4 shrink-0 text-foreground" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Siguiente paso
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    {selectedService
-                      ? "Elegí fecha y luego el horario"
-                      : `${pageData.services.length} ${pageData.services.length === 1 ? "servicio disponible" : "servicios disponibles"}`}
-                  </p>
+                <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card/90 px-4 py-3">
+                  <CalendarDays className="mt-0.5 size-4 shrink-0 text-foreground" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Servicios disponibles
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-foreground">
+                      {pageData.services.length} {pageData.services.length === 1 ? "servicio" : "servicios"} para elegir
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {selectedService ? (
             <BookingFormWithWaitlist

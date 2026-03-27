@@ -15,14 +15,14 @@ export function BookingSupportCard({ whatsappHref }: BookingSupportCardProps) {
         <MessageSquareMore className="size-5" />
       </div>
       <p className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-        Soporte rapido
+        ¿Necesitás ayuda?
       </p>
       <h3 className="mt-2 text-lg font-semibold text-foreground">
-        Solo si hubo un problema con la reserva.
+        Solo para errores o urgencias reales.
       </h3>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Usa este canal solo si hubo un error con la pagina, la reserva o una urgencia real. Los
-        horarios publicados son los disponibles y definitivos.
+        Si hay un problema con la página o un inconveniente real, usá este canal. Los horarios
+        visibles son los únicos disponibles.
       </p>
       <a
         href={whatsappHref}

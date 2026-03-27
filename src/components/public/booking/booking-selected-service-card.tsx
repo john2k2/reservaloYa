@@ -8,14 +8,22 @@ type BookingSelectedServiceCardProps = {
     durationMinutes: number;
     priceLabel: string;
   };
+  paymentMode?: "mercadopago" | "cash" | "none";
   changeHref?: string;
 };
 
 export function BookingSelectedServiceCard({
   accentColor,
   service,
+  paymentMode = "none",
   changeHref,
 }: BookingSelectedServiceCardProps) {
+  const reservaLabel =
+    paymentMode === "mercadopago"
+      ? "Pago online"
+      : paymentMode === "cash"
+        ? "Pago en el local"
+        : "Confirmación inmediata";
   return (
     <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -63,7 +71,7 @@ export function BookingSelectedServiceCard({
           <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Reserva
           </p>
-          <p className="mt-1 text-lg font-semibold text-foreground">Confirmación inmediata</p>
+          <p className="mt-1 text-lg font-semibold text-foreground">{reservaLabel}</p>
         </div>
       </div>
     </section>
