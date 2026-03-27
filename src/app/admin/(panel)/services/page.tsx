@@ -1,13 +1,10 @@
 import Link from "next/link";
-import { Clock3, ExternalLink, PencilLine, Plus, Sparkles } from "lucide-react";
+import { Clock3, ExternalLink, PencilLine, Plus } from "lucide-react";
 
-import {
-  deactivateServiceAction,
-  saveServiceAction,
-} from "@/app/admin/(panel)/services/actions";
+import { deactivateServiceAction } from "@/app/admin/(panel)/services/actions";
 import { ServiceDeleteButton } from "@/app/admin/(panel)/services/service-delete-button";
+import { ServiceForm } from "@/app/admin/(panel)/services/service-form";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
 import { getAdminServicesData, getAdminShellData } from "@/server/queries/admin";
 
@@ -19,10 +16,6 @@ type AdminServicesPageProps = {
     error?: string;
   }>;
 };
-
-function getPriceInputValue(price: number | null) {
-  return price == null ? "" : String(price);
-}
 
 function buildNotice(params: {
   saved?: string;
@@ -86,131 +79,7 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
       {/* Layout de 2 columnas */}
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         {/* Formulario */}
-        <section className="rounded-xl border border-border/60 bg-background p-5 shadow-sm h-fit">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="rounded-full bg-secondary p-2">
-              {editingService ? <PencilLine className="size-4" /> : <Plus className="size-4" />}
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">
-                {editingService ? "Editar servicio" : "Nuevo servicio"}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {editingService ? "Modificá los datos del servicio." : "Agregá un servicio a tu catálogo."}
-              </p>
-            </div>
-          </div>
-
-          <form action={saveServiceAction} className="space-y-3">
-            <input type="hidden" name="serviceId" value={editingService?.id ?? ""} />
-
-            <div className="space-y-1">
-              <label htmlFor="name" className="text-xs font-medium">Nombre</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                maxLength={80}
-                defaultValue={editingService?.name ?? ""}
-                placeholder="Ej: Corte clásico"
-                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="description" className="text-xs font-medium">Descripción</label>
-              <textarea
-                id="description"
-                name="description"
-                rows={3}
-                maxLength={240}
-                defaultValue={editingService?.description ?? ""}
-                placeholder="¿Qué incluye el servicio?"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground/30 resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label htmlFor="durationMinutes" className="text-xs font-medium">Duración (min)</label>
-                <input
-                  id="durationMinutes"
-                  name="durationMinutes"
-                  type="number"
-                  required
-                  min={5}
-                  max={480}
-                  step={5}
-                  defaultValue={editingService?.durationMinutes ?? 30}
-                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
-                />
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="price" className="text-xs font-medium">Precio</label>
-                <input
-                  id="price"
-                  name="price"
-                  type="text"
-                  inputMode="decimal"
-                  defaultValue={getPriceInputValue(editingService?.price ?? null)}
-                  placeholder="18000"
-                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
-                />
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border/60 bg-secondary/20 p-3 space-y-3">
-              <div className="flex items-start gap-2">
-                <input
-                  id="featured"
-                  name="featured"
-                  type="checkbox"
-                  value="on"
-                  defaultChecked={editingService?.featured ?? false}
-                  className="mt-0.5 size-4 rounded border-border"
-                />
-                <div>
-                  <label htmlFor="featured" className="text-sm font-medium flex items-center gap-1">
-                    <Sparkles className="size-3" /> Destacar servicio
-                  </label>
-                  <p className="text-[10px] text-muted-foreground">
-                    Máximo 3 destacados. Se muestran primero.
-                  </p>
-                </div>
-              </div>
-              
-              {(editingService?.featured || !editingService) && (
-                <div className="space-y-1">
-                  <label htmlFor="featuredLabel" className="text-xs font-medium">Etiqueta (opcional)</label>
-                  <input
-                    id="featuredLabel"
-                    name="featuredLabel"
-                    type="text"
-                    maxLength={24}
-                    defaultValue={editingService?.featuredLabel ?? ""}
-                    placeholder="Más elegido"
-                    className="h-8 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <LoadingButton className="h-9 flex-1 text-sm">
-                {editingService ? "Guardar cambios" : "Crear servicio"}
-              </LoadingButton>
-              {editingService && (
-                <Link
-                  href="/admin/services"
-                  className={cn(buttonVariants({ variant: "outline" }), "h-9 px-3")}
-                >
-                  Cancelar
-                </Link>
-              )}
-            </div>
-          </form>
-        </section>
+        <ServiceForm editingService={editingService} />
 
         {/* Lista de servicios */}
         <section className="rounded-xl border border-border/60 bg-background shadow-sm overflow-hidden">

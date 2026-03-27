@@ -9,11 +9,13 @@ import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
 import {
   getLocalAdminSettingsData,
   updateLocalAdminBooking,
+  createLocalPublicBooking,
 } from "@/server/local-store";
 import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
 import {
   getPocketBaseAdminSettingsData,
   updatePocketBaseAdminBooking,
+  createPocketBasePublicBooking,
 } from "@/server/pocketbase-store";
 
 const bookingSchema = z.object({
@@ -30,6 +32,7 @@ function buildBookingsRedirectPath(params: {
   status?: string;
   date?: string;
   q?: string;
+  nuevo?: string;
 }) {
   const searchParams = new URLSearchParams();
 
@@ -51,6 +54,10 @@ function buildBookingsRedirectPath(params: {
 
   if (params.q) {
     searchParams.set("q", params.q);
+  }
+
+  if (params.nuevo) {
+    searchParams.set("nuevo", params.nuevo);
   }
 
   const queryString = searchParams.toString();
@@ -88,6 +95,74 @@ function revalidateBookingViews(businessSlug: string) {
   revalidatePath("/admin/bookings");
   revalidatePath("/admin/dashboard");
   revalidatePath(`/${businessSlug}`);
+}
+
+const manualBookingSchema = z.object({
+  serviceId: z.string().trim().min(1, "Seleccioná un servicio."),
+  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida."),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Hora inválida."),
+  fullName: z.string().trim().min(2, "Ingresá el nombre del cliente.").max(80),
+  phone: z.string().trim().max(30).default(""),
+  email: z.string().trim().max(120).default(""),
+  notes: z.string().trim().max(400).default(""),
+});
+
+export async function createManualBookingAction(formData: FormData) {
+  try {
+    const parsed = manualBookingSchema.safeParse({
+      serviceId: String(formData.get("serviceId") ?? "").trim(),
+      bookingDate: String(formData.get("bookingDate") ?? "").trim(),
+      startTime: String(formData.get("startTime") ?? "").trim(),
+      fullName: String(formData.get("fullName") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      notes: String(formData.get("notes") ?? "").trim(),
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message ?? "Revisá los campos.";
+      throw new Error(firstError);
+    }
+
+    const context = await getBookingContext();
+
+    if (context.live) {
+      await createPocketBasePublicBooking({
+        businessSlug: context.businessSlug,
+        serviceId: parsed.data.serviceId,
+        bookingDate: parsed.data.bookingDate,
+        startTime: parsed.data.startTime,
+        fullName: parsed.data.fullName,
+        phone: parsed.data.phone,
+        email: parsed.data.email,
+        notes: parsed.data.notes,
+        initialStatus: "confirmed",
+      });
+    } else {
+      await createLocalPublicBooking({
+        businessSlug: context.businessSlug,
+        serviceId: parsed.data.serviceId,
+        bookingDate: parsed.data.bookingDate,
+        startTime: parsed.data.startTime,
+        fullName: parsed.data.fullName,
+        phone: parsed.data.phone,
+        email: parsed.data.email,
+        notes: parsed.data.notes,
+        initialStatus: "confirmed",
+      });
+    }
+
+    revalidateBookingViews(context.businessSlug);
+    redirect(buildBookingsRedirectPath({ saved: "nuevo", date: parsed.data.bookingDate }));
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(
+      buildBookingsRedirectPath({
+        error: error instanceof Error ? error.message : "No se pudo crear el turno.",
+        nuevo: "1",
+      })
+    );
+  }
 }
 
 export async function updateBookingAction(formData: FormData) {

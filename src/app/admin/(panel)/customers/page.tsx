@@ -1,4 +1,4 @@
-import { Search, Calendar, FileText, Download } from "lucide-react";
+import { Search, Calendar, FileText, Download, Phone, CalendarClock } from "lucide-react";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -70,13 +70,33 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-semibold text-card-foreground">{customer.fullName}</h3>
-                  <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                  <Link
+                    href={`/admin/bookings?q=${encodeURIComponent(customer.fullName)}`}
+                    className="truncate font-semibold text-card-foreground hover:underline block"
+                    title="Ver turnos de este cliente"
+                  >
+                    {customer.fullName}
+                  </Link>
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                    {customer.phone && (
+                      <a
+                        href={`https://wa.me/${customer.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir en WhatsApp"
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400 transition-colors"
+                      >
+                        <Phone className="size-3" />
+                        WA
+                      </a>
+                    )}
+                  </div>
                   {customer.email && (
                     <p className="truncate text-xs text-muted-foreground">{customer.email}</p>
                   )}
                 </div>
-                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
+                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium" title={`${customer.bookingsCount} turno${customer.bookingsCount !== 1 ? "s" : ""}`}>
                   {customer.bookingsCount}
                 </span>
               </div>
@@ -93,6 +113,18 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
                   </p>
                 )}
               </div>
+              {customer.bookingsCount > 0 && (
+                <Link
+                  href={`/admin/bookings?q=${encodeURIComponent(customer.fullName)}`}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "mt-2 h-7 w-full gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <CalendarClock className="size-3" />
+                  Ver {customer.bookingsCount} turno{customer.bookingsCount !== 1 ? "s" : ""}
+                </Link>
+              )}
             </article>
           ))}
         </section>

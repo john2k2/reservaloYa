@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { CalendarClock, Clock3, MessageSquareText, Download } from "lucide-react";
+import { CalendarClock, Clock3, MessageSquareText, Download, Phone, Plus } from "lucide-react";
 
 import { updateBookingAction } from "@/app/admin/(panel)/bookings/actions";
 import { BookingsNotice } from "@/app/admin/(panel)/bookings/bookings-notice";
 import { BookingSubmitButton } from "@/app/admin/(panel)/bookings/booking-submit-button";
+import { ManualBookingWrapper } from "@/app/admin/(panel)/bookings/manual-booking-wrapper";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
-import { getAdminBookingsData } from "@/server/queries/admin";
+import { getAdminBookingsData, getAdminServicesData } from "@/server/queries/admin";
 
 type AdminBookingsPageProps = {
   searchParams: Promise<{
@@ -54,7 +55,10 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
     date: params.date?.trim() ?? "",
     q: params.q?.trim() ?? "",
   };
-  const bookings = await getAdminBookingsData(activeFilters);
+  const [bookings, services] = await Promise.all([
+    getAdminBookingsData(activeFilters),
+    getAdminServicesData(),
+  ]);
   const notice = buildNotice(params);
   const savedBookingId = params.saved ?? "";
   const hasActiveFilters = Boolean(activeFilters.status || activeFilters.date || activeFilters.q);
@@ -82,20 +86,35 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
             Gestioná la agenda y actualizá estados.
           </p>
         </div>
-        <Link
-          href={bookingsExportHref}
-          className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "h-9 gap-2 shrink-0 w-full sm:w-auto justify-center"
-          )}
-        >
-          <Download className="size-4" />
-          <span className="hidden sm:inline">Exportar CSV</span>
-          <span className="sm:hidden">Exportar</span>
-        </Link>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link
+            href="/admin/bookings?nuevo=1"
+            className={cn(
+              buttonVariants({ variant: "default", size: "sm" }),
+              "h-9 gap-2 flex-1 sm:flex-none justify-center"
+            )}
+          >
+            <Plus className="size-4" />
+            Nuevo turno
+          </Link>
+          <Link
+            href={bookingsExportHref}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "h-9 gap-2 shrink-0 justify-center"
+            )}
+          >
+            <Download className="size-4" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="sm:hidden">Exportar</span>
+          </Link>
+        </div>
       </header>
 
       {notice && <BookingsNotice message={notice.message} tone={notice.tone} />}
+
+      {/* Formulario turno manual (se muestra si ?nuevo=1) */}
+      <ManualBookingWrapper services={services} />
 
       {/* Filtros compactos */}
       <section className="rounded-xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm">
@@ -184,7 +203,21 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       {booking.statusLabel}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{booking.phone}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs sm:text-sm text-muted-foreground">{booking.phone}</p>
+                    {booking.phone && (
+                      <a
+                        href={`https://wa.me/${booking.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir en WhatsApp"
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400 transition-colors"
+                      >
+                        <Phone className="size-3" />
+                        WhatsApp
+                      </a>
+                    )}
+                  </div>
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-2.5 py-1 text-xs text-foreground">
                     <CalendarClock className="size-3 sm:size-3.5" />
                     {formatDateLabel(booking.bookingDate)} · {booking.startTime}

@@ -290,6 +290,106 @@ export async function createBlockedSlotAction(formData: FormData) {
   }
 }
 
+export type BlockedSlotActionState = { ok: true; message: string } | { ok: false; message: string } | null;
+
+export async function createBlockedSlotFormAction(
+  _prevState: BlockedSlotActionState,
+  formData: FormData
+): Promise<BlockedSlotActionState> {
+  try {
+    const blockMode = String(formData.get("blockMode") ?? "single").trim();
+    const context = await getAvailabilityContext();
+    const createdSlots =
+      blockMode === "weekly"
+        ? (() => {
+            const parsed = recurringBlockedSlotSchema.safeParse({
+              repeatFromDate: String(formData.get("repeatFromDate") ?? "").trim(),
+              repeatDayOfWeek: formData.get("repeatDayOfWeek"),
+              repeatWeeks: formData.get("repeatWeeks"),
+              startTime: String(formData.get("startTime") ?? "").trim(),
+              endTime: String(formData.get("endTime") ?? "").trim(),
+              reason: String(formData.get("reason") ?? "").trim(),
+            });
+
+            if (!parsed.success) {
+              throw new Error("Revisa la repeticion semanal antes de guardar.");
+            }
+
+            ensureRange(parsed.data.startTime, parsed.data.endTime);
+
+            return {
+              slots: buildWeeklyBlockedDates({
+                startDate: parsed.data.repeatFromDate,
+                dayOfWeek: parsed.data.repeatDayOfWeek,
+                totalWeeks: parsed.data.repeatWeeks,
+              }).map((blockedDate) => ({
+                blockedDate,
+                startTime: parsed.data.startTime,
+                endTime: parsed.data.endTime,
+                reason: parsed.data.reason,
+              })),
+              label: `${dayLabels[parsed.data.repeatDayOfWeek] ?? "ese día"} durante ${parsed.data.repeatWeeks} semanas`,
+            };
+          })()
+        : (() => {
+            const parsed = blockedSlotSchema.safeParse({
+              blockedDate: String(formData.get("blockedDate") ?? "").trim(),
+              startTime: String(formData.get("startTime") ?? "").trim(),
+              endTime: String(formData.get("endTime") ?? "").trim(),
+              reason: String(formData.get("reason") ?? "").trim(),
+            });
+
+            if (!parsed.success) {
+              throw new Error("Revisa fecha, horario y motivo del bloqueo.");
+            }
+
+            ensureRange(parsed.data.startTime, parsed.data.endTime);
+
+            return {
+              slots: [
+                {
+                  blockedDate: parsed.data.blockedDate,
+                  startTime: parsed.data.startTime,
+                  endTime: parsed.data.endTime,
+                  reason: parsed.data.reason,
+                },
+              ],
+              label: parsed.data.blockedDate,
+            };
+          })();
+
+    const result = context.live
+      ? await createPocketBaseBlockedSlots({
+          businessId: context.businessId,
+          slots: createdSlots.slots,
+        })
+      : await createLocalBlockedSlots({
+          businessSlug: context.businessSlug,
+          slots: createdSlots.slots,
+        });
+
+    if (result.createdCount === 0) {
+      throw new Error("Esos bloqueos ya existen.");
+    }
+
+    revalidateAvailabilityViews(context.businessSlug);
+
+    const message =
+      result.createdCount === 1 && result.skippedCount === 0
+        ? `Bloqueo agregado para ${createdSlots.label}.`
+        : result.skippedCount > 0
+          ? `Se agregaron ${result.createdCount} bloqueos para ${createdSlots.label}. ${result.skippedCount} ya existian.`
+          : `Se agregaron ${result.createdCount} bloqueos para ${createdSlots.label}.`;
+
+    return { ok: true, message };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "No se pudo crear el bloqueo.",
+    };
+  }
+}
+
 export async function removeBlockedSlotAction(formData: FormData) {
   const blockedSlotId = String(formData.get("blockedSlotId") ?? "").trim();
   const blockedDate = String(formData.get("blockedDate") ?? "").trim() || "bloqueo";

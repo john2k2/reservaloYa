@@ -3,21 +3,28 @@ import {
   AlertCircle,
   BarChart3,
   CalendarClock,
+  CalendarPlus,
+  CheckCircle2,
+  Circle,
   Clock3,
   ExternalLink,
-  Percent,
-  Pointer,
   Send,
   TrendingUp,
 } from "lucide-react";
 
 import { runLocalReminderSweepAction } from "@/app/admin/(panel)/dashboard/actions";
 import { MetricCard } from "@/components/dashboard/metric-card";
+import { BookingLinkBar } from "@/components/ui/copy-link-button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { canAccessAdminRoute } from "@/lib/admin-permissions";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
-import { getAdminDashboardData, getAdminShellData } from "@/server/queries/admin";
+import {
+  getAdminDashboardData,
+  getAdminShellData,
+  getAdminServicesData,
+  getAdminAvailabilityData,
+} from "@/server/queries/admin";
 
 type AdminDashboardPageProps = {
   searchParams: Promise<{
@@ -28,15 +35,38 @@ type AdminDashboardPageProps = {
 };
 
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
-  const [dashboardData, shellData] = await Promise.all([
+  const [dashboardData, shellData, services, availability] = await Promise.all([
     getAdminDashboardData(),
     getAdminShellData(),
+    getAdminServicesData(),
+    getAdminAvailabilityData(),
   ]);
   const params = await searchParams;
   const reminderMessage = params.reminders ?? "";
   const errorMessage = params.error ?? "";
   const successMessage = params.success ?? "";
   const canEditSite = canAccessAdminRoute(shellData?.userRole, "/admin/onboarding");
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  const hasServices = services.length > 0;
+  const hasActiveDays = availability.rules.some((r) => r.active);
+  const setupDone = hasServices && hasActiveDays;
+
+  const setupSteps = [
+    {
+      done: hasServices,
+      label: "Agregar al menos un servicio",
+      href: "/admin/services",
+      cta: "Ir a Servicios",
+    },
+    {
+      done: hasActiveDays,
+      label: "Activar horarios de atención",
+      href: "/admin/availability",
+      cta: "Ir a Disponibilidad",
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -67,6 +97,9 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         </div>
       </header>
 
+      {/* Link de reservas */}
+      <BookingLinkBar businessSlug={dashboardData.businessSlug} appUrl={appUrl} />
+
       {/* Alertas */}
       {(reminderMessage || errorMessage || successMessage) && (
         <div
@@ -82,6 +115,52 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         >
           {errorMessage || successMessage || reminderMessage}
         </div>
+      )}
+
+      {/* Checklist de configuración inicial */}
+      {!setupDone && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/10">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="size-4 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Completá la configuración para recibir reservas
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {setupSteps.map((step) => (
+              <div key={step.label} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  {step.done ? (
+                    <CheckCircle2 className="size-4 shrink-0 text-success" />
+                  ) : (
+                    <Circle className="size-4 shrink-0 text-amber-500" />
+                  )}
+                  <span
+                    className={cn(
+                      "text-sm",
+                      step.done
+                        ? "text-muted-foreground line-through"
+                        : "text-foreground"
+                    )}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {!step.done && (
+                  <Link
+                    href={step.href}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "h-7 text-xs shrink-0"
+                    )}
+                  >
+                    {step.cta}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Métricas principales */}
@@ -178,15 +257,15 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </div>
                 <div className="rounded-lg bg-secondary/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Pointer className="size-4" />
-                    Clics
+                    <CalendarPlus className="size-4" />
+                    Clics para reservar
                   </div>
                   <p className="mt-2 text-2xl font-bold">{dashboardData.analytics.ctaClicks}</p>
                 </div>
                 <div className="rounded-lg bg-secondary/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <TrendingUp className="size-4" />
-                    Inicios
+                    Formularios
                   </div>
                   <p className="mt-2 text-2xl font-bold">
                     {dashboardData.analytics.bookingIntents}
@@ -194,8 +273,8 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </div>
                 <div className="rounded-lg bg-secondary/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Percent className="size-4" />
-                    Conversión
+                    <CheckCircle2 className="size-4" />
+                    Completaron reserva
                   </div>
                   <p className="mt-2 text-2xl font-bold">
                     {dashboardData.analytics.conversionRate}%
@@ -203,7 +282,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </div>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
-                Fuente principal: {dashboardData.analytics.topSource}
+                Origen más frecuente: {dashboardData.analytics.topSource}
               </p>
             </article>
           )}
@@ -219,7 +298,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   Recordatorios
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Ventana: {dashboardData.reminders?.reminderWindowHours ?? 24} hs
+                  Se avisa con {dashboardData.reminders?.reminderWindowHours ?? 24} hs de anticipación
                 </p>
               </div>
               <Send aria-hidden="true" className="size-5 text-muted-foreground" />
@@ -231,7 +310,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   {dashboardData.reminders?.pending ?? 0}
                 </p>
                 <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  listos
+                  para enviar
                 </p>
               </div>
               <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
@@ -239,7 +318,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   {dashboardData.reminders?.missingEmail ?? 0}
                 </p>
                 <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  sin canal
+                  sin email
                 </p>
               </div>
               <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
@@ -247,14 +326,14 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   {dashboardData.reminders?.sentRecently ?? 0}
                 </p>
                 <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  enviados
+                  ya avisados
                 </p>
               </div>
             </div>
 
             <p className="mt-3 text-xs text-muted-foreground">
               {dashboardData.reminders?.providerReady
-                ? "✓ Canal de recordatorios listo"
+                ? "✓ Recordatorios por email activos"
                 : "Configurá Resend o Twilio WhatsApp para enviar recordatorios."}
             </p>
 
@@ -291,7 +370,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-muted-foreground">
-                      {channel.conversionRate}%
+                      {channel.conversionRate}% reservaron
                     </span>
                   </div>
                 ))}
