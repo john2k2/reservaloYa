@@ -2,7 +2,7 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { isPocketBaseConfigured, isPocketBaseAdminConfigured } from "@/lib/pocketbase/config";
 import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
-import type { BusinessRecord, BookingRecord, UserRecord } from "@/server/pocketbase-domain";
+import type { BusinessRecord, BookingRecord, UserRecord, SubscriptionRecord } from "@/server/pocketbase-domain";
 
 async function getAdminClient() {
   if (!isPocketBaseAdminConfigured()) {
@@ -18,6 +18,12 @@ async function getAdminClient() {
   }
 }
 
+export type PlatformSubscriptionInfo = {
+  status: "trial" | "active" | "cancelled" | "suspended" | "none";
+  trialEndsAt?: string;
+  nextBillingDate?: string;
+};
+
 export type PlatformBusinessRow = {
   id: string;
   name: string;
@@ -27,6 +33,8 @@ export type PlatformBusinessRow = {
   createdAt: string;
   ownerEmail: string;
   ownerName: string;
+  mpConnected: boolean;
+  subscription: PlatformSubscriptionInfo;
 };
 
 export type PlatformUserRow = {
@@ -47,6 +55,10 @@ export type PlatformDashboardData = {
   totalUsers: number;
   bookingsLast30d: number;
   newBusinessesThisWeek: number;
+  // Revenue/subscription breakdown
+  subscriptionActive: number;
+  subscriptionTrial: number;
+  subscriptionSuspended: number;
   recentBusinesses: PlatformBusinessRow[];
 };
 
@@ -60,13 +72,14 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [businesses, users, recentBookings] = await Promise.all([
+  const [businesses, users, recentBookings, subscriptions] = await Promise.all([
     pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-id", requestKey: null }).catch(() => [] as BusinessRecord[]),
     pb.collection("users").getFullList<UserRecord>({ sort: "-created", requestKey: null }).catch(() => [] as UserRecord[]),
     pb.collection("bookings").getFullList<BookingRecord>({
       filter: pb.filter("created >= {:since}", { since: since30d }),
       requestKey: null,
     }).catch(() => [] as BookingRecord[]),
+    pb.collection("subscriptions").getFullList<SubscriptionRecord>({ requestKey: null }).catch(() => [] as SubscriptionRecord[]),
   ]);
 
   // Build owner map: businessId -> owner user
@@ -76,6 +89,22 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
       const bizId = Array.isArray(user.business) ? user.business[0] : user.business;
       if (bizId) ownerMap.set(String(bizId), user);
     }
+  }
+
+  // Build subscription map: businessId -> subscription
+  const subMap = new Map<string, SubscriptionRecord>();
+  for (const sub of subscriptions) {
+    subMap.set(sub.businessId, sub);
+  }
+
+  function buildSubscriptionInfo(businessId: string): PlatformSubscriptionInfo {
+    const sub = subMap.get(businessId);
+    if (!sub) return { status: "none" };
+    return {
+      status: sub.status,
+      trialEndsAt: sub.trialEndsAt,
+      nextBillingDate: sub.nextBillingDate,
+    };
   }
 
   const recentBusinesses: PlatformBusinessRow[] = businesses.slice(0, 10).map((b) => {
@@ -89,8 +118,15 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
       createdAt: b.created,
       ownerEmail: owner?.email ?? "—",
       ownerName: String(owner?.name ?? owner?.email ?? "—"),
+      mpConnected: Boolean(b.mpConnected),
+      subscription: buildSubscriptionInfo(b.id),
     };
   });
+
+  // Subscription counts
+  const subActive = subscriptions.filter((s) => s.status === "active").length;
+  const subTrial = subscriptions.filter((s) => s.status === "trial").length;
+  const subSuspended = subscriptions.filter((s) => s.status === "suspended" || s.status === "cancelled").length;
 
   return {
     totalBusinesses: businesses.length,
@@ -98,6 +134,9 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
     totalUsers: users.filter((u) => u.role !== "public_app").length,
     bookingsLast30d: recentBookings.length,
     newBusinessesThisWeek: businesses.filter((b) => b.created >= since7d).length,
+    subscriptionActive: subActive,
+    subscriptionTrial: subTrial,
+    subscriptionSuspended: subSuspended,
     recentBusinesses,
   };
 }
@@ -109,13 +148,14 @@ export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[]
 
   const pb = await getAdminClient();
 
-  const [businesses, users] = await Promise.all([
+  const [businesses, users, subscriptions] = await Promise.all([
     pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-id", requestKey: null }).catch(() => [] as BusinessRecord[]),
     pb.collection("users").getFullList<UserRecord>({
       filter: "role = 'owner'",
       sort: "email",
       requestKey: null,
     }).catch(() => [] as UserRecord[]),
+    pb.collection("subscriptions").getFullList<SubscriptionRecord>({ requestKey: null }).catch(() => [] as SubscriptionRecord[]),
   ]);
 
   const ownerMap = new Map<string, UserRecord>();
@@ -124,8 +164,14 @@ export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[]
     if (bizId) ownerMap.set(String(bizId), user);
   }
 
+  const subMap = new Map<string, SubscriptionRecord>();
+  for (const sub of subscriptions) {
+    subMap.set(sub.businessId, sub);
+  }
+
   return businesses.map((b) => {
     const owner = ownerMap.get(b.id);
+    const sub = subMap.get(b.id);
     return {
       id: b.id,
       name: b.name,
@@ -135,6 +181,10 @@ export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[]
       createdAt: b.created,
       ownerEmail: owner?.email ?? "—",
       ownerName: String(owner?.name ?? owner?.email ?? "—"),
+      mpConnected: Boolean(b.mpConnected),
+      subscription: sub
+        ? { status: sub.status, trialEndsAt: sub.trialEndsAt, nextBillingDate: sub.nextBillingDate }
+        : { status: "none" as const },
     };
   });
 }
@@ -173,4 +223,12 @@ export async function getPlatformUsersList(): Promise<PlatformUserRow[] | null> 
       createdAt: u.created,
     };
   });
+}
+
+export async function togglePlatformBusinessActive(
+  businessId: string,
+  active: boolean
+): Promise<void> {
+  const pb = await getAdminClient();
+  await pb.collection("businesses").update(businessId, { active });
 }
