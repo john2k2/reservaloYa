@@ -167,8 +167,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
                 {selectedService
-                  ? "Ya tienes el servicio definido. Ahora te mostramos días y horas reales para confirmar el turno sin vueltas."
-                  : "Primero selecciona que quieres reservar. Cuando lo hagas, vas a ver disponibilidad real y el formulario final."}
+                  ? "Ya tenés el servicio elegido. Ahora seleccioná día y hora para confirmar tu turno."
+                  : "Primero elegí qué querés reservar. Cuando lo hagas, vas a ver los horarios disponibles."}
               </p>
               {rescheduleBooking && (
                 <div className="mt-5 flex items-start gap-3 rounded-[1.5rem] border border-border/60 bg-background/85 p-4 text-sm text-muted-foreground">
@@ -211,12 +211,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 <CalendarDays className="mt-0.5 size-4 shrink-0 text-foreground" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Estado del flujo
+                    Siguiente paso
                   </p>
                   <p className="mt-1 text-sm font-medium text-foreground">
                     {selectedService
-                      ? "Los horarios se cargan apenas eliges la fecha"
-                      : `${pageData.services.length} servicios disponibles para elegir`}
+                      ? "Elegí fecha y luego el horario"
+                      : `${pageData.services.length} ${pageData.services.length === 1 ? "servicio disponible" : "servicios disponibles"}`}
                   </p>
                 </div>
               </div>
@@ -271,7 +271,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 businessSlug={slug}
                 accentColor={accentColor}
                 heading="Selecciona el servicio que quieres reservar"
-                description="Este es el primer paso real del flujo. Cuando elijas uno, te mostraremos solo la disponibilidad que corresponde."
+                description="Cuando elijas un servicio, vas a ver los horarios disponibles para ese día."
                 prefetchDate={selectedDate}
                 services={pageData.services}
                 baseQueryParams={{

@@ -55,21 +55,33 @@ export function BookingWaitlistForm({
         <input type="hidden" name="bookingDate" value={bookingDate} />
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <input
-            name="fullName"
-            placeholder="Tu nombre"
-            required
-            minLength={2}
-            maxLength={120}
-            className="minimalist-input text-sm"
-          />
-          <input
-            name="email"
-            type="email"
-            placeholder="Tu email"
-            required
-            className="minimalist-input text-sm"
-          />
+          <div>
+            <label htmlFor="waitlist-fullName" className="sr-only">
+              Nombre completo
+            </label>
+            <input
+              id="waitlist-fullName"
+              name="fullName"
+              placeholder="Tu nombre"
+              required
+              minLength={2}
+              maxLength={120}
+              className="minimalist-input text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="waitlist-email" className="sr-only">
+              Correo electrónico
+            </label>
+            <input
+              id="waitlist-email"
+              name="email"
+              type="email"
+              placeholder="Tu email"
+              required
+              className="minimalist-input text-sm"
+            />
+          </div>
         </div>
 
         {state && !state.success && (

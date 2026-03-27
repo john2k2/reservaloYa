@@ -92,25 +92,37 @@ export function AdminShell({
           </div>
         </div>
 
-        <nav className="flex-1 space-y-0.5 px-2">
-          {visibleNavigation.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-
+        <nav className="flex-1 px-2 py-1">
+          {(["Operaciones", "Configuración"] as const).map((group) => {
+            const items = visibleNavigation.filter((item) => item.group === group);
+            if (items.length === 0) return null;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                )}
-              >
-                <Icon aria-hidden="true" className="size-4" />
-                {item.label}
-              </Link>
+              <div key={group} className="mb-3">
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  {group}
+                </p>
+                <div className="space-y-0.5">
+                  {items.map((item) => {
+                    const Icon = item.icon;
+                    const active = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-foreground text-background"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )}
+                      >
+                        <Icon aria-hidden="true" className="size-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </nav>
@@ -205,14 +217,6 @@ export function AdminShell({
                   pointerEvents: mobileNavOpen ? "auto" : "none",
                 }}
               >
-                <div className="rounded-xl bg-secondary/40 p-3 mb-2">
-                  <p className="truncate text-sm font-medium">{profileName}</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                    {getAdminRoleLabel(userRole)}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-                </div>
-
                 <nav className="grid grid-cols-2 gap-2">
                   {visibleNavigation.map((item) => {
                     const Icon = item.icon;

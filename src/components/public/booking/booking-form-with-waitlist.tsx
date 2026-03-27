@@ -141,13 +141,10 @@ export function BookingFormWithWaitlist({
             changeHref={changeHref}
           />
 
-          {/* Paso 2 — Fecha y hora */}
+          {/* Fecha y hora */}
           <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-3 shadow-sm sm:p-4">
             <div className="mb-4 px-2 pt-2 sm:px-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Paso 2
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 Elige día y hora
               </h2>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -184,12 +181,9 @@ export function BookingFormWithWaitlist({
               </div>
             </section>
           ) : (
-            /* Paso 3 — Datos (solo si hay horarios) */
+            /* Datos del cliente */
             <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Paso 3
-              </p>
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 Completa tus datos
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -304,19 +298,6 @@ export function BookingFormWithWaitlist({
 
             <div className="mt-5 space-y-3">
               <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/85 px-4 py-3">
-                <CheckCircle2 className="mt-0.5 size-4 shrink-0" style={{ color: accentColor }} />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Servicio
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">{service.name}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {service.durationMinutes} min de duración
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/85 px-4 py-3">
                 <CalendarDays
                   className="mt-0.5 size-4 shrink-0"
                   style={{ color: accentColor }}
@@ -325,9 +306,9 @@ export function BookingFormWithWaitlist({
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Fecha y horario
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">Calendario activo</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">Elegí arriba</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Los horarios se cargan al instante cuando eliges una fecha.
+                    Seleccioná una fecha y luego el horario disponible.
                   </p>
                 </div>
               </div>
@@ -359,15 +340,6 @@ export function BookingFormWithWaitlist({
                   </div>
                 </div>
               )}
-            </div>
-
-            <div className="mt-5 rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
-              <p className="text-sm font-semibold text-foreground">
-                {paymentMode === "mercadopago"
-                  ? "Elige la hora y despues continua al pago."
-                  : "Elige la hora y despues envia tus datos."}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">{paymentSummary.description}</p>
             </div>
 
             <div className="mt-6">

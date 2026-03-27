@@ -242,11 +242,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             )}
           </article>
 
-          {/* Analytics compacto — solo datos no mostrados en las métricas superiores */}
+          {/* Analytics compacto */}
           {dashboardData.analytics && (
             <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
               <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
-                Embudo de reservas
+                Actividad de reservas
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-secondary/30 p-4">

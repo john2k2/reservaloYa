@@ -205,7 +205,7 @@ export default async function ConfirmationPage({
         {/* Detalles del turno */}
         <div className="mt-8 sm:mt-10 w-full rounded-xl sm:rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-left shadow-sm">
           <h2 className="mb-4 sm:mb-6 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Detalles de la cita
+            Detalles de tu turno
           </h2>
 
           <div className="space-y-3 sm:space-y-4">
@@ -278,6 +278,12 @@ export default async function ConfirmationPage({
             Reservar otro turno
           </Link>
         </div>
+
+        {!isPaymentFailed && (
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Después de tu visita vas a recibir un email para dejarnos tu opinión.
+          </p>
+        )}
 
       </div>
     </main>

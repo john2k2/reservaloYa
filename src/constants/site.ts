@@ -101,41 +101,49 @@ export const adminNavigation: Array<{
   href: string;
   label: string;
   icon: LucideIcon;
+  group?: string;
 }> = [
   {
     href: "/admin/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
+    group: "Operaciones",
   },
   {
     href: "/admin/bookings",
     label: "Turnos",
     icon: ClipboardList,
-  },
-  {
-    href: "/admin/services",
-    label: "Servicios",
-    icon: Scissors,
-  },
-  {
-    href: "/admin/availability",
-    label: "Disponibilidad",
-    icon: Clock3,
+    group: "Operaciones",
   },
   {
     href: "/admin/customers",
     label: "Clientes",
     icon: Users,
+    group: "Operaciones",
+  },
+  {
+    href: "/admin/services",
+    label: "Servicios",
+    icon: Scissors,
+    group: "Configuración",
+  },
+  {
+    href: "/admin/availability",
+    label: "Horarios",
+    icon: Clock3,
+    group: "Configuración",
   },
   {
     href: "/admin/team",
     label: "Equipo",
     icon: ShieldCheck,
+    group: "Configuración",
   },
   {
     href: "/admin/onboarding",
-    label: "Página",
+    label: "Mi negocio",
     icon: Sparkles,
+    group: "Configuración",
   },
 ];
 

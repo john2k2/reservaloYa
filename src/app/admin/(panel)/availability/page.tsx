@@ -59,9 +59,9 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Disponibilidad</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Horarios de atención</h1>
           <p className="text-sm text-muted-foreground">
-            Definí tus horarios de atención y bloqueos especiales.
+            Definí los días y horarios en que atendés, y bloqueá fechas especiales.
           </p>
         </div>
         <span className="inline-flex items-center rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs font-medium">
@@ -85,19 +85,9 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         {/* Horarios semanales */}
         <section className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-foreground">Horarios semanales</h2>
-              <p className="text-xs text-muted-foreground">Activá los días que atendés y sus horarios.</p>
-            </div>
-            <form action={saveAvailabilityRulesAction}>
-              <AvailabilitySubmitButton
-                scopeValue="week"
-                idleLabel="Guardar semana"
-                pendingLabel="Guardando..."
-                className="h-8 text-xs px-3"
-              />
-            </form>
+          <div className="mb-4">
+            <h2 className="font-semibold text-foreground">Horarios semanales</h2>
+            <p className="text-xs text-muted-foreground">Activá los días que atendés y sus horarios.</p>
           </div>
 
           <form action={saveAvailabilityRulesAction} className="space-y-2">
@@ -105,14 +95,14 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
               <div
                 key={rule.dayOfWeek}
                 className={cn(
-                  "grid items-center gap-2 rounded-lg border p-3 sm:grid-cols-[100px_80px_1fr_1fr_auto]",
+                  "grid items-center gap-2 rounded-lg border p-3 sm:grid-cols-[100px_80px_1fr_1fr]",
                   rule.active ? "border-border/60 bg-secondary/5" : "border-border/30 bg-secondary/20 opacity-70"
                 )}
               >
                 <input type="hidden" name={`ruleId_${rule.dayOfWeek}`} value={rule.ruleId} />
-                
+
                 <span className="text-sm font-medium">{rule.label}</span>
-                
+
                 <select
                   name={`active_${rule.dayOfWeek}`}
                   defaultValue={String(rule.active)}
@@ -146,16 +136,17 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
                     className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs outline-none disabled:opacity-50"
                   />
                 </div>
-
-                <AvailabilitySubmitButton
-                  scopeValue={`day:${rule.dayOfWeek}`}
-                  idleLabel="Guardar"
-                  pendingLabel="..."
-                  variant="outline"
-                  className="h-8 text-xs px-2"
-                />
               </div>
             ))}
+
+            <div className="pt-2">
+              <AvailabilitySubmitButton
+                scopeValue="week"
+                idleLabel="Guardar horarios"
+                pendingLabel="Guardando..."
+                className="h-10 text-sm"
+              />
+            </div>
           </form>
         </section>
 

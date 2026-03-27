@@ -21,11 +21,11 @@ type AdminBookingsPageProps = {
 };
 
 const statusOptions = [
-  { value: "pending", label: "Pendiente" },
-  { value: "confirmed", label: "Confirmado" },
-  { value: "completed", label: "Completado" },
-  { value: "cancelled", label: "Cancelado" },
-  { value: "no_show", label: "No asistió" },
+  { value: "pending", label: "Pendiente", hint: "Esperando confirmación" },
+  { value: "confirmed", label: "Confirmado", hint: "Turno confirmado" },
+  { value: "completed", label: "Completado", hint: "El servicio ya se realizó" },
+  { value: "cancelled", label: "Cancelado", hint: "El turno fue cancelado" },
+  { value: "no_show", label: "No asistió", hint: "El cliente no se presentó" },
 ] as const;
 
 function formatDateLabel(date: string) {
@@ -241,7 +241,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
                     >
                       {statusOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value} title={opt.hint}>{opt.label}</option>
                       ))}
                     </select>
                   </div>
