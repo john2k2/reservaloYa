@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   AlertCircle,
   BarChart3,
-  CalendarClock,
   CalendarPlus,
   CheckCircle2,
   Circle,
@@ -16,7 +15,6 @@ import { runLocalReminderSweepAction } from "@/app/admin/(panel)/dashboard/actio
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { BookingLinkBar } from "@/components/ui/copy-link-button";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { canAccessAdminRoute } from "@/lib/admin-permissions";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
 import {
@@ -45,8 +43,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const reminderMessage = params.reminders ?? "";
   const errorMessage = params.error ?? "";
   const successMessage = params.success ?? "";
-  const canEditSite = canAccessAdminRoute(shellData?.userRole, "/admin/onboarding");
-
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   const hasServices = services.length > 0;
@@ -82,19 +78,14 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
               : "Todo lo que necesitás saber de tu negocio, en un solo lugar."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href={`/${dashboardData.businessSlug}`}
-            target="_blank"
-            className={cn(
-              buttonVariants({ variant: "default", size: "lg" }),
-              "h-11 gap-2"
-            )}
-          >
-            Ver página pública
-            <ExternalLink aria-hidden="true" className="size-4" />
-          </Link>
-        </div>
+        <Link
+          href={`/${dashboardData.businessSlug}`}
+          target="_blank"
+          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+        >
+          <ExternalLink aria-hidden="true" className="size-3.5" />
+          Ver página pública
+        </Link>
       </header>
 
       {/* Link de reservas */}
@@ -176,10 +167,21 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         ))}
       </section>
 
-      {/* Layout de 3 columnas para pantallas grandes */}
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_0.9fr] xl:grid-cols-[1.3fr_1fr_0.8fr]">
+      {/* Layout de 2 columnas para pantallas grandes */}
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Columna 1: Turnos + Analytics */}
         <div className="space-y-6">
+          {/* Alerta turnos pendientes */}
+          {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes")) && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700">
+              <AlertCircle className="size-4 shrink-0" />
+              Tenés turnos pendientes de confirmar
+              <Link href="/admin/bookings?status=pending" className="ml-auto text-xs underline underline-offset-2">
+                Ver →
+              </Link>
+            </div>
+          )}
+
           {/* Próximos turnos */}
           <article className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
@@ -241,20 +243,13 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             )}
           </article>
 
-          {/* Analytics compacto */}
+          {/* Analytics compacto — solo datos no mostrados en las métricas superiores */}
           {dashboardData.analytics && (
             <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
               <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
-                Análisis de visitas
+                Embudo de reservas
               </h2>
-              <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4">
-                <div className="rounded-lg bg-secondary/30 p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <BarChart3 className="size-4" />
-                    Visitas
-                  </div>
-                  <p className="mt-2 text-2xl font-bold">{dashboardData.analytics.visits}</p>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-secondary/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CalendarPlus className="size-4" />
@@ -265,19 +260,10 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 <div className="rounded-lg bg-secondary/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <TrendingUp className="size-4" />
-                    Formularios
+                    Formularios iniciados
                   </div>
                   <p className="mt-2 text-2xl font-bold">
                     {dashboardData.analytics.bookingIntents}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-secondary/30 p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="size-4" />
-                    Completaron reserva
-                  </div>
-                  <p className="mt-2 text-2xl font-bold">
-                    {dashboardData.analytics.conversionRate}%
                   </p>
                 </div>
               </div>
@@ -349,6 +335,16 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </LoadingButton>
               </form>
             )}
+
+            {/* Próximo turno a recordar */}
+            {dashboardData.reminders?.nextBookingAt && (
+              <div className="mt-3 rounded-lg border border-border/50 bg-secondary/20 p-3">
+                <p className="text-xs text-muted-foreground">Próximo turno a recordar</p>
+                <p className="mt-0.5 text-sm font-medium text-foreground">
+                  {dashboardData.reminders.nextBookingAt}
+                </p>
+              </div>
+            )}
           </article>
 
           {/* Canales */}
@@ -385,79 +381,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           </article>
         </div>
 
-        {/* Columna 3: Alertas + Accesos */}
-        <div className="space-y-6">
-          {/* Alertas - solo mostrar si hay turnos pendientes */}
-          {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes")) && (
-            <article className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-medium text-amber-700">
-                <AlertCircle className="size-4" />
-                Revisá tus turnos pendientes
-              </div>
-            </article>
-          )}
-
-          {/* Accesos rápidos */}
-          <article className="rounded-xl border border-border/60 bg-secondary/10 p-5 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Accesos rápidos
-            </h2>
-            <div className="grid grid-cols-1 gap-2">
-              <Link
-                href="/admin/bookings"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "h-10 w-full justify-start gap-2 text-sm"
-                )}
-              >
-                <CalendarClock className="size-4" />
-                Ver turnos
-              </Link>
-              <Link
-                href="/admin/customers"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "h-10 w-full justify-start gap-2 text-sm"
-                )}
-              >
-                <TrendingUp className="size-4" />
-                Ver clientes
-              </Link>
-              <Link
-                href="/admin/services"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "h-10 w-full justify-start gap-2 text-sm"
-                )}
-              >
-                <Send className="size-4" />
-                Servicios
-              </Link>
-              {canEditSite ? (
-                <Link
-                  href="/admin/onboarding"
-                  className={cn(
-                    buttonVariants({ variant: "outline" }),
-                    "h-10 w-full justify-start gap-2 text-sm"
-                  )}
-                >
-                  <ExternalLink className="size-4" />
-                  Personalizar sitio
-                </Link>
-              ) : null}
-            </div>
-          </article>
-
-          {/* Próximo recordatorio */}
-          {dashboardData.reminders?.nextBookingAt && (
-            <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
-              <p className="text-xs text-muted-foreground">Próximo turno a recordar</p>
-              <p className="mt-1 text-sm font-medium text-foreground">
-                {dashboardData.reminders.nextBookingAt}
-              </p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
