@@ -23,11 +23,13 @@ export function AvailabilityBlockForm({
   const router = useRouter();
   const [blockMode, setBlockMode] = useState<BlockMode>("single");
   const [formKey, setFormKey] = useState(0);
-  const [state, action, isPending] = useActionState(createBlockedSlotFormAction, null);
+  const [state, action] = useActionState(createBlockedSlotFormAction, null);
 
   useEffect(() => {
     if (state?.ok) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormKey((k) => k + 1);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBlockMode("single");
       router.refresh();
     }

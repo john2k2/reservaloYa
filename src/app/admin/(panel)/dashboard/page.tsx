@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   AlertCircle,
-  BarChart3,
   CalendarPlus,
   CheckCircle2,
   Circle,
@@ -33,7 +32,7 @@ type AdminDashboardPageProps = {
 };
 
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
-  const [dashboardData, shellData, services, availability] = await Promise.all([
+  const [dashboardData, , services, availability] = await Promise.all([
     getAdminDashboardData(),
     getAdminShellData(),
     getAdminServicesData(),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock3, ExternalLink, PencilLine, Plus } from "lucide-react";
+import { Clock3, ExternalLink } from "lucide-react";
 
 import { deactivateServiceAction } from "@/app/admin/(panel)/services/actions";
 import { ServiceDeleteButton } from "@/app/admin/(panel)/services/service-delete-button";
