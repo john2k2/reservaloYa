@@ -50,6 +50,7 @@ export type CreatePaymentPreferenceInput = {
   serviceName: string;
   customerEmail?: string;
   customerName: string;
+  customerPhone?: string;
   priceAmount: number;  // ARS
   currency?: string;    // default: ARS
 };
@@ -82,6 +83,9 @@ async function createPreferenceWithClient(
 
     const preference = new Preference(client);
 
+    const [firstName, ...rest] = input.customerName.trim().split(" ");
+    const lastName = rest.join(" ") || firstName;
+
     const response = await preference.create({
       body: {
         items: [
@@ -89,6 +93,7 @@ async function createPreferenceWithClient(
             id: input.bookingId,
             title: `${input.serviceName} – ${input.businessName}`,
             description: `Reserva para ${input.customerName}`,
+            category_id: "services",
             quantity: 1,
             unit_price: input.priceAmount,
             currency_id: currency,
@@ -96,8 +101,12 @@ async function createPreferenceWithClient(
         ],
         payer: input.customerEmail
           ? {
-              name: input.customerName,
+              name: firstName,
+              surname: lastName,
               email: input.customerEmail,
+              ...(input.customerPhone
+                ? { phone: { number: input.customerPhone } }
+                : {}),
             }
           : undefined,
         back_urls: {
