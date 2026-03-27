@@ -70,13 +70,7 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/admin/bookings?q=${encodeURIComponent(customer.fullName)}`}
-                    className="truncate font-semibold text-card-foreground hover:underline block"
-                    title="Ver turnos de este cliente"
-                  >
-                    {customer.fullName}
-                  </Link>
+                  <h3 className="truncate font-semibold text-card-foreground">{customer.fullName}</h3>
                   <div className="flex items-center gap-2 flex-wrap mt-0.5">
                     <p className="text-sm text-muted-foreground">{customer.phone}</p>
                     {customer.phone && (

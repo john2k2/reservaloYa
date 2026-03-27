@@ -239,15 +239,6 @@ export function AdminShell({
                 <div className="mt-2 space-y-1">
                   <ThemeToggle />
 
-                  <Link
-                    href={`/${businessSlug || demoBusinessSlug}`}
-                    target="_blank"
-                    className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                  >
-                    <ExternalLink className="size-4" />
-                    Ver página pública
-                  </Link>
-
                   {!demoMode ? (
                     <form action="/auth/signout" method="post">
                       <button

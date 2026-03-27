@@ -267,9 +267,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                   </p>
                 </div>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Origen más frecuente: {dashboardData.analytics.topSource}
-              </p>
             </article>
           )}
         </div>
