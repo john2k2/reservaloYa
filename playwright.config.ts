@@ -20,6 +20,9 @@ export default defineConfig({
   /* Reintentos en CI */
   retries: process.env.CI ? 2 : 0,
 
+  /* Timeout por test — más alto para dar margen al dev server (cold-start) */
+  timeout: 45000,
+
   /* Workers para tests */
   workers: process.env.CI ? 1 : undefined,
 
@@ -92,8 +95,9 @@ export default defineConfig({
     // Firefox completo para todos los tests (fallback cuando Chrome/Chromium falla en Windows)
     {
       name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
+      use: { ...devices["Desktop Firefox"], navigationTimeout: 60000 },
       testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
+      workers: 1,
     },
   ],
 

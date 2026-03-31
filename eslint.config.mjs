@@ -19,6 +19,7 @@ const eslintConfig = defineConfig([
     "pocketbase/pb_hooks/**",
     "pocketbase/pb_public/**",
     "pocketbase_*/**",
+    ".codex-output/**",
   ]),
 ]);
 

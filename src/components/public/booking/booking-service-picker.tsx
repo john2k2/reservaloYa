@@ -84,7 +84,7 @@ export function BookingServicePicker({
 
       {services.length === 0 ? (
         <div className="mt-6 rounded-[1.5rem] border border-border/60 bg-background/85 p-5 text-sm text-muted-foreground">
-          Este negocio todavia no cargo servicios activos para reservar online.
+          Este negocio aún no tiene servicios disponibles para reservar online.
         </div>
       ) : null}
 

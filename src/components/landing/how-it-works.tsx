@@ -49,7 +49,7 @@ export function HowItWorksSection() {
                 <step.icon className="size-6 sm:size-7 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
               </div>
               <div className="mt-4 sm:mt-6 flex items-center gap-2">
-                <span className="flex size-5 sm:size-6 items-center justify-center rounded-full bg-secondary text-[10px] sm:text-xs font-bold transition-colors group-hover:bg-foreground group-hover:text-background">
+                <span className="flex size-5 sm:size-6 items-center justify-center rounded-full bg-secondary text-xs font-bold transition-colors group-hover:bg-foreground group-hover:text-background">
                   {index + 1}
                 </span>
                 <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">{step.title}</h3>

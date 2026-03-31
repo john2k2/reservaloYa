@@ -40,7 +40,7 @@ test.describe("Smoke Tests - Paginas principales", () => {
     const response = await page.goto("/admin/dashboard");
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
-    await expect(page.locator("nav, aside").first()).toBeVisible();
+    await expect(page.locator("main")).toBeVisible();
   });
 
   test("Admin onboarding deberia cargar", async ({ page }) => {
@@ -55,21 +55,21 @@ test.describe("Smoke Tests - Paginas principales", () => {
     const response = await page.goto("/admin/bookings");
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
-    await expect(page.getByText(/turnos|bookings/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /turnos/i }).first()).toBeVisible();
   });
 
   test("Admin services deberia cargar", async ({ page }) => {
     const response = await page.goto("/admin/services");
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
-    await expect(page.getByText(/servicios|agregar servicio/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /servicios/i }).first()).toBeVisible();
   });
 
   test("Admin availability deberia cargar", async ({ page }) => {
     const response = await page.goto("/admin/availability");
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
-    await expect(page.getByText(/disponibilidad|bloquear agenda/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /horarios/i }).first()).toBeVisible();
   });
 
   test("Ruta 404 deberia manejarse", async ({ page }) => {

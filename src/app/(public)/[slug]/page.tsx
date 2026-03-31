@@ -581,10 +581,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
             </div>
 
             <div className="mt-8 sm:mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
-              <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
+              <p className="text-xs text-muted-foreground text-center sm:text-left">
                 © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
-              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 Desarrollado con <span className="font-bold text-foreground">{productName}</span>
               </p>
             </div>

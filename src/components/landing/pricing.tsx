@@ -50,7 +50,7 @@ export function PricingSection() {
       <AnimatedSection delay={200} animation="fadeInScale">
         <div className="mt-8 sm:mt-12 flex justify-center px-2 sm:px-0">
           <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl border border-border/60 bg-gradient-to-b from-background to-secondary/20 p-6 sm:p-8 shadow-lg md:p-10 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-foreground to-gray-700 px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-background shadow-lg">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-foreground to-gray-700 px-3 sm:px-4 py-1 text-xs font-bold uppercase tracking-wide text-background shadow-lg">
               Plan único
             </div>
 
@@ -63,7 +63,7 @@ export function PricingSection() {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground">Precio fijo en pesos argentinos</p>
-              <div className="mt-3 sm:mt-4 inline-flex items-center rounded-full bg-green-100 px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <div className="mt-3 sm:mt-4 inline-flex items-center rounded-full bg-green-100 px-2.5 sm:px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                 15 días gratis para probar
               </div>
             </div>
@@ -91,7 +91,7 @@ export function PricingSection() {
               >
                 Comenzar mis 15 días gratis
               </Link>
-              <p className="text-center text-[10px] sm:text-xs text-muted-foreground">
+              <p className="text-center text-xs text-muted-foreground">
                 Sin tarjeta de crédito. Sin compromiso. Cancelás cuando quieras.
               </p>
             </div>

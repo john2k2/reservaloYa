@@ -66,7 +66,7 @@ export function ReviewForm({
                 onClick={() => setSelected(star)}
                 onMouseEnter={() => setHovered(star)}
                 onMouseLeave={() => setHovered(0)}
-                className="p-1 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="p-2 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               >
                 <Star
                   className="size-8"
@@ -108,7 +108,7 @@ export function ReviewForm({
         <button
           type="submit"
           disabled={isPending || selected === 0}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: accentColor }}
         >
           {isPending ? (

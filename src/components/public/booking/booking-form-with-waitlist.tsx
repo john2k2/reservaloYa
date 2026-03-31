@@ -127,7 +127,7 @@ export function BookingFormWithWaitlist({
         <div className="space-y-6">
           {error && (
             <div
-              aria-live="polite"
+              role="alert"
               className="flex items-start gap-3 rounded-[1.5rem] border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive"
             >
               <AlertCircle className="mt-0.5 size-4 shrink-0" />

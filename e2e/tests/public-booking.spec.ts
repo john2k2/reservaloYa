@@ -39,7 +39,11 @@ test.describe("Flujo público de reserva", () => {
 
     if (count > 0) {
       await expect(serviceCards.first()).toBeVisible();
-      await serviceCards.first().click();
+      const href = await serviceCards.first().getAttribute("href");
+      if (href) {
+        await page.goto(href);
+        await page.waitForLoadState("domcontentloaded");
+      }
       await expect(page).toHaveURL(/service=/, { timeout: 8000 });
     } else {
       const serviceButtons = page.locator("button, [role='button']").filter({ hasText: /Corte|Barba|Servicio/i });

@@ -29,7 +29,6 @@ export function AvailabilityBlockForm({
     if (state?.ok) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormKey((k) => k + 1);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBlockMode("single");
       router.refresh();
     }

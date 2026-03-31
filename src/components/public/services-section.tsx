@@ -99,7 +99,7 @@ export function ServicesSection({
                 pagePath={`/${slug}`}
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "mt-4 h-10 rounded-full text-xs font-semibold transition-transform hover:scale-[1.02] sm:mt-6 sm:h-12 sm:text-sm",
+                  "mt-4 h-11 rounded-full text-xs font-semibold transition-transform hover:scale-[1.02] sm:mt-6 sm:h-12 sm:text-sm",
                   service.popular ? "" : "bg-foreground hover:bg-foreground/90"
                 )}
                 style={service.popular ? { backgroundColor: accentColor, borderColor: accentColor } : undefined}
