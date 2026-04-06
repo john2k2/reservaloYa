@@ -1,14 +1,10 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
+import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 import { AnimatedSection } from "./animated-section";
-import { getBlueDollarRate } from "@/lib/dollar-rate";
-
-const USD_PRICE = 17;
 
 const pricingItems = [
   "Landing pública profesional del negocio",
@@ -18,31 +14,28 @@ const pricingItems = [
   "Soporte técnico incluido",
 ];
 
-export function PricingSection() {
-  const [priceArs, setPriceArs] = useState<string>("...");
+type PricingSectionProps = {
+  arsPrice: number;
+};
 
-  useEffect(() => {
-    getBlueDollarRate().then((rate) => {
-      if (rate) {
-        setPriceArs((USD_PRICE * rate).toLocaleString("es-AR"));
-      } else {
-        setPriceArs("24.000");
-      }
-    });
-  }, []);
+export function PricingSection({ arsPrice }: PricingSectionProps) {
+  const arsPriceLabel = arsPrice.toLocaleString("es-AR");
 
   return (
-    <section id="precios" className="mx-auto w-full max-w-6xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
+    <section
+      id="precios"
+      className="mx-auto w-full max-w-6xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32"
+    >
       <AnimatedSection>
         <div className="flex flex-col items-center text-center">
           <p className="mb-3 sm:mb-4 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Precios
           </p>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tighter text-foreground md:text-4xl">
-            Sin setup. Sin compromisos.
+            Un plan. Sin permanencia.
           </h2>
           <p className="mt-3 sm:mt-4 max-w-[600px] text-base sm:text-lg text-muted-foreground">
-            Arrancás gratis con 15 días de trial. Después abonás en pesos al tipo de cambio blue.
+            Arrancás gratis con 15 días de trial. Después abonás ${SUBSCRIPTION_USD_PRICE} USD/mes en pesos al tipo de cambio blue.
           </p>
         </div>
       </AnimatedSection>
@@ -57,12 +50,14 @@ export function PricingSection() {
             <div>
               <p className="text-xs sm:text-sm font-medium text-muted-foreground">Mensualidad</p>
               <div className="mt-3 sm:mt-4 flex items-baseline text-4xl sm:text-5xl font-bold tracking-tighter">
-                ${priceArs}
+                ${arsPriceLabel}
                 <span className="ml-2 text-base sm:text-lg font-medium tracking-normal text-muted-foreground">
                   ARS/mes
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">Precio fijo en pesos argentinos</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Precio en pesos al dólar blue del día
+              </p>
               <div className="mt-3 sm:mt-4 inline-flex items-center rounded-full bg-green-100 px-2.5 sm:px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                 15 días gratis para probar
               </div>

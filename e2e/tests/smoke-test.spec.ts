@@ -72,10 +72,9 @@ test.describe("Smoke Tests - Paginas principales", () => {
     await expect(page.getByRole("heading", { name: /horarios/i }).first()).toBeVisible();
   });
 
-  test("Ruta 404 deberia manejarse", async ({ page }) => {
-    await page.goto("/ruta-que-no-existe-abc123");
+  test("Ruta inexistente deberia devolver 404", async ({ page }) => {
+    const response = await page.goto("/ruta-que-no-existe-abc123");
+    expect(response?.status()).toBe(404);
     await expect(page.locator("body")).toBeVisible();
-    const status = await page.evaluate(() => document.title);
-    expect(status).toBeTruthy();
   });
 });

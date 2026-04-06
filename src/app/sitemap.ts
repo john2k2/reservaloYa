@@ -7,12 +7,13 @@ const staticRoutes = ["", "/terminos", "/privacidad"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  const exampleRoutes = demoBusinessOptions.flatMap(({ slug }) => [`/${slug}`, `/${slug}/reservar`]);
+  // Solo páginas públicas indexables — /reservar y otras páginas transaccionales quedan fuera
+  const businessRoutes = demoBusinessOptions.map(({ slug }) => `/${slug}`);
 
-  return [...staticRoutes, ...exampleRoutes].map((path) => ({
+  return [...staticRoutes, ...businessRoutes].map((path) => ({
     url: `${siteConfig.url}${path}`,
     lastModified: now,
-    changeFrequency: path.includes("/reservar") ? "weekly" : "monthly",
-    priority: path === "" ? 1 : path.includes("/reservar") ? 0.7 : 0.8,
+    changeFrequency: "monthly" as const,
+    priority: path === "" ? 1 : 0.8,
   }));
 }

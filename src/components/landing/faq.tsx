@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     question: "¿Cuánto tiempo tarda estar listo mi sistema?",
-    answer: "El setup inicial se completa en 48hs hábiles una vez que nos pasás los datos de tu negocio.",
+    answer: "La configuración inicial de tu negocio se completa en 48hs hábiles. El costo de ese setup es único y no se repite.",
   },
   {
     question: "¿Puedo modificar horarios y servicios después?",

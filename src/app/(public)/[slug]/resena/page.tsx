@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 import { formatDateLabel } from "@/lib/bookings/format";
 import { isValidBookingManageToken } from "@/server/public-booking-links";

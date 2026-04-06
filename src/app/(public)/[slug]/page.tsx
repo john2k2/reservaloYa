@@ -271,16 +271,20 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reservaya.app";
   const businessUrl = `${siteUrl}/${slug}`;
   
+  // hoursLabel tiene formato "09:00 a 18:00" y puede tener múltiples
+  // franjas separadas por " · " (ej: "09:00 a 12:00 · 14:00 a 18:00")
   const openingHoursForJsonLd = pageData.weeklyHours
     .filter((h) => !h.hoursLabel.toLowerCase().includes("cerrado"))
-    .map((h) => {
-      const [opens, closes] = h.hoursLabel.split("-").map((t) => t.trim());
-      return {
-        day: h.dayLabel,
-        opens: opens || "09:00",
-        closes: closes || "18:00",
-      };
-    });
+    .flatMap((h) =>
+      h.hoursLabel.split(" · ").map((window) => {
+        const [opens, closes] = window.split(" a ").map((t) => t.trim());
+        return {
+          day: h.dayLabel,
+          opens: opens || "09:00",
+          closes: closes || "18:00",
+        };
+      })
+    );
 
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>

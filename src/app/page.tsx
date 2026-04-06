@@ -8,10 +8,15 @@ import {
   CTASection,
   Footer,
 } from "@/components/landing";
+import { getBlueDollarRate } from "@/lib/dollar-rate";
+import { getSubscriptionArsPrice } from "@/server/payments-domain";
 
 import "./landing-animations.css";
 
-export default function Home() {
+export default async function Home() {
+  const blueRate = await getBlueDollarRate();
+  const arsPrice = getSubscriptionArsPrice(blueRate);
+
   return (
     <main
       id="main-content"
@@ -30,7 +35,7 @@ export default function Home() {
       <HeroSection />
       <DemoSelector />
       <HowItWorksSection />
-      <PricingSection />
+      <PricingSection arsPrice={arsPrice} />
       <FAQSection />
       <CTASection />
 

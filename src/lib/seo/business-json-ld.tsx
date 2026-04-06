@@ -1,5 +1,19 @@
 import type { ReactElement } from "react";
 
+const DAY_OF_WEEK_SCHEMA: Record<string, string> = {
+  Domingo: "Sunday",
+  Lunes: "Monday",
+  Martes: "Tuesday",
+  Miércoles: "Wednesday",
+  Jueves: "Thursday",
+  Viernes: "Friday",
+  Sábado: "Saturday",
+};
+
+function toSchemaDay(spanishDay: string): string {
+  return DAY_OF_WEEK_SCHEMA[spanishDay] ?? spanishDay;
+}
+
 interface LocalBusinessJsonLdProps {
   name: string;
   description: string;
@@ -74,7 +88,7 @@ export function LocalBusinessJsonLd({
   if (openingHours && openingHours.length > 0) {
     schema.openingHoursSpecification = openingHours.map((h) => ({
       "@type": "OpeningHoursSpecification",
-      dayOfWeek: h.day,
+      dayOfWeek: toSchemaDay(h.day),
       opens: h.opens,
       closes: h.closes,
     }));

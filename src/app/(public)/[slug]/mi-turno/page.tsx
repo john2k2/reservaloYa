@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock, CalendarX2, RefreshCcw } from "lucide-react";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 import { PublicSubmitButton } from "@/components/public/public-submit-button";
 import { buttonVariants } from "@/components/ui/button-variants";

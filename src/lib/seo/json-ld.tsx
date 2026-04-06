@@ -2,12 +2,7 @@ import type { ReactElement } from "react";
 
 import { getSiteWhatsAppPhoneForSchema, siteContact } from "@/lib/contact";
 import { siteConfig } from "@/lib/seo/metadata";
-
-type OpeningHoursInput = Array<{
-  days: string[];
-  opens: string;
-  closes: string;
-}>;
+import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 
 export function OrganizationJsonLd(): ReactElement {
   const schema = {
@@ -43,71 +38,12 @@ export function SoftwareApplicationJsonLd(): ReactElement {
     operatingSystem: "Web",
     offers: {
       "@type": "Offer",
-      price: "20",
+      price: String(SUBSCRIPTION_USD_PRICE),
       priceCurrency: "USD",
     },
     description: siteConfig.description,
     url: siteConfig.url,
   };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
-
-export function LocalBusinessJsonLd({
-  name,
-  description,
-  url,
-  telephone,
-  address,
-  openingHours,
-  image,
-}: {
-  name: string;
-  description: string;
-  url: string;
-  telephone?: string;
-  address?: {
-    street: string;
-    city: string;
-    region: string;
-    country: string;
-  };
-  openingHours?: OpeningHoursInput;
-  image?: string;
-}): ReactElement {
-  const schema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name,
-    description,
-    url,
-    telephone,
-    image,
-  };
-
-  if (address) {
-    schema.address = {
-      "@type": "PostalAddress",
-      streetAddress: address.street,
-      addressLocality: address.city,
-      addressRegion: address.region,
-      addressCountry: address.country,
-    };
-  }
-
-  if (openingHours) {
-    schema.openingHoursSpecification = openingHours.map((item) => ({
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: item.days,
-      opens: item.opens,
-      closes: item.closes,
-    }));
-  }
 
   return (
     <script
@@ -143,17 +79,13 @@ export function FAQPageJsonLd({
   );
 }
 
+// WebSiteJsonLd sin SearchAction — /buscar no existe
 export function WebSiteJsonLd(): ReactElement {
   const schema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: siteConfig.name,
     url: siteConfig.url,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${siteConfig.url}/buscar?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
   };
 
   return (
