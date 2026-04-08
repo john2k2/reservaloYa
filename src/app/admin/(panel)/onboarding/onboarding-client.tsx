@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -24,7 +23,6 @@ import { OnboardingStepper, type OnboardingStep } from "./components/onboarding-
 import { ImagesStep } from "./components/images-step";
 import { OnboardingStatusBanner } from "./components/onboarding-status-banner";
 import { PublicStep } from "./components/public-step";
-import { LivePreview } from "./components/live-preview";
 import EditBusinessPage from "./edit-business-page";
 
 // Validaciones
@@ -179,7 +177,6 @@ export default function OnboardingPageClient({
     return new Set();
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   // Buscar datos del negocio activo para precargar
   const activeBusiness = hasExistingBusiness
@@ -582,40 +579,7 @@ export default function OnboardingPageClient({
         />
       )}
 
-      {/* Contenido principal: Formulario + Preview */}
-      <section className="w-full xl:hidden">
-        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setMobilePreviewOpen((open) => !open)}
-            className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 text-left"
-          >
-            <div>
-              <p className="text-sm font-medium text-foreground">Preview de tu página</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Revisá cómo se va viendo antes de guardar.
-              </p>
-            </div>
-            <ChevronDown
-              className={cn(
-                "size-4 shrink-0 text-muted-foreground transition-transform",
-                mobilePreviewOpen && "rotate-180"
-              )}
-            />
-          </button>
-
-          {mobilePreviewOpen ? (
-            <div className="mt-4 h-[28rem] rounded-2xl border border-border/60 bg-background p-3 sm:h-[34rem]">
-              <LivePreview
-                businessSlug={activeBusinessSlug}
-                isActive={onboardingData.businesses.length > 0}
-              />
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <div className="grid w-full gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="w-full">
         {/* Formulario */}
         <div className="space-y-6">
           {/* PASO 1: Negocio */}
@@ -676,15 +640,6 @@ export default function OnboardingPageClient({
           )}
         </div>
 
-        {/* Panel de Preview */}
-        <aside className="hidden xl:block">
-          <div className="sticky top-6 rounded-3xl border border-border/60 bg-card p-6 shadow-sm h-[calc(100vh-6rem)]">
-            <LivePreview
-              businessSlug={activeBusinessSlug}
-              isActive={onboardingData.businesses.length > 0}
-            />
-          </div>
-        </aside>
       </div>
 
       {/* Negocios creados */}
