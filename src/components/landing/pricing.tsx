@@ -3,7 +3,6 @@ import { CheckCircle2 } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
-import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 import { AnimatedSection } from "./animated-section";
 
 const pricingItems = [
@@ -35,7 +34,7 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
             Un plan. Sin permanencia.
           </h2>
           <p className="mt-3 sm:mt-4 max-w-[600px] text-base sm:text-lg text-muted-foreground">
-            Arrancás gratis con 15 días de trial. Después abonás ${SUBSCRIPTION_USD_PRICE} USD/mes en pesos al tipo de cambio blue.
+            Arrancás gratis con 15 días de trial. Después abonás ${arsPriceLabel} ARS/mes al tipo de cambio blue.
           </p>
         </div>
       </AnimatedSection>
