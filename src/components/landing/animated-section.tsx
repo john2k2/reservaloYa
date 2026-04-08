@@ -16,10 +16,16 @@ export function AnimatedSection({
   delay = 0,
   animation = "fadeInUp",
 }: AnimatedSectionProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const prefersReduced =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const [isVisible, setIsVisible] = useState(prefersReduced);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (prefersReduced) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -27,7 +33,7 @@ export function AnimatedSection({
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" }
     );
 
     if (ref.current) {
@@ -35,7 +41,7 @@ export function AnimatedSection({
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [prefersReduced]);
 
   const animationClass = {
     fadeInUp: "animate-fade-in-up",
@@ -49,8 +55,8 @@ export function AnimatedSection({
       ref={ref}
       className={cn(
         className,
-        "opacity-0",
-        isVisible && animationClass
+        !isVisible && "opacity-0",
+        isVisible && !prefersReduced && animationClass
       )}
       style={{
         animationDelay: `${delay}ms`,
