@@ -89,19 +89,20 @@ function ensureRange(startTime: string, endTime: string) {
 }
 
 function getAvailabilityRuleFromFormData(formData: FormData, dayOfWeek: number) {
+  const active = String(formData.get(`active_${dayOfWeek}`) ?? "") === "true";
   const parsed = availabilityRuleSchema.safeParse({
     ruleId: String(formData.get(`ruleId_${dayOfWeek}`) ?? "").trim() || undefined,
     dayOfWeek,
-    startTime: String(formData.get(`startTime_${dayOfWeek}`) ?? "").trim(),
-    endTime: String(formData.get(`endTime_${dayOfWeek}`) ?? "").trim(),
-    active: String(formData.get(`active_${dayOfWeek}`) ?? "") === "true",
+    startTime: active ? String(formData.get(`startTime_${dayOfWeek}`) ?? "").trim() : "00:00",
+    endTime: active ? String(formData.get(`endTime_${dayOfWeek}`) ?? "").trim() : "00:00",
+    active,
   });
 
   if (!parsed.success) {
     throw new Error(`Revisa el horario de ${dayLabels[dayOfWeek] ?? "ese día"}.`);
   }
 
-  ensureRange(parsed.data.startTime, parsed.data.endTime);
+  if (active) ensureRange(parsed.data.startTime, parsed.data.endTime);
   return parsed.data;
 }
 
