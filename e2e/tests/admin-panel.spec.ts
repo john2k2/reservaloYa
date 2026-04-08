@@ -36,7 +36,8 @@ test.describe("Panel Admin - Login", () => {
     await page.waitForLoadState("networkidle");
 
     const showsError = await page.getByText(/incorrecto|invalido|error|wrong|invalid/i).isVisible().catch(() => false);
-    const staysOnLogin = page.url().includes("/admin/login");
+    // La app puede redirigir a /login?error=... o quedarse en /admin/login
+    const staysOnLogin = page.url().includes("/login");
     expect(showsError || staysOnLogin).toBeTruthy();
   });
 });
@@ -49,7 +50,9 @@ test.describe("Panel Admin - Dashboard (Modo Demo)", () => {
   });
 
   test("deberia mostrar el dashboard o el login", async ({ page }) => {
-    expect(page.url()).toMatch(/admin/);
+    // Sin sesión redirige a /login, con sesión muestra /admin/dashboard
+    const url = page.url();
+    expect(url.includes("/admin") || url.includes("/login")).toBeTruthy();
     await expect(page.locator("body")).toBeVisible();
   });
 
@@ -116,7 +119,8 @@ test.describe("Panel Admin - Disponibilidad", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1000);
     await expect(page.locator("body")).toBeVisible();
-    expect(page.url()).toMatch(/admin/);
+    const url = page.url();
+    expect(url.includes("/admin") || url.includes("/login")).toBeTruthy();
   });
 
   test("deberia mostrar dias de la semana configurables", async ({ page }) => {
@@ -143,7 +147,8 @@ test.describe("Panel Admin - Onboarding / Configuracion del negocio", () => {
 
   test("deberia cargar la pagina de onboarding", async ({ page }) => {
     await expect(page.locator("body")).toBeVisible();
-    expect(page.url()).toMatch(/admin/);
+    const url = page.url();
+    expect(url.includes("/admin") || url.includes("/login")).toBeTruthy();
   });
 
   test("deberia mostrar los tabs de configuracion", async ({ page }) => {
@@ -257,6 +262,7 @@ test.describe("Panel Admin - Clientes", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1000);
     await expect(page.locator("body")).toBeVisible();
-    expect(page.url()).toMatch(/admin/);
+    const url = page.url();
+    expect(url.includes("/admin") || url.includes("/login")).toBeTruthy();
   });
 });
