@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -62,9 +63,18 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
     >
       <div className="flex w-full flex-col justify-center px-8 py-10 sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
         <div className="mx-auto w-full max-w-sm">
-          <Link href="/" className="inline-flex h-11 items-center text-2xl font-bold tracking-tight">
-            {productName}
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/" className="inline-flex h-11 items-center text-2xl font-bold tracking-tight">
+              {productName}
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="size-4" />
+              Volver al inicio
+            </Link>
+          </div>
 
           <div className="mt-12">
             <h1 className="text-3xl font-bold tracking-tight">Ingresar a tu negocio</h1>
