@@ -42,7 +42,7 @@ type BusinessHeroProps = {
     trustPoints: string[];
   };
   bookingHref: string;
-  whatsappHref: string;
+  whatsappHref: string | undefined;
   websiteHref: SocialHref;
   instagramHref: SocialHref;
   facebookHref: SocialHref;
@@ -74,7 +74,7 @@ function SocialLinksDesktop({
   instagramHref: SocialHref;
   facebookHref: SocialHref;
   tiktokHref: SocialHref;
-  whatsappHref: string;
+  whatsappHref: string | undefined;
 }) {
   return (
     <div className="hidden flex-wrap items-center gap-2 lg:flex">
@@ -118,14 +118,16 @@ function SocialLinksDesktop({
           <TikTokIcon className="size-4" />
         </a>
       )}
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-      >
-        <WhatsAppIcon className="size-4" />
-      </a>
+      {whatsappHref && (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+        >
+          <WhatsAppIcon className="size-4" />
+        </a>
+      )}
     </div>
   );
 }
@@ -267,19 +269,21 @@ export function BusinessHero({
                 <Calendar className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
                 {profile.primaryCta}
               </PublicTrackedLink>
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "inline-flex h-11 items-center justify-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-12 sm:px-8 sm:text-base"
-                )}
-              >
-                <WhatsAppIcon className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
-                <span className="sm:hidden">Consultar por WhatsApp</span>
-                <span className="hidden sm:inline">{profile.secondaryCta}</span>
-              </a>
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    "inline-flex h-11 items-center justify-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-12 sm:px-8 sm:text-base"
+                  )}
+                >
+                  <WhatsAppIcon className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
+                  <span className="sm:hidden">Consultar por WhatsApp</span>
+                  <span className="hidden sm:inline">{profile.secondaryCta}</span>
+                </a>
+              )}
             </div>
 
             <div

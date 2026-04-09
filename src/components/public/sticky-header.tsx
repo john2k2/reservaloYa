@@ -31,7 +31,7 @@ export function StickyHeader({
   logoUrl?: string | null;
   businessName: string;
   bookingHref: string;
-  whatsappHref: string;
+  whatsappHref: string | undefined;
   accent: string;
   enableDarkMode?: boolean;
 }) {
@@ -69,19 +69,21 @@ export function StickyHeader({
           <div className="hidden sm:block">
             <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
           </div>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "h-10 w-10 rounded-full px-0 sm:w-auto sm:px-4"
-            )}
-            aria-label="Consultar por WhatsApp"
-          >
-            <WhatsAppIcon className="size-4 sm:mr-2" />
-            <span className="hidden sm:inline">WhatsApp</span>
-          </a>
+          {whatsappHref && (
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "h-10 w-10 rounded-full px-0 sm:w-auto sm:px-4"
+              )}
+              aria-label="Consultar por WhatsApp"
+            >
+              <WhatsAppIcon className="size-4 sm:mr-2" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
+          )}
           <PublicTrackedLink
             businessSlug={businessSlug}
             eventName="booking_cta_clicked"

@@ -113,15 +113,13 @@ function buildWebsiteHref(value?: string) {
   return `https://${value}`;
 }
 
-function buildWhatsAppHref(phone?: string, businessName?: string) {
+function buildWhatsAppHref(phone?: string, businessName?: string): string | undefined {
   const normalizedPhone = phone?.replace(/\D/g, "");
+  if (!normalizedPhone) return undefined;
+
   const message = businessName
     ? `Hola ${businessName}, quiero reservar un turno.`
     : "Hola, quiero reservar un turno.";
-
-  if (!normalizedPhone) {
-    return getSiteWhatsAppHref(message);
-  }
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -517,14 +515,16 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                   >
                     Reservar turno
                   </PublicTrackedLink>
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
+                  {whatsappHref && (
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
                       Contactar por WhatsApp
-                  </a>
+                    </a>
+                  )}
                   <a
                     href={mapsHref}
                     target="_blank"
@@ -571,14 +571,16 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         <TikTokIcon className="size-3.5 sm:size-4" />
                       </a>
                     )}
-                    <a
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      <WhatsAppIcon className="size-3.5 sm:size-4" />
-                    </a>
+                    {whatsappHref && (
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <WhatsAppIcon className="size-3.5 sm:size-4" />
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

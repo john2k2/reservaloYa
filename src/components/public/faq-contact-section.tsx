@@ -14,7 +14,7 @@ type FaqContactSectionProps = {
   surfaceTint: string;
   faqs: FaqItem[];
   policies: string[];
-  whatsappHref: string;
+  whatsappHref: string | undefined;
   instagramHref: string | null;
   facebookHref: string | null;
   tiktokHref: string | null;
@@ -86,16 +86,18 @@ export function FaqContactSection({
               Escribinos o seguinos sin salir de la página.
             </p>
             <div className="mt-4 flex flex-col gap-3">
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-12 rounded-full font-semibold")}
-                style={{ backgroundColor: accentColor, borderColor: accentColor }}
-              >
-                <WhatsAppIcon className="mr-2 size-5" />
-                Escribinos al WhatsApp
-              </a>
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-12 rounded-full font-semibold")}
+                  style={{ backgroundColor: accentColor, borderColor: accentColor }}
+                >
+                  <WhatsAppIcon className="mr-2 size-5" />
+                  Escribinos al WhatsApp
+                </a>
+              )}
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
