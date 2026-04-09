@@ -43,7 +43,6 @@ type BusinessHeroProps = {
   };
   bookingHref: string;
   whatsappHref: string | undefined;
-  websiteHref: SocialHref;
   instagramHref: SocialHref;
   facebookHref: SocialHref;
   tiktokHref: SocialHref;
@@ -64,13 +63,11 @@ type BusinessHeroProps = {
 };
 
 function SocialLinksDesktop({
-  websiteHref,
   instagramHref,
   facebookHref,
   tiktokHref,
   whatsappHref,
 }: {
-  websiteHref: SocialHref;
   instagramHref: SocialHref;
   facebookHref: SocialHref;
   tiktokHref: SocialHref;
@@ -78,16 +75,6 @@ function SocialLinksDesktop({
 }) {
   return (
     <div className="hidden flex-wrap items-center gap-2 lg:flex">
-      {websiteHref && (
-        <a
-          href={websiteHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-        >
-          <Globe className="size-4" />
-        </a>
-      )}
       {instagramHref && (
         <a
           href={instagramHref}
@@ -133,25 +120,13 @@ function SocialLinksDesktop({
 }
 
 function SocialLinksMobile({
-  websiteHref,
   instagramHref,
 }: {
-  websiteHref: SocialHref;
   instagramHref: SocialHref;
 }) {
-  if (!websiteHref && !instagramHref) return null;
+  if (!instagramHref) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 lg:hidden">
-      {websiteHref && (
-        <a
-          href={websiteHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-        >
-          Web
-        </a>
-      )}
       {instagramHref && (
         <a
           href={instagramHref}
@@ -172,7 +147,6 @@ export function BusinessHero({
   profile,
   bookingHref,
   whatsappHref,
-  websiteHref,
   instagramHref,
   facebookHref,
   tiktokHref,
@@ -222,13 +196,12 @@ export function BusinessHero({
           </div>
 
           <SocialLinksDesktop
-            websiteHref={websiteHref}
             instagramHref={instagramHref}
             facebookHref={facebookHref}
             tiktokHref={tiktokHref}
             whatsappHref={whatsappHref}
           />
-          <SocialLinksMobile websiteHref={websiteHref} instagramHref={instagramHref} />
+          <SocialLinksMobile instagramHref={instagramHref} />
         </div>
 
         <div className="grid gap-5 py-3 sm:py-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-8 lg:py-8">

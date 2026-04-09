@@ -331,7 +331,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           profile={pageData.profile}
           bookingHref={bookingHref}
           whatsappHref={whatsappHref}
-          websiteHref={websiteHref}
           instagramHref={instagramHref}
           facebookHref={facebookHref}
           tiktokHref={tiktokHref}
