@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ChevronDown, ExternalLink, Plug, Save, Store } from "lucide-react";
+import { CheckCircle2, ExternalLink, Plug, Save, Store } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -19,7 +19,6 @@ import { EditImagesTab } from "./components/edit-images-tab";
 import { EditIntegrationsTab } from "./components/edit-integrations-tab";
 import { EditPublicTab } from "./components/edit-public-tab";
 import { EditStyleTab } from "./components/edit-style-tab";
-import { LivePreview } from "./components/live-preview";
 
 interface EditBusinessPageProps {
   business: {
@@ -135,11 +134,9 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [activeTab, setActiveTab] = useState<"business" | "style" | "images" | "public" | "integrations">(
     settingsData.defaultTab ?? "business"
   );
-  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   const [businessData, setBusinessData] = useState({
     name: business.name,
@@ -253,7 +250,6 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
       await saveOnboardingBrandingInlineAction(brandingFormData);
 
       setSuccessMessage("Cambios guardados correctamente");
-      setPreviewRefreshToken((current) => current + 1);
       router.refresh();
     } catch (error) {
       console.error("Error saving:", error);
@@ -370,36 +366,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
         </div>
       </section>
 
-      <section className="w-full xl:hidden">
-        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setMobilePreviewOpen((open) => !open)}
-            className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 text-left"
-          >
-            <div>
-              <p className="text-sm font-medium text-foreground">Preview de tu página</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Revisá cómo se ven los cambios antes de guardar.
-              </p>
-            </div>
-            <ChevronDown
-              className={cn(
-                "size-4 shrink-0 text-muted-foreground transition-transform",
-                mobilePreviewOpen && "rotate-180"
-              )}
-            />
-          </button>
-
-          {mobilePreviewOpen ? (
-            <div className="mt-4 h-[28rem] rounded-2xl border border-border/60 bg-background p-3 sm:h-[34rem]">
-              <LivePreview businessSlug={business.slug} isActive={true} refreshToken={previewRefreshToken} />
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <div className="grid w-full gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="w-full">
         <div className="space-y-6">
           {activeTab === "business" && (
             <EditBusinessTab
@@ -446,11 +413,6 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
           )}
         </div>
 
-        <aside className="hidden xl:block">
-          <div className="sticky top-6 h-[calc(100vh-6rem)] rounded-2xl sm:rounded-3xl border border-border/60 bg-card p-6 shadow-sm">
-            <LivePreview businessSlug={business.slug} isActive={true} refreshToken={previewRefreshToken} />
-          </div>
-        </aside>
       </div>
     </div>
   );
