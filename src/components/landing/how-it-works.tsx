@@ -17,18 +17,18 @@ const steps = [
   {
     icon: Calendar,
     title: "Elige servicio, día y horario",
-    description: "Selecciona lo que necesita sin preguntar. Solo horarios reales disponibles, sin pisadas.",
+    description: "El cliente selecciona lo que necesita sin preguntar. Solo horarios reales disponibles, sin pisadas.",
   },
   {
     icon: Bell,
     title: "Recibe confirmación y recordatorios",
-    description: "Email de confirmación + recordatorio 24hs antes del turno. Menos ausencias, mejor ocupación.",
+    description: "Confirmación por email al instante + recordatorio 24hs antes. Menos ausencias, mejor ocupación.",
   },
 ];
 
 export function HowItWorksSection() {
   return (
-    <section id="como-funciona" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
+    <section id="como-funciona" className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
       <AnimatedSection>
         <SectionTitle
           eyebrow="Cómo funciona"

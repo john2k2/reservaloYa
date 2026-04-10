@@ -1,4 +1,5 @@
 ﻿import { Quote, ShieldCheck, Star } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type Testimonial = {
@@ -64,10 +65,11 @@ export function TestimonialsSection({
             </p>
             <div className="mt-5 flex items-center gap-4 sm:mt-6">
               {testimonial.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={testimonial.avatar}
                   alt={testimonial.author}
+                  width={56}
+                  height={56}
                   className="size-12 rounded-full object-cover ring-2 ring-border sm:size-14"
                 />
               ) : (

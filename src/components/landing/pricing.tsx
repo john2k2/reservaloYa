@@ -23,7 +23,7 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
   return (
     <section
       id="precios"
-      className="mx-auto w-full max-w-6xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32"
+      className="mx-auto w-full max-w-6xl border-t border-border/40 px-4 py-12 sm:px-6 sm:py-16 lg:py-20"
     >
       <AnimatedSection>
         <div className="flex flex-col items-center text-center">

@@ -15,14 +15,14 @@ import { AnimatedSection } from "./animated-section";
 const demoHighlights = [
   {
     icon: CalendarDays,
-    title: "Reserva publica real",
+    title: "Reserva pública real",
     description:
       "El cliente elige servicio, día y horario desde el celular sin dar vueltas ni pedir ayuda.",
     badge: "Flujo completo",
   },
   {
     icon: LayoutDashboard,
-    title: "Panel admin util",
+    title: "Panel admin útil",
     description:
       "Agenda, clientes, servicios y disponibilidad ya listos para mostrar el producto en uso real.",
     badge: "Operación diaria",
@@ -31,8 +31,8 @@ const demoHighlights = [
     icon: Palette,
     title: "Negocio configurable",
     description:
-      "Branding, textos y presencia publica para que cada negocio sienta que tiene su propio sistema.",
-    badge: "Personalizacion",
+      "Branding, textos y presencia pública para que cada negocio sienta que tiene su propio sistema.",
+    badge: "Personalización",
   },
 ];
 

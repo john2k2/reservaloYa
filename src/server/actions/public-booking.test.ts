@@ -98,22 +98,36 @@ function buildBookingFormData() {
   return formData;
 }
 
-describe("public booking action rate limit", () => {
-  beforeEach(() => {
-    resetRateLimitStoreForTests();
-    redirectMock.mockClear();
-    createLocalPublicBookingMock.mockClear();
-    cancelLocalPublicBookingMock.mockClear();
-    getLocalBusinessPaymentSettingsMock.mockReset();
-    updateLocalBusinessMPTokensMock.mockClear();
-    createPaymentPreferenceForBusinessMock.mockReset();
+const VALID_MANAGE_TOKEN = "a".repeat(32);
 
-    getLocalBusinessPaymentSettingsMock.mockResolvedValue(null);
-    createPaymentPreferenceForBusinessMock.mockResolvedValue({
-      ok: false,
-      error: "business payment provider unavailable",
-    });
+function buildRescheduleFormData(overrides: Record<string, string> = {}) {
+  const formData = buildBookingFormData();
+  formData.set("rescheduleBookingId", "existing-booking-id");
+  formData.set("manageToken", VALID_MANAGE_TOKEN);
+  for (const [key, value] of Object.entries(overrides)) {
+    formData.set(key, value);
+  }
+  return formData;
+}
+
+const sharedBeforeEach = () => {
+  resetRateLimitStoreForTests();
+  redirectMock.mockClear();
+  createLocalPublicBookingMock.mockClear();
+  cancelLocalPublicBookingMock.mockClear();
+  getLocalBusinessPaymentSettingsMock.mockReset();
+  updateLocalBusinessMPTokensMock.mockClear();
+  createPaymentPreferenceForBusinessMock.mockReset();
+
+  getLocalBusinessPaymentSettingsMock.mockResolvedValue(null);
+  createPaymentPreferenceForBusinessMock.mockResolvedValue({
+    ok: false,
+    error: "business payment provider unavailable",
   });
+};
+
+describe("public booking action rate limit", () => {
+  beforeEach(sharedBeforeEach);
 
   it("shows a friendly throttle message after repeated submits", async () => {
     const { createPublicBookingAction } = await import("./public-booking");
@@ -188,5 +202,63 @@ describe("public booking action rate limit", () => {
     expect(redirectedUrl).toContain(
       "error=No+pudimos+iniciar+el+pago+online.+Intenta+nuevamente+en+unos+minutos+o+contacta+al+negocio."
     );
+  });
+});
+
+describe("reschedule booking", () => {
+  beforeEach(sharedBeforeEach);
+
+  it("reschedula correctamente en el store local", async () => {
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildRescheduleFormData())).rejects.toThrow(
+      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id/
+    );
+
+    expect(createLocalPublicBookingMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rescheduleBookingId: "existing-booking-id",
+        businessSlug: "demo-barberia",
+        bookingDate: "2026-03-25",
+        startTime: "10:00",
+      })
+    );
+  });
+
+  it("no intenta cobro online en un reschedule", async () => {
+    // Simular que el negocio tiene MP conectado — no debería importar en un reschedule
+    getLocalBusinessPaymentSettingsMock.mockResolvedValue({
+      businessId: "business-1",
+      businessSlug: "demo-barberia",
+      businessName: "Demo Barberia",
+      mpConnected: true,
+      mpCollectorId: "123456789",
+      mpAccessToken: "APP_USR_test_token",
+      mpRefreshToken: "refresh-token",
+      mpTokenExpiresAt: null,
+    });
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildRescheduleFormData())).rejects.toThrow(
+      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id/
+    );
+
+    expect(createPaymentPreferenceForBusinessMock).not.toHaveBeenCalled();
+  });
+
+  it("rechaza reschedule con token inválido", async () => {
+    const { isValidBookingManageToken } = await import("@/server/public-booking-links");
+    vi.mocked(isValidBookingManageToken).mockReturnValueOnce(false);
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildRescheduleFormData())).rejects.toThrow(/REDIRECT:/);
+
+    const redirectedUrl = String(redirectMock.mock.calls.at(-1)?.[0] ?? "");
+    const url = new URL(redirectedUrl, "http://localhost");
+    expect(url.pathname).toBe("/demo-barberia/reservar");
+    expect(url.searchParams.get("error")).toContain("Link de gestion invalido");
+    expect(createLocalPublicBookingMock).not.toHaveBeenCalled();
   });
 });

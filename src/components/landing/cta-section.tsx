@@ -9,7 +9,7 @@ import { AnimatedSection } from "./animated-section";
 
 export function CTASection() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 pb-24">
+    <section className="mx-auto w-full max-w-6xl px-6 pt-4 pb-16 sm:pb-20">
       <AnimatedSection animation="fadeInScale">
         <div className="relative overflow-hidden rounded-3xl bg-card p-8 text-card-foreground shadow-lg ring-1 ring-border sm:p-12 md:p-16">
           <div className="relative mx-auto max-w-2xl text-center">

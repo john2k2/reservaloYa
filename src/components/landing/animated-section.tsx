@@ -16,32 +16,39 @@ export function AnimatedSection({
   delay = 0,
   animation = "fadeInUp",
 }: AnimatedSectionProps) {
-  const prefersReduced =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const [isVisible, setIsVisible] = useState(prefersReduced);
+  // SSR: siempre visible (sin opacity-0) para evitar flicker en hidratación
+  const [isVisible, setIsVisible] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (prefersReduced) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const el = ref.current;
+    if (!el) return;
+
+    // Si el elemento ya está en el viewport al cargar, no lo ocultamos ni animamos
+    const rect = el.getBoundingClientRect();
+    const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
+    if (alreadyVisible) return;
+
+    // Está fuera del viewport: ocultarlo y observar cuándo entra
+    setIsVisible(false);
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
+          setShouldAnimate(true);
           observer.disconnect();
         }
       },
       { threshold: 0.05, rootMargin: "0px 0px -20px 0px" }
     );
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
+    observer.observe(el);
     return () => observer.disconnect();
-  }, [prefersReduced]);
+  }, []);
 
   const animationClass = {
     fadeInUp: "animate-fade-in-up",
@@ -56,7 +63,7 @@ export function AnimatedSection({
       className={cn(
         className,
         !isVisible && "opacity-0",
-        isVisible && !prefersReduced && animationClass
+        shouldAnimate && animationClass
       )}
       style={{
         animationDelay: `${delay}ms`,

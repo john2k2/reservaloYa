@@ -73,6 +73,7 @@ export function BookingFormWithWaitlist({
   whatsappHref,
 }: BookingFormWithWaitlistProps) {
   const [noSlotsDate, setNoSlotsDate] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string>(rescheduleStartTime ?? "");
 
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split("-").map(Number);
@@ -150,6 +151,7 @@ export function BookingFormWithWaitlist({
             initialDateOptions={initialDateOptions}
             rescheduleStartTime={rescheduleStartTime}
             onNoSlots={setNoSlotsDate}
+            onSelectSlot={setSelectedSlot}
           />
 
           {!noSlotsDate && (
@@ -312,12 +314,18 @@ export function BookingFormWithWaitlist({
             </div>
 
             <div className="mt-6">
-              <PublicSubmitButton
-                className="h-12 rounded-2xl text-sm font-semibold sm:text-base"
-                style={{ backgroundColor: accentColor, borderColor: accentColor }}
-              >
-                {paymentSummary.buttonLabel}
-              </PublicSubmitButton>
+              {selectedSlot ? (
+                <PublicSubmitButton
+                  className="h-12 rounded-2xl text-sm font-semibold sm:text-base"
+                  style={{ backgroundColor: accentColor, borderColor: accentColor }}
+                >
+                  {paymentSummary.buttonLabel}
+                </PublicSubmitButton>
+              ) : (
+                <div className="flex h-12 w-full items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground/50 cursor-not-allowed">
+                  Elegí un horario para continuar
+                </div>
+              )}
               <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
                 Al confirmar aceptás las{" "}
                 <a
@@ -331,7 +339,7 @@ export function BookingFormWithWaitlist({
                 y las políticas del negocio.
               </p>
             </div>
-          </section>
+            </section>
 
           <BookingPolicyCard />
           {whatsappHref && <BookingSupportCard whatsappHref={whatsappHref} />}
@@ -341,22 +349,28 @@ export function BookingFormWithWaitlist({
 
       {/* Waitlist fuera del form principal para evitar <form> anidados */}
       {noSlotsDate && (
-        <section className="mt-6 rounded-[1.75rem] border-2 border-warning/40 bg-warning/5 p-5 sm:p-6">
-          <p className="text-center text-sm font-semibold text-foreground">
-            No hay horarios disponibles para el {formatDate(noSlotsDate)}
-          </p>
-          <p className="mt-1 text-center text-xs text-muted-foreground">
-            Dejá tu email y te avisamos si alguien cancela
-          </p>
-          <div className="mt-4">
-            <BookingWaitlistForm
-              businessSlug={slug}
-              serviceId={service.id}
-              bookingDate={noSlotsDate}
-              accentColor={accentColor}
-            />
-          </div>
-        </section>
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <section className="rounded-[1.75rem] border-2 border-warning/40 bg-warning/5 p-5 sm:p-6">
+            <p className="text-center text-sm font-semibold text-foreground">
+              No hay horarios disponibles para el {formatDate(noSlotsDate)}
+            </p>
+            <p className="mt-1 text-center text-xs text-muted-foreground">
+              Dejá tu email y te avisamos si alguien cancela
+            </p>
+            <div className="mt-4">
+              <BookingWaitlistForm
+                businessSlug={slug}
+                serviceId={service.id}
+                bookingDate={noSlotsDate}
+                accentColor={accentColor}
+              />
+            </div>
+          </section>
+          <aside className="space-y-4 lg:sticky lg:top-6">
+            <BookingPolicyCard />
+            {whatsappHref && <BookingSupportCard whatsappHref={whatsappHref} />}
+          </aside>
+        </div>
       )}
     </>
   );

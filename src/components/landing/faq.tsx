@@ -7,8 +7,8 @@ import { AnimatedSection } from "./animated-section";
 
 const faqs = [
   {
-    question: "¿Necesito tarjeta de credito para ver el producto en accion?",
-    answer: "No. Podes revisar el flujo publico completo sin dejar tarjeta y hablar con nosotros antes de activar tu cuenta.",
+    question: "¿Necesito tarjeta de crédito para ver el producto en acción?",
+    answer: "No. Podés revisar el flujo público completo sin dejar tarjeta y hablar con nosotros antes de activar tu cuenta.",
   },
   {
     question: "¿Cuánto tiempo tarda estar listo mi sistema?",
@@ -32,7 +32,7 @@ export function FAQSection() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="mx-auto w-full max-w-3xl border-t border-border/40 px-4 py-16 sm:px-6 sm:py-20 md:py-24 lg:py-32">
+    <section id="faq" className="mx-auto w-full max-w-3xl border-t border-border/40 px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
       <AnimatedSection>
         <div className="text-center">
           <p className="mb-3 sm:mb-4 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
@@ -64,7 +64,7 @@ export function FAQSection() {
             </button>
             <div
               className={cn(
-                "transition-all duration-200 ease-out",
+                "overflow-hidden transition-all duration-200 ease-out",
                 openFaq === index ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
               )}
             >

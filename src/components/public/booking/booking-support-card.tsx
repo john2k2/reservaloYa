@@ -15,14 +15,13 @@ export function BookingSupportCard({ whatsappHref }: BookingSupportCardProps) {
         <MessageSquareMore className="size-5" />
       </div>
       <p className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-        ¿Necesitás ayuda?
+        ¿Tenés alguna consulta?
       </p>
       <h3 className="mt-2 text-lg font-semibold text-foreground">
-        Solo para errores o urgencias reales.
+        Contactá al negocio por WhatsApp.
       </h3>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Si hay un problema con la página o un inconveniente real, usá este canal. Los horarios
-        visibles son los únicos disponibles.
+        Si tenés dudas sobre el servicio, el precio o cualquier otra cosa, escribinos directamente.
       </p>
       <a
         href={whatsappHref}
@@ -34,7 +33,7 @@ export function BookingSupportCard({ whatsappHref }: BookingSupportCardProps) {
         )}
       >
         <WhatsAppIcon className="size-4" />
-        Reportar un problema
+        Consultar por WhatsApp
       </a>
     </section>
   );

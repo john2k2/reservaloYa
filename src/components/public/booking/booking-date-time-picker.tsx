@@ -28,6 +28,7 @@ interface BookingDateTimePickerProps {
   slots: string[];
   rescheduleStartTime?: string;
   onSelectDate?: (date: string) => void;
+  onSelectSlot?: (slot: string) => void;
   isLoading?: boolean;
 }
 
@@ -76,7 +77,7 @@ function getSlotPeriod(slot: string): "morning" | "afternoon" | "evening" {
 }
 
 const PERIOD_LABELS: Record<string, string> = {
-  morning: "Manana",
+  morning: "Mañana",
   afternoon: "Tarde",
   evening: "Noche",
 };
@@ -93,6 +94,7 @@ export function BookingDateTimePicker({
   slots,
   rescheduleStartTime,
   onSelectDate,
+  onSelectSlot,
   isLoading = false,
 }: BookingDateTimePickerProps) {
   // Available dates as a Set for fast lookup
@@ -349,6 +351,7 @@ export function BookingDateTimePicker({
                         className="sr-only"
                         defaultChecked={rescheduleStartTime === slot}
                         required
+                        onChange={() => onSelectSlot?.(slot)}
                       />
                       <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-card active:scale-[0.97]">
                         {slot}

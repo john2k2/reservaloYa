@@ -13,6 +13,7 @@ type BookingScheduleSectionProps = {
   initialDateOptions: string[];
   rescheduleStartTime?: string;
   onNoSlots?: (date: string | null) => void;
+  onSelectSlot?: (slot: string) => void;
 };
 
 type SlotsState = {
@@ -33,6 +34,7 @@ export function BookingScheduleSection({
   initialDateOptions,
   rescheduleStartTime,
   onNoSlots,
+  onSelectSlot,
 }: BookingScheduleSectionProps) {
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
   // Tracks which date's slots are loaded — null means "not yet loaded"
@@ -105,6 +107,7 @@ export function BookingScheduleSection({
         slots={slots}
         rescheduleStartTime={rescheduleStartTime}
         onSelectDate={setSelectedDate}
+        onSelectSlot={onSelectSlot}
         isLoading={isLoading}
       />
     </section>

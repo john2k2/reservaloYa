@@ -243,7 +243,7 @@ gh pr list
 
 ---
 
-## Estado del proyecto (2026-04-08)
+## Estado del proyecto (2026-04-09)
 
 ### Funcionalidades completadas
 - [x] Flujo publico de reserva completo (landing → servicio → fecha → hora → datos → confirmacion)
@@ -254,19 +254,87 @@ gh pr list
 - [x] MercadoPago OAuth per-negocio
 - [x] Tokens HMAC para links de gestion y resena
 - [x] Rate limiting en creacion de turnos
-- [x] Lista de espera (waitlist)
+- [x] Lista de espera (waitlist) con layout 2 columnas y politicas siempre visibles
 - [x] Resenas post-turno
 - [x] Analytics de embudo con UTM
 - [x] CI: lint + typecheck + tests + coverage thresholds + smoke E2E
 - [x] Dominio propio reservaya.ar en produccion
 - [x] PocketBase en Railway con volumen persistente
+- [x] ImprovMX email forwarding (hola@reservaya.ar) — MX records propagados
+- [x] Contacto y WhatsApp del sitio configurados (541124057521 / hola@reservaya.ar)
+- [x] Booking UX: boton confirmar deshabilitado hasta elegir horario
+- [x] Booking UX: politicas de la reserva siempre visibles (sidebar en todos los estados)
+- [x] Booking UX: soporte de WhatsApp con tono amigable
+- [x] Pagina publica: seccion reordenada (Servicios → Galeria → FAQ → Horarios → Mapa)
+- [x] Pagina publica: WhatsApp/redes ocultas cuando no estan configuradas
+- [x] Onboarding: preview eliminada (muy chica en pantallas chicas)
+- [x] Onboarding: opcion "Personalizado" en selector de paleta de colores
+- [x] Bug fix: dias cerrados en disponibilidad ya no fallan validacion Zod
+- [x] Lanzamiento publico en LinkedIn (2026-04-09)
 
 ### Proximos pasos
+- [ ] ImprovMX: click en "Check Again" en el dashboard para confirmar verificacion
+- [ ] Cambiar password del superuser de PocketBase en Railway
 - [ ] Crear negocios reales para pilotos (suegra + peluqueria externa)
 - [ ] Verificar cron de recordatorios manualmente en produccion
 - [ ] Configurar Sentry authToken para source maps (observabilidad)
 - [ ] Video demo 30-45 segundos para publicaciones
-- [ ] Publicaciones y promociones en redes
+- [ ] Seguimiento de pilotos y feedback
+
+---
+
+## Paginas y componentes clave
+
+### Paginas publicas (`src/app/(public)/[slug]/`)
+| Archivo | Descripcion |
+|---------|-------------|
+| `page.tsx` | Landing publica del negocio (hero, servicios, galeria, FAQ, horarios, mapa) |
+| `reservar/page.tsx` | Flujo de reserva step 1 (elegir servicio) y step 2 (fecha/hora/datos) |
+| `confirmacion/page.tsx` | Pagina de confirmacion post-reserva |
+| `mi-turno/page.tsx` | Gestion del turno (cancelar, reprogramar) via link HMAC |
+| `resena/page.tsx` | Formulario de resena post-turno via link HMAC |
+
+### Componentes del booking (`src/components/public/booking/`)
+| Componente | Descripcion |
+|------------|-------------|
+| `booking-form-with-waitlist.tsx` | Form principal del step 2 — maneja slot seleccionado, datos del cliente, sidebar con resumen y politicas |
+| `booking-date-time-picker.tsx` | Calendario + grilla de horarios por franja (Manana/Tarde/Noche) |
+| `booking-schedule-section.tsx` | Wrapper del picker — fetches slots via API al cambiar fecha |
+| `booking-service-picker.tsx` | Grid de servicios para el step 1 |
+| `booking-selected-service-card.tsx` | Card del servicio elegido en step 2 |
+| `booking-policy-card.tsx` | Politicas de la reserva (siempre visible) |
+| `booking-support-card.tsx` | Contacto WhatsApp con negocio |
+| `booking-steps-header.tsx` | Header con pasos (1-2-3) |
+
+### Componentes de la pagina publica (`src/components/public/`)
+| Componente | Descripcion |
+|------------|-------------|
+| `business-hero.tsx` | Hero de la pagina del negocio (logo, nombre, redes, CTA) |
+| `sticky-header.tsx` | Header fijo al hacer scroll (logo, WhatsApp, boton reservar) |
+| `faq-contact-section.tsx` | Seccion FAQ + politicas + contacto |
+| `public-tracked-link.tsx` | Link con tracking de analytics |
+| `public-analytics-tracker.tsx` | Registra eventos de funnel |
+
+### Panel admin (`src/app/admin/(panel)/`)
+| Ruta | Descripcion |
+|------|-------------|
+| `dashboard/` | Resumen de turnos, KPIs y actividad reciente |
+| `bookings/` | Lista y gestion de turnos |
+| `services/` | CRUD de servicios |
+| `availability/` | Horarios semanales por dia |
+| `customers/` | Lista de clientes |
+| `onboarding/` | Editor visual de pagina publica (wizard + edicion directa) |
+| `settings/` | Configuracion del negocio |
+| `subscription/` | Estado de la suscripcion |
+
+### Server actions y queries
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/server/actions/public-booking.ts` | Creacion de turnos publicos |
+| `src/server/queries/public.ts` | Datos para paginas publicas (business, services, availability) |
+| `src/server/booking-notifications.ts` | Emails y WhatsApp de confirmacion/recordatorio |
+| `src/server/public-booking-links.ts` | Generacion y validacion de tokens HMAC |
+| `src/lib/contact.ts` | WhatsApp y email de contacto del sitio |
 
 ---
 

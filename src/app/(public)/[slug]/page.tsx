@@ -344,6 +344,24 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           highlightedTestimonial={highlightedTestimonial}
         />
 
+        <ServicesSection
+          slug={slug}
+          accentColor={pageData.profile.accent}
+          accentSoft={pageData.profile.accentSoft}
+          surfaceTint={pageData.profile.surfaceTint}
+          services={services}
+          mobilePreviewCount={pageData.profile.sectionLayout.mobileServiceCards}
+          bookingHrefForService={(serviceId) =>
+            buildBookingHref({
+              slug,
+              serviceId,
+              source: tracking.utm_source,
+              medium: tracking.utm_medium,
+              campaign: tracking.utm_campaign,
+            })
+          }
+        />
+
         {/* Gallery */}
         {pageData.profile.gallery && pageData.profile.gallery.length > 0 && (
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
@@ -381,28 +399,26 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           </section>
         )}
 
-        <ServicesSection
-          slug={slug}
-          accentColor={pageData.profile.accent}
-          accentSoft={pageData.profile.accentSoft}
-          surfaceTint={pageData.profile.surfaceTint}
-          services={services}
-          mobilePreviewCount={pageData.profile.sectionLayout.mobileServiceCards}
-          bookingHrefForService={(serviceId) =>
-            buildBookingHref({
-              slug,
-              serviceId,
-              source: tracking.utm_source,
-              medium: tracking.utm_medium,
-              campaign: tracking.utm_campaign,
-            })
-          }
-        />
-
         <TestimonialsSection
           accentColor={pageData.profile.accent}
           testimonials={pageData.profile.testimonials}
           mobileVisibleCount={pageData.profile.sectionLayout.mobileTestimonials}
+        />
+
+        <FaqContactSection
+          accentColor={pageData.profile.accent}
+          surfaceTint={pageData.profile.surfaceTint}
+          faqs={pageData.profile.faqs}
+          policies={[
+            ...(pageData.business.cancellationPolicy ? [pageData.business.cancellationPolicy] : []),
+            ...pageData.profile.policies,
+          ]}
+          whatsappHref={whatsappHref}
+          instagramHref={instagramHref}
+          facebookHref={facebookHref}
+          tiktokHref={tiktokHref}
+          mobileFaqCount={pageData.profile.sectionLayout.mobileFaqItems}
+          mobilePolicyCount={pageData.profile.sectionLayout.mobilePolicyItems}
         />
 
         {/* Horarios de atención */}
@@ -442,22 +458,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
             </div>
           </section>
         )}
-
-        <FaqContactSection
-          accentColor={pageData.profile.accent}
-          surfaceTint={pageData.profile.surfaceTint}
-          faqs={pageData.profile.faqs}
-          policies={[
-            ...(pageData.business.cancellationPolicy ? [pageData.business.cancellationPolicy] : []),
-            ...pageData.profile.policies,
-          ]}
-          whatsappHref={whatsappHref}
-          instagramHref={instagramHref}
-          facebookHref={facebookHref}
-          tiktokHref={tiktokHref}
-          mobileFaqCount={pageData.profile.sectionLayout.mobileFaqItems}
-          mobilePolicyCount={pageData.profile.sectionLayout.mobilePolicyItems}
-        />
 
         {/* Location */}
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">

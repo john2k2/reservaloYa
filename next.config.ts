@@ -23,6 +23,17 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "picsum.photos",
       },
+      // PocketBase en Railway (producción)
+      {
+        protocol: "https",
+        hostname: "*.up.railway.app",
+      },
+      // PocketBase local (desarrollo)
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "8090",
+      },
     ],
   },
   // Compress output for better performance
