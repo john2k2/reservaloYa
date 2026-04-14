@@ -12,7 +12,13 @@
 
 # testing (outputs generados — todos en tmp/)
 /tmp/
+/coverage/
+/playwright-report/
+/test-results/
 /playwright/.cache/
+
+# tools locales
+.engram/
 
 # next.js
 /.next/
