@@ -45,7 +45,7 @@ Para enviar a cualquier destinatario en produccion, necesitas dominio propio.
 
 ```bash
 npm run notifications:test -- --channel email --dry-run    # sin enviar
-node scripts/test-notifications.mjs --channel email --email tu@email.com  # envio real
+node scripts/dev/test-notifications.mjs --channel email --email tu@email.com  # envio real
 ```
 
 ### Troubleshooting
@@ -72,7 +72,7 @@ Complementa los recordatorios por email. Si no se configura, el sistema funciona
 ### Probar
 
 ```bash
-node scripts/test-notifications.mjs --channel whatsapp --phone +5491155550101
+node scripts/dev/test-notifications.mjs --channel whatsapp --phone +5491155550101
 ```
 
 ---

@@ -18,12 +18,12 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "demo:reset": "node scripts/reset-local-demo.mjs",
-    "notifications:test": "node scripts/test-notifications.mjs --dry-run",
+    "demo:reset": "node scripts/dev/reset-local-demo.mjs",
+    "notifications:test": "node scripts/dev/test-notifications.mjs --dry-run",
     "pb:up": "docker compose up -d pocketbase",
     "pb:down": "docker compose down",
     "pb:logs": "docker compose logs -f pocketbase",
-    "pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs",
+    "pb:bootstrap": "node scripts/setup/bootstrap-pocketbase.mjs",
     "test:e2e:smoke": "playwright test e2e/tests/smoke-test.spec.ts --project=ci-smoke"
   },
   "dependencies": {
