@@ -9,6 +9,7 @@ import {
   createPocketBaseServerClient,
   persistPocketBaseAuth,
 } from "@/lib/pocketbase/server";
+import { isPocketBaseInfraError } from "@/lib/pocketbase/shared";
 import { createPocketBaseOwnerAccount } from "@/server/pocketbase-store";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 
@@ -81,11 +82,13 @@ export async function loginAction(formData: FormData) {
     // Re-throw Next.js redirect/notFound — must not be caught
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
 
-    redirect(
-      `/login?error=${encodeURIComponent(
-        error instanceof Error ? error.message : "No pudimos iniciar sesion."
-      )}`
-    );
+    const message = isPocketBaseInfraError(error)
+      ? "No pudimos conectarnos al servidor. Intentá de nuevo en unos minutos."
+      : error instanceof Error
+        ? error.message
+        : "No pudimos iniciar sesion.";
+
+    redirect(`/login?error=${encodeURIComponent(message)}`);
   }
 
   if (isSuperAdminEmail(email)) {

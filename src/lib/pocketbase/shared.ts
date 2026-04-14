@@ -1,4 +1,4 @@
-import PocketBase from "pocketbase";
+import PocketBase, { ClientResponseError } from "pocketbase";
 
 import { getPocketBaseUrl } from "@/lib/pocketbase/config";
 
@@ -14,6 +14,18 @@ export function createPocketBaseClient() {
 
 export function getCookieHeader(cookies: Array<{ name: string; value: string }>) {
   return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+}
+
+/**
+ * Distingue errores de infraestructura de PocketBase de errores de usuario.
+ * - status 0 → network/timeout (infra)
+ * - status 4xx → validación o auth incorrecta (usuario), salvo 404 que indica colección faltante (infra)
+ * - status 5xx → servidor caído (infra)
+ */
+export function isPocketBaseInfraError(error: unknown): boolean {
+  if (!(error instanceof ClientResponseError)) return false;
+  const { status } = error;
+  return status === 0 || status === 404 || status >= 500;
 }
 
 export function parsePocketBaseAuthCookie(serializedCookie: string) {

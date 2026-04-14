@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import { isPocketBaseInfraError } from "@/lib/pocketbase/shared";
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
@@ -336,9 +337,11 @@ export async function createPublicBookingAction(formData: FormData) {
     const errorMessage =
       error instanceof RateLimitError
         ? `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
-        : error instanceof Error
-          ? error.message
-          : "No se pudo crear la reserva.";
+        : isPocketBaseInfraError(error)
+          ? "No pudimos procesar tu reserva por un problema del servidor. Intentá de nuevo en unos minutos."
+          : error instanceof Error
+            ? error.message
+            : "No se pudo crear la reserva.";
 
     redirect(
       buildBookingPageHref({
@@ -467,14 +470,13 @@ export async function cancelPublicBookingAction(formData: FormData) {
       await cancelPocketBasePublicBooking({ businessSlug, bookingId });
     }
   } catch (error) {
-    redirect(
-      buildManagePageHref({
-        businessSlug,
-        bookingId,
-        manageToken,
-        error: error instanceof Error ? error.message : "No se pudo cancelar el turno.",
-      })
-    );
+    const errorMessage = isPocketBaseInfraError(error)
+      ? "No pudimos cancelar el turno por un problema del servidor. Intentá de nuevo en unos minutos."
+      : error instanceof Error
+        ? error.message
+        : "No se pudo cancelar el turno.";
+
+    redirect(buildManagePageHref({ businessSlug, bookingId, manageToken, error: errorMessage }));
   }
 
   redirect(

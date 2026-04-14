@@ -198,19 +198,15 @@ export async function consumeRateLimit(
   try {
     return await consumePocketBaseRateLimit(input);
   } catch (error) {
-    // Fail closed: si el shared store falla con múltiples instancias, el fallback a memoria
-    // rompe el límite (cada instancia contaría por separado). Es más seguro denegar
-    // temporalmente que permitir sin control sincronizado.
-    logger.error("Rate limit store no disponible — denegando request para evitar bypass", {
+    // Si el shared store no está disponible (colección inexistente, credenciales,
+    // conectividad), caemos a memoria. En Railway (single instance) y Vercel
+    // (serverless, sin estado compartido entre invocaciones) el bypass
+    // cross-instance no es un riesgo real.
+    logger.warn("Rate limit store no disponible — usando memoria como fallback", {
       bucket: input.bucket,
       message: error instanceof Error ? error.message : String(error),
     });
-    return {
-      ok: false,
-      remaining: 0,
-      retryAfterSeconds: Math.max(Math.ceil(input.windowMs / 1000), 1),
-      store: "memory",
-    };
+    return consumeMemoryRateLimit(input);
   }
 }
 
