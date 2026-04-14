@@ -13,6 +13,11 @@ RUN curl -fsSL -o pocketbase.zip "https://github.com/pocketbase/pocketbase/relea
   && rm pocketbase.zip \
   && chmod +x /pb/pocketbase
 
+# Copiar hooks y migrations al crear la imagen.
+# pb_data (base de datos) se monta como volumen externo para persistencia.
+COPY pocketbase/pb_hooks /pb/pb_hooks
+COPY pocketbase/pb_migrations /pb/pb_migrations
+
 EXPOSE 8090
 
 CMD ["./pocketbase", "serve", "--http=0.0.0.0:8090"]
