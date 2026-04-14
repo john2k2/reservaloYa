@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useLayoutEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface AnimatedSectionProps {
@@ -16,29 +16,33 @@ export function AnimatedSection({
   delay = 0,
   animation = "fadeInUp",
 }: AnimatedSectionProps) {
-  // SSR: siempre visible (sin opacity-0) para evitar flicker en hidratación
-  const [isVisible, setIsVisible] = useState(true);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Ocultar el elemento antes del primer paint si está fuera del viewport.
+  // Usamos manipulación directa del DOM (no setState) para evitar cascading renders.
+  useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
     const el = ref.current;
     if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
+    if (!alreadyVisible) el.style.opacity = "0";
+  }, []);
 
-    // Si el elemento ya está en el viewport al cargar, no lo ocultamos ni animamos
+  // Configurar el IntersectionObserver para mostrar el elemento al entrar al viewport.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const el = ref.current;
+    if (!el) return;
     const rect = el.getBoundingClientRect();
     const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
     if (alreadyVisible) return;
 
-    // Está fuera del viewport: ocultarlo y observar cuándo entra
-    setIsVisible(false);
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsVisible(true);
+          el.style.opacity = "";
           setShouldAnimate(true);
           observer.disconnect();
         }
@@ -60,11 +64,7 @@ export function AnimatedSection({
   return (
     <div
       ref={ref}
-      className={cn(
-        className,
-        !isVisible && "opacity-0",
-        shouldAnimate && animationClass
-      )}
+      className={cn(className, shouldAnimate && animationClass)}
       style={{
         animationDelay: `${delay}ms`,
         animationFillMode: "forwards",
