@@ -28,9 +28,10 @@ export default defineConfig({
 
   /* Reporter */
   reporter: [
-    ["html", { outputFolder: "playwright-report" }],
+    ["html", { outputFolder: "tmp/playwright-report" }],
     ["list"],
   ],
+  outputDir: "tmp/test-results",
 
   /* Shared settings for all the projects below */
   use: {

@@ -17,6 +17,7 @@ export default defineConfig({
     fileParallelism: false,
     coverage: {
       provider: "v8",
+      reportsDirectory: "tmp/coverage",
       reporter: ["text", "json", "html"],
       thresholds: {
         statements: 35,

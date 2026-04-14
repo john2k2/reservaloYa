@@ -10,10 +10,8 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-/test-results/
-/playwright-report/
+# testing (outputs generados — todos en tmp/)
+/tmp/
 /playwright/.cache/
 
 # next.js
