@@ -272,7 +272,7 @@ describe("mercadopago webhook route", () => {
 
     vi.unstubAllEnvs();
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(401);
     expect(body).toEqual({ ok: false, error: "Webhook signature required" });
     expect(getMPPaymentInfoMock).not.toHaveBeenCalled();
   });
@@ -298,6 +298,8 @@ describe("mercadopago webhook route", () => {
   it("activates PocketBase subscriptions on approved subscription payments", async () => {
     const subscriptionUpdateMock = vi.fn().mockResolvedValue(undefined);
     isPocketBaseConfiguredMock.mockReturnValue(true);
+    shouldVerifyMPWebhookSignatureMock.mockReturnValue(true);
+    isValidMPWebhookSignatureMock.mockReturnValue(true);
     getPocketBaseBusinessPaymentSettingsByCollectorIdMock.mockResolvedValue({
       businessId: "biz-1",
       businessSlug: "demo-barberia",

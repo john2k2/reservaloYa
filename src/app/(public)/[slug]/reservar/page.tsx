@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { RefreshCcw } from "lucide-react";
 
@@ -15,6 +16,9 @@ import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
 
+// cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
+const getPageData = cache(getPublicBusinessPageData);
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -26,7 +30,7 @@ export async function generateMetadata({
     const { slug } = await params;
     const { service } = await searchParams;
     
-    const pageData = await getPublicBusinessPageData(slug);
+    const pageData = await getPageData(slug);
     
     if (!pageData) {
       return { title: "Reserva no encontrada | ReservaYa" };
@@ -97,7 +101,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     : null;
 
   const effectiveServiceId = filters.service ?? rescheduleBooking?.serviceId;
-  const pageData = await getPublicBusinessPageData(slug);
+  const pageData = await getPageData(slug);
 
   if (!pageData) notFound();
 

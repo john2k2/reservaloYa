@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/pocketbase/config", () => ({
+  isPocketBaseConfigured: vi.fn().mockReturnValue(false),
+}));
+
 const emailSendMock = vi.fn();
 
 vi.mock("resend", () => ({
@@ -110,5 +114,171 @@ describe("booking notifications", () => {
 
     expect(result.status).toBe("sent");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips reminder email when customer has no email", async () => {
+    const { sendBookingReminderEmail } = await import("./booking-notifications");
+    const result = await sendBookingReminderEmail({
+      bookingId: "b-1",
+      businessSlug: "demo-barberia",
+      customerName: "Cliente",
+      customerEmail: undefined,
+      customerPhone: "+5491155550101",
+      confirmation,
+    });
+    expect(result.status).toBe("skipped");
+  });
+
+  it("sends reminder email when Resend is configured", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.RESEND_FROM_EMAIL = "turnos@reservaya.ar";
+    process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.ar";
+    process.env.BOOKING_LINK_SECRET = "booking-links-secret";
+
+    emailSendMock.mockResolvedValue({ data: { id: "email_456" }, error: null });
+
+    const { sendBookingReminderEmail } = await import("./booking-notifications");
+    const result = await sendBookingReminderEmail({
+      bookingId: "b-1",
+      businessSlug: "demo-barberia",
+      customerName: "Cliente QA",
+      customerEmail: "cliente@example.com",
+      customerPhone: "+5491155550101",
+      confirmation,
+    });
+    expect(result.status).toBe("sent");
+  });
+
+  it("skips WhatsApp reminder when customer has no phone", async () => {
+    const { sendBookingReminderWhatsApp } = await import("./booking-notifications");
+    const result = await sendBookingReminderWhatsApp({
+      bookingId: "b-1",
+      businessSlug: "demo-barberia",
+      customerName: "Cliente",
+      customerEmail: "a@b.com",
+      customerPhone: undefined,
+      confirmation,
+    });
+    expect(result.status).toBe("skipped");
+  });
+
+  it("skips WhatsApp reminder when Twilio is not configured", async () => {
+    delete process.env.TWILIO_ACCOUNT_SID;
+    const { sendBookingReminderWhatsApp } = await import("./booking-notifications");
+    const result = await sendBookingReminderWhatsApp({
+      bookingId: "b-1",
+      businessSlug: "demo-barberia",
+      customerName: "Cliente",
+      customerEmail: "a@b.com",
+      customerPhone: "+5491155550101",
+      confirmation,
+    });
+    expect(result.status).toBe("skipped");
+  });
+
+  it("skips business notification when no email configured", async () => {
+    const { sendBusinessNotificationEmail } = await import("./booking-notifications");
+    const result = await sendBusinessNotificationEmail({
+      ...confirmation,
+      bookingId: "b-1",
+      confirmationCode: "ABC",
+      customerName: "Cliente",
+      customerEmail: "cliente@example.com",
+      customerPhone: "+5491155550101",
+      businessId: "biz-1",
+      businessSlug: "demo-barberia",
+      businessNotificationEmail: undefined,
+      serviceId: "svc-1",
+      priceAmount: null,
+      currency: "ARS",
+      startsAt: "2026-05-01T09:00:00.000Z",
+      timezone: "America/Argentina/Buenos_Aires",
+      status: "confirmed",
+    });
+    expect(result.status).toBe("skipped");
+  });
+
+  it("sends business notification email when configured", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.RESEND_FROM_EMAIL = "turnos@reservaya.ar";
+    process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.ar";
+
+    emailSendMock.mockResolvedValue({ data: { id: "email_789" }, error: null });
+
+    const { sendBusinessNotificationEmail } = await import("./booking-notifications");
+    const result = await sendBusinessNotificationEmail({
+      ...confirmation,
+      bookingId: "b-1",
+      confirmationCode: "ABC",
+      customerName: "Cliente QA",
+      customerEmail: "cliente@example.com",
+      customerPhone: "+5491155550101",
+      businessId: "biz-1",
+      businessSlug: "demo-barberia",
+      businessNotificationEmail: "negocio@example.com",
+      serviceId: "svc-1",
+      priceAmount: null,
+      currency: "ARS",
+      startsAt: "2026-05-01T09:00:00.000Z",
+      timezone: "America/Argentina/Buenos_Aires",
+      status: "confirmed",
+    });
+    expect(result.status).toBe("sent");
+  });
+
+  it("sends follow-up email when Resend is configured", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.RESEND_FROM_EMAIL = "turnos@reservaya.ar";
+    process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.ar";
+
+    emailSendMock.mockResolvedValue({ data: { id: "email_followup" }, error: null });
+
+    const { sendPostBookingFollowUpEmail } = await import("./booking-notifications");
+    const result = await sendPostBookingFollowUpEmail({
+      customerEmail: "cliente@example.com",
+      customerName: "Cliente QA",
+      businessName: "Demo Barberia",
+      businessSlug: "demo-barberia",
+      serviceName: "Corte de pelo",
+      bookingDate: "2026-05-01",
+      bookingId: "b-1",
+      manageToken: "token123",
+    });
+    expect(result.status).toBe("sent");
+  });
+
+  it("skips follow-up WhatsApp when Twilio is not configured", async () => {
+    delete process.env.TWILIO_ACCOUNT_SID;
+    const { sendPostBookingFollowUpWhatsApp } = await import("./booking-notifications");
+    const result = await sendPostBookingFollowUpWhatsApp({
+      customerPhone: "+5491155550101",
+      customerName: "Cliente",
+      businessName: "Demo Barberia",
+      businessSlug: "demo-barberia",
+      serviceName: "Corte de pelo",
+    });
+    expect(result.status).toBe("skipped");
+  });
+
+  it("sends follow-up WhatsApp when Twilio is configured", async () => {
+    process.env.TWILIO_ACCOUNT_SID = "AC123";
+    process.env.TWILIO_AUTH_TOKEN = "auth";
+    process.env.TWILIO_WHATSAPP_FROM = "whatsapp:+14155238886";
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ sid: "SM_followup" }),
+    });
+
+    const { sendPostBookingFollowUpWhatsApp } = await import("./booking-notifications");
+    const result = await sendPostBookingFollowUpWhatsApp({
+      customerPhone: "+5491155550101",
+      customerName: "Cliente QA",
+      businessName: "Demo Barberia",
+      businessSlug: "demo-barberia",
+      serviceName: "Corte de pelo",
+      reviewUrl: "https://reservaya.ar/demo-barberia/resena?booking=b-1&token=tok",
+    });
+    expect(result.status).toBe("sent");
   });
 });

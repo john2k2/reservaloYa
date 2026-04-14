@@ -1,5 +1,3 @@
-import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
@@ -23,7 +21,6 @@ import {
   type CreateLocalBookingInput,
   type CreateLocalBusinessFromTemplateInput,
   type DeactivateLocalServiceInput,
-  ensureDemoPresetData,
   findReminderCandidatesForBusiness,
   getBookingTimestamp,
   getBusinessCommunicationEvents,
@@ -37,14 +34,12 @@ import {
   getBusinessServices,
   getLocalBookingDetails,
   getPrimaryBusiness,
-  type LegacyLocalStore,
   type LocalAnalyticsEventName,
   type LocalBooking,
   type LocalCommunicationKind,
   type LocalCommunicationStatus,
-  type LocalStore,
   normalizeServiceName,
-  normalizeStore,
+  type LocalStore,
   type RemoveLocalBlockedSlotInput,
   type UpdateLocalAdminBookingInput,
   type UpdateLocalBusinessBrandingInput,
@@ -54,6 +49,7 @@ import {
   type UpsertLocalAvailabilityRulesInput,
   type UpsertLocalServiceInput,
 } from "@/server/local-domain";
+import { mutateStore, readStore } from "./_core";
 import {
   getAvailableReminderChannels,
   isTwilioConfigured,
@@ -99,53 +95,6 @@ import {
 } from "@/server/admin-dashboard-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
-const dataDir = path.join(process.cwd(), "data");
-const seedPath = path.join(dataDir, "local-store.seed.json");
-const runtimePath = path.join(dataDir, "local-store.json");
-
-let storeMutationQueue = Promise.resolve();
-
-async function ensureStoreFile() {
-  await mkdir(dataDir, { recursive: true });
-
-  try {
-    await readFile(runtimePath, "utf8");
-  } catch {
-    await copyFile(seedPath, runtimePath);
-  }
-}
-
-async function readStore() {
-  await ensureStoreFile();
-  const content = await readFile(runtimePath, "utf8");
-  const rawStore = JSON.parse(content) as LocalStore | LegacyLocalStore;
-
-  return ensureDemoPresetData(normalizeStore(rawStore));
-}
-
-async function writeStore(store: LocalStore) {
-  const content = JSON.stringify(store, null, 2);
-  const runtimeTempPath = path.join(dataDir, `local-store.${randomUUID()}.tmp.json`);
-
-  await writeFile(runtimeTempPath, content);
-  await rename(runtimeTempPath, runtimePath);
-}
-
-async function mutateStore<T>(mutator: (store: LocalStore) => Promise<T> | T) {
-  const run = storeMutationQueue.then(async () => {
-    const store = await readStore();
-    const result = await mutator(store);
-    await writeStore(store);
-    return result;
-  });
-
-  storeMutationQueue = run.then(
-    () => undefined,
-    () => undefined
-  );
-
-  return run;
-}
 
 export async function getLocalPublicBusinessPageData(slug: string) {
   const store = await readStore();

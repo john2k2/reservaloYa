@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { Facebook, Instagram } from "lucide-react";
 
@@ -23,6 +24,9 @@ import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
 import { productName } from "@/constants/site";
 
+// cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
+const getPageData = cache(getPublicBusinessPageData);
+
 export async function generateMetadata({
   params,
 }: {
@@ -30,7 +34,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { slug } = await params;
-    const pageData = await getPublicBusinessPageData(slug);
+    const pageData = await getPageData(slug);
 
     if (!pageData) {
       return {
@@ -204,7 +208,7 @@ function getNextAvailableSlotLabel(input?: {
 export default async function BusinessPage({ params, searchParams }: BusinessPageProps) {
   const { slug } = await params;
   const tracking = await searchParams;
-  const pageData = await getPublicBusinessPageData(slug);
+  const pageData = await getPageData(slug);
 
   if (!pageData) {
     notFound();

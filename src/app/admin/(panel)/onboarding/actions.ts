@@ -32,6 +32,15 @@ const onboardingSchema = z.object({
   address: z.string().min(4).max(160),
 });
 
+const updateBusinessSchema = z.object({
+  businessSlug: z.string().min(2).max(120),
+  name: z.string().min(3).max(120),
+  phone: z.string().min(6).max(40),
+  email: z.union([z.string().email(), z.literal("")]).optional(),
+  address: z.string().min(4).max(160),
+  cancellationPolicy: z.string().max(600).optional(),
+});
+
 const colorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color invalido.");
 
 const onboardingBrandingSchema = z.object({
@@ -88,16 +97,23 @@ type SaveOnboardingBrandingResult = {
 
 async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboardedBusinessResult> {
   await requireAdminRouteAccess("/admin/onboarding");
-  const businessSlug = String(formData.get("businessSlug") ?? "").trim();
-  const name = String(formData.get("name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const address = String(formData.get("address") ?? "").trim();
-  const cancellationPolicy = String(formData.get("cancellationPolicy") ?? "").trim();
 
-  if (!businessSlug || !name || !phone || !address) {
+  const parsed = updateBusinessSchema.safeParse({
+    businessSlug: String(formData.get("businessSlug") ?? "").trim(),
+    name: String(formData.get("name") ?? "").trim(),
+    phone: String(formData.get("phone") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim(),
+    address: String(formData.get("address") ?? "").trim(),
+    cancellationPolicy: String(formData.get("cancellationPolicy") ?? "").trim(),
+  });
+
+  if (!parsed.success) {
     throw new Error("Completa los datos requeridos del negocio.");
   }
+
+  const { businessSlug, name, phone, address } = parsed.data;
+  const email = parsed.data.email ?? "";
+  const cancellationPolicy = parsed.data.cancellationPolicy ?? "";
 
   if (isPocketBaseConfigured()) {
     const user = await getAuthenticatedPocketBaseUser();

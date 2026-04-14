@@ -1,4 +1,5 @@
 import type { PaymentStatus } from "@/types/domain";
+import { decryptMPToken, encryptMPToken } from "@/server/mp-token-crypto";
 
 // ─── Subscription pricing ────────────────────────────────────────────────────
 
@@ -45,8 +46,8 @@ export function buildBusinessPaymentSettings(
     businessName: business.name,
     mpConnected: business.mpConnected ?? false,
     mpCollectorId: business.mpCollectorId,
-    mpAccessToken: business.mpAccessToken,
-    mpRefreshToken: business.mpRefreshToken,
+    mpAccessToken: decryptMPToken(business.mpAccessToken) ?? undefined,
+    mpRefreshToken: decryptMPToken(business.mpRefreshToken) ?? undefined,
     mpTokenExpiresAt: business.mpTokenExpiresAt,
   };
 }
@@ -67,8 +68,8 @@ export function buildBusinessMercadoPagoTokenPatch(
   input: BusinessMercadoPagoTokenUpdateInput
 ) {
   return {
-    mpAccessToken: input.mpAccessToken,
-    mpRefreshToken: input.mpRefreshToken,
+    mpAccessToken: encryptMPToken(input.mpAccessToken),
+    mpRefreshToken: encryptMPToken(input.mpRefreshToken),
     mpCollectorId: input.mpCollectorId,
     mpTokenExpiresAt: input.mpTokenExpiresAt,
     mpConnected: true,

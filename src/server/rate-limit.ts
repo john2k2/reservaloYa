@@ -198,11 +198,19 @@ export async function consumeRateLimit(
   try {
     return await consumePocketBaseRateLimit(input);
   } catch (error) {
-    logger.error("Falling back to memory store", {
+    // Fail closed: si el shared store falla con múltiples instancias, el fallback a memoria
+    // rompe el límite (cada instancia contaría por separado). Es más seguro denegar
+    // temporalmente que permitir sin control sincronizado.
+    logger.error("Rate limit store no disponible — denegando request para evitar bypass", {
       bucket: input.bucket,
       message: error instanceof Error ? error.message : String(error),
     });
-    return consumeMemoryRateLimit(input);
+    return {
+      ok: false,
+      remaining: 0,
+      retryAfterSeconds: Math.max(Math.ceil(input.windowMs / 1000), 1),
+      store: "memory",
+    };
   }
 }
 

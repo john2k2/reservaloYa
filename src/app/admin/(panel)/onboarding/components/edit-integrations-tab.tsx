@@ -23,16 +23,20 @@ export function EditIntegrationsTab({
 }: EditIntegrationsTabProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [disconnected, setDisconnected] = useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
 
   const isCurrentlyConnected = mpConnected && !disconnected;
 
   const handleDisconnect = async () => {
     setIsDisconnecting(true);
+    setDisconnectError(null);
     try {
       await onDisconnect();
       setDisconnected(true);
     } catch (err) {
-      console.error("Error desconectando MP:", err);
+      setDisconnectError(
+        err instanceof Error ? err.message : "No se pudo desconectar la cuenta. Intentá de nuevo."
+      );
     } finally {
       setIsDisconnecting(false);
     }
@@ -118,6 +122,12 @@ export function EditIntegrationsTab({
           )}
         </div>
       </div>
+
+      {disconnectError && (
+        <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 dark:border-red-400/20 dark:bg-red-400/10">
+          <p className="text-sm font-medium text-red-800 dark:text-red-200">{disconnectError}</p>
+        </div>
+      )}
 
       {/* Info banner */}
       <div className="mt-4 rounded-2xl border border-blue-200/60 bg-blue-50/60 p-4 dark:border-blue-800/30 dark:bg-blue-950/20">

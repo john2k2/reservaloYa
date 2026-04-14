@@ -10,8 +10,16 @@ import {
 } from "@/lib/bookings/format";
 import { buildWeeklySchedule } from "@/lib/bookings/schedule";
 import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
-import { createPocketBasePublicClient } from "@/lib/pocketbase/public";
 import { slugify } from "@/lib/utils";
+import {
+  getAdminClient,
+  getPublicMutationClient,
+  getPublicReadClient,
+  listPocketBaseRecords,
+  listPocketBaseRecordsWithClient,
+  type PocketBaseListOptions,
+  type PocketBaseScopedClient,
+} from "./_core";
 import { withBookingDateLock } from "@/server/booking-slot-lock";
 import {
   type AnalyticsRecord,
@@ -81,47 +89,6 @@ import {
 } from "@/server/admin-dashboard-domain";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 
-type PocketBaseListOptions = {
-  sort?: string;
-  expand?: string;
-  filter?: string;
-};
-
-type PocketBaseScopedClient =
-  | Awaited<ReturnType<typeof createPocketBaseAdminClient>>
-  | Awaited<ReturnType<typeof createPocketBasePublicClient>>;
-
-async function listPocketBaseRecords<T>(collection: string, options?: PocketBaseListOptions) {
-  const pb = await getAdminClient();
-
-  return listPocketBaseRecordsWithClient<T>(pb, collection, options);
-}
-
-function listPocketBaseRecordsWithClient<T>(
-  pb: PocketBaseScopedClient,
-  collection: string,
-  options?: PocketBaseListOptions
-) {
-  return pb.collection(collection).getFullList<T>({
-    sort: options?.sort,
-    expand: options?.expand,
-    filter: options?.filter,
-    batch: 1000,
-    requestKey: null,
-  });
-}
-
-async function getAdminClient() {
-  return createPocketBaseAdminClient();
-}
-
-async function getPublicReadClient() {
-  return createPocketBasePublicClient();
-}
-
-async function getPublicMutationClient() {
-  return createPocketBasePublicClient();
-}
 
 async function getBusinessBySlug(slug: string) {
   const pb = await getAdminClient();

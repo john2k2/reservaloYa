@@ -68,11 +68,12 @@ export async function POST(request: Request) {
   }
 
   if (!shouldVerifyMPWebhookSignature()) {
-    if (process.env.NODE_ENV === "production") {
-      logger.error("MP_WEBHOOK_SECRET no configurado en produccion: rechazando webhook");
-      return NextResponse.json({ ok: false, error: "Webhook signature required" }, { status: 500 });
+    const isRealDeployment = isPocketBase || process.env.NODE_ENV === "production";
+    if (isRealDeployment) {
+      logger.error("MP_WEBHOOK_SECRET no configurado en deployment real: rechazando webhook");
+      return NextResponse.json({ ok: false, error: "Webhook signature required" }, { status: 401 });
     }
-    logger.warn("MP_WEBHOOK_SECRET no configurado: webhook sin verificacion de firma (solo dev)");
+    logger.warn("MP_WEBHOOK_SECRET no configurado: webhook sin verificacion de firma (solo dev local)");
   } else if (
     !isValidMPWebhookSignature({
       paymentId,

@@ -2,12 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import { publicBookingSchema } from "./booking";
 
+/** Un año desde hoy, primer día del mes, para que el test nunca expire. */
+function futureDateString(): string {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(1);
+  return d.toISOString().slice(0, 10);
+}
+
 describe("publicBookingSchema", () => {
   it("accepts PocketBase booking ids for reschedules", () => {
     const parsed = publicBookingSchema.safeParse({
       businessSlug: "demo-barberia",
       serviceId: "afdkwzm04yk2mc6",
-      bookingDate: "2026-03-11",
+      bookingDate: futureDateString(),
       startTime: "09:45",
       fullName: "QA Produccion ReservaYa",
       phone: "1155550101",

@@ -80,11 +80,21 @@ vi.mock("@/server/mercadopago", () => ({
   isMercadoPagoConfiguredForBusiness: vi.fn((token?: string) => Boolean(token)),
 }));
 
+/** Fecha futura fija para tests: un año desde hoy, primer día del mes. */
+function futureDateString(): string {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(1);
+  return d.toISOString().slice(0, 10);
+}
+
+const TEST_BOOKING_DATE = futureDateString();
+
 function buildBookingFormData() {
   const formData = new FormData();
   formData.set("businessSlug", "demo-barberia");
   formData.set("serviceId", "service-1");
-  formData.set("bookingDate", "2026-03-25");
+  formData.set("bookingDate", TEST_BOOKING_DATE);
   formData.set("startTime", "10:00");
   formData.set("fullName", "Cliente Test");
   formData.set("phone", "1133344455");
@@ -219,7 +229,7 @@ describe("reschedule booking", () => {
       expect.objectContaining({
         rescheduleBookingId: "existing-booking-id",
         businessSlug: "demo-barberia",
-        bookingDate: "2026-03-25",
+        bookingDate: TEST_BOOKING_DATE,
         startTime: "10:00",
       })
     );
