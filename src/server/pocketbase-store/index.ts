@@ -17,8 +17,6 @@ import {
   getPublicReadClient,
   listPocketBaseRecords,
   listPocketBaseRecordsWithClient,
-  type PocketBaseListOptions,
-  type PocketBaseScopedClient,
 } from "./_core";
 import { withBookingDateLock } from "@/server/booking-slot-lock";
 import {

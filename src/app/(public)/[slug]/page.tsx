@@ -18,7 +18,6 @@ import {
   LocalBusinessJsonLd,
   WebPageJsonLd,
 } from "@/lib/seo/business-json-ld";
-import { getSiteWhatsAppHref } from "@/lib/contact";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
@@ -237,7 +236,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   const instagramHref = buildInstagramHref(pageData.profile.instagram);
   const facebookHref = buildFacebookHref(pageData.profile.facebook);
   const tiktokHref = buildTikTokHref(pageData.profile.tiktok);
-  const websiteHref = buildWebsiteHref(pageData.profile.website);
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     pageData.business.address ?? pageData.profile.mapQuery ?? pageData.business.name
   )}`;

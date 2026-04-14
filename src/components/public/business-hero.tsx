@@ -7,7 +7,6 @@ import {
   Clock,
   Clock3,
   Facebook,
-  Globe,
   Instagram,
   MapPin,
   Quote,

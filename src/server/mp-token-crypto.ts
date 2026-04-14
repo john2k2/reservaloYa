@@ -21,7 +21,6 @@ const logger = createLogger("MP Token Crypto");
 
 const ALGORITHM = "aes-256-gcm";
 const IV_BYTES = 12; // 96 bits — recomendado para GCM
-const TAG_BYTES = 16;
 const ENC_PREFIX = "enc1:";
 
 function getEncryptionKey(): Buffer | null {
