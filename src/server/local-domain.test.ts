@@ -235,9 +235,9 @@ describe("getBusinessServices", () => {
   const store: LocalStore = {
     ...emptyStore,
     services: [
-      { id: "svc-1", businessId: "biz-1", name: "Corte", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" },
-      { id: "svc-2", businessId: "biz-1", name: "Barba", durationMinutes: 20, price: null, active: false, featured: false, createdAt: "2026-01-01T00:00:00Z" },
-      { id: "svc-3", businessId: "biz-2", name: "Spa", durationMinutes: 60, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" },
+      { id: "svc-1", businessId: "biz-1", name: "Corte", description: "", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" },
+      { id: "svc-2", businessId: "biz-1", name: "Barba", description: "", durationMinutes: 20, price: null, active: false, featured: false, createdAt: "2026-01-01T00:00:00Z" },
+      { id: "svc-3", businessId: "biz-2", name: "Spa", description: "", durationMinutes: 60, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" },
     ],
   };
 
@@ -257,15 +257,15 @@ describe("getBusinessCustomers / getBusinessBookings", () => {
   const store: LocalStore = {
     ...emptyStore,
     customers: [
-      { id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", createdAt: "2026-01-01T00:00:00Z" },
-      { id: "c-2", businessId: "biz-2", fullName: "Ana", phone: "1100000002", email: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", notes: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "c-2", businessId: "biz-2", fullName: "Ana", phone: "1100000002", email: "", notes: "", createdAt: "2026-01-01T00:00:00Z" },
     ],
     bookings: [
       {
         id: "b-1", businessId: "biz-1", serviceId: "svc-1", customerId: "c-1",
         bookingDate: "2026-05-01", startTime: "09:00", endTime: "09:30",
-        status: "confirmed", createdAt: "2026-01-01T00:00:00Z",
-      } as LocalBooking,
+        status: "confirmed", notes: "", createdAt: "2026-01-01T00:00:00Z",
+      },
     ],
   };
 
@@ -284,14 +284,14 @@ describe("getLocalBookingDetails", () => {
   const store: LocalStore = {
     ...emptyStore,
     businesses: [mockBusiness],
-    services: [{ id: "svc-1", businessId: "biz-1", name: "Corte", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" }],
-    customers: [{ id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", createdAt: "2026-01-01T00:00:00Z" }],
+    services: [{ id: "svc-1", businessId: "biz-1", name: "Corte", description: "", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" }],
+    customers: [{ id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", notes: "", createdAt: "2026-01-01T00:00:00Z" }],
     bookings: [
       {
         id: "b-1", businessId: "biz-1", serviceId: "svc-1", customerId: "c-1",
         bookingDate: "2026-05-01", startTime: "09:00", endTime: "09:30",
-        status: "confirmed", createdAt: "2026-01-01T00:00:00Z",
-      } as LocalBooking,
+        status: "confirmed", notes: "", createdAt: "2026-01-01T00:00:00Z",
+      },
     ],
   };
 
@@ -341,7 +341,7 @@ describe("isLegacyStore / normalizeStore", () => {
       customers: [],
       bookings: [],
     };
-    expect(isLegacyStore(legacy as Parameters<typeof isLegacyStore>[0])).toBe(true);
+    expect(isLegacyStore(legacy as unknown as Parameters<typeof isLegacyStore>[0])).toBe(true);
   });
 
   it("convierte tienda legacy a formato moderno", () => {
@@ -353,7 +353,7 @@ describe("isLegacyStore / normalizeStore", () => {
       customers: [],
       bookings: [],
     };
-    const normalized = normalizeStore(legacy as Parameters<typeof normalizeStore>[0]);
+    const normalized = normalizeStore(legacy as unknown as Parameters<typeof normalizeStore>[0]);
     expect(normalized.businesses).toHaveLength(1);
     expect(normalized.waitlistEntries).toEqual([]);
   });
@@ -383,6 +383,7 @@ describe("findReminderCandidatesForBusiness", () => {
     startTime: "",
     endTime: "",
     status: "confirmed",
+    notes: "",
     createdAt: "2026-01-01T00:00:00Z",
   };
 
@@ -410,8 +411,8 @@ describe("findReminderCandidatesForBusiness", () => {
     const store: LocalStore = {
       ...emptyStore,
       businesses: [mockBusiness],
-      services: [{ id: "svc-1", businessId: "biz-1", name: "Corte", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" }],
-      customers: [{ id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", createdAt: "2026-01-01T00:00:00Z" }],
+      services: [{ id: "svc-1", businessId: "biz-1", name: "Corte", description: "", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" }],
+      customers: [{ id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", notes: "", createdAt: "2026-01-01T00:00:00Z" }],
       bookings: [booking],
     };
 
@@ -439,17 +440,21 @@ describe("findReminderCandidatesForBusiness", () => {
     const store: LocalStore = {
       ...emptyStore,
       businesses: [mockBusiness],
-      services: [{ id: "svc-1", businessId: "biz-1", name: "Corte", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" }],
-      customers: [{ id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", createdAt: "2026-01-01T00:00:00Z" }],
+      services: [{ id: "svc-1", businessId: "biz-1", name: "Corte", description: "", durationMinutes: 30, price: null, active: true, featured: false, createdAt: "2026-01-01T00:00:00Z" }],
+      customers: [{ id: "c-1", businessId: "biz-1", fullName: "Juan", phone: "1100000001", email: "", notes: "", createdAt: "2026-01-01T00:00:00Z" }],
       bookings: [booking],
       communicationEvents: [
         {
           id: "comm-1",
           businessId: "biz-1",
           bookingId: "b-future",
+          customerId: "c-1",
           kind: "reminder",
           status: "sent",
           channel: "email",
+          recipient: "",
+          subject: "",
+          note: "",
           createdAt: "2026-01-01T00:00:00Z",
         },
       ],
@@ -471,10 +476,10 @@ describe("buildLocalAnalyticsSummary", () => {
 
   it("calcula métricas correctamente con eventos", () => {
     const events: LocalAnalyticsEvent[] = [
-      { id: "e-1", businessId: "biz-1", eventName: "public_page_view", source: "google", createdAt: "2026-01-01T00:00:00Z" },
-      { id: "e-2", businessId: "biz-1", eventName: "public_page_view", source: "google", createdAt: "2026-01-01T00:00:00Z" },
-      { id: "e-3", businessId: "biz-1", eventName: "booking_cta_clicked", source: "google", createdAt: "2026-01-01T00:00:00Z" },
-      { id: "e-4", businessId: "biz-1", eventName: "booking_created", source: "google", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-1", businessId: "biz-1", eventName: "public_page_view", pagePath: "/biz-1", source: "google", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-2", businessId: "biz-1", eventName: "public_page_view", pagePath: "/biz-1", source: "google", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-3", businessId: "biz-1", eventName: "booking_cta_clicked", pagePath: "/biz-1", source: "google", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-4", businessId: "biz-1", eventName: "booking_created", pagePath: "/biz-1", source: "google", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
     ];
 
     const store: LocalStore = { ...emptyStore, analyticsEvents: events };
@@ -490,9 +495,9 @@ describe("buildLocalAnalyticsSummary", () => {
 
   it("agrupa canales por source y los ordena por bookingsCreated", () => {
     const events: LocalAnalyticsEvent[] = [
-      { id: "e-1", businessId: "biz-1", eventName: "public_page_view", source: "instagram", createdAt: "2026-01-01T00:00:00Z" },
-      { id: "e-2", businessId: "biz-1", eventName: "booking_created", source: "instagram", createdAt: "2026-01-01T00:00:00Z" },
-      { id: "e-3", businessId: "biz-1", eventName: "public_page_view", source: "google", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-1", businessId: "biz-1", eventName: "public_page_view", pagePath: "/biz-1", source: "instagram", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-2", businessId: "biz-1", eventName: "booking_created", pagePath: "/biz-1", source: "instagram", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-3", businessId: "biz-1", eventName: "public_page_view", pagePath: "/biz-1", source: "google", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
     ];
 
     const store: LocalStore = { ...emptyStore, analyticsEvents: events };
@@ -503,7 +508,7 @@ describe("buildLocalAnalyticsSummary", () => {
 
   it("usa 'direct' como source por defecto", () => {
     const events: LocalAnalyticsEvent[] = [
-      { id: "e-1", businessId: "biz-1", eventName: "public_page_view", source: "", createdAt: "2026-01-01T00:00:00Z" },
+      { id: "e-1", businessId: "biz-1", eventName: "public_page_view", pagePath: "/biz-1", source: "", medium: "", campaign: "", referrer: "", createdAt: "2026-01-01T00:00:00Z" },
     ];
 
     const store: LocalStore = { ...emptyStore, analyticsEvents: events };

@@ -77,7 +77,7 @@ describe("consumeRateLimit — fail closed cuando PocketBase falla", () => {
     vi.unstubAllEnvs();
   });
 
-  it("deniega la request si el shared store lanza un error", async () => {
+  it("hace fallback a memoria si el shared store lanza un error", async () => {
     createPocketBaseAdminClientMock.mockRejectedValue(new Error("DB connection failed"));
 
     const { consumeRateLimit } = await import("./rate-limit");
@@ -88,8 +88,9 @@ describe("consumeRateLimit — fail closed cuando PocketBase falla", () => {
       windowMs: 60_000,
     });
 
-    expect(result.ok).toBe(false);
-    expect(result.retryAfterSeconds).toBeGreaterThanOrEqual(1);
+    // En vez de denegar (fail closed), hace fallback a memoria — primer intento es ok
+    expect(result.ok).toBe(true);
+    expect(result.retryAfterSeconds).toBe(0);
     expect(result.store).toBe("memory");
   });
 });

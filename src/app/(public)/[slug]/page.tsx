@@ -110,11 +110,6 @@ function buildTikTokHref(value?: string) {
   return `https://www.tiktok.com/${value.startsWith("@") ? value : `@${value}`}`;
 }
 
-function buildWebsiteHref(value?: string) {
-  if (!value) return null;
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  return `https://${value}`;
-}
 
 function buildWhatsAppHref(phone?: string, businessName?: string): string | undefined {
   const normalizedPhone = phone?.replace(/\D/g, "");
