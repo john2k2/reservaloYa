@@ -22,11 +22,15 @@ onMailerSend((e) => {
         return addr.name ? addr.name + " <" + addr.address + ">" : addr.address;
     });
 
-    const from = e.message.from && e.message.from.address
+    // Siempre usar el dominio verificado en Resend.
+    // PocketBase puede tener configurado un remitente inválido (ej: noreply@example.com).
+    const VERIFIED_SENDER = "ReservaYa <turnos@reservaya.ar>";
+    const rawFrom = e.message.from && e.message.from.address ? e.message.from.address : "";
+    const from = rawFrom && !rawFrom.endsWith("@example.com")
         ? (e.message.from.name
-            ? e.message.from.name + " <" + e.message.from.address + ">"
-            : e.message.from.address)
-        : "ReservaYa <turnos@reservaya.ar>";
+            ? e.message.from.name + " <" + rawFrom + ">"
+            : rawFrom)
+        : VERIFIED_SENDER;
 
     const payload = {
         from: from,
