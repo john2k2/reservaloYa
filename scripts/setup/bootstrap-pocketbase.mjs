@@ -5,7 +5,10 @@ import { DatabaseSync } from "node:sqlite";
 import PocketBase from "pocketbase";
 
 const rootDir = process.cwd();
-const envPath = path.join(rootDir, ".env.local");
+const isProd = process.argv.includes("--prod");
+const envPath = isProd
+  ? path.join(rootDir, ".env.production.local")
+  : path.join(rootDir, ".env.local");
 
 async function loadEnvFile() {
   try {
@@ -25,7 +28,13 @@ async function loadEnvFile() {
       }
 
       const key = trimmed.slice(0, separatorIndex).trim();
-      const value = trimmed.slice(separatorIndex + 1).trim();
+      let value = trimmed.slice(separatorIndex + 1).trim();
+
+      // Strip surrounding quotes (single or double)
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
 
       if (!(key in process.env)) {
         process.env[key] = value;
@@ -427,16 +436,17 @@ async function buildCollections(pb) {
 
   await pb.collections.import([bookings], false);
 
+  // Refresh idByName to include the bookings ID just created
+  const stageThreeCollections = await pb.collections.getFullList();
+  idByName = Object.fromEntries(
+    stageThreeCollections.map((collection) => [collection.name, collection.id])
+  );
+
   reviews.fields[0] = relationField("business", idByName.businesses, { required: true });
   reviews.fields[1] = relationField("booking", idByName.bookings, { required: false });
   reviews.fields[2] = relationField("service", idByName.services, { required: false });
 
   await pb.collections.import([reviews], false);
-
-  const stageThreeCollections = await pb.collections.getFullList();
-  idByName = Object.fromEntries(
-    stageThreeCollections.map((collection) => [collection.name, collection.id])
-  );
 
   communicationEvents.fields[0] = relationField("business", idByName.businesses, { required: true });
   communicationEvents.fields[1] = relationField("booking", idByName.bookings, { required: true });
@@ -634,31 +644,44 @@ async function seedDemoOwner(pb) {
 async function seedPublicAppUser(pb) {
   const email = process.env.POCKETBASE_PUBLIC_AUTH_EMAIL;
   const password = process.env.POCKETBASE_PUBLIC_AUTH_PASSWORD;
-  const businessSlug =
-    process.env.POCKETBASE_DEMO_OWNER_BUSINESS_SLUG ?? "demo-barberia";
 
   if (!email || !password) {
+    console.log("POCKETBASE_PUBLIC_AUTH_EMAIL / PASSWORD no definidos — saltando public_app user.");
     return;
   }
 
-  const business = await pb
-    .collection("businesses")
-    .getFirstListItem(pb.filter("slug = {:slug}", { slug: businessSlug }));
+  // En modo local intentamos asociar al business demo; en prod creamos sin business.
+  let businessId = null;
+  if (!isProd) {
+    const businessSlug = process.env.POCKETBASE_DEMO_OWNER_BUSINESS_SLUG ?? "demo-barberia";
+    try {
+      const business = await pb
+        .collection("businesses")
+        .getFirstListItem(pb.filter("slug = {:slug}", { slug: businessSlug }));
+      businessId = business.id;
+    } catch {
+      // no existe el negocio demo, continuar igual
+    }
+  }
+
+  const userData = {
+    email,
+    password,
+    passwordConfirm: password,
+    name: "ReservaYa Public App",
+    role: "public_app",
+    active: true,
+    verified: true,
+  };
+  if (businessId) {
+    userData.business = businessId;
+  }
 
   await upsertByFilter(
     pb,
     "users",
     pb.filter("email = {:email}", { email }),
-    {
-      email,
-      password,
-      passwordConfirm: password,
-      name: "ReservaYa Public App",
-      business: business.id,
-      role: "public_app",
-      active: true,
-      verified: true,
-    }
+    userData
   );
 }
 
@@ -669,22 +692,36 @@ async function main() {
   const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL;
   const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD;
 
+  const envFile = isProd ? ".env.production.local" : ".env.local";
   if (!baseUrl || !adminEmail || !adminPassword) {
     throw new Error(
-      "Define NEXT_PUBLIC_POCKETBASE_URL, POCKETBASE_ADMIN_EMAIL y POCKETBASE_ADMIN_PASSWORD en .env.local."
+      `Define NEXT_PUBLIC_POCKETBASE_URL, POCKETBASE_ADMIN_EMAIL y POCKETBASE_ADMIN_PASSWORD en ${envFile}.`
     );
   }
 
+  console.log(`Modo: ${isProd ? "PRODUCCIÓN" : "local"}`);
+  console.log(`PocketBase URL: ${baseUrl}`);
+
   const pb = new PocketBase(baseUrl);
   await pb.collection("_superusers").authWithPassword(adminEmail, adminPassword);
+  console.log("Autenticado como superusuario ✓");
 
   await buildCollections(pb);
-  repairBaseCollectionTimestamps();
-  await seedData(pb);
-  await seedDemoOwner(pb);
-  await seedPublicAppUser(pb);
+  console.log("Colecciones creadas/actualizadas ✓");
 
-  console.log("PocketBase listo con colecciones y seed demo.");
+  if (!isProd) {
+    repairBaseCollectionTimestamps();
+    console.log("Timestamps SQLite reparados ✓");
+    await seedData(pb);
+    console.log("Datos demo importados ✓");
+    await seedDemoOwner(pb);
+    console.log("Usuario demo owner creado ✓");
+  }
+
+  await seedPublicAppUser(pb);
+  console.log("Usuario public_app creado ✓");
+
+  console.log("\nPocketBase listo.");
 }
 
 main().catch((error) => {
