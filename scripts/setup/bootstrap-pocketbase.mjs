@@ -419,7 +419,6 @@ async function buildCollections(pb) {
       availabilityRules,
       blockedSlots,
       customers,
-      waitlistEntries,
       analyticsEvents,
       rateLimitEvents,
       bookingLocks,
@@ -432,11 +431,15 @@ async function buildCollections(pb) {
     stageTwoCollections.map((collection) => [collection.name, collection.id])
   );
 
+  // waitlist_entries needs the just-created services ID
+  waitlistEntries.fields[0] = relationField("business", idByName.businesses, { required: true });
+  waitlistEntries.fields[1] = relationField("service", idByName.services, { required: false });
+
   bookings.fields[0] = relationField("business", idByName.businesses, { required: true });
   bookings.fields[1] = relationField("customer", idByName.customers, { required: true });
   bookings.fields[2] = relationField("service", idByName.services, { required: true });
 
-  await pb.collections.import([bookings], false);
+  await pb.collections.import([waitlistEntries, bookings], false);
 
   // Refresh idByName to include the bookings ID just created
   const stageThreeCollections = await pb.collections.getFullList();

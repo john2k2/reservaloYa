@@ -1,9 +1,0 @@
-[build]
-dockerfilePath = "docker/pocketbase/Dockerfile"
-buildCommand = ""
-
-[deploy]
-startCommand = "./pocketbase serve --http=0.0.0.0:${PORT:-8090}"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 60
-restartPolicyType = "on_failure"
