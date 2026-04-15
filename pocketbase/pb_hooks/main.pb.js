@@ -11,6 +11,17 @@
 onMailerSend((e) => {
     const apiKey = $os.getenv("RESEND_API_KEY");
 
+    // Skip "Login from a new location" spam para el admin superuser.
+    // En Vercel serverless cada cold start dispara este email; lo bloqueamos
+    // SOLO para el superuser, mantenemos la notificación para usuarios normales.
+    const adminEmail = ($os.getenv("POCKETBASE_ADMIN_EMAIL") || "").toLowerCase();
+    const subject = (e.message.subject || "").toLowerCase();
+    const isLoginLocation = subject.indexOf("login from a new location") !== -1;
+    if (isLoginLocation && adminEmail && e.message.to.some((a) => (a.address || "").toLowerCase() === adminEmail)) {
+        console.log("[mailer] Skipped 'Login from a new location' para admin superuser");
+        return; // No enviar ni llamar e.next()
+    }
+
     if (!apiKey) {
         // Sin API key — intentar con el mailer por defecto (fallback, probablemente falle)
         console.warn("[mailer] RESEND_API_KEY no configurada. El email no se enviará.");

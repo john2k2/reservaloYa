@@ -97,7 +97,8 @@ function buildPublicAppActiveRelatedBusinessRule() {
 }
 
 function buildAdminOnlyRule() {
-  return "";
+  // null = solo superusuario (admin SDK). "" = público total. Antes devolvíamos "" por error.
+  return null;
 }
 
 function repairBaseCollectionTimestamps() {
