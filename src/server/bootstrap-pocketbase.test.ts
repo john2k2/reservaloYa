@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 describe("bootstrap PocketBase schema", () => {
   it("includes pending_payment in bookings.status options", () => {
-    const bootstrapPath = path.join(process.cwd(), "scripts", "bootstrap-pocketbase.mjs");
+    const bootstrapPath = path.join(process.cwd(), "scripts", "setup", "bootstrap-pocketbase.mjs");
     const bootstrapSource = readFileSync(bootstrapPath, "utf8");
 
     expect(bootstrapSource).toContain('selectField("status", [');
@@ -13,7 +13,7 @@ describe("bootstrap PocketBase schema", () => {
   });
 
   it("includes payment fields in bookings and keeps customer phone optional", () => {
-    const bootstrapPath = path.join(process.cwd(), "scripts", "bootstrap-pocketbase.mjs");
+    const bootstrapPath = path.join(process.cwd(), "scripts", "setup", "bootstrap-pocketbase.mjs");
     const bootstrapSource = readFileSync(bootstrapPath, "utf8");
 
     expect(bootstrapSource).toContain('textField("paymentStatus")');

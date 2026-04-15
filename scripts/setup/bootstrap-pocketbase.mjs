@@ -6,6 +6,7 @@ import PocketBase from "pocketbase";
 
 const rootDir = process.cwd();
 const isProd = process.argv.includes("--prod");
+const skipSeed = process.argv.includes("--no-seed");
 const envPath = isProd
   ? path.join(rootDir, ".env.production.local")
   : path.join(rootDir, ".env.local");
@@ -709,9 +710,14 @@ async function main() {
   await buildCollections(pb);
   console.log("Colecciones creadas/actualizadas ✓");
 
+  // Local-only: reparar timestamps del SQLite local
   if (!isProd) {
     repairBaseCollectionTimestamps();
     console.log("Timestamps SQLite reparados ✓");
+  }
+
+  // Seed de demos: por defecto en local, opt-out con --no-seed
+  if (!skipSeed) {
     await seedData(pb);
     console.log("Datos demo importados ✓");
     await seedDemoOwner(pb);
