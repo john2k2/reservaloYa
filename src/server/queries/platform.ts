@@ -22,6 +22,7 @@ export type PlatformSubscriptionInfo = {
   status: "trial" | "active" | "cancelled" | "suspended" | "none";
   trialEndsAt?: string;
   nextBillingDate?: string;
+  lockedAt?: string;
 };
 
 export type PlatformBusinessRow = {
@@ -104,6 +105,7 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
       status: sub.status,
       trialEndsAt: sub.trialEndsAt,
       nextBillingDate: sub.nextBillingDate,
+      lockedAt: sub.lockedAt,
     };
   }
 
@@ -183,7 +185,7 @@ export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[]
       ownerName: String(owner?.name ?? owner?.email ?? "—"),
       mpConnected: Boolean(b.mpConnected),
       subscription: sub
-        ? { status: sub.status, trialEndsAt: sub.trialEndsAt, nextBillingDate: sub.nextBillingDate }
+        ? { status: sub.status, trialEndsAt: sub.trialEndsAt, nextBillingDate: sub.nextBillingDate, lockedAt: sub.lockedAt }
         : { status: "none" as const },
     };
   });
@@ -231,4 +233,98 @@ export async function togglePlatformBusinessActive(
 ): Promise<void> {
   const pb = await getAdminClient();
   await pb.collection("businesses").update(businessId, { active });
+}
+
+export async function enableTrial(businessId: string, days: number): Promise<void> {
+  const pb = await getAdminClient();
+  const now = new Date();
+  const trialEndsAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    const subs = await pb.collection("subscriptions").getFullList({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+
+    if (subs.length > 0) {
+      await pb.collection("subscriptions").update(subs[0].id, {
+        status: "trial",
+        trialStartedAt: now.toISOString(),
+        trialEndsAt,
+        lockedAt: null,
+      });
+    } else {
+      await pb.collection("subscriptions").create({
+        businessId,
+        status: "trial",
+        trialStartedAt: now.toISOString(),
+        trialEndsAt,
+        lockedAt: null,
+      });
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Error habilitando trial: ${msg}`);
+  }
+}
+
+export async function extendTrial(businessId: string, days: number): Promise<void> {
+  const pb = await getAdminClient();
+
+  try {
+    const subs = await pb.collection("subscriptions").getFullList({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+
+    if (subs.length === 0) {
+      throw new Error("No existe suscripción para este negocio");
+    }
+
+    const sub = subs[0];
+    const currentEndsAt = sub.trialEndsAt ? new Date(sub.trialEndsAt) : new Date();
+    const newEndsAt = new Date(currentEndsAt.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+
+    await pb.collection("subscriptions").update(sub.id, { trialEndsAt: newEndsAt });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Error extendiendo trial: ${msg}`);
+  }
+}
+
+export async function cancelSubscription(businessId: string): Promise<void> {
+  const pb = await getAdminClient();
+
+  try {
+    const subs = await pb.collection("subscriptions").getFullList({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+
+    if (subs.length === 0) {
+      throw new Error("No existe suscripción para este negocio");
+    }
+
+    const sub = subs[0];
+    const update: Record<string, unknown> = { status: "cancelled" };
+    if (!sub.lockedAt) {
+      update.lockedAt = new Date().toISOString();
+    }
+    await pb.collection("subscriptions").update(sub.id, update);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Error cancelando suscripción: ${msg}`);
+  }
+}
+
+export async function unlockBusinessSubscription(businessId: string): Promise<void> {
+  const pb = await getAdminClient();
+
+  try {
+    const subs = await pb.collection("subscriptions").getFullList({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+
+    if (subs.length === 0) return;
+    await pb.collection("subscriptions").update(subs[0].id, { lockedAt: null });
+  } catch {
+    // Silently fail
+  }
 }

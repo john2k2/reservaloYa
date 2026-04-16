@@ -119,7 +119,9 @@ export type UserRecord = RecordModel & {
 export type SubscriptionRecord = RecordModel & {
   businessId: string;
   status: "trial" | "active" | "cancelled" | "suspended";
+  trialStartedAt?: string;
   trialEndsAt?: string;
+  lockedAt?: string;
   nextBillingDate?: string;
   mpSubscriptionId?: string;
 };

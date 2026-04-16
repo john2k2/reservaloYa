@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getPlatformBusinessesList, type PlatformSubscriptionInfo } from "@/server/queries/platform";
 import { BusinessSearchFilter } from "./business-search-filter";
 import { ToggleBusinessButton } from "./toggle-business-button";
+import { TrialActions } from "./trial-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -207,6 +208,11 @@ export default async function PlatformBusinessesPage({
                     businessId={b.id}
                     active={b.active}
                     businessName={b.name}
+                  />
+                  <TrialActions
+                    businessId={b.id}
+                    subscriptionStatus={b.subscription.status}
+                    lockedAt={b.subscription.lockedAt}
                   />
                 </div>
               </div>

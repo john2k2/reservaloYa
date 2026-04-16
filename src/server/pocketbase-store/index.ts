@@ -37,6 +37,7 @@ import {
   joinPocketBaseFilters,
   parseProfileOverrides,
   type ServiceRecord,
+  type SubscriptionRecord,
   toMoney,
   type UserRecord,
   type WaitlistEntryRecord,
@@ -138,23 +139,72 @@ export async function getPocketBaseAdminShellData(userRecord: RecordModel) {
     userRole: String((userRecord as { role?: string }).role ?? "staff"),
     businessId: business.id,
     subscriptionStatus: subscription?.status ?? "trial",
-    subscriptionExpired: subscription?.status === "suspended" || 
-      (subscription?.status === "trial" && subscription.trialEndsAt && new Date(subscription.trialEndsAt) < new Date()),
+    subscriptionExpired: isSubscriptionExpired(subscription),
   });
 }
 
-export async function getBusinessSubscription(businessId: string) {
+export function isSubscriptionActive(sub: SubscriptionRecord | null): boolean {
+  if (!sub) return false;
+  if (sub.status === "active") return true;
+  if (sub.status === "trial") {
+    if (sub.lockedAt) return false;
+    if (!sub.trialEndsAt) return false;
+    return new Date(sub.trialEndsAt) > new Date();
+  }
+  return false;
+}
+
+export function isSubscriptionExpired(sub: SubscriptionRecord | null): boolean {
+  if (!sub) return false;
+  if (sub.status === "suspended") return true;
+  if (sub.lockedAt) return true;
+  if (sub.status === "trial" && sub.trialEndsAt && new Date(sub.trialEndsAt) < new Date()) {
+    return true;
+  }
+  return false;
+}
+
+export async function lockSubscriptionIfExpired(businessId: string): Promise<void> {
   const pb = await getAdminClient();
-  
   try {
     const subs = await pb.collection("subscriptions").getFullList({
       filter: pb.filter("businessId = {:businessId}", { businessId }),
     });
-    
+    if (subs.length === 0) return;
+    const sub = subs[0];
+    if (sub.status === "trial" && sub.trialEndsAt && new Date(sub.trialEndsAt) < new Date() && !sub.lockedAt) {
+      await pb.collection("subscriptions").update(sub.id, { lockedAt: new Date().toISOString() });
+    }
+  } catch {
+    // Fail silently - don't block access if lock update fails
+  }
+}
+
+export async function unlockSubscription(businessId: string): Promise<void> {
+  const pb = await getAdminClient();
+  try {
+    const subs = await pb.collection("subscriptions").getFullList({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+    if (subs.length === 0) return;
+    await pb.collection("subscriptions").update(subs[0].id, { lockedAt: null });
+  } catch {
+    // Fail silently
+  }
+}
+
+export async function getBusinessSubscription(businessId: string): Promise<SubscriptionRecord | null> {
+  const pb = await getAdminClient();
+
+  try {
+    const subs = await pb.collection("subscriptions").getFullList<SubscriptionRecord>({
+      filter: pb.filter("businessId = {:businessId}", { businessId }),
+    });
+
     if (subs.length === 0) {
       return null;
     }
-    
+
     return subs[0];
   } catch {
     return null;
