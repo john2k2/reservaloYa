@@ -14,7 +14,10 @@ import {
   createLocalPublicBooking,
   updateLocalBusinessMPTokens,
 } from "@/server/local-store";
-import { isValidBookingManageToken } from "@/server/public-booking-links";
+import {
+  buildBookingConfirmationHref,
+  isValidBookingManageToken,
+} from "@/server/public-booking-links";
 import {
   cancelPocketBasePublicBooking,
   createPocketBasePublicBooking,
@@ -130,6 +133,26 @@ function buildManagePageHref(input: {
   return `/${input.businessSlug}/mi-turno?${params.toString()}`;
 }
 
+function buildConfirmationPageHref(input: {
+  businessSlug: string;
+  bookingId: string;
+  payment?: "success" | "failure" | "pending";
+}) {
+  const href = buildBookingConfirmationHref(input.businessSlug, input.bookingId);
+
+  if (!href) {
+    return `/${input.businessSlug}`;
+  }
+
+  if (!input.payment) {
+    return href;
+  }
+
+  const url = new URL(href, "http://localhost");
+  url.searchParams.set("payment", input.payment);
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
+
 async function sendConfirmationEmailIfPossible(input: {
   bookingId: string;
   businessSlug: string;
@@ -145,6 +168,7 @@ async function sendConfirmationEmailIfPossible(input: {
   const confirmation = await getBookingConfirmationData({
     slug: input.businessSlug,
     bookingId: input.bookingId,
+    skipTokenValidation: true,
   });
 
   if (!confirmation) {
@@ -392,6 +416,7 @@ export async function createPublicBookingAction(formData: FormData) {
           paymentProvider: "mercadopago",
           paymentPreferenceId: preferenceResult.preferenceId,
           paymentAmount: serviceEarly.price!,
+          paymentCurrency: "ARS",
         });
       } else {
         const { updatePocketBaseBookingPayment } = await import("@/server/pocketbase-store");
@@ -401,6 +426,7 @@ export async function createPublicBookingAction(formData: FormData) {
           paymentProvider: "mercadopago",
           paymentPreferenceId: preferenceResult.preferenceId,
           paymentAmount: serviceEarly.price!,
+          paymentCurrency: "ARS",
         });
       }
 
@@ -451,7 +477,12 @@ export async function createPublicBookingAction(formData: FormData) {
     mode: isReschedule ? "rescheduled" : "created",
   });
 
-  redirect(`/${parsed.data.businessSlug}/confirmacion?booking=${bookingId}`);
+  redirect(
+    buildConfirmationPageHref({
+      businessSlug: parsed.data.businessSlug,
+      bookingId,
+    })
+  );
 }
 
 export async function cancelPublicBookingAction(formData: FormData) {

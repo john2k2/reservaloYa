@@ -1,4 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { resetRateLimitStoreForTests } from "@/server/rate-limit";
 import { joinWaitlistAction } from "./waitlist";
 
 const { createLocalWaitlistEntryMock, createPocketBaseWaitlistEntryMock } = vi.hoisted(() => ({
@@ -12,6 +13,10 @@ vi.mock("@/lib/pocketbase/config", () => ({
 
 vi.mock("@/lib/runtime", () => ({
   isDemoModeEnabled: vi.fn(() => false),
+}));
+
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Headers({ "x-forwarded-for": "203.0.113.33" })),
 }));
 
 vi.mock("@/server/local-store", () => ({
@@ -38,6 +43,7 @@ function buildWaitlistFormData(overrides: Record<string, string> = {}) {
 
 describe("joinWaitlistAction", () => {
   beforeEach(() => {
+    resetRateLimitStoreForTests();
     createLocalWaitlistEntryMock.mockClear();
     createPocketBaseWaitlistEntryMock.mockClear();
   });
@@ -128,5 +134,18 @@ describe("joinWaitlistAction", () => {
     expect(result).toEqual({ success: true });
     expect(createPocketBaseWaitlistEntryMock).toHaveBeenCalled();
     expect(createLocalWaitlistEntryMock).not.toHaveBeenCalled();
+  });
+
+  it("rate-limitea envíos repetidos de waitlist", async () => {
+    let lastResult = null;
+
+    for (let index = 0; index < 6; index += 1) {
+      lastResult = await joinWaitlistAction(null, buildWaitlistFormData());
+    }
+
+    expect(lastResult).toEqual({
+      success: false,
+      error: expect.stringContaining("Demasiados intentos de lista de espera"),
+    });
   });
 });

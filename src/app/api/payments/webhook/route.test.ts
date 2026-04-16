@@ -7,11 +7,13 @@ const {
   mapMPStatusToPaymentStatusMock,
   shouldVerifyMPWebhookSignatureMock,
   getLocalBusinessPaymentSettingsByCollectorIdMock,
+  getLocalBookingPaymentValidationContextMock,
   getLocalBookingBusinessSlugMock,
   updateLocalBookingPaymentMock,
   updateLocalBusinessMPTokensMock,
   getUsableBusinessMercadoPagoAccessTokenMock,
   getBusinessSubscriptionMock,
+  getPocketBaseBookingPaymentValidationContextMock,
   getPocketBaseBookingBusinessSlugMock,
   getPocketBaseBusinessPaymentSettingsByCollectorIdMock,
   updatePocketBaseBookingPaymentMock,
@@ -23,14 +25,16 @@ const {
   getMPPaymentInfoMock: vi.fn(),
   isValidMPWebhookSignatureMock: vi.fn(),
   mapMPStatusToPaymentStatusMock: vi.fn(),
-  shouldVerifyMPWebhookSignatureMock: vi.fn(),
-  getLocalBusinessPaymentSettingsByCollectorIdMock: vi.fn(),
-  getLocalBookingBusinessSlugMock: vi.fn(),
-  updateLocalBookingPaymentMock: vi.fn(),
+    shouldVerifyMPWebhookSignatureMock: vi.fn(),
+    getLocalBusinessPaymentSettingsByCollectorIdMock: vi.fn(),
+    getLocalBookingPaymentValidationContextMock: vi.fn(),
+    getLocalBookingBusinessSlugMock: vi.fn(),
+    updateLocalBookingPaymentMock: vi.fn(),
   updateLocalBusinessMPTokensMock: vi.fn(),
-  getUsableBusinessMercadoPagoAccessTokenMock: vi.fn(),
-  getBusinessSubscriptionMock: vi.fn(),
-  getPocketBaseBookingBusinessSlugMock: vi.fn(),
+    getUsableBusinessMercadoPagoAccessTokenMock: vi.fn(),
+    getBusinessSubscriptionMock: vi.fn(),
+    getPocketBaseBookingPaymentValidationContextMock: vi.fn(),
+    getPocketBaseBookingBusinessSlugMock: vi.fn(),
   getPocketBaseBusinessPaymentSettingsByCollectorIdMock: vi.fn(),
   updatePocketBaseBookingPaymentMock: vi.fn(),
   updatePocketBaseBusinessMPTokensMock: vi.fn(),
@@ -51,6 +55,7 @@ vi.mock("@/server/mercadopago", () => ({
 
 vi.mock("@/server/local-store", () => ({
   getLocalBusinessPaymentSettingsByCollectorId: getLocalBusinessPaymentSettingsByCollectorIdMock,
+  getLocalBookingPaymentValidationContext: getLocalBookingPaymentValidationContextMock,
   getLocalBookingBusinessSlug: getLocalBookingBusinessSlugMock,
   updateLocalBookingPayment: updateLocalBookingPaymentMock,
   updateLocalBusinessMPTokens: updateLocalBusinessMPTokensMock,
@@ -62,6 +67,7 @@ vi.mock("@/server/mercadopago-business-auth", () => ({
 
 vi.mock("@/server/pocketbase-store", () => ({
   getBusinessSubscription: getBusinessSubscriptionMock,
+  getPocketBaseBookingPaymentValidationContext: getPocketBaseBookingPaymentValidationContextMock,
   getPocketBaseBookingBusinessSlug: getPocketBaseBookingBusinessSlugMock,
   getPocketBaseBusinessPaymentSettingsByCollectorId: getPocketBaseBusinessPaymentSettingsByCollectorIdMock,
   updatePocketBaseBookingPayment: updatePocketBaseBookingPaymentMock,
@@ -85,11 +91,13 @@ describe("mercadopago webhook route", () => {
     mapMPStatusToPaymentStatusMock.mockReset();
     shouldVerifyMPWebhookSignatureMock.mockReset();
     getLocalBusinessPaymentSettingsByCollectorIdMock.mockReset();
+    getLocalBookingPaymentValidationContextMock.mockReset();
     getLocalBookingBusinessSlugMock.mockReset();
     updateLocalBookingPaymentMock.mockReset();
     updateLocalBusinessMPTokensMock.mockReset();
     getUsableBusinessMercadoPagoAccessTokenMock.mockReset();
     getBusinessSubscriptionMock.mockReset();
+    getPocketBaseBookingPaymentValidationContextMock.mockReset();
     getPocketBaseBookingBusinessSlugMock.mockReset();
     getPocketBaseBusinessPaymentSettingsByCollectorIdMock.mockReset();
     updatePocketBaseBookingPaymentMock.mockReset();
@@ -104,7 +112,31 @@ describe("mercadopago webhook route", () => {
     );
     getBusinessSubscriptionMock.mockResolvedValue(null);
     getLocalBusinessPaymentSettingsByCollectorIdMock.mockResolvedValue(null);
+    getLocalBookingPaymentValidationContextMock.mockResolvedValue({
+      bookingId: "booking-1",
+      businessId: "biz-1",
+      businessSlug: "demo-barberia",
+      status: "pending_payment",
+      paymentAmount: 18000,
+      paymentCurrency: "ARS",
+      paymentProvider: "mercadopago",
+      paymentPreferenceId: "pref-1",
+      paymentExternalId: undefined,
+      mpCollectorId: "collector-1",
+    });
     getPocketBaseBusinessPaymentSettingsByCollectorIdMock.mockResolvedValue(null);
+    getPocketBaseBookingPaymentValidationContextMock.mockResolvedValue({
+      bookingId: "booking-1",
+      businessId: "biz-1",
+      businessSlug: "demo-barberia",
+      status: "pending_payment",
+      paymentAmount: 18000,
+      paymentCurrency: "ARS",
+      paymentProvider: "mercadopago",
+      paymentPreferenceId: "pref-1",
+      paymentExternalId: undefined,
+      mpCollectorId: "collector-1",
+    });
     getUsableBusinessMercadoPagoAccessTokenMock.mockResolvedValue(null);
   });
 
@@ -252,8 +284,76 @@ describe("mercadopago webhook route", () => {
     expect(getBookingConfirmationDataMock).toHaveBeenCalledWith({
       slug: "demo-barberia",
       bookingId: "booking-1",
+      skipTokenValidation: true,
     });
     expect(sendBookingConfirmationEmailMock).toHaveBeenCalledWith({ bookingId: "booking-1" }, "created");
+  });
+
+  it("ignores approved payments when the amount does not match the booking", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "booking-1",
+      transactionAmount: 99999,
+      currencyId: "ARS",
+      collectorId: "collector-1",
+      metadata: { bookingId: "booking-1", businessSlug: "demo-barberia" },
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" }, user_id: "collector-1" }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(updateLocalBookingPaymentMock).not.toHaveBeenCalled();
+    expect(sendBookingConfirmationEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("ignores approved payments when the collector belongs to another business", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+      collectorId: "collector-2",
+      metadata: { bookingId: "booking-1", businessSlug: "demo-barberia" },
+    });
+    getLocalBusinessPaymentSettingsByCollectorIdMock.mockResolvedValue({
+      businessId: "biz-otro",
+      businessSlug: "otro-negocio",
+      businessName: "Otro Negocio",
+      mpConnected: true,
+      mpCollectorId: "collector-2",
+      mpAccessToken: "token-2",
+      mpRefreshToken: "refresh-2",
+      mpTokenExpiresAt: null,
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" }, user_id: "collector-2" }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(updateLocalBookingPaymentMock).not.toHaveBeenCalled();
   });
 
   it("returns 500 when MP_WEBHOOK_SECRET is not configured in production", async () => {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Calendar, Check, Clock, Settings2 } from "lucide-react";
+import { Calendar, Check, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -16,14 +16,13 @@ import {
 } from "@/lib/bookings/format";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
-import { buildManageBookingHref } from "@/server/public-booking-links";
 import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 
 type ConfirmationPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ booking?: string; payment?: string }>;
+  searchParams: Promise<{ booking?: string; payment?: string; token?: string }>;
 };
 
 function toCalendarStamp(date: string, time: string) {
@@ -81,7 +80,7 @@ export default async function ConfirmationPage({
   const { slug } = await params;
   const query = await searchParams;
   const [confirmation, pageData] = await Promise.all([
-    getBookingConfirmationData({ slug, bookingId: query.booking }),
+    getBookingConfirmationData({ slug, bookingId: query.booking, token: query.token }),
     getPublicBusinessPageData(slug),
   ]);
 
@@ -100,8 +99,6 @@ export default async function ConfirmationPage({
     durationMinutes: confirmation.durationMinutes,
     timezone: confirmation.businessTimezone,
   });
-  const manageHref = query.booking ? buildManageBookingHref(slug, query.booking) : null;
-
   // Estado de pago desde query param (MP back_url) o desde el booking guardado
   const paymentParam = query.payment; // "success" | "failure" | "pending" | undefined
   const paymentStatus = (confirmation as { paymentStatus?: string }).paymentStatus;
@@ -258,20 +255,6 @@ export default async function ConfirmationPage({
             <Calendar aria-hidden="true" className="size-4" />
             Añadir al calendario
           </a>
-
-          {manageHref && (
-            <Link
-              href={manageHref}
-              className={cn(
-                buttonVariants({ variant: "default", size: "lg" }),
-                "h-11 sm:h-12 w-full gap-2 rounded-xl px-6 sm:px-8"
-              )}
-            >
-              <Settings2 aria-hidden="true" className="size-4" />
-              <span className="hidden sm:inline">Ver, reprogramar o cancelar</span>
-              <span className="sm:hidden">Gestionar turno</span>
-            </Link>
-          )}
 
           <Link
             href={`/${slug}`}

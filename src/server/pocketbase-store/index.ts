@@ -57,6 +57,7 @@ import {
   buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
   normalizeMercadoPagoCollectorId,
+  type BookingPaymentValidationContext,
   type BookingPaymentUpdateInput,
 } from "@/server/payments-domain";
 import {
@@ -67,6 +68,7 @@ import {
   buildBookingCustomerDetails,
   buildBookingMutationFields,
   buildBookingTimeWindow,
+  canMutatePublicBooking,
   fitsBookingWithinAvailability,
   hasBlockedSlotConflict,
   hasBookingConflict,
@@ -348,6 +350,11 @@ export async function getPocketBaseBookingConfirmationData(input: {
     const business = booking.expand?.business as BusinessRecord | undefined;
     const service = booking.expand?.service as ServiceRecord | undefined;
     const customer = booking.expand?.customer as CustomerRecord | undefined;
+
+    if (!business || business.slug !== input.slug) {
+      return null;
+    }
+
     const timezone = business?.timezone ?? "America/Argentina/Buenos_Aires";
 
     return buildBookingConfirmationView({
@@ -557,6 +564,16 @@ export async function createPocketBaseWaitlistEntry(input: {
       pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
     );
 
+  if (!input.serviceId) {
+    throw new Error("No encontramos el servicio.");
+  }
+
+  const service = await pb.collection("services").getOne<ServiceRecord>(input.serviceId).catch(() => null);
+
+  if (!service || service.business !== business.id || !service.active) {
+    throw new Error("No encontramos el servicio.");
+  }
+
   const existing = await pb.collection("waitlist_entries").getList(1, 1, {
     filter: pb.filter(
       "business = {:business} && service = {:service} && bookingDate = {:bookingDate} && email = {:email}",
@@ -574,11 +591,11 @@ export async function createPocketBaseWaitlistEntry(input: {
     return existing.items[0].id;
   }
 
-  const entry = await pb.collection("waitlist_entries").create<WaitlistEntryRecord>({
-    business: business.id,
-    service: input.serviceId || undefined,
-    bookingDate: input.bookingDate,
-    fullName: input.fullName,
+    const entry = await pb.collection("waitlist_entries").create<WaitlistEntryRecord>({
+      business: business.id,
+      service: service.id,
+      bookingDate: input.bookingDate,
+      fullName: input.fullName,
     email: input.email,
     phone: input.phone || undefined,
     notified: false,
@@ -590,8 +607,6 @@ export async function createPocketBaseWaitlistEntry(input: {
 export async function createPocketBaseReview(input: {
   businessSlug: string;
   bookingId?: string;
-  serviceId?: string;
-  customerName: string;
   rating: 1 | 2 | 3 | 4 | 5;
   comment?: string;
 }) {
@@ -603,25 +618,44 @@ export async function createPocketBaseReview(input: {
       pb.filter("slug = {:slug} && active = true", { slug: normalizedSlug })
     );
 
-  if (input.bookingId) {
-    const existing = await pb.collection("reviews").getList(1, 1, {
-      filter: pb.filter("business = {:business} && booking = {:booking}", {
-        business: business.id,
-        booking: input.bookingId,
-      }),
-      requestKey: null,
-    });
+  if (!input.bookingId) {
+    throw new Error("No encontramos el turno.");
+  }
 
-    if (existing.totalItems > 0) {
-      return existing.items[0].id;
-    }
+  const existing = await pb.collection("reviews").getList(1, 1, {
+    filter: pb.filter("business = {:business} && booking = {:booking}", {
+      business: business.id,
+      booking: input.bookingId,
+    }),
+    requestKey: null,
+  });
+
+  if (existing.totalItems > 0) {
+    return existing.items[0].id;
+  }
+
+  const booking = await pb.collection("bookings").getOne<BookingRecord>(input.bookingId, {
+    expand: "business,service,customer",
+    requestKey: null,
+  }).catch(() => null);
+
+  const bookingBusiness = booking?.expand?.business as BusinessRecord | undefined;
+  const service = booking?.expand?.service as ServiceRecord | undefined;
+  const customer = booking?.expand?.customer as CustomerRecord | undefined;
+
+  if (!booking || !bookingBusiness || bookingBusiness.slug !== normalizedSlug) {
+    throw new Error("No encontramos el turno.");
+  }
+
+  if (booking.status !== "completed") {
+    throw new Error("Solo podés dejar una reseña después de completar el turno.");
   }
 
   const review = await pb.collection("reviews").create<ReviewRecord>({
     business: business.id,
-    booking: input.bookingId || undefined,
-    service: input.serviceId || undefined,
-    customerName: input.customerName,
+    booking: input.bookingId,
+    service: service?.id || booking.service,
+    customerName: customer?.fullName ?? "Cliente",
     rating: input.rating,
     comment: input.comment || undefined,
   });
@@ -656,7 +690,7 @@ export async function reschedulePocketBasePublicBooking(input: {
         throw new Error("Link de gestion invalido.");
       }
 
-      if (!["pending", "confirmed"].includes(booking.status)) {
+      if (!canMutatePublicBooking(booking.status)) {
         throw new Error("Este turno ya no se puede reprogramar.");
       }
 
@@ -687,7 +721,7 @@ export async function reschedulePocketBasePublicBooking(input: {
       const businessBookings = bookings.filter(
         (candidate) =>
           candidate.bookingDate === input.bookingDate &&
-          ["pending", "confirmed"].includes(candidate.status) &&
+          canMutatePublicBooking(candidate.status) &&
           candidate.id !== booking.id
       );
 
@@ -698,7 +732,7 @@ export async function reschedulePocketBasePublicBooking(input: {
       if (
         hasBookingConflict(businessBookings, {
           ...bookingWindow,
-          allowedStatuses: ["pending", "confirmed"],
+          allowedStatuses: ["pending", "pending_payment", "confirmed"],
         })
       ) {
         throw new Error("Ese horario ya no esta disponible.");
@@ -736,6 +770,10 @@ export async function cancelPocketBasePublicBooking(input: {
 
   if (!business || business.slug !== input.businessSlug) {
     throw new Error("Link de gestion invalido.");
+  }
+
+  if (!canMutatePublicBooking(booking.status)) {
+    throw new Error("Este turno ya no se puede cancelar.");
   }
 
   await pb.collection("bookings").update(booking.id, {
@@ -1977,6 +2015,39 @@ export async function getPocketBaseBookingBusinessSlug(bookingId: string): Promi
   if (!booking) return null;
   const business = booking.expand?.business as { slug?: string } | undefined;
   return business?.slug ?? null;
+}
+
+export async function getPocketBaseBookingPaymentValidationContext(
+  bookingId: string
+): Promise<BookingPaymentValidationContext | null> {
+  const pb = await getAdminClient();
+  const booking = await pb
+    .collection("bookings")
+    .getOne<BookingRecord>(bookingId, { expand: "business", requestKey: null })
+    .catch(() => null);
+
+  if (!booking) {
+    return null;
+  }
+
+  const business = booking.expand?.business as BusinessRecord | undefined;
+
+  if (!business) {
+    return null;
+  }
+
+  return {
+    bookingId: booking.id,
+    businessId: business.id,
+    businessSlug: business.slug,
+    status: booking.status,
+    paymentAmount: booking.paymentAmount,
+    paymentCurrency: booking.paymentCurrency,
+    paymentProvider: booking.paymentProvider,
+    paymentPreferenceId: booking.paymentPreferenceId,
+    paymentExternalId: booking.paymentExternalId,
+    mpCollectorId: business.mpCollectorId,
+  };
 }
 
 export type UpdatePocketBaseBookingPaymentInput = BookingPaymentUpdateInput;

@@ -44,11 +44,15 @@ type AdminShellData = {
   subscriptionExpired?: boolean;
 };
 
+function canUseLocalAdminMode() {
+  return process.env.NODE_ENV !== "production" && isDemoModeEnabled();
+}
+
 export async function getAdminShellData(): Promise<AdminShellData | null> {
   noStore();
 
   if (!isPocketBaseConfigured()) {
-    if (!isDemoModeEnabled()) {
+    if (!canUseLocalAdminMode()) {
       return null;
     }
 

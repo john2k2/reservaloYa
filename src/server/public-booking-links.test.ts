@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  buildAbsoluteBookingConfirmationUrl,
+  buildBookingConfirmationHref,
   buildAbsoluteManageBookingUrl,
   buildAbsoluteReviewUrl,
+  createBookingConfirmationToken,
   buildManageBookingHref,
   buildReviewHref,
   canGenerateBookingManageLinks,
   createBookingManageToken,
+  isValidBookingConfirmationToken,
   isValidBookingManageToken,
 } from "./public-booking-links";
 
@@ -110,6 +114,44 @@ describe("isValidBookingManageToken — edge cases", () => {
     const [payload] = token.split(".");
     const tampered = `${payload}.invalidsignature`;
     expect(isValidBookingManageToken({ slug: "demo-barberia", bookingId: "b-1", token: tampered })).toBe(false);
+  });
+});
+
+describe("buildBookingConfirmationHref / buildAbsoluteBookingConfirmationUrl", () => {
+  afterEach(() => {
+    restoreEnvValue("BOOKING_LINK_SECRET", originalEnv.BOOKING_LINK_SECRET);
+    restoreEnvValue("NEXT_PUBLIC_POCKETBASE_URL", originalEnv.NEXT_PUBLIC_POCKETBASE_URL);
+    restoreEnvValue("RESERVAYA_ENABLE_DEMO_MODE", originalEnv.RESERVAYA_ENABLE_DEMO_MODE);
+  });
+
+  it("genera el href relativo de confirmación", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    delete process.env.NEXT_PUBLIC_POCKETBASE_URL;
+    const href = buildBookingConfirmationHref("demo-barberia", "b-1");
+    expect(href).toMatch(/^\/demo-barberia\/confirmacion\?booking=b-1&token=/);
+  });
+
+  it("genera URL absoluta de confirmación", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    delete process.env.NEXT_PUBLIC_POCKETBASE_URL;
+    const url = buildAbsoluteBookingConfirmationUrl("demo-barberia", "b-1");
+    expect(url).toMatch(/\/demo-barberia\/confirmacion\?booking=b-1&token=/);
+  });
+
+  it("acepta token de confirmación para abrir la confirmación", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    delete process.env.NEXT_PUBLIC_POCKETBASE_URL;
+    const token = createBookingConfirmationToken("demo-barberia", "b-1");
+    expect(
+      isValidBookingConfirmationToken({ slug: "demo-barberia", bookingId: "b-1", token })
+    ).toBe(true);
+  });
+
+  it("no acepta token de confirmación como token de gestión", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    delete process.env.NEXT_PUBLIC_POCKETBASE_URL;
+    const token = createBookingConfirmationToken("demo-barberia", "b-1");
+    expect(isValidBookingManageToken({ slug: "demo-barberia", bookingId: "b-1", token })).toBe(false);
   });
 });
 

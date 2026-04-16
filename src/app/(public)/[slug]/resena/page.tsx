@@ -26,7 +26,7 @@ export default async function ReviewPage({ params, searchParams }: ReviewPagePro
   }
 
   const [confirmation, pageData] = await Promise.all([
-    getBookingConfirmationData({ slug, bookingId }),
+    getBookingConfirmationData({ slug, bookingId, token }),
     getPublicBusinessPageData(slug),
   ]);
 
@@ -59,8 +59,6 @@ export default async function ReviewPage({ params, searchParams }: ReviewPagePro
             businessSlug={slug}
             bookingId={bookingId!}
             manageToken={token!}
-            serviceId={confirmation.serviceId ?? ""}
-            customerName={confirmation.customerName}
             accentColor={accentColor}
           />
         </div>

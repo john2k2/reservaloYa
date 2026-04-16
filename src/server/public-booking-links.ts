@@ -7,6 +7,7 @@ type BookingManageTokenPayload = {
   slug: string;
   bookingId: string;
   exp: number;
+  scope?: "manage" | "confirmation";
 };
 
 const DEV_BOOKING_LINK_SECRET = "reservaya-demo-booking-link-secret";
@@ -76,20 +77,69 @@ function decodePayload(token: string) {
   }
 }
 
-export function canGenerateBookingManageLinks() {
-  return Boolean(getBookingLinkSecret());
-}
-
-export function createBookingManageToken(slug: string, bookingId: string) {
+function createBookingAccessToken(
+  slug: string,
+  bookingId: string,
+  scope: "manage" | "confirmation"
+) {
   const secret = getRequiredBookingLinkSecret();
 
   const encodedPayload = encodePayload({
     slug,
     bookingId,
     exp: Date.now() + getBookingLinkTtlMs(),
+    scope,
   });
 
   return `${encodedPayload}.${signPayload(encodedPayload, secret)}`;
+}
+
+function hasValidBookingAccessToken(input: {
+  slug: string;
+  bookingId?: string;
+  token?: string;
+  allowedScopes: Array<"manage" | "confirmation">;
+}) {
+  const secret = getBookingLinkSecret();
+
+  if (!secret || !input.bookingId || !input.token) {
+    return false;
+  }
+
+  const decoded = decodePayload(input.token);
+
+  if (!decoded) {
+    return false;
+  }
+
+  const expectedSignature = signPayload(decoded.encodedPayload, secret);
+  const received = Buffer.from(decoded.signature, "utf8");
+  const expected = Buffer.from(expectedSignature, "utf8");
+
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
+    return false;
+  }
+
+  const tokenScope = decoded.payload.scope ?? "manage";
+
+  return (
+    decoded.payload.slug === input.slug &&
+    decoded.payload.bookingId === input.bookingId &&
+    decoded.payload.exp > Date.now() &&
+    input.allowedScopes.includes(tokenScope)
+  );
+}
+
+export function canGenerateBookingManageLinks() {
+  return Boolean(getBookingLinkSecret());
+}
+
+export function createBookingManageToken(slug: string, bookingId: string) {
+  return createBookingAccessToken(slug, bookingId, "manage");
+}
+
+export function createBookingConfirmationToken(slug: string, bookingId: string) {
+  return createBookingAccessToken(slug, bookingId, "confirmation");
 }
 
 export function buildManageBookingHref(slug: string, bookingId: string) {
@@ -103,6 +153,25 @@ export function buildManageBookingHref(slug: string, bookingId: string) {
 
 export function buildAbsoluteManageBookingUrl(slug: string, bookingId: string) {
   const href = buildManageBookingHref(slug, bookingId);
+
+  if (!href) {
+    return null;
+  }
+
+  return `${getPublicAppUrl()}${href}`;
+}
+
+export function buildBookingConfirmationHref(slug: string, bookingId: string) {
+  if (!canGenerateBookingManageLinks()) {
+    return null;
+  }
+
+  const token = createBookingConfirmationToken(slug, bookingId);
+  return `/${slug}/confirmacion?booking=${bookingId}&token=${token}`;
+}
+
+export function buildAbsoluteBookingConfirmationUrl(slug: string, bookingId: string) {
+  const href = buildBookingConfirmationHref(slug, bookingId);
 
   if (!href) {
     return null;
@@ -135,29 +204,19 @@ export function isValidBookingManageToken(input: {
   bookingId?: string;
   token?: string;
 }) {
-  const secret = getBookingLinkSecret();
+  return hasValidBookingAccessToken({
+    ...input,
+    allowedScopes: ["manage"],
+  });
+}
 
-  if (!secret || !input.bookingId || !input.token) {
-    return false;
-  }
-
-  const decoded = decodePayload(input.token);
-
-  if (!decoded) {
-    return false;
-  }
-
-  const expectedSignature = signPayload(decoded.encodedPayload, secret);
-  const received = Buffer.from(decoded.signature, "utf8");
-  const expected = Buffer.from(expectedSignature, "utf8");
-
-  if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
-    return false;
-  }
-
-  return (
-    decoded.payload.slug === input.slug &&
-    decoded.payload.bookingId === input.bookingId &&
-    decoded.payload.exp > Date.now()
-  );
+export function isValidBookingConfirmationToken(input: {
+  slug: string;
+  bookingId?: string;
+  token?: string;
+}) {
+  return hasValidBookingAccessToken({
+    ...input,
+    allowedScopes: ["confirmation", "manage"],
+  });
 }

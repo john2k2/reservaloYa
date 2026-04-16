@@ -1,15 +1,30 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { updateLocalBusinessMPTokens } from "@/server/local-store";
 import { createLogger } from "@/server/logger";
 import { parseMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
+import { getAdminShellData } from "@/server/queries/admin";
 import {
   getPocketBaseBusinessIdBySlug,
   updatePocketBaseBusinessMPTokens,
 } from "@/server/pocketbase-store";
 
 const logger = createLogger("MP OAuth");
+const MP_OAUTH_NONCE_COOKIE = "reservaya-mp-oauth-nonce";
+
+function withClearedOAuthNonceCookie(response: NextResponse) {
+  response.cookies.set(MP_OAUTH_NONCE_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").startsWith("https://"),
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
+}
 
 /**
  * Callback OAuth de MercadoPago.
@@ -22,9 +37,11 @@ export async function GET(request: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const errorRedirect = `${appUrl}/admin/onboarding?tab=integraciones&mp=error`;
+  const cookieStore = await cookies();
+  const oauthNonce = cookieStore.get(MP_OAUTH_NONCE_COOKIE)?.value ?? null;
 
   if (!code || !state) {
-    return NextResponse.redirect(errorRedirect);
+    return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
   }
 
   const mpAppId = process.env.MP_APP_ID?.trim();
@@ -32,14 +49,29 @@ export async function GET(request: Request) {
 
   if (!mpAppId || !mpAppSecret) {
     logger.error("MP_APP_ID o MP_APP_SECRET no configurados");
-    return NextResponse.redirect(errorRedirect);
+    return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
   }
 
   const parsedState = parseMercadoPagoOAuthState(state);
 
   if (!parsedState) {
     logger.warn("State invalido o vencido");
-    return NextResponse.redirect(errorRedirect);
+    return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
+  }
+
+  const shellData = await getAdminShellData();
+
+  if (
+    !shellData?.businessSlug ||
+    !shellData.userEmail ||
+    !oauthNonce ||
+    oauthNonce !== parsedState.nonce ||
+    shellData.businessSlug !== parsedState.businessSlug ||
+    shellData.userEmail !== parsedState.userEmail ||
+    (parsedState.businessId && shellData.businessId !== parsedState.businessId)
+  ) {
+    logger.warn("Callback OAuth rechazado por sesion/nonce invalido");
+    return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
   }
 
   let tokenData: {
@@ -67,13 +99,13 @@ export async function GET(request: Request) {
     if (!res.ok) {
       const errorBody = await res.text();
       logger.error("Error al intercambiar code por tokens", errorBody);
-      return NextResponse.redirect(errorRedirect);
+      return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
     }
 
     tokenData = (await res.json()) as typeof tokenData;
   } catch (err) {
     logger.error("Error en token exchange", err);
-    return NextResponse.redirect(errorRedirect);
+    return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
   }
 
   const tokens = {
@@ -90,7 +122,7 @@ export async function GET(request: Request) {
 
       if (!businessId) {
         logger.error("No se encontro el negocio", parsedState.businessSlug);
-        return NextResponse.redirect(errorRedirect);
+        return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
       }
 
       await updatePocketBaseBusinessMPTokens({ businessId, ...tokens });
@@ -102,10 +134,12 @@ export async function GET(request: Request) {
     }
   } catch (err) {
     logger.error("Error guardando tokens", err);
-    return NextResponse.redirect(errorRedirect);
+    return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
   }
 
   logger.info(`Tokens guardados para negocio: ${parsedState.businessSlug}`);
 
-  return NextResponse.redirect(`${appUrl}/admin/onboarding?tab=integraciones&mp=connected`);
+  return withClearedOAuthNonceCookie(
+    NextResponse.redirect(`${appUrl}/admin/onboarding?tab=integraciones&mp=connected`)
+  );
 }

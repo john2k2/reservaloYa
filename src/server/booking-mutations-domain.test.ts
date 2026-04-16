@@ -4,6 +4,7 @@ import {
   buildBookingCustomerDetails,
   buildBookingMutationFields,
   buildBookingTimeWindow,
+  canMutatePublicBooking,
   fitsBookingWithinAvailability,
   hasBlockedSlotConflict,
   hasBookingConflict,
@@ -118,5 +119,14 @@ describe("booking mutations domain", () => {
       email: "ana@test.com",
       notes: "Cliente frecuente",
     });
+  });
+
+  it("allows only mutable public booking statuses", () => {
+    expect(canMutatePublicBooking("pending")).toBe(true);
+    expect(canMutatePublicBooking("pending_payment")).toBe(true);
+    expect(canMutatePublicBooking("confirmed")).toBe(true);
+    expect(canMutatePublicBooking("completed")).toBe(false);
+    expect(canMutatePublicBooking("cancelled")).toBe(false);
+    expect(canMutatePublicBooking("no_show")).toBe(false);
   });
 });

@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import MercadoPago, { Preference, Payment } from "mercadopago";
 
 import { createLogger } from "@/server/logger";
+import { buildAbsoluteBookingConfirmationUrl } from "@/server/public-booking-links";
 
 // ─── Client (lazy singleton) ──────────────────────────────────────────────────
 
@@ -80,6 +81,14 @@ async function createPreferenceWithClient(
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const currency = input.currency || "ARS";
+    const confirmationUrl = buildAbsoluteBookingConfirmationUrl(
+      input.businessSlug,
+      input.bookingId
+    );
+
+    if (!confirmationUrl) {
+      return { ok: false, error: "No se pudo generar el link de confirmacion del booking." };
+    }
 
     const preference = new Preference(client);
 
@@ -110,9 +119,9 @@ async function createPreferenceWithClient(
             }
           : undefined,
         back_urls: {
-          success: `${appUrl}/${input.businessSlug}/confirmacion?booking=${input.bookingId}&payment=success`,
-          failure: `${appUrl}/${input.businessSlug}/confirmacion?booking=${input.bookingId}&payment=failure`,
-          pending: `${appUrl}/${input.businessSlug}/confirmacion?booking=${input.bookingId}&payment=pending`,
+          success: `${confirmationUrl}&payment=success`,
+          failure: `${confirmationUrl}&payment=failure`,
+          pending: `${confirmationUrl}&payment=pending`,
         },
         auto_return: "approved",
         external_reference: input.bookingId,
@@ -311,6 +320,11 @@ export type MPPaymentInfo = {
   externalReference: string; // = bookingId
   transactionAmount: number;
   currencyId: string;
+  collectorId?: string;
+  metadata?: {
+    bookingId?: string;
+    businessSlug?: string;
+  };
   payerEmail?: string;
 };
 
@@ -399,6 +413,17 @@ export async function getMPPaymentInfo(
       externalReference: response.external_reference ?? "",
       transactionAmount: response.transaction_amount ?? 0,
       currencyId: response.currency_id ?? "ARS",
+      collectorId: response.collector_id != null ? String(response.collector_id) : undefined,
+      metadata: {
+        bookingId:
+          response.metadata && typeof response.metadata === "object"
+            ? String((response.metadata as { booking_id?: string }).booking_id ?? "") || undefined
+            : undefined,
+        businessSlug:
+          response.metadata && typeof response.metadata === "object"
+            ? String((response.metadata as { business_slug?: string }).business_slug ?? "") || undefined
+            : undefined,
+      },
       payerEmail: response.payer?.email ?? undefined,
     };
   } catch (err) {

@@ -3,6 +3,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 type MPOAuthStatePayload = {
   businessSlug: string;
   businessId?: string;
+  userEmail: string;
+  nonce: string;
   exp: number;
 };
 
@@ -23,11 +25,15 @@ function signPayload(encodedPayload: string, secret: string) {
 export function createMercadoPagoOAuthState(input: {
   businessSlug: string;
   businessId?: string;
+  userEmail: string;
+  nonce: string;
 }) {
   const secret = getMPOAuthStateSecret();
   const payload: MPOAuthStatePayload = {
     businessSlug: input.businessSlug,
     businessId: input.businessId,
+    userEmail: input.userEmail,
+    nonce: input.nonce,
     exp: Date.now() + 10 * 60 * 1000,
   };
   const encodedPayload = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
@@ -55,7 +61,13 @@ export function parseMercadoPagoOAuthState(state: string) {
       Buffer.from(encodedPayload, "base64url").toString("utf8")
     ) as MPOAuthStatePayload;
 
-    if (!payload.businessSlug || !payload.exp || payload.exp < Date.now()) {
+    if (
+      !payload.businessSlug ||
+      !payload.userEmail ||
+      !payload.nonce ||
+      !payload.exp ||
+      payload.exp < Date.now()
+    ) {
       return null;
     }
 

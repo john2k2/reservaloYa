@@ -22,6 +22,8 @@ describe("mercadopago oauth state", () => {
     const state = createMercadoPagoOAuthState({
       businessSlug: "demo-barberia",
       businessId: "abcd1234business",
+      userEmail: "owner@demo.com",
+      nonce: "nonce-123",
     });
 
     expect(
@@ -29,6 +31,8 @@ describe("mercadopago oauth state", () => {
     ).toMatchObject({
       businessSlug: "demo-barberia",
       businessId: "abcd1234business",
+      userEmail: "owner@demo.com",
+      nonce: "nonce-123",
     });
   });
 
@@ -37,6 +41,8 @@ describe("mercadopago oauth state", () => {
 
     const state = createMercadoPagoOAuthState({
       businessSlug: "demo-barberia",
+      userEmail: "owner@demo.com",
+      nonce: "nonce-123",
     });
 
     expect(parseMercadoPagoOAuthState(`${state}tampered`)).toBeNull();

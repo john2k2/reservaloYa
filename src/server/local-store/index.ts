@@ -64,6 +64,7 @@ import {
   buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
   normalizeMercadoPagoCollectorId,
+  type BookingPaymentValidationContext,
   type BookingPaymentUpdateInput,
 } from "@/server/payments-domain";
 import {
@@ -74,6 +75,7 @@ import {
   buildBookingCustomerDetails,
   buildBookingMutationFields,
   buildBookingTimeWindow,
+  canMutatePublicBooking,
   fitsBookingWithinAvailability,
   hasBlockedSlotConflict,
   hasBookingConflict,
@@ -318,6 +320,10 @@ export async function createLocalPublicBooking(input: CreateLocalBookingInput) {
 
         if (input.rescheduleBookingId && !existingBooking) {
           throw new Error("No encontramos el turno para reprogramar.");
+        }
+
+        if (existingBooking && !canMutatePublicBooking(existingBooking.status)) {
+          throw new Error("Este turno ya no se puede reprogramar.");
         }
 
         if (existingBooking) {
@@ -755,6 +761,17 @@ export async function createLocalWaitlistEntry(input: {
       throw new Error("No encontramos el negocio.");
     }
 
+    const service = store.services.find(
+      (candidate) =>
+        candidate.id === input.serviceId &&
+        candidate.businessId === business.id &&
+        candidate.active
+    );
+
+    if (!service) {
+      throw new Error("No encontramos el servicio.");
+    }
+
     // Check for duplicate entry (same email + date + service)
     const existing = store.waitlistEntries.find(
       (e) =>
@@ -789,8 +806,6 @@ export async function createLocalWaitlistEntry(input: {
 export async function createLocalReview(input: {
   businessSlug: string;
   bookingId: string;
-  serviceId: string;
-  customerName: string;
   rating: 1 | 2 | 3 | 4 | 5;
   comment?: string;
 }) {
@@ -818,12 +833,23 @@ export async function createLocalReview(input: {
       throw new Error("No encontramos el turno.");
     }
 
+    if (booking.status !== "completed") {
+      throw new Error("Solo podés dejar una reseña después de completar el turno.");
+    }
+
+    const service = store.services.find(
+      (candidate) => candidate.id === booking.serviceId && candidate.businessId === business.id
+    );
+    const customer = store.customers.find(
+      (candidate) => candidate.id === booking.customerId && candidate.businessId === business.id
+    );
+
     const review = {
       id: randomUUID(),
       businessId: business.id,
       bookingId: input.bookingId,
-      serviceId: input.serviceId,
-      customerName: input.customerName,
+      serviceId: service?.id ?? booking.serviceId,
+      customerName: customer?.fullName ?? "Cliente",
       rating: input.rating,
       comment: input.comment,
       createdAt: new Date().toISOString(),
@@ -1284,6 +1310,10 @@ export async function cancelLocalPublicBooking(input: {
       throw new Error("Booking not found");
     }
 
+    if (!canMutatePublicBooking(booking.status)) {
+      throw new Error("Este turno ya no se puede cancelar.");
+    }
+
     booking.status = "cancelled";
 
     return booking.id;
@@ -1507,6 +1537,36 @@ export async function getLocalBookingBusinessSlug(bookingId: string): Promise<st
   if (!booking) return null;
   const business = store.businesses.find((b) => b.id === booking.businessId);
   return business?.slug ?? null;
+}
+
+export async function getLocalBookingPaymentValidationContext(
+  bookingId: string
+): Promise<BookingPaymentValidationContext | null> {
+  const store = await readStore();
+  const booking = store.bookings.find((item) => item.id === bookingId);
+
+  if (!booking) {
+    return null;
+  }
+
+  const business = store.businesses.find((item) => item.id === booking.businessId);
+
+  if (!business) {
+    return null;
+  }
+
+  return {
+    bookingId: booking.id,
+    businessId: business.id,
+    businessSlug: business.slug,
+    status: booking.status,
+    paymentAmount: booking.paymentAmount,
+    paymentCurrency: booking.paymentCurrency,
+    paymentProvider: booking.paymentProvider,
+    paymentPreferenceId: booking.paymentPreferenceId,
+    paymentExternalId: booking.paymentExternalId,
+    mpCollectorId: business.mpCollectorId,
+  };
 }
 
 export type UpdateLocalBookingPaymentInput = BookingPaymentUpdateInput;

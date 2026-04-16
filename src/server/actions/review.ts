@@ -10,8 +10,6 @@ const reviewSchema = z.object({
   businessSlug: z.string().min(2).max(80),
   bookingId: z.string().min(1),
   manageToken: z.string().min(1),
-  serviceId: z.string().min(1),
-  customerName: z.string().min(2).max(120),
   rating: z.coerce.number().int().min(1).max(5),
   comment: z.string().max(1000).optional(),
 });
@@ -28,8 +26,6 @@ export async function submitReviewAction(
     businessSlug: String(formData.get("businessSlug") ?? ""),
     bookingId: String(formData.get("bookingId") ?? ""),
     manageToken: String(formData.get("manageToken") ?? ""),
-    serviceId: String(formData.get("serviceId") ?? ""),
-    customerName: String(formData.get("customerName") ?? ""),
     rating: String(formData.get("rating") ?? ""),
     comment: String(formData.get("comment") ?? "") || undefined,
   };
@@ -55,8 +51,6 @@ export async function submitReviewAction(
       await createPocketBaseReview({
         businessSlug: parsed.data.businessSlug,
         bookingId: parsed.data.bookingId,
-        serviceId: parsed.data.serviceId,
-        customerName: parsed.data.customerName,
         rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
         comment: parsed.data.comment,
       });
@@ -64,8 +58,6 @@ export async function submitReviewAction(
       await createLocalReview({
         businessSlug: parsed.data.businessSlug,
         bookingId: parsed.data.bookingId,
-        serviceId: parsed.data.serviceId,
-        customerName: parsed.data.customerName,
         rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
         comment: parsed.data.comment,
       });

@@ -1,6 +1,5 @@
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminOnboardingData, getAdminSettingsData } from "@/server/queries/admin";
-import { createMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
 import OnboardingPageClient from "./onboarding-client";
 
 interface OnboardingWrapperProps {
@@ -25,18 +24,7 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
   // Construir URL OAuth de MercadoPago server-side (para no exponer MP_APP_ID al browser)
   const mpAppId = process.env.MP_APP_ID?.trim();
   const mpAppSecret = process.env.MP_APP_SECRET?.trim();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const redirectUri = `${appUrl}/api/auth/mercadopago/callback`;
-  const stateValue =
-    mpAppSecret && settingsData.businessSlug
-      ? createMercadoPagoOAuthState({
-          businessSlug: settingsData.businessSlug,
-          businessId: shellData?.businessId,
-        })
-      : null;
-  const mpOAuthUrl = mpAppId && mpAppSecret && stateValue
-    ? `https://auth.mercadopago.com/authorization?client_id=${mpAppId}&response_type=code&platform_id=mp&state=${encodeURIComponent(stateValue)}&redirect_uri=${encodeURIComponent(redirectUri)}`
-    : null;
+  const mpOAuthUrl = mpAppId && mpAppSecret ? "/api/auth/mercadopago/start" : null;
 
   // Si el callback OAuth redirige con ?tab=integraciones, abrir ese tab por defecto
   const defaultTab = params.tab === "integraciones" ? "integrations" as const : undefined;

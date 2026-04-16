@@ -1,13 +1,17 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 import { hasPocketBasePublicAuthCredentials } from "@/lib/pocketbase/config";
 import { isDemoModeEnabled } from "@/lib/runtime";
 import { createLocalWaitlistEntry } from "@/server/local-store";
 import { createPocketBaseWaitlistEntry } from "@/server/pocketbase-store";
 import { createLogger } from "@/server/logger";
+import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 
 const logger = createLogger("Waitlist");
+const WAITLIST_LIMIT_MAX = 5;
+const WAITLIST_LIMIT_WINDOW_MS = 60_000;
 
 const waitlistSchema = z.object({
   businessSlug: z.string().min(2).max(80),
@@ -21,6 +25,23 @@ const waitlistSchema = z.object({
 export type WaitlistActionResult =
   | { success: true }
   | { success: false; error: string };
+
+async function enforceWaitlistRateLimit(input: {
+  businessSlug: string;
+  email: string;
+  bookingDate: string;
+}) {
+  const requestHeaders = await headers();
+  const clientId = getRateLimitIdentifier(requestHeaders, "public-waitlist");
+
+  await assertRateLimit({
+    bucket: "public-waitlist",
+    identifier: `${input.businessSlug}:${clientId}:${input.email}:${input.bookingDate}`,
+    max: WAITLIST_LIMIT_MAX,
+    windowMs: WAITLIST_LIMIT_WINDOW_MS,
+    message: "Demasiados intentos de lista de espera. Intenta nuevamente en unos segundos.",
+  });
+}
 
 export async function joinWaitlistAction(
   _prev: WaitlistActionResult | null,
@@ -42,6 +63,12 @@ export async function joinWaitlistAction(
   }
 
   try {
+    await enforceWaitlistRateLimit({
+      businessSlug: parsed.data.businessSlug,
+      email: parsed.data.email,
+      bookingDate: parsed.data.bookingDate,
+    });
+
     const canUsePocketBase = hasPocketBasePublicAuthCredentials() && !isDemoModeEnabled();
     if (canUsePocketBase) {
       await createPocketBaseWaitlistEntry({
@@ -56,6 +83,13 @@ export async function joinWaitlistAction(
     }
     return { success: true };
   } catch (err) {
+    if (err instanceof RateLimitError) {
+      return {
+        success: false,
+        error: `${err.message} Reintenta en ${err.retryAfterSeconds}s.`,
+      };
+    }
+
     logger.error("Error registrando en waitlist", err);
     return { success: false, error: "No se pudo registrar. Intentá de nuevo." };
   }

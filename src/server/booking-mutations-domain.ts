@@ -1,6 +1,8 @@
 import { addMinutes } from "@/lib/bookings/format";
 import type { BookingStatus, PaymentStatus } from "@/types/domain";
 
+const PUBLIC_BOOKING_MUTABLE_STATUSES = ["pending", "pending_payment", "confirmed"] as const;
+
 type TimeRangeLike = {
   startTime: string;
   endTime: string;
@@ -87,6 +89,12 @@ export function hasBookingConflict(
         booking.startTime,
         booking.endTime
       )
+  );
+}
+
+export function canMutatePublicBooking(status: BookingStatus) {
+  return PUBLIC_BOOKING_MUTABLE_STATUSES.includes(
+    status as (typeof PUBLIC_BOOKING_MUTABLE_STATUSES)[number]
   );
 }
 

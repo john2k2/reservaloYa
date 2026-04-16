@@ -71,6 +71,9 @@ vi.mock("@/server/queries/public", () => ({
 }));
 
 vi.mock("@/server/public-booking-links", () => ({
+  buildBookingConfirmationHref: vi.fn(
+    (slug: string, bookingId: string) => `/${slug}/confirmacion?booking=${bookingId}&token=confirmation-token`
+  ),
   isValidBookingManageToken: vi.fn(() => true),
 }));
 
@@ -151,7 +154,9 @@ describe("public booking action rate limit", () => {
       }
     }
 
-    expect(redirectedUrls[7]).toBe("/demo-barberia/confirmacion?booking=booking-test-id");
+    expect(redirectedUrls[7]).toBe(
+      "/demo-barberia/confirmacion?booking=booking-test-id&token=confirmation-token"
+    );
     const rateLimitedUrl = new URL(redirectedUrls[8] ?? "", "http://localhost");
     expect(rateLimitedUrl.pathname).toBe("/demo-barberia/reservar");
     expect(rateLimitedUrl.searchParams.get("error")).toContain("Demasiados intentos de reserva");
@@ -161,7 +166,7 @@ describe("public booking action rate limit", () => {
     const { createPublicBookingAction } = await import("./public-booking");
 
     await expect(createPublicBookingAction(buildBookingFormData())).rejects.toThrow(
-      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id/
+      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id&token=confirmation-token/
     );
 
     expect(createLocalPublicBookingMock).toHaveBeenCalledWith(
@@ -222,7 +227,7 @@ describe("reschedule booking", () => {
     const { createPublicBookingAction } = await import("./public-booking");
 
     await expect(createPublicBookingAction(buildRescheduleFormData())).rejects.toThrow(
-      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id/
+      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id&token=confirmation-token/
     );
 
     expect(createLocalPublicBookingMock).toHaveBeenCalledWith(
@@ -251,7 +256,7 @@ describe("reschedule booking", () => {
     const { createPublicBookingAction } = await import("./public-booking");
 
     await expect(createPublicBookingAction(buildRescheduleFormData())).rejects.toThrow(
-      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id/
+      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id&token=confirmation-token/
     );
 
     expect(createPaymentPreferenceForBusinessMock).not.toHaveBeenCalled();

@@ -8,8 +8,6 @@ interface ReviewFormProps {
   businessSlug: string;
   bookingId: string;
   manageToken: string;
-  serviceId: string;
-  customerName: string;
   accentColor: string;
 }
 
@@ -17,8 +15,6 @@ export function ReviewForm({
   businessSlug,
   bookingId,
   manageToken,
-  serviceId,
-  customerName,
   accentColor,
 }: ReviewFormProps) {
   const [state, action, isPending] = useActionState<ReviewActionResult | null, FormData>(
@@ -50,8 +46,6 @@ export function ReviewForm({
         <input type="hidden" name="businessSlug" value={businessSlug} />
         <input type="hidden" name="bookingId" value={bookingId} />
         <input type="hidden" name="manageToken" value={manageToken} />
-        <input type="hidden" name="serviceId" value={serviceId} />
-        <input type="hidden" name="customerName" value={customerName} />
         <input type="hidden" name="rating" value={selected} />
 
         {/* Star rating */}

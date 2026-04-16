@@ -9,9 +9,10 @@ const RETENTION_DAYS = 30;
 const BLOB_PREFIX = "backups/pb/";
 
 export type BackupResult = {
-  backup: string;
+  backupPath: string;
   size: number;
   purged: number;
+  access: "private";
 };
 
 export async function runBackup(): Promise<BackupResult> {
@@ -54,12 +55,15 @@ export async function runBackup(): Promise<BackupResult> {
   // 4. Subir a Vercel Blob
   const blobPath = `${BLOB_PREFIX}${backupName}`;
   const uploaded = await put(blobPath, buffer, {
-    access: "public",
+    access: "private",
     contentType: "application/zip",
     token: blobToken,
-    addRandomSuffix: false,
+    addRandomSuffix: true,
   });
-  logger.info("Subido a Vercel Blob", { url: uploaded.url });
+  logger.info("Subido a Vercel Blob", {
+    pathname: uploaded.pathname,
+    access: "private",
+  });
 
   // 5. Borrar backup de PB (ya está en Blob, no ocupar espacio en Railway)
   await pb.backups.delete(backupName);
@@ -73,7 +77,7 @@ export async function runBackup(): Promise<BackupResult> {
   );
 
   for (const old of toDelete) {
-    await del(old.url, { token: blobToken });
+    await del(old.pathname, { token: blobToken });
   }
 
   if (toDelete.length > 0) {
@@ -81,8 +85,9 @@ export async function runBackup(): Promise<BackupResult> {
   }
 
   return {
-    backup: uploaded.url,
+    backupPath: uploaded.pathname,
     size: buffer.length,
     purged: toDelete.length,
+    access: "private",
   };
 }

@@ -22,15 +22,33 @@ const logger = createLogger("MP Token Crypto");
 const ALGORITHM = "aes-256-gcm";
 const IV_BYTES = 12; // 96 bits — recomendado para GCM
 const ENC_PREFIX = "enc1:";
+const ENCRYPTION_KEY_ERROR =
+  "MP_TOKEN_ENCRYPTION_KEY es obligatoria fuera de local/demo y debe tener 64 caracteres hex.";
+
+function requiresStrictTokenEncryption() {
+  return (
+    process.env.NODE_ENV === "production" ||
+    (Boolean(process.env.NEXT_PUBLIC_POCKETBASE_URL) &&
+      process.env.RESERVAYA_ENABLE_DEMO_MODE !== "true")
+  );
+}
 
 function getEncryptionKey(): Buffer | null {
   const keyHex = process.env.MP_TOKEN_ENCRYPTION_KEY?.trim();
 
   if (!keyHex) {
+    if (requiresStrictTokenEncryption()) {
+      throw new Error(ENCRYPTION_KEY_ERROR);
+    }
+
     return null;
   }
 
   if (keyHex.length !== 64) {
+    if (requiresStrictTokenEncryption()) {
+      throw new Error(ENCRYPTION_KEY_ERROR);
+    }
+
     logger.error(
       "MP_TOKEN_ENCRYPTION_KEY debe tener exactamente 64 caracteres hex (32 bytes). Tokens en plaintext."
     );

@@ -6,11 +6,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { addMinutes } from "@/lib/bookings/format";
 import { resetBookingLocksForTests } from "@/server/booking-slot-lock";
 import {
+  createLocalReview,
+  createLocalWaitlistEntry,
+  cancelLocalPublicBooking,
   createLocalBlockedSlot,
   createLocalPublicBooking,
   getLocalPublicBookingFlowData,
   updateLocalAdminBooking,
 } from "@/server/local-store";
+import { readStore } from "@/server/local-store/_core";
 
 async function resetLocalRuntimeStore() {
   const dataDir = path.join(process.cwd(), "data");
@@ -126,5 +130,168 @@ describe.sequential("local booking schedule QA", () => {
         notes: "Fuera de horario",
       })
     ).rejects.toThrow("Ese horario queda fuera de la disponibilidad configurada.");
+  });
+
+  it("prevents public rescheduling of closed bookings", async () => {
+    const flow = await getLocalPublicBookingFlowData({ slug: "demo-barberia" });
+
+    if (!flow?.selectedService || flow.slots.length < 2) {
+      throw new Error("El seed local no tiene suficientes slots para probar reprogramación pública.");
+    }
+
+    const bookingId = await createLocalPublicBooking({
+      businessSlug: "demo-barberia",
+      serviceId: flow.selectedService.id,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      fullName: "Cliente QA D",
+      phone: "1100001004",
+      email: "qa-d@example.com",
+      notes: "",
+    });
+
+    await updateLocalAdminBooking({
+      businessSlug: "demo-barberia",
+      bookingId,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      status: "completed",
+      notes: "Turno ya cerrado",
+    });
+
+    await expect(
+      createLocalPublicBooking({
+        businessSlug: "demo-barberia",
+        serviceId: flow.selectedService.id,
+        bookingDate: flow.bookingDate,
+        startTime: flow.slots[1],
+        fullName: "Cliente QA D",
+        phone: "1100001004",
+        email: "qa-d@example.com",
+        notes: "",
+        rescheduleBookingId: bookingId,
+      })
+    ).rejects.toThrow("Este turno ya no se puede reprogramar.");
+  });
+
+  it("prevents public cancellation of closed bookings", async () => {
+    const flow = await getLocalPublicBookingFlowData({ slug: "demo-barberia" });
+
+    if (!flow?.selectedService || flow.slots.length === 0) {
+      throw new Error("El seed local no tiene slots para probar cancelación pública.");
+    }
+
+    const bookingId = await createLocalPublicBooking({
+      businessSlug: "demo-barberia",
+      serviceId: flow.selectedService.id,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      fullName: "Cliente QA E",
+      phone: "1100001005",
+      email: "qa-e@example.com",
+      notes: "",
+    });
+
+    await updateLocalAdminBooking({
+      businessSlug: "demo-barberia",
+      bookingId,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      status: "completed",
+      notes: "Turno cerrado",
+    });
+
+    await expect(
+      cancelLocalPublicBooking({
+        businessSlug: "demo-barberia",
+        bookingId,
+      })
+    ).rejects.toThrow("Este turno ya no se puede cancelar.");
+  });
+
+  it("prevents reviews before the booking is completed", async () => {
+    const flow = await getLocalPublicBookingFlowData({ slug: "demo-barberia" });
+
+    if (!flow?.selectedService || flow.slots.length === 0) {
+      throw new Error("El seed local no tiene slots para probar reseñas.");
+    }
+
+    const bookingId = await createLocalPublicBooking({
+      businessSlug: "demo-barberia",
+      serviceId: flow.selectedService.id,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      fullName: "Cliente QA F",
+      phone: "1100001006",
+      email: "qa-f@example.com",
+      notes: "",
+    });
+
+    await expect(
+      createLocalReview({
+        businessSlug: "demo-barberia",
+        bookingId,
+        rating: 5,
+        comment: "Excelente",
+      })
+    ).rejects.toThrow("Solo podés dejar una reseña después de completar el turno.");
+  });
+
+  it("derives review identity from the completed booking", async () => {
+    const flow = await getLocalPublicBookingFlowData({ slug: "demo-barberia" });
+
+    if (!flow?.selectedService || flow.slots.length === 0) {
+      throw new Error("El seed local no tiene slots para probar reseñas completadas.");
+    }
+
+    const bookingId = await createLocalPublicBooking({
+      businessSlug: "demo-barberia",
+      serviceId: flow.selectedService.id,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      fullName: "Cliente QA G",
+      phone: "1100001007",
+      email: "qa-g@example.com",
+      notes: "",
+    });
+
+    await updateLocalAdminBooking({
+      businessSlug: "demo-barberia",
+      bookingId,
+      bookingDate: flow.bookingDate,
+      startTime: flow.slots[0],
+      status: "completed",
+      notes: "Turno finalizado",
+    });
+
+    await createLocalReview({
+      businessSlug: "demo-barberia",
+      bookingId,
+      rating: 4,
+      comment: "Muy bien",
+    });
+
+    const store = await readStore();
+    const review = store.reviews.find((item) => item.bookingId === bookingId);
+
+    expect(review).toMatchObject({
+      serviceId: flow.selectedService.id,
+      customerName: "Cliente QA G",
+      rating: 4,
+      comment: "Muy bien",
+    });
+  });
+
+  it("rejects waitlist entries for services outside the business", async () => {
+    await expect(
+      createLocalWaitlistEntry({
+        businessSlug: "demo-barberia",
+        serviceId: "servicio-inexistente",
+        bookingDate: "2026-04-20",
+        fullName: "Cliente QA H",
+        email: "qa-h@example.com",
+        phone: "1100001008",
+      })
+    ).rejects.toThrow("No encontramos el servicio.");
   });
 });

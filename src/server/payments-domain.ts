@@ -108,6 +108,19 @@ export type BookingPaymentPatch = {
   status?: "confirmed";
 };
 
+export type BookingPaymentValidationContext = {
+  bookingId: string;
+  businessId: string;
+  businessSlug: string;
+  status: "pending" | "pending_payment" | "confirmed" | "completed" | "cancelled" | "no_show";
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentProvider?: "mercadopago";
+  paymentPreferenceId?: string;
+  paymentExternalId?: string;
+  mpCollectorId?: string;
+};
+
 export function buildBookingPaymentPatch(
   input: BookingPaymentUpdateInput
 ): BookingPaymentPatch {

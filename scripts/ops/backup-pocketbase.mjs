@@ -55,12 +55,12 @@ async function runBackup() {
   // 4. Subir a Vercel Blob
   const blobPath = `${BLOB_PREFIX}${backupName}`;
   const uploaded = await put(blobPath, buffer, {
-    access: "public",
+    access: "private",
     contentType: "application/zip",
     token: BLOB_TOKEN,
-    addRandomSuffix: false,
+    addRandomSuffix: true,
   });
-  console.log(`✓ Subido a Blob: ${uploaded.url}`);
+  console.log(`✓ Subido a Blob privado: ${uploaded.pathname}`);
 
   // 5. Borrar backup de PB
   await pb.backups.delete(backupName);
@@ -71,13 +71,18 @@ async function runBackup() {
   const { blobs } = await list({ prefix: BLOB_PREFIX, token: BLOB_TOKEN });
   const toDelete = blobs.filter((b) => new Date(b.uploadedAt).getTime() < cutoff);
   for (const old of toDelete) {
-    await del(old.url, { token: BLOB_TOKEN });
+    await del(old.pathname, { token: BLOB_TOKEN });
   }
   if (toDelete.length > 0) {
     console.log(`✓ Purgados ${toDelete.length} backup(s) viejos`);
   }
 
-  return { backup: uploaded.url, size: buffer.length, purged: toDelete.length };
+  return {
+    backupPath: uploaded.pathname,
+    size: buffer.length,
+    purged: toDelete.length,
+    access: "private",
+  };
 }
 
 runBackup()

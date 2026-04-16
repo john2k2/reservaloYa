@@ -2,6 +2,7 @@ import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 
 import { demoSlots } from "@/constants/demo";
 import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import { isValidBookingConfirmationToken } from "@/server/public-booking-links";
 import { isValidBookingManageToken } from "@/server/public-booking-links";
 import {
   getLocalBookingConfirmationData,
@@ -90,19 +91,45 @@ export async function getPublicBookingFlowData({
 export async function getBookingConfirmationData({
   slug,
   bookingId,
+  token,
+  skipTokenValidation = false,
 }: {
   slug: string;
   bookingId?: string;
+  token?: string;
+  skipTokenValidation?: boolean;
 }) {
   noStore();
 
-  if (!bookingId || !isPocketBaseConfigured()) {
-    return getLocalBookingConfirmationData(bookingId);
+  if (
+    !skipTokenValidation &&
+    !isValidBookingConfirmationToken({ slug, bookingId, token })
+  ) {
+    return null;
   }
-  return (
-    (await getPocketBaseBookingConfirmationData({ slug, bookingId })) ??
-    getLocalBookingConfirmationData(bookingId)
-  );
+
+  if (!bookingId || !isPocketBaseConfigured()) {
+    const localBooking = await getLocalBookingConfirmationData(bookingId);
+
+    if (!localBooking || localBooking.businessSlug !== slug) {
+      return null;
+    }
+
+    return localBooking;
+  }
+
+  const pocketBaseBooking = await getPocketBaseBookingConfirmationData({ slug, bookingId });
+
+  if (pocketBaseBooking) {
+    return pocketBaseBooking;
+  }
+
+  const localBooking = await getLocalBookingConfirmationData(bookingId);
+  if (!localBooking || localBooking.businessSlug !== slug) {
+    return null;
+  }
+
+  return localBooking;
 }
 
 export async function getPublicManageBookingData({

@@ -10,6 +10,7 @@ import {
 } from "@/server/mercadopago";
 import {
   getLocalBusinessPaymentSettingsByCollectorId,
+  getLocalBookingPaymentValidationContext,
   getLocalBookingBusinessSlug,
   updateLocalBookingPayment,
   updateLocalBusinessMPTokens,
@@ -17,6 +18,7 @@ import {
 import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
   getBusinessSubscription,
+  getPocketBaseBookingPaymentValidationContext,
   getPocketBaseBookingBusinessSlug,
   getPocketBaseBusinessPaymentSettingsByCollectorId,
   updatePocketBaseBookingPayment,
@@ -27,6 +29,82 @@ import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
 import { getBookingConfirmationData } from "@/server/queries/public";
 
 const logger = createLogger("MP Webhook");
+
+function amountsMatch(expectedAmount: number | undefined, actualAmount: number) {
+  if (expectedAmount == null) {
+    return false;
+  }
+
+  return Math.abs(expectedAmount - actualAmount) < 0.01;
+}
+
+function canApplyBookingPayment(input: {
+  booking:
+    | Awaited<ReturnType<typeof getLocalBookingPaymentValidationContext>>
+    | Awaited<ReturnType<typeof getPocketBaseBookingPaymentValidationContext>>;
+  collectorId?: string | null;
+  paymentInfo: Awaited<ReturnType<typeof getMPPaymentInfo>>;
+  paymentStatus: ReturnType<typeof mapMPStatusToPaymentStatus>;
+  businessPaymentSettings:
+    | Awaited<ReturnType<typeof getLocalBusinessPaymentSettingsByCollectorId>>
+    | Awaited<ReturnType<typeof getPocketBaseBusinessPaymentSettingsByCollectorId>>
+    | null;
+}) {
+  const { booking, collectorId, paymentInfo, paymentStatus, businessPaymentSettings } = input;
+
+  if (!booking || !paymentInfo) {
+    return { ok: false, reason: "booking_not_found" } as const;
+  }
+
+  if (booking.paymentProvider !== "mercadopago" || !booking.paymentPreferenceId) {
+    return { ok: false, reason: "booking_not_prepared_for_mp" } as const;
+  }
+
+  if (!amountsMatch(booking.paymentAmount, paymentInfo.transactionAmount)) {
+    return { ok: false, reason: "payment_amount_mismatch" } as const;
+  }
+
+  const expectedCurrency = booking.paymentCurrency ?? "ARS";
+  if (paymentInfo.currencyId !== expectedCurrency) {
+    return { ok: false, reason: "payment_currency_mismatch" } as const;
+  }
+
+  if (booking.paymentExternalId && booking.paymentExternalId !== paymentInfo.id) {
+    return { ok: false, reason: "payment_external_id_mismatch" } as const;
+  }
+
+  const resolvedCollectorId = collectorId ?? paymentInfo.collectorId ?? null;
+  if (resolvedCollectorId && booking.mpCollectorId && resolvedCollectorId !== booking.mpCollectorId) {
+    return { ok: false, reason: "collector_mismatch" } as const;
+  }
+
+  if (businessPaymentSettings && businessPaymentSettings.businessId !== booking.businessId) {
+    return { ok: false, reason: "business_mismatch" } as const;
+  }
+
+  if (
+    paymentInfo.metadata?.bookingId &&
+    paymentInfo.metadata.bookingId !== booking.bookingId
+  ) {
+    return { ok: false, reason: "metadata_booking_mismatch" } as const;
+  }
+
+  if (
+    paymentInfo.metadata?.businessSlug &&
+    paymentInfo.metadata.businessSlug !== booking.businessSlug
+  ) {
+    return { ok: false, reason: "metadata_business_mismatch" } as const;
+  }
+
+  if (
+    paymentStatus === "approved" &&
+    !["pending_payment", "confirmed"].includes(booking.status)
+  ) {
+    return { ok: false, reason: "invalid_booking_status_for_approval" } as const;
+  }
+
+  return { ok: true } as const;
+}
 
 /**
  * Webhook de MercadoPago: se llama cuando hay cambios en un pago.
@@ -86,29 +164,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    const collectorId =
+    const collectorIdFromRequest =
       (body?.user_id != null ? String(body.user_id) : null) ?? url.searchParams.get("user_id");
 
-    const businessPaymentSettings = collectorId
+    let businessPaymentSettings = collectorIdFromRequest
       ? isPocketBase
-        ? await getPocketBaseBusinessPaymentSettingsByCollectorId(collectorId)
-        : await getLocalBusinessPaymentSettingsByCollectorId(collectorId)
+        ? await getPocketBaseBusinessPaymentSettingsByCollectorId(collectorIdFromRequest)
+        : await getLocalBusinessPaymentSettingsByCollectorId(collectorIdFromRequest)
       : null;
 
-    const businessAccessToken = businessPaymentSettings
+    const initialBusinessPaymentSettings = businessPaymentSettings;
+
+    const businessAccessToken = initialBusinessPaymentSettings
       ? await getUsableBusinessMercadoPagoAccessToken(
-          businessPaymentSettings,
+          initialBusinessPaymentSettings,
           async (tokens) => {
             if (isPocketBase) {
               await updatePocketBaseBusinessMPTokens({
-                businessId: businessPaymentSettings.businessId,
+                businessId: initialBusinessPaymentSettings.businessId,
                 ...tokens,
               });
               return;
             }
 
             await updateLocalBusinessMPTokens({
-              businessSlug: businessPaymentSettings.businessSlug,
+              businessSlug: initialBusinessPaymentSettings.businessSlug,
               ...tokens,
             });
           }
@@ -123,6 +203,14 @@ export async function POST(request: Request) {
     }
 
     const { externalReference, status, transactionAmount, currencyId } = paymentInfo;
+
+    const resolvedCollectorId = collectorIdFromRequest ?? paymentInfo.collectorId ?? null;
+
+    if (!businessPaymentSettings && resolvedCollectorId) {
+      businessPaymentSettings = isPocketBase
+        ? await getPocketBaseBusinessPaymentSettingsByCollectorId(resolvedCollectorId)
+        : await getLocalBusinessPaymentSettingsByCollectorId(resolvedCollectorId);
+    }
 
     if (!externalReference) {
       logger.warn("Pago sin external_reference", paymentId);
@@ -156,6 +244,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true }, { status: 200 });
     }
 
+    const bookingValidation = isPocketBase
+      ? await getPocketBaseBookingPaymentValidationContext(externalReference)
+      : await getLocalBookingPaymentValidationContext(externalReference);
+
+    const paymentValidation = canApplyBookingPayment({
+      booking: bookingValidation,
+      collectorId: resolvedCollectorId,
+      paymentInfo,
+      paymentStatus,
+      businessPaymentSettings,
+    });
+
+    if (!paymentValidation.ok) {
+      logger.warn("Webhook MP ignorado por validación de booking", {
+        paymentId,
+        bookingId: externalReference,
+        reason: paymentValidation.reason,
+      });
+      return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
+    }
+
     const paymentData = {
       bookingId: externalReference,
       paymentStatus,
@@ -178,7 +287,11 @@ export async function POST(request: Request) {
           : await getLocalBookingBusinessSlug(externalReference).catch(() => null);
 
         if (slug) {
-          const confirmation = await getBookingConfirmationData({ slug, bookingId: externalReference });
+          const confirmation = await getBookingConfirmationData({
+            slug,
+            bookingId: externalReference,
+            skipTokenValidation: true,
+          });
           if (confirmation) {
             await sendBookingConfirmationEmail(confirmation, "created");
           }
