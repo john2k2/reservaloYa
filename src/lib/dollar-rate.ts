@@ -1,4 +1,5 @@
 const BLUELYTICS_URL = "https://api.bluelytics.com.ar/v2/latest";
+const DOLLAR_RATE_TIMEOUT_MS = 3000;
 
 interface BluelyticsData {
   blue: {
@@ -10,8 +11,14 @@ interface BluelyticsData {
 
 export async function getBlueDollarRate(): Promise<number | null> {
   try {
+    const timeoutSignal =
+      typeof AbortSignal.timeout === "function"
+        ? AbortSignal.timeout(DOLLAR_RATE_TIMEOUT_MS)
+        : undefined;
+
     const res = await fetch(BLUELYTICS_URL, {
       next: { revalidate: 3600 },
+      signal: timeoutSignal,
     });
 
     if (!res.ok) {
