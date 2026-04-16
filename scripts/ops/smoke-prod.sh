@@ -44,7 +44,7 @@ check "Robots"         "$BASE/robots.txt"
 
 echo ""
 echo "Admin (redirect a login si no autenticado):"
-check "Admin panel"    "$BASE/admin" "307"
+check "Admin panel"    "$BASE/admin" "308"
 
 echo ""
 if [ "$EXIT_CODE" -eq 0 ]; then
