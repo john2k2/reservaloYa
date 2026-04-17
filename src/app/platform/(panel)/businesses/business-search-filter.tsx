@@ -45,7 +45,7 @@ export function BusinessSearchFilter({
           className="w-full rounded-xl border border-border/60 bg-background pl-9 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
-      <div className="flex gap-1.5 overflow-x-auto pb-1 shrink-0">
+<div className="flex gap-1.5 overflow-x-auto pb-1 shrink-0">
         {STATUS_OPTIONS.map((opt) => (
           <button
             key={opt.value}
