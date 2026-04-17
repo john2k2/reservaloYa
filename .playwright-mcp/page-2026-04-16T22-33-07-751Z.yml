@@ -1,0 +1,35 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - alert [ref=e29]
+  - main [ref=e30]:
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - link "ReservaYa" [ref=e34] [cursor=pointer]:
+          - /url: /
+        - link "Volver al inicio" [ref=e35] [cursor=pointer]:
+          - /url: /
+          - img [ref=e36]
+          - text: Volver al inicio
+      - generic [ref=e38]:
+        - heading "Ingresar a tu negocio" [level=1] [ref=e39]
+        - paragraph [ref=e40]: Inicia sesion con tu correo electronico para gestionar tu negocio.
+      - alert [ref=e41]: Failed to authenticate.
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - text: Correo electronico
+            - textbox "Correo electronico" [ref=e46]:
+              - /placeholder: tu@negocio.com
+          - generic [ref=e47]:
+            - text: Contrasena
+            - textbox "Contrasena" [ref=e48]:
+              - /placeholder: Tu contrasena
+          - link "Olvide mi contrasena" [ref=e50] [cursor=pointer]:
+            - /url: /admin/forgot-password
+          - button "Iniciar sesion" [ref=e51]:
+            - generic [ref=e52]: Iniciar sesion
+        - generic [ref=e54]:
+          - paragraph [ref=e55]: Todavia no tienes cuenta?
+          - link "Crea tu negocio y empieza ahora" [ref=e56] [cursor=pointer]:
+            - /url: /admin/signup

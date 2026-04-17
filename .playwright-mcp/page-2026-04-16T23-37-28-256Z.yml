@@ -1,0 +1,240 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - generic [ref=e8]: BL
+          - generic [ref=e9]:
+            - paragraph [ref=e10]: Barbería de barrio premium
+            - paragraph [ref=e11]: Barberia Libertador
+        - link "Instagram" [ref=e13] [cursor=pointer]:
+          - /url: https://instagram.com/barberia.libertador
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - text: Turnos online claros
+          - generic [ref=e20]:
+            - img [ref=e21]
+            - text: Reserva en menos de 1 minuto
+        - paragraph [ref=e24]: Reserva online en segundos
+        - heading "Cortes y barba con turnos claros." [level=1] [ref=e25]
+        - paragraph [ref=e26]: Sin mensajes de WhatsApp cruzados. Elige tu servicio, día y horario. Confirmación inmediata con acceso para reprogramar o cancelar.
+        - generic [ref=e27]:
+          - link "Reservar turno" [ref=e28] [cursor=pointer]:
+            - /url: /demo-barberia/reservar
+            - img
+            - text: Reservar turno
+          - link "Soporte por WhatsApp" [ref=e29] [cursor=pointer]:
+            - /url: https://wa.me/541155550199?text=Hola%20Barberia%20Libertador%2C%20quiero%20reservar%20un%20turno.
+            - img
+            - generic [ref=e30]: Soporte por WhatsApp
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - img [ref=e33]
+            - text: Atención puntual
+          - generic [ref=e36]:
+            - img [ref=e37]
+            - text: Ubicación en Palermo
+          - generic [ref=e40]:
+            - img [ref=e41]
+            - text: Horarios visibles antes de reservar
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - paragraph [ref=e46]: Próximo turno
+            - paragraph [ref=e47]: Lunes
+            - paragraph [ref=e48]: 09:00 a 18:00
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Oferta real
+            - paragraph [ref=e51]: 3 servicios
+            - paragraph [ref=e52]: Opciones claras con duración definida
+          - generic [ref=e53]:
+            - paragraph [ref=e54]: Desde
+            - paragraph [ref=e55]: Desde $ 8.000
+            - paragraph [ref=e56]: Lunes · 09:00 a 18:00
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Servicios
+          - heading "Elegí el turno que mejor encaja con tu agenda" [level=2] [ref=e62]
+        - generic [ref=e63]: 3 opciones
+      - generic [ref=e64]:
+        - article [ref=e65]:
+          - generic [ref=e66]:
+            - img [ref=e67]
+            - text: Más elegido
+          - generic [ref=e69]:
+            - heading "Corte + barba" [level=3] [ref=e70]
+            - generic [ref=e71]: $ 18.000
+          - paragraph [ref=e72]: Servicio completo con perfilado y terminacion.
+          - generic [ref=e73]:
+            - img [ref=e74]
+            - generic [ref=e80]: 60 min
+          - link "Reservar este servicio" [ref=e81] [cursor=pointer]:
+            - /url: /demo-barberia/reservar?service=0sjy2l1hloa229e
+        - article [ref=e82]:
+          - generic [ref=e83]:
+            - heading "Corte clasico" [level=3] [ref=e84]
+            - generic [ref=e85]: $ 12.000
+          - paragraph [ref=e86]: Corte con terminacion prolija para uso diario.
+          - generic [ref=e87]:
+            - img [ref=e88]
+            - generic [ref=e94]: 45 min
+          - link "Reservar este servicio" [ref=e95] [cursor=pointer]:
+            - /url: /demo-barberia/reservar?service=mmaqg2dpl85fss2
+        - article [ref=e96]:
+          - generic [ref=e97]:
+            - heading "Perfilado premium" [level=3] [ref=e98]
+            - generic [ref=e99]: $ 8.000
+          - paragraph [ref=e100]: Repaso rapido para mantener prolijo el look.
+          - generic [ref=e101]:
+            - img [ref=e102]
+            - generic [ref=e108]: 30 min
+          - link "Reservar este servicio" [ref=e109] [cursor=pointer]:
+            - /url: /demo-barberia/reservar?service=09895fx5zvjg3m4
+    - generic [ref=e110]:
+      - generic [ref=e111]:
+        - paragraph [ref=e112]: Galería
+        - heading "Así se vive la experiencia del negocio" [level=2] [ref=e113]
+      - generic [ref=e114]:
+        - article [ref=e115] [cursor=pointer]:
+          - img "Barbero realizando un corte con tijeras" [ref=e116]
+          - paragraph [ref=e118]: Barbero realizando un corte con tijeras
+        - article [ref=e119] [cursor=pointer]:
+          - img "Perfilado de barba con navaja tradicional" [ref=e120]
+          - paragraph [ref=e122]: Perfilado de barba con navaja tradicional
+        - article [ref=e123] [cursor=pointer]:
+          - img "Sillón de barbería clásico y ambiente premium" [ref=e124]
+          - paragraph [ref=e126]: Sillón de barbería clásico y ambiente premium
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - paragraph [ref=e129]: Testimonios
+        - heading "Lo que más valoran después de reservar" [level=2] [ref=e130]
+        - paragraph [ref=e131]: La confianza no sale de promesas vacías. Sale de una experiencia clara, rápida y fácil de repetir.
+        - generic [ref=e132]:
+          - generic [ref=e133]:
+            - img [ref=e134]
+            - text: Simple desde el primer vistazo
+          - generic [ref=e136]:
+            - img [ref=e137]
+            - text: Reprogramación sin llamadas cruzadas
+      - article [ref=e141]:
+        - generic [ref=e142]:
+          - img [ref=e143]
+          - generic [ref=e146]:
+            - img [ref=e147]
+            - text: Confianza real
+        - paragraph [ref=e149]: Antes respondía lo mismo todo el día. Ahora la mayoría entra, reserva y listo.
+        - generic [ref=e150]:
+          - img "Matías Gómez" [ref=e151]
+          - generic [ref=e152]:
+            - paragraph [ref=e153]: Matías Gómez
+            - paragraph [ref=e154]: Barbero independiente
+    - generic [ref=e156]:
+      - generic [ref=e157]:
+        - paragraph [ref=e158]: Preguntas frecuentes
+        - generic [ref=e159]:
+          - generic [ref=e160]:
+            - heading "¿Cuánto tarda la reserva?" [level=3] [ref=e161]
+            - paragraph [ref=e162]: "Menos de un minuto: eliges servicio, día, horario y confirmas."
+          - generic [ref=e163]:
+            - heading "¿Puedo cambiar el turno después?" [level=3] [ref=e164]
+            - paragraph [ref=e165]: Sí. Cada reserva deja un link para ver, reprogramar o cancelar el turno.
+          - generic [ref=e166]:
+            - heading "¿Atienden solo con reserva?" [level=3] [ref=e167]
+            - paragraph [ref=e168]: La pagina esta pensada para priorizar reservas, pero tambien puede convivir con turnos espontaneos.
+      - generic [ref=e169]:
+        - generic [ref=e170]:
+          - paragraph [ref=e171]: Políticas del turno
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - img [ref=e174]
+              - generic [ref=e177]: Se recomienda llegar 5 minutos antes del horario.
+            - generic [ref=e178]:
+              - img [ref=e179]
+              - generic [ref=e182]: La cancelación sin costo se puede hacer desde el link del turno.
+            - generic [ref=e183]:
+              - img [ref=e184]
+              - generic [ref=e187]: Si llegas muy tarde, el negocio puede ajustar la duración del servicio.
+        - generic [ref=e188]:
+          - paragraph [ref=e189]: Contacto y soporte
+          - paragraph [ref=e190]: Escribinos o seguinos sin salir de la página.
+          - link "Escribinos al WhatsApp" [ref=e192] [cursor=pointer]:
+            - /url: https://wa.me/541155550199?text=Hola%20Barberia%20Libertador%2C%20quiero%20reservar%20un%20turno.
+            - img
+            - text: Escribinos al WhatsApp
+          - generic [ref=e193]:
+            - link "Instagram" [ref=e194] [cursor=pointer]:
+              - /url: https://instagram.com/barberia.libertador
+              - img
+              - text: Instagram
+            - link "Facebook" [ref=e195] [cursor=pointer]:
+              - /url: https://facebook.com/barberia.libertador
+              - img
+              - text: Facebook
+            - link "TikTok" [ref=e196] [cursor=pointer]:
+              - /url: https://www.tiktok.com/@barberia.libertador
+              - img
+              - text: TikTok
+    - generic [ref=e198]:
+      - generic [ref=e199]:
+        - paragraph [ref=e200]: Horarios
+        - heading "Días y horarios de atención" [level=2] [ref=e201]
+      - generic [ref=e203]:
+        - generic [ref=e204]:
+          - generic [ref=e205]: Lunes
+          - generic [ref=e206]: 09:00 a 18:00
+        - generic [ref=e207]:
+          - generic [ref=e208]: Miércoles
+          - generic [ref=e209]: 09:00 a 18:00
+        - generic [ref=e210]:
+          - generic [ref=e211]: Viernes
+          - generic [ref=e212]: 10:00 a 20:00
+    - generic [ref=e213]:
+      - generic [ref=e214]:
+        - paragraph [ref=e215]: Ubicación
+        - heading "Av. del Libertador 214, Palermo" [level=2] [ref=e216]
+      - iframe [ref=e218]:
+        - link "Abrir en Maps (se abre en una nueva pestaña)" [ref=f7e4] [cursor=pointer]:
+          - /url: about:invalid#zClosurez
+          - text: Abrir en Maps
+          - img [ref=f7e6]
+    - generic [ref=e220]:
+      - generic [ref=e221]:
+        - generic [ref=e222]:
+          - generic [ref=e223]:
+            - generic [ref=e224]: BL
+            - generic [ref=e225]: Barberia Libertador
+          - paragraph [ref=e226]: Sin mensajes de WhatsApp cruzados. Elige tu servicio, día y horario. Confirmación inmediata con acce...
+        - generic [ref=e227]:
+          - paragraph [ref=e228]: Links rápidos
+          - generic [ref=e229]:
+            - link "Reservar turno" [ref=e230] [cursor=pointer]:
+              - /url: /demo-barberia/reservar
+            - link "Contactar por WhatsApp" [ref=e231] [cursor=pointer]:
+              - /url: https://wa.me/541155550199?text=Hola%20Barberia%20Libertador%2C%20quiero%20reservar%20un%20turno.
+            - link "Ver ubicación" [ref=e232] [cursor=pointer]:
+              - /url: https://www.google.com/maps/search/?api=1&query=Av.%20del%20Libertador%20214%2C%20Palermo
+        - generic [ref=e233]:
+          - paragraph [ref=e234]: Contacto
+          - generic [ref=e235]:
+            - paragraph [ref=e236]: Av. del Libertador 214, Palermo
+            - generic [ref=e237]:
+              - link [ref=e238] [cursor=pointer]:
+                - /url: https://instagram.com/barberia.libertador
+                - img [ref=e239]
+              - link [ref=e242] [cursor=pointer]:
+                - /url: https://facebook.com/barberia.libertador
+                - img [ref=e243]
+              - link [ref=e245] [cursor=pointer]:
+                - /url: https://www.tiktok.com/@barberia.libertador
+                - img [ref=e246]
+              - link [ref=e248] [cursor=pointer]:
+                - /url: https://wa.me/541155550199?text=Hola%20Barberia%20Libertador%2C%20quiero%20reservar%20un%20turno.
+                - img [ref=e249]
+      - generic [ref=e251]:
+        - paragraph [ref=e252]: © 2026 Barberia Libertador. Todos los derechos reservados.
+        - paragraph [ref=e253]: Desarrollado con ReservaYa
+  - alert [ref=e254]

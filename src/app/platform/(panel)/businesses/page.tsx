@@ -151,11 +151,13 @@ export default async function PlatformBusinessesPage({
                   <p className="text-sm font-medium truncate">{b.name}</p>
                   <p className="text-xs text-muted-foreground">/{b.slug}</p>
                   <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                    {new Date(b.createdAt).toLocaleDateString("es-AR", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {b.createdAt && b.createdAt !== ""
+                      ? new Date(b.createdAt).toLocaleDateString("es-AR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
                   </p>
                 </div>
 

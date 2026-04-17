@@ -38,7 +38,7 @@ export default async function PlatformDashboardPage() {
     {
       label: "Usuarios registrados",
       value: data.totalUsers,
-      sub: "Sin public_app",
+      sub: "Admin y owners",
       icon: Users,
     },
     {

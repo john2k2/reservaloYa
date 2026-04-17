@@ -1,0 +1,131 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e8]:
+          - paragraph [ref=e9]: Admin
+          - heading "Mi Negocio" [level=1] [ref=e10]
+        - generic [ref=e11]:
+          - link "Ver página pública" [ref=e12] [cursor=pointer]:
+            - /url: /mi-negocio
+            - img [ref=e13]
+          - button [ref=e17]:
+            - img [ref=e18]
+    - main [ref=e19]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - heading "Panel de Mi Negocio" [level=1] [ref=e24]
+            - paragraph [ref=e25]: Todo lo que necesitás saber de tu negocio, en un solo lugar.
+          - link "Ver página pública" [ref=e26] [cursor=pointer]:
+            - /url: /mi-negocio
+            - img [ref=e27]
+            - text: Ver página pública
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - img [ref=e33]
+            - generic [ref=e36]: https://reservaya.ar /mi-negocio/reservar
+          - button "Copiar link" [ref=e37]:
+            - img [ref=e38]
+            - text: Copiar link
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - img [ref=e43]
+            - heading "Completá la configuración para recibir reservas" [level=2] [ref=e45]
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - generic [ref=e48]:
+                - img [ref=e49]
+                - generic [ref=e51]: Agregar al menos un servicio
+              - link "Ir a Servicios" [ref=e52] [cursor=pointer]:
+                - /url: /admin/services
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - img [ref=e55]
+                - generic [ref=e57]: Activar horarios de atención
+              - link "Ir a Disponibilidad" [ref=e58] [cursor=pointer]:
+                - /url: /admin/availability
+        - generic [ref=e59]:
+          - article [ref=e60] [cursor=pointer]:
+            - generic [ref=e61]:
+              - heading "Visitas publicas" [level=3] [ref=e62]
+              - img [ref=e63]
+            - generic [ref=e67]:
+              - generic [ref=e68]: "0"
+              - paragraph [ref=e69]: 0 clics en reservar
+          - article [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]:
+              - heading "Reservas creadas" [level=3] [ref=e72]
+              - img [ref=e73]
+            - generic [ref=e77]:
+              - generic [ref=e78]: "0"
+              - paragraph [ref=e79]: 0 pendientes de confirmar
+          - article [ref=e80] [cursor=pointer]:
+            - generic [ref=e81]:
+              - heading "Conversion web" [level=3] [ref=e82]
+              - img [ref=e83]
+            - generic [ref=e87]:
+              - generic [ref=e88]: 0%
+              - paragraph [ref=e89]: Todavia sin visitas registradas
+          - article [ref=e90] [cursor=pointer]:
+            - generic [ref=e91]:
+              - heading "Clientes activos" [level=3] [ref=e92]
+              - img [ref=e93]
+            - generic [ref=e98]:
+              - generic [ref=e99]: "0"
+              - paragraph [ref=e100]: Clientes registrados en PocketBase
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - img [ref=e104]
+              - text: Tenés turnos pendientes de confirmar
+              - link "Ver →" [ref=e106] [cursor=pointer]:
+                - /url: /admin/bookings?status=pending
+            - article [ref=e107]:
+              - generic [ref=e108]:
+                - heading "Próximos turnos" [level=2] [ref=e109]
+                - link "Ver todos →" [ref=e110] [cursor=pointer]:
+                  - /url: /admin/bookings
+              - generic [ref=e111]:
+                - paragraph [ref=e112]: No hay turnos próximos
+                - link "Gestionar turnos" [ref=e113] [cursor=pointer]:
+                  - /url: /admin/bookings
+            - article [ref=e114]:
+              - heading "Actividad de reservas" [level=2] [ref=e115]
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - generic [ref=e118]:
+                    - img [ref=e119]
+                    - text: Clics para reservar
+                  - paragraph [ref=e121]: "0"
+                - generic [ref=e122]:
+                  - generic [ref=e123]:
+                    - img [ref=e124]
+                    - text: Formularios iniciados
+                  - paragraph [ref=e127]: "0"
+          - generic [ref=e128]:
+            - article [ref=e129]:
+              - generic [ref=e130]:
+                - generic [ref=e131]:
+                  - heading "Recordatorios" [level=2] [ref=e132]
+                  - paragraph [ref=e133]: Se avisa con 24 hs de anticipación
+                - img [ref=e134]
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - paragraph [ref=e139]: "0"
+                  - paragraph [ref=e140]: para enviar
+                - generic [ref=e141]:
+                  - paragraph [ref=e142]: "0"
+                  - paragraph [ref=e143]: sin email
+                - generic [ref=e144]:
+                  - paragraph [ref=e145]: "0"
+                  - paragraph [ref=e146]: ya avisados
+              - paragraph [ref=e147]: ✓ Recordatorios por email activos
+              - button "Procesar recordatorios" [ref=e149]:
+                - generic [ref=e150]: Procesar recordatorios
+            - article [ref=e151]:
+              - heading "Origen de clientes" [level=2] [ref=e152]
+              - paragraph [ref=e154]: Cuando tengas visitas, verás de dónde vienen tus clientes.
+  - alert [ref=e155]
