@@ -34,7 +34,7 @@ export function BusinessSearchFilter({
   }
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="w-full flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
         <input
@@ -45,7 +45,7 @@ export function BusinessSearchFilter({
           className="w-full rounded-xl border border-border/60 bg-background pl-9 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 shrink-0">
         {STATUS_OPTIONS.map((opt) => (
           <button
             key={opt.value}
