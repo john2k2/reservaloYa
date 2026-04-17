@@ -1,0 +1,14 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - alert [ref=e29]: Platform Dashboard | ReservaYa
+  - generic [ref=e31]:
+    - banner [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - paragraph [ref=e35]: Plataforma
+          - heading "ReservaYa" [level=1] [ref=e36]
+        - button [ref=e37]:
+          - img [ref=e38]
+    - main [ref=e39]:
+      - generic [ref=e41]: "Error al cargar datos: Error autenticando cliente admin de PocketBase: Failed to authenticate."
