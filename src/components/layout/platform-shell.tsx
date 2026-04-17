@@ -129,10 +129,10 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
             <button
               type="button"
               onClick={() => setMobileNavOpen((open) => !open)}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-border/60 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground xl:hidden"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-border/60 bg-background text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground xl:hidden"
               aria-expanded={mobileNavOpen}
             >
-              {mobileNavOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              {mobileNavOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           </div>
 

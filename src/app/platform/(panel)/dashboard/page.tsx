@@ -119,7 +119,7 @@ export default async function PlatformDashboardPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Suscripciones
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {subscriptionKpis.map((kpi) => {
             const Icon = kpi.icon;
             return (

@@ -45,12 +45,12 @@ export function BusinessSearchFilter({
           className="w-full rounded-xl border border-border/60 bg-background pl-9 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
         {STATUS_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => update(currentQ, opt.value)}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors shrink-0 ${
               currentStatus === opt.value
                 ? "bg-foreground text-background"
                 : "bg-secondary text-muted-foreground hover:text-foreground"
