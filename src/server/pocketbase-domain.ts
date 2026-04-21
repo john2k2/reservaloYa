@@ -2,6 +2,7 @@ import type { RecordModel } from "pocketbase";
 
 import {
   getPublicBusinessProfile,
+  mergePublicBusinessProfile,
   type PublicBusinessProfile,
 } from "@/constants/public-business-profiles";
 
@@ -164,10 +165,7 @@ export function parseProfileOverrides(value?: string) {
 export function buildBusinessPublicProfile(record: BusinessRecord) {
   const baseProfile = getPublicBusinessProfile(record.slug, record.name, record.templateSlug);
 
-  return {
-    ...baseProfile,
-    ...parseProfileOverrides(record.publicProfileOverrides),
-  };
+  return mergePublicBusinessProfile(baseProfile, parseProfileOverrides(record.publicProfileOverrides));
 }
 
 export function toMoney(value?: number | null) {

@@ -1,5 +1,6 @@
 import {
   getPublicBusinessProfile,
+  mergePublicBusinessProfile,
   type PublicBusinessProfile,
 } from "@/constants/public-business-profiles";
 import { demoBusiness, demoPresets } from "@/constants/demo";
@@ -546,10 +547,7 @@ export function buildBusinessPublicProfile(business: LocalBusiness) {
       }
     : baseProfile;
 
-  return {
-    ...sanitizedBaseProfile,
-    ...(business.publicProfileOverrides ?? {}),
-  };
+  return mergePublicBusinessProfile(sanitizedBaseProfile, business.publicProfileOverrides ?? {});
 }
 
 export function getBusinessActiveDays(store: LocalStore, businessId: string) {
