@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Clock3, ExternalLink } from "lucide-react";
 
 import { deactivateServiceAction } from "@/app/admin/(panel)/services/actions";
@@ -34,6 +35,11 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
     getAdminShellData(),
     searchParams,
   ]);
+
+  if (services === null || shellData === null) {
+    redirect("/admin/onboarding");
+  }
+
   const editingService = services.find((s) => s.id === params.edit) ?? null;
   const notice = buildNotice(params);
   const featuredCount = services.filter((s) => s.featured).length;

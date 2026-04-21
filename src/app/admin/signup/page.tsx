@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 
 import { signupAction } from "@/app/login/actions";
 import { demoBusinessOptions, productName } from "@/constants/site";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { LoadingButton } from "@/components/ui/loading-button";
 
 type AdminSignupPageProps = {
@@ -13,15 +12,10 @@ type AdminSignupPageProps = {
 
 export default async function AdminSignupPage({ searchParams }: AdminSignupPageProps) {
   const params = await searchParams;
-  const configured = isPocketBaseConfigured();
 
-  if (configured) {
-    const pb = await createPocketBaseServerClient();
-    const isAuthenticated = await refreshPocketBaseAuth(pb);
-
-    if (isAuthenticated && pb.authStore.record) {
-      redirect("/admin/dashboard");
-    }
+  const user = await getAuthenticatedSupabaseUser();
+  if (user) {
+    redirect("/admin/dashboard");
   }
 
   return (
@@ -53,149 +47,135 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
             </div>
           )}
 
-          {configured ? (
-            <form action={signupAction} className="mt-8 space-y-5">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="ownerName" className="text-sm font-medium text-foreground">
-                    Tu nombre
-                  </label>
-                  <input
-                    id="ownerName"
-                    name="ownerName"
-                    autoComplete="name"
-                    className="minimalist-input"
-                    placeholder="Ej: Juan Perez"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-foreground">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    className="minimalist-input"
-                    placeholder="tu@negocio.com"
-                    required
-                  />
-                </div>
-              </div>
-
+          <form action={signupAction} className="mt-8 space-y-5">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <label htmlFor="businessName" className="text-sm font-medium text-foreground">
-                  Nombre del negocio
+                <label htmlFor="ownerName" className="text-sm font-medium text-foreground">
+                  Tu nombre
                 </label>
                 <input
-                  id="businessName"
-                  name="businessName"
-                  autoComplete="organization"
+                  id="ownerName"
+                  name="ownerName"
+                  autoComplete="name"
                   className="minimalist-input"
-                  placeholder="Ej: Aura Studio Palermo"
+                  placeholder="Ej: Juan Perez"
                   required
                 />
               </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="businessSlug" className="text-sm font-medium text-foreground">
-                    Link público
-                  </label>
-                  <input
-                    id="businessSlug"
-                    name="businessSlug"
-                    autoComplete="off"
-                    className="minimalist-input"
-                    placeholder="aura-studio"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="templateSlug" className="text-sm font-medium text-foreground">
-                    Tipo de negocio
-                  </label>
-                  <select
-                    id="templateSlug"
-                    name="templateSlug"
-                    className="minimalist-input"
-                    defaultValue={demoBusinessOptions[0]?.slug}
-                    required
-                  >
-                    {demoBusinessOptions.map((option) => (
-                      <option key={option.slug} value={option.slug}>
-                        {option.label} - {option.category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="phone" className="text-sm font-medium text-foreground">
-                    WhatsApp
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    autoComplete="tel"
-                    className="minimalist-input"
-                    placeholder="+54 11 5555 0000"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-foreground">
-                    Contraseña
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    className="minimalist-input"
-                    placeholder="Minimo 8 caracteres"
-                    required
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <label htmlFor="address" className="text-sm font-medium text-foreground">
-                  Dirección
+                <label htmlFor="email" className="text-sm font-medium text-foreground">
+                  Email
                 </label>
                 <input
-                  id="address"
-                  name="address"
-                  autoComplete="street-address"
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
                   className="minimalist-input"
-                  placeholder="Ej: Honduras 4821, Palermo"
+                  placeholder="tu@negocio.com"
                   required
                 />
               </div>
-
-              <LoadingButton
-                pendingLabel="Creando cuenta..."
-                className="h-12 w-full rounded-md bg-foreground font-medium text-background"
-              >
-                Crear cuenta y empezar
-              </LoadingButton>
-            </form>
-          ) : (
-            <div className="mt-8 space-y-4">
-              <div className="rounded-xl border border-border/70 bg-card p-5 text-sm text-muted-foreground">
-                El registro no está disponible en este entorno. Podés explorar el demo sin crear cuenta.
-              </div>
-              <Link
-                href="/login"
-                className="flex h-12 w-full items-center justify-center rounded-xl bg-foreground font-semibold text-background transition-transform hover:bg-foreground/90 active:scale-[0.98]"
-              >
-                Ir al demo
-              </Link>
             </div>
-          )}
+
+            <div className="space-y-2">
+              <label htmlFor="businessName" className="text-sm font-medium text-foreground">
+                Nombre del negocio
+              </label>
+              <input
+                id="businessName"
+                name="businessName"
+                autoComplete="organization"
+                className="minimalist-input"
+                placeholder="Ej: Aura Studio Palermo"
+                required
+              />
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="businessSlug" className="text-sm font-medium text-foreground">
+                  Link público
+                </label>
+                <input
+                  id="businessSlug"
+                  name="businessSlug"
+                  autoComplete="off"
+                  className="minimalist-input"
+                  placeholder="aura-studio"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="templateSlug" className="text-sm font-medium text-foreground">
+                  Tipo de negocio
+                </label>
+                <select
+                  id="templateSlug"
+                  name="templateSlug"
+                  className="minimalist-input"
+                  defaultValue={demoBusinessOptions[0]?.slug}
+                  required
+                >
+                  {demoBusinessOptions.map((option) => (
+                    <option key={option.slug} value={option.slug}>
+                      {option.label} - {option.category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="phone" className="text-sm font-medium text-foreground">
+                  WhatsApp
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  autoComplete="tel"
+                  className="minimalist-input"
+                  placeholder="+54 11 5555 0000"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-foreground">
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  className="minimalist-input"
+                  placeholder="Minimo 8 caracteres"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="address" className="text-sm font-medium text-foreground">
+                Dirección
+              </label>
+              <input
+                id="address"
+                name="address"
+                autoComplete="street-address"
+                className="minimalist-input"
+                placeholder="Ej: Honduras 4821, Palermo"
+                required
+              />
+            </div>
+
+            <LoadingButton
+              pendingLabel="Creando cuenta..."
+              className="h-12 w-full rounded-md bg-foreground font-medium text-background"
+            >
+              Crear cuenta y empezar
+            </LoadingButton>
+          </form>
 
           <div className="mt-6 space-y-2 text-sm text-muted-foreground">
             <p>¿Ya tienes cuenta?</p>

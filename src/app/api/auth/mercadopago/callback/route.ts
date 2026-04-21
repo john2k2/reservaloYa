@@ -1,15 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { updateLocalBusinessMPTokens } from "@/server/local-store";
 import { createLogger } from "@/server/logger";
 import { parseMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
 import { getAdminShellData } from "@/server/queries/admin";
 import {
-  getPocketBaseBusinessIdBySlug,
-  updatePocketBaseBusinessMPTokens,
-} from "@/server/pocketbase-store";
+  getSupabaseBusinessIdBySlug,
+  updateSupabaseBusinessMPTokens,
+} from "@/server/supabase-store";
 
 const logger = createLogger("MP OAuth");
 const MP_OAUTH_NONCE_COOKIE = "reservaya-mp-oauth-nonce";
@@ -26,10 +24,6 @@ function withClearedOAuthNonceCookie(response: NextResponse) {
   return response;
 }
 
-/**
- * Callback OAuth de MercadoPago.
- * MercadoPago redirige aqui con ?code=...&state=...
- */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -116,22 +110,15 @@ export async function GET(request: Request) {
   };
 
   try {
-    if (isPocketBaseConfigured()) {
-      const businessId =
-        parsedState.businessId ?? (await getPocketBaseBusinessIdBySlug(parsedState.businessSlug));
+    const businessId =
+      parsedState.businessId ?? (await getSupabaseBusinessIdBySlug(parsedState.businessSlug));
 
-      if (!businessId) {
-        logger.error("No se encontro el negocio", parsedState.businessSlug);
-        return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
-      }
-
-      await updatePocketBaseBusinessMPTokens({ businessId, ...tokens });
-    } else {
-      await updateLocalBusinessMPTokens({
-        businessSlug: parsedState.businessSlug,
-        ...tokens,
-      });
+    if (!businessId) {
+      logger.error("No se encontro el negocio", parsedState.businessSlug);
+      return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
     }
+
+    await updateSupabaseBusinessMPTokens({ businessId, ...tokens });
   } catch (err) {
     logger.error("Error guardando tokens", err);
     return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));

@@ -144,7 +144,7 @@ Respuesta esperada:
 
 ## Paso 4 — Verificar el flujo completo
 
-1. Resetear demo si vas a mostrar modo local: `npm run demo:reset`
+1. Verificar que el negocio demo exista en Supabase y tenga datos consistentes
 2. Abrir https://reservaya-kappa.vercel.app/demo-barberia
 3. Crear una reserva completa con tu email
 4. Verificar que llegue el email de confirmación (cliente y negocio)

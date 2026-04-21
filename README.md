@@ -20,26 +20,23 @@ El modelo de negocio es cobrarle una suscripcion mensual a cada negocio que usa 
 |------|------------|
 | Framework | Next.js 16, React 19, TypeScript 5 (strict) |
 | Estilos | Tailwind CSS v4, shadcn/ui v4 |
-| Backend / Auth / DB | PocketBase 0.26.8 |
+| Backend / Auth / DB | Supabase |
 | Email | Resend — desde turnos@reservaya.ar |
 | WhatsApp | Twilio (recordatorios, opcional) |
 | Pagos | MercadoPago OAuth per-negocio |
 | Testing | Vitest, Testing Library, Playwright |
-| Deploy | Vercel (app) + Railway (PocketBase) |
+| Deploy | Vercel (app) + Supabase |
 
 ---
 
-## Arquitectura — Dual Backend
+## Arquitectura — Supabase Only
 
-La app corre en uno de dos modos segun las variables de entorno:
+La app usa `Supabase` como backend unico para auth, base de datos y persistencia multi-tenant.
 
-- **Modo local** (default sin config): datos en `data/local-store.json`. Sin dependencias externas. Util para demo comercial y desarrollo.
-- **Modo PocketBase**: cuando `NEXT_PUBLIC_POCKETBASE_URL` esta seteado. Auth real, datos reales, multi-tenant completo.
-
-Ambos modos implementan la misma interfaz. Archivos clave:
-- `src/server/local-store.ts` — implementacion local
-- `src/server/pocketbase-store.ts` — implementacion PocketBase
-- `src/server/local-domain.ts` — tipos compartidos y logica de dominio
+Archivos clave:
+- `src/server/supabase-store/` — acceso a datos y store server-side
+- `src/server/supabase-auth.ts` — auth, sesión y helpers de usuarios
+- `src/lib/supabase/` — configuración y clientes de Supabase
 
 ---
 
@@ -51,12 +48,10 @@ Ambos modos implementan la misma interfaz. Archivos clave:
 - **DNS:** delegado a Vercel desde NIC.ar (ns1.vercel-dns.com / ns2.vercel-dns.com)
 - **Deploy:** automatico desde rama `main` del repo
 
-### Railway — PocketBase
-- **Proyecto Railway:** `dynamic-joy`
-- **URL:** https://pocketbase-production-f360.up.railway.app
-- **Admin panel:** https://pocketbase-production-f360.up.railway.app/_/
-- **Datos:** volumen persistente montado en `/pb_data`
-- **Credenciales:** guardadas en Railway vars del proyecto `dynamic-joy`
+### Supabase
+- **Proyecto:** `reservaloYa`
+- **Ref:** `jshlqmfggyzbnwjejkyb`
+- **Uso:** auth, datos multi-tenant, RLS y operación de la app
 
 ### Resend — Email
 - **Dominio verificado:** reservaya.ar
@@ -77,11 +72,9 @@ Todas las variables estan en Vercel Dashboard → reservaya → Settings → Env
 | Variable | Descripcion |
 |----------|-------------|
 | `NEXT_PUBLIC_APP_URL` | https://reservaya.ar |
-| `NEXT_PUBLIC_POCKETBASE_URL` | URL de la instancia Railway |
-| `POCKETBASE_ADMIN_EMAIL` | Superuser de PocketBase |
-| `POCKETBASE_ADMIN_PASSWORD` | Password del superuser |
-| `POCKETBASE_PUBLIC_AUTH_EMAIL` | Usuario de solo lectura |
-| `POCKETBASE_PUBLIC_AUTH_PASSWORD` | Password del usuario de solo lectura |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable/anon key para cliente y lecturas publicas |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key para operaciones privilegiadas server-side |
 | `RESEND_API_KEY` | API key de resend.com |
 | `RESEND_FROM_EMAIL` | turnos@reservaya.ar |
 | `BOOKING_LINK_SECRET` | Secret para tokens HMAC de links firmados |
@@ -94,10 +87,6 @@ Todas las variables estan en Vercel Dashboard → reservaya → Settings → Env
 | `TWILIO_WHATSAPP_FROM` | Numero WhatsApp de Twilio |
 | `TWILIO_WHATSAPP_TEMPLATE_SID` | SID del template de WhatsApp |
 | `PLATFORM_SUPERADMIN_EMAIL` | Email del superadmin de la plataforma |
-| `RESERVAYA_ENABLE_DEMO_MODE` | Activa el modo demo publico |
-| `POCKETBASE_DEMO_OWNER_EMAIL` | Email del owner del negocio demo |
-| `POCKETBASE_DEMO_OWNER_PASSWORD` | Password del owner del negocio demo |
-| `POCKETBASE_DEMO_OWNER_BUSINESS_SLUG` | Slug del negocio demo |
 
 ---
 
@@ -137,7 +126,7 @@ MercadoPago OAuth per-negocio. Cada negocio conecta su propia cuenta de MP desde
 
 ---
 
-## Modelo de datos (PocketBase)
+## Modelo de datos (Supabase)
 
 Colecciones principales, todas filtradas por `business`:
 
@@ -172,14 +161,6 @@ npm test -- --run        # Vitest una sola vez
 npm run test:coverage    # cobertura
 npm run test:e2e         # Playwright e2e
 
-# PocketBase local (Docker)
-npm run pb:up            # levantar PocketBase
-npm run pb:down          # bajar PocketBase
-npm run pb:bootstrap     # seed inicial de colecciones
-npm run pb:logs          # ver logs
-
-# Demo
-npm run demo:reset       # resetear datos de demo local
 ```
 
 ---
@@ -194,7 +175,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Sin variables de entorno configuradas, corre en **modo local** con datos de demo.
+La app requiere variables de entorno de Supabase válidas para funcionar correctamente.
 Abri `http://localhost:3000/demo-barberia` para ver el flujo completo.
 
 Para usar PocketBase local:

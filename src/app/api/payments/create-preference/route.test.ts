@@ -6,9 +6,8 @@ const { redirectMock } = vi.hoisted(() => ({
   }),
 }));
 
-const { createPocketBaseServerClientMock, refreshPocketBaseAuthMock } = vi.hoisted(() => ({
-  createPocketBaseServerClientMock: vi.fn(),
-  refreshPocketBaseAuthMock: vi.fn(),
+const { getAuthenticatedSupabaseUserMock } = vi.hoisted(() => ({
+  getAuthenticatedSupabaseUserMock: vi.fn(),
 }));
 
 const { getBlueDollarRateMock } = vi.hoisted(() => ({
@@ -24,9 +23,8 @@ vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
 
-vi.mock("@/lib/pocketbase/server", () => ({
-  createPocketBaseServerClient: createPocketBaseServerClientMock,
-  refreshPocketBaseAuth: refreshPocketBaseAuthMock,
+vi.mock("@/server/supabase-auth", () => ({
+  getAuthenticatedSupabaseUser: getAuthenticatedSupabaseUserMock,
 }));
 
 vi.mock("@/lib/dollar-rate", () => ({
@@ -44,8 +42,7 @@ describe("create preference route", () => {
   beforeEach(() => {
     vi.resetModules();
     redirectMock.mockClear();
-    createPocketBaseServerClientMock.mockReset();
-    refreshPocketBaseAuthMock.mockReset();
+    getAuthenticatedSupabaseUserMock.mockReset();
     getBlueDollarRateMock.mockReset();
     createSubscriptionPreferenceMock.mockReset();
     isMercadoPagoConfiguredMock.mockReset();
@@ -58,25 +55,31 @@ describe("create preference route", () => {
     process.env.NEXT_PUBLIC_APP_URL = originalAppUrl;
   });
 
-  function createPb(record: { business?: string | string[] } | null) {
-    return {
-      authStore: {
-        record,
-      },
-    };
-  }
+  it("redirects to admin login when there is no authenticated user", async () => {
+    getAuthenticatedSupabaseUserMock.mockResolvedValue(null);
+    const { GET } = await import("./route");
 
-  it("redirects to admin login when there is no authenticated business", async () => {
-    createPocketBaseServerClientMock.mockResolvedValue(createPb(null));
-    refreshPocketBaseAuthMock.mockResolvedValue(false);
+    await expect(GET()).rejects.toThrow("REDIRECT:/admin/login");
+  });
+
+  it("redirects to admin login when user has no linked business", async () => {
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "u1",
+      email: "user@demo.com",
+      role: "owner",
+    });
     const { GET } = await import("./route");
 
     await expect(GET()).rejects.toThrow("REDIRECT:/admin/login");
   });
 
   it("redirects to subscription pay when MP is not configured", async () => {
-    createPocketBaseServerClientMock.mockResolvedValue(createPb({ business: "biz-1" }));
-    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "u1",
+      email: "owner@demo.com",
+      role: "owner",
+      businessId: "biz-1",
+    });
     isMercadoPagoConfiguredMock.mockReturnValue(false);
     const { GET } = await import("./route");
 
@@ -89,8 +92,12 @@ describe("create preference route", () => {
   });
 
   it("creates a subscription preference and redirects to checkout", async () => {
-    createPocketBaseServerClientMock.mockResolvedValue(createPb({ business: ["biz-1"] }));
-    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "u1",
+      email: "owner@demo.com",
+      role: "owner",
+      businessId: "biz-1",
+    });
     getBlueDollarRateMock.mockResolvedValue(1200);
     createSubscriptionPreferenceMock.mockResolvedValue({
       ok: true,
@@ -110,8 +117,12 @@ describe("create preference route", () => {
   });
 
   it("redirects to error page when preference creation fails", async () => {
-    createPocketBaseServerClientMock.mockResolvedValue(createPb({ business: "biz-1" }));
-    refreshPocketBaseAuthMock.mockResolvedValue(true);
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "u1",
+      email: "owner@demo.com",
+      role: "owner",
+      businessId: "biz-1",
+    });
     getBlueDollarRateMock.mockResolvedValue(1200);
     createSubscriptionPreferenceMock.mockResolvedValue({
       ok: false,

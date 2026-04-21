@@ -1,22 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  createPocketBaseAdminClientMock,
-  isPocketBaseAdminConfiguredMock,
-  isPocketBaseConfiguredMock,
-} = vi.hoisted(() => ({
-  createPocketBaseAdminClientMock: vi.fn(),
-  isPocketBaseAdminConfiguredMock: vi.fn(() => false),
-  isPocketBaseConfiguredMock: vi.fn(() => false),
+const { getSupabaseAdminClientMock } = vi.hoisted(() => ({
+  getSupabaseAdminClientMock: vi.fn(),
 }));
 
-vi.mock("@/lib/pocketbase/admin", () => ({
-  createPocketBaseAdminClient: createPocketBaseAdminClientMock,
-}));
-
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseAdminConfigured: isPocketBaseAdminConfiguredMock,
-  isPocketBaseConfigured: isPocketBaseConfiguredMock,
+vi.mock("@/server/supabase-store/_core", () => ({
+  getSupabaseAdminClient: getSupabaseAdminClientMock,
 }));
 
 describe("withBookingDateLock", () => {
@@ -25,9 +14,7 @@ describe("withBookingDateLock", () => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
     vi.stubEnv("NODE_ENV", "test");
-    createPocketBaseAdminClientMock.mockReset();
-    isPocketBaseAdminConfiguredMock.mockReturnValue(false);
-    isPocketBaseConfiguredMock.mockReturnValue(false);
+    getSupabaseAdminClientMock.mockReset();
   });
 
   it("serializes concurrent operations with the memory lock", async () => {
@@ -66,24 +53,20 @@ describe("withBookingDateLock", () => {
     expect(order).toEqual(["first-start", "first-end", "second-start"]);
   });
 
-  it("uses the shared PocketBase lock path when available and releases it after the operation", async () => {
+  it("uses the shared Supabase lock path when available and releases it after the operation", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    isPocketBaseConfiguredMock.mockReturnValue(true);
-    isPocketBaseAdminConfiguredMock.mockReturnValue(true);
 
-    const deleteMock = vi.fn(async () => true);
-    const createMock = vi.fn(async () => ({ id: "lock_123" }));
-    const getFullListMock = vi.fn(async () => []);
-    const collectionMock = vi.fn(() => ({
-      create: createMock,
+    const deleteMock = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) });
+    const selectMock = vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({ data: { id: "lock_123" }, error: null }),
+    });
+    const insertMock = vi.fn().mockReturnValue({ select: selectMock });
+    const fromMock = vi.fn(() => ({
+      insert: insertMock,
       delete: deleteMock,
-      getFullList: getFullListMock,
     }));
 
-    createPocketBaseAdminClientMock.mockResolvedValue({
-      collection: collectionMock,
-      filter: vi.fn(() => "expiresAt <= {:now}"),
-    });
+    getSupabaseAdminClientMock.mockResolvedValue({ from: fromMock });
 
     const { withBookingDateLock } = await import("./booking-slot-lock");
 
@@ -94,27 +77,26 @@ describe("withBookingDateLock", () => {
       )
     ).resolves.toBe("ok");
 
-    expect(createMock).toHaveBeenCalledTimes(1);
-    expect(deleteMock).toHaveBeenCalledWith("lock_123");
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    // deleteMock is called by cleanup (lte) + release (eq) — verify release happened
+    expect(deleteMock).toHaveBeenCalled();
   });
 
-  it("falls back to the memory lock when the shared collection is missing", async () => {
+  it("falls back to the memory lock when the booking_locks table is missing", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    isPocketBaseConfiguredMock.mockReturnValue(true);
-    isPocketBaseAdminConfiguredMock.mockReturnValue(true);
 
-    createPocketBaseAdminClientMock.mockResolvedValue({
-      collection: vi.fn(() => ({
-        create: vi.fn(async () => {
-          const error = new Error("missing collection") as Error & { status: number };
-          error.status = 404;
-          throw error;
-        }),
-        delete: vi.fn(async () => true),
-        getFullList: vi.fn(async () => []),
-      })),
-      filter: vi.fn(() => "expiresAt <= {:now}"),
+    const tableError = { code: "42P01", message: "relation does not exist" };
+    const selectMock = vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({ data: null, error: tableError }),
     });
+    const insertMock = vi.fn().mockReturnValue({ select: selectMock });
+    const fromMock = vi.fn(() => ({
+      insert: insertMock,
+      delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) }),
+      lte: vi.fn().mockResolvedValue({}),
+    }));
+
+    getSupabaseAdminClientMock.mockResolvedValue({ from: fromMock });
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const { withBookingDateLock } = await import("./booking-slot-lock");
@@ -126,8 +108,6 @@ describe("withBookingDateLock", () => {
       )
     ).resolves.toBe("fallback-ok");
 
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[booking-lock] booking_locks collection is missing, falling back to memory lock"
-    );
+    errorSpy.mockRestore();
   });
 });

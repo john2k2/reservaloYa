@@ -5,21 +5,16 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { addDays, getDayOfWeek } from "@/lib/bookings/format";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import {
-  createLocalBlockedSlots,
-  getLocalAdminSettingsData,
-  removeLocalBlockedSlot,
-  upsertLocalAvailabilityRules,
-} from "@/server/local-store";
-import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
-import {
-  createPocketBaseBlockedSlots,
-  getPocketBaseAdminSettingsData,
-  removePocketBaseBlockedSlot,
-  upsertPocketBaseAvailabilityRules,
-} from "@/server/pocketbase-store";
+  createSupabaseRecord,
+  getSupabaseRecord,
+  listSupabaseRecords,
+  updateSupabaseRecord,
+  deleteSupabaseRecord,
+} from "@/server/supabase-store/_core";
+import { buildBlockedSlotKey } from "@/server/supabase-domain";
+import type { AvailabilityRuleRecord, BlockedSlotRecord } from "@/server/supabase-domain";
 
 const availabilityRuleSchema = z.object({
   ruleId: z.string().trim().optional(),
@@ -56,29 +51,15 @@ const dayLabels = [
 ];
 
 async function getAvailabilityContext() {
-  if (isPocketBaseConfigured()) {
-    const user = await getAuthenticatedPocketBaseUser();
-    const businessId = Array.isArray(user?.business) ? user.business[0] : user?.business;
+  const user = await getAuthenticatedSupabaseUser();
 
-    if (!businessId) {
-      throw new Error("No encontramos el negocio activo.");
-    }
-
-    const settings = await getPocketBaseAdminSettingsData(String(businessId));
-
-    return {
-      businessId: String(businessId),
-      businessSlug: settings.businessSlug,
-      live: true as const,
-    };
+  if (!user?.businessId) {
+    throw new Error("No encontramos el negocio activo.");
   }
 
-  const activeBusinessSlug = await getLocalActiveBusinessSlug();
-  const settings = await getLocalAdminSettingsData(activeBusinessSlug);
-
   return {
-    businessSlug: settings.businessSlug,
-    live: false as const,
+    businessId: user.businessId,
+    businessSlug: user.businessSlug ?? "",
   };
 }
 
@@ -131,6 +112,119 @@ function revalidateAvailabilityViews(businessSlug: string) {
   revalidatePath(`/${businessSlug}/reservar`);
 }
 
+async function upsertSupabaseAvailabilityRules(input: {
+  businessId: string;
+  rules: Array<{
+    ruleId?: string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    active: boolean;
+  }>;
+}) {
+  const existingRules = await listSupabaseRecords<AvailabilityRuleRecord>("availability_rules", {
+    filter: `business_id=eq.${input.businessId}`,
+  });
+
+  const rulesById = new Map(existingRules.map((rule) => [rule.id, rule]));
+  const rulesByDay = new Map(existingRules.map((rule) => [rule.dayOfWeek, rule]));
+
+  for (const ruleInput of input.rules) {
+    const existingRule = ruleInput.ruleId
+      ? (rulesById.get(ruleInput.ruleId) ?? null)
+      : (rulesByDay.get(ruleInput.dayOfWeek) ?? null);
+
+    if (!ruleInput.active && !existingRule) {
+      continue;
+    }
+
+    if (existingRule) {
+      await updateSupabaseRecord("availability_rules", existingRule.id, {
+        startTime: ruleInput.startTime,
+        endTime: ruleInput.endTime,
+        active: ruleInput.active,
+      });
+      continue;
+    }
+
+    const createdRule = await createSupabaseRecord<AvailabilityRuleRecord>("availability_rules", {
+      business_id: input.businessId,
+      dayOfWeek: ruleInput.dayOfWeek,
+      startTime: ruleInput.startTime,
+      endTime: ruleInput.endTime,
+      active: ruleInput.active,
+    });
+
+    rulesById.set(createdRule.id, createdRule);
+    rulesByDay.set(createdRule.dayOfWeek, createdRule);
+  }
+
+  return input.rules.length;
+}
+
+async function createSupabaseBlockedSlots(input: {
+  businessId: string;
+  slots: Array<{
+    blockedDate: string;
+    startTime: string;
+    endTime: string;
+    reason: string;
+  }>;
+}) {
+  const existingSlots = await listSupabaseRecords<BlockedSlotRecord>("blocked_slots", {
+    filter: `business_id=eq.${input.businessId}`,
+  });
+
+  const existingKeys = new Set(existingSlots.map((slot) => buildBlockedSlotKey(slot)));
+  const submittedKeys = new Set<string>();
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const slot of input.slots) {
+    const key = buildBlockedSlotKey(slot);
+
+    if (existingKeys.has(key) || submittedKeys.has(key)) {
+      skippedCount += 1;
+      continue;
+    }
+
+    submittedKeys.add(key);
+    existingKeys.add(key);
+    createdCount += 1;
+
+    await createSupabaseRecord<BlockedSlotRecord>("blocked_slots", {
+      business_id: input.businessId,
+      blockedDate: slot.blockedDate,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      reason: slot.reason,
+    });
+  }
+
+  return {
+    createdCount,
+    skippedCount,
+  };
+}
+
+async function removeSupabaseBlockedSlot(input: {
+  businessId: string;
+  blockedSlotId: string;
+}) {
+  const existingSlot = await getSupabaseRecord<BlockedSlotRecord>(
+    "blocked_slots",
+    input.blockedSlotId
+  );
+
+  if (existingSlot.business_id !== input.businessId) {
+    throw new Error("No encontramos el bloqueo a eliminar.");
+  }
+
+  await deleteSupabaseRecord("blocked_slots", input.blockedSlotId);
+
+  return input.blockedSlotId;
+}
+
 export async function saveAvailabilityRulesAction(formData: FormData) {
   try {
     const scope = String(formData.get("scope") ?? "").trim() || "week";
@@ -150,29 +244,16 @@ export async function saveAvailabilityRulesAction(formData: FormData) {
 
     const context = await getAvailabilityContext();
 
-    if (context.live) {
-      await upsertPocketBaseAvailabilityRules({
-        businessId: context.businessId,
-        rules: targetRules.map((rule) => ({
-          ruleId: rule.ruleId,
-          dayOfWeek: rule.dayOfWeek,
-          startTime: rule.startTime,
-          endTime: rule.endTime,
-          active: rule.active,
-        })),
-      });
-    } else {
-      await upsertLocalAvailabilityRules({
-        businessSlug: context.businessSlug,
-        rules: targetRules.map((rule) => ({
-          ruleId: rule.ruleId,
-          dayOfWeek: rule.dayOfWeek,
-          startTime: rule.startTime,
-          endTime: rule.endTime,
-          active: rule.active,
-        })),
-      });
-    }
+    await upsertSupabaseAvailabilityRules({
+      businessId: context.businessId,
+      rules: targetRules.map((rule) => ({
+        ruleId: rule.ruleId,
+        dayOfWeek: rule.dayOfWeek,
+        startTime: rule.startTime,
+        endTime: rule.endTime,
+        active: rule.active,
+      })),
+    });
 
     revalidateAvailabilityViews(context.businessSlug);
 
@@ -256,15 +337,10 @@ export async function createBlockedSlotAction(formData: FormData) {
             };
           })();
 
-    const result = context.live
-      ? await createPocketBaseBlockedSlots({
-          businessId: context.businessId,
-          slots: createdSlots.slots,
-        })
-      : await createLocalBlockedSlots({
-          businessSlug: context.businessSlug,
-          slots: createdSlots.slots,
-        });
+    const result = await createSupabaseBlockedSlots({
+      businessId: context.businessId,
+      slots: createdSlots.slots,
+    });
 
     if (result.createdCount === 0) {
       throw new Error("Esos bloqueos ya existen.");
@@ -359,15 +435,10 @@ export async function createBlockedSlotFormAction(
             };
           })();
 
-    const result = context.live
-      ? await createPocketBaseBlockedSlots({
-          businessId: context.businessId,
-          slots: createdSlots.slots,
-        })
-      : await createLocalBlockedSlots({
-          businessSlug: context.businessSlug,
-          slots: createdSlots.slots,
-        });
+    const result = await createSupabaseBlockedSlots({
+      businessId: context.businessId,
+      slots: createdSlots.slots,
+    });
 
     if (result.createdCount === 0) {
       throw new Error("Esos bloqueos ya existen.");
@@ -402,17 +473,10 @@ export async function removeBlockedSlotAction(formData: FormData) {
   try {
     const context = await getAvailabilityContext();
 
-    if (context.live) {
-      await removePocketBaseBlockedSlot({
-        businessId: context.businessId,
-        blockedSlotId,
-      });
-    } else {
-      await removeLocalBlockedSlot({
-        businessSlug: context.businessSlug,
-        blockedSlotId,
-      });
-    }
+    await removeSupabaseBlockedSlot({
+      businessId: context.businessId,
+      blockedSlotId,
+    });
 
     revalidateAvailabilityViews(context.businessSlug);
 

@@ -2,8 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { createPocketBaseServerClient } from "@/lib/pocketbase/server";
-import { createPocketBaseStaffAccount, updatePocketBaseTeamUserStatus } from "@/server/pocketbase-store";
+import { createSupabaseStaffAccount, updateSupabaseTeamUserStatus } from "@/server/supabase-auth";
 import { requireAdminRouteAccess } from "@/server/admin-access";
 
 async function getOwnerContext(): Promise<{
@@ -13,7 +12,7 @@ async function getOwnerContext(): Promise<{
   const shellData = await requireAdminRouteAccess("/admin/team");
 
   if (!shellData.businessId || shellData.demoMode) {
-    redirect("/admin/dashboard?error=La gestion de equipo solo esta disponible en modo PocketBase.");
+    redirect("/admin/dashboard?error=La gestion de equipo solo esta disponible en modo Supabase.");
   }
 
   return {
@@ -37,20 +36,13 @@ export async function createStaffAction(formData: FormData) {
   }
 
   try {
-    const created = await createPocketBaseStaffAccount({
+    await createSupabaseStaffAccount({
       businessId: shellData.businessId,
       name,
       email,
       password,
       role: "staff",
     });
-
-    try {
-      const pb = await createPocketBaseServerClient();
-      await pb.collection("users").requestVerification(created.email);
-    } catch {
-      // Best effort only.
-    }
   } catch (error) {
     redirect(
       `/admin/team?error=${encodeURIComponent(
@@ -63,7 +55,7 @@ export async function createStaffAction(formData: FormData) {
 }
 
 export async function updateStaffStatusAction(formData: FormData) {
-  const shellData = await getOwnerContext();
+  await getOwnerContext();
   const userId = String(formData.get("userId") ?? "").trim();
   const nextActive = String(formData.get("nextActive") ?? "").trim() === "true";
 
@@ -72,11 +64,7 @@ export async function updateStaffStatusAction(formData: FormData) {
   }
 
   try {
-    await updatePocketBaseTeamUserStatus({
-      businessId: shellData.businessId,
-      userId,
-      active: nextActive,
-    });
+    await updateSupabaseTeamUserStatus(userId, nextActive);
   } catch (error) {
     redirect(
       `/admin/team?error=${encodeURIComponent(

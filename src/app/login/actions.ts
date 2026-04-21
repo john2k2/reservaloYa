@@ -3,14 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { isDemoModeEnabled } from "@/lib/runtime";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import {
-  createPocketBaseServerClient,
-  persistPocketBaseAuth,
-} from "@/lib/pocketbase/server";
-import { isPocketBaseInfraError } from "@/lib/pocketbase/shared";
-import { createPocketBaseOwnerAccount } from "@/server/pocketbase-store";
+import { signInSupabaseUser, createSupabaseOwnerAccount, resetSupabaseUserPassword, updateSupabaseUserPassword } from "@/server/supabase-auth";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 
 function isSuperAdminEmail(email: string) {
@@ -55,38 +48,18 @@ export async function loginAction(formData: FormData) {
     throw error;
   }
 
-  if (!isPocketBaseConfigured()) {
-    if (isDemoModeEnabled()) {
-      redirect("/admin/dashboard");
-    }
-
-    redirect("/login?error=El acceso admin esta deshabilitado hasta conectar la autenticacion real.");
-  }
-
   if (!email || !password || password.length > 256 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     redirect("/login?error=Completa%20email%20y%20password");
   }
 
-  const pb = await createPocketBaseServerClient();
-
   try {
-    await pb.collection("users").authWithPassword(email, password);
-
-    if ((pb.authStore.record as { active?: boolean } | null)?.active === false) {
-      pb.authStore.clear();
-      redirect("/login?error=Tu usuario esta desactivado.");
-    }
-
-    await persistPocketBaseAuth(pb);
+    await signInSupabaseUser(email, password);
   } catch (error) {
-    // Re-throw Next.js redirect/notFound — must not be caught
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
 
-    const message = isPocketBaseInfraError(error)
-      ? "No pudimos conectarnos al servidor. Intentá de nuevo en unos minutos."
-      : error instanceof Error
-        ? error.message
-        : "No pudimos iniciar sesion.";
+    const message = error instanceof Error
+      ? error.message
+      : "No pudimos iniciar sesion.";
 
     redirect(`/login?error=${encodeURIComponent(message)}`);
   }
@@ -131,10 +104,6 @@ export async function signupAction(formData: FormData) {
     throw error;
   }
 
-  if (!isPocketBaseConfigured()) {
-    redirect("/admin/signup?error=El registro self-serve requiere PocketBase configurado.");
-  }
-
   if (
     !ownerName || !businessName || !templateSlug || !phone || !address || !email || !password ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -151,7 +120,7 @@ export async function signupAction(formData: FormData) {
   }
 
   try {
-    const created = await createPocketBaseOwnerAccount({
+    await createSupabaseOwnerAccount({
       ownerName,
       email,
       password,
@@ -162,20 +131,11 @@ export async function signupAction(formData: FormData) {
       templateSlug,
     });
 
-    const pb = await createPocketBaseServerClient();
-
-    try {
-      await pb.collection("users").requestVerification(created.email);
-    } catch {
-      // Best-effort. The account is already created and usable.
-    }
-
-    await pb.collection("users").authWithPassword(created.email, password);
-    await persistPocketBaseAuth(pb);
+    await signInSupabaseUser(email, password);
 
     redirect(
-      `/admin/onboarding?created=${encodeURIComponent(created.businessSlug)}&verification=${encodeURIComponent(
-        "Te enviamos un correo para verificar tu email."
+      `/admin/onboarding?created=${encodeURIComponent(businessSlug)}&verification=${encodeURIComponent(
+        "Cuenta creada correctamente."
       )}`
     );
   } catch (error) {
@@ -215,18 +175,12 @@ export async function forgotPasswordAction(formData: FormData) {
     throw error;
   }
 
-  if (!isPocketBaseConfigured()) {
-    redirect("/admin/forgot-password?error=La recuperacion de contrasena requiere PocketBase configurado.");
-  }
-
   if (!email) {
-    redirect("/admin/forgot-password?error=Ingresa tu correo electrónico.");
+    redirect("/admin/forgot-password?error=Ingresa tu correo electronico.");
   }
-
-  const pb = await createPocketBaseServerClient();
 
   try {
-    await pb.collection("users").requestPasswordReset(email);
+    await resetSupabaseUserPassword(email);
   } catch (error) {
     redirect(
       `/admin/forgot-password?error=${encodeURIComponent(
@@ -237,12 +191,15 @@ export async function forgotPasswordAction(formData: FormData) {
 
   redirect(
     `/admin/forgot-password?success=${encodeURIComponent(
-      "Si el correo existe, enviamos instrucciones para restablecer la contraseña."
+      "Si el correo existe, enviamos instrucciones para restablecer la contrasena."
     )}`
   );
 }
 
-export async function resetPasswordAction(formData: FormData) {
+export async function resetPasswordAction(
+  _prevState: { error: string } | null,
+  formData: FormData
+): Promise<{ error: string }> {
   const token = String(formData.get("token") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
@@ -260,113 +217,47 @@ export async function resetPasswordAction(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof RateLimitError) {
-      redirect(
-        `/admin/reset-password?token=${encodeURIComponent(token)}&error=${encodeURIComponent(
-          `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
-        )}`
-      );
+      return { error: `${error.message} Reintentá en ${error.retryAfterSeconds}s.` };
     }
-
     throw error;
   }
 
-  if (!isPocketBaseConfigured()) {
-    redirect("/admin/reset-password?error=La recuperacion de contrasena requiere PocketBase configurado.");
-  }
-
   if (!token) {
-    redirect("/admin/reset-password?error=Falta el token de recuperacion.");
+    return { error: "Token inválido. Solicitá un nuevo enlace de recuperación." };
   }
 
   if (!password || !passwordConfirm) {
-    redirect(`/admin/reset-password?token=${encodeURIComponent(token)}&error=Completa ambos campos.`);
+    return { error: "Completá ambos campos." };
   }
 
   if (password.length < 8) {
-    redirect(
-      `/admin/reset-password?token=${encodeURIComponent(token)}&error=La contrasena debe tener al menos 8 caracteres.`
-    );
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
   if (password !== passwordConfirm) {
-    redirect(`/admin/reset-password?token=${encodeURIComponent(token)}&error=Las contrasenas no coinciden.`);
+    return { error: "Las contraseñas no coinciden." };
   }
 
-  const pb = await createPocketBaseServerClient();
-
   try {
-    await pb.collection("users").confirmPasswordReset(token, password, passwordConfirm);
+    await updateSupabaseUserPassword(token, password);
   } catch (error) {
-    redirect(
-      `/admin/reset-password?token=${encodeURIComponent(token)}&error=${encodeURIComponent(
-        error instanceof Error ? error.message : "No pudimos actualizar la contrasena."
-      )}`
-    );
+    return {
+      error: error instanceof Error ? error.message : "No pudimos actualizar la contraseña.",
+    };
   }
 
   redirect(
     `/login?success=${encodeURIComponent(
-      "Contrasena actualizada. Ya puedes iniciar sesion con tu nueva clave."
+      "Contraseña actualizada. Ya podés iniciar sesión con tu nueva clave."
     )}`
   );
 }
 
 export async function resendVerificationAction() {
-  if (!isPocketBaseConfigured()) {
-    redirect("/admin/dashboard?error=La verificacion requiere PocketBase configurado.");
-  }
-
-  const pb = await createPocketBaseServerClient();
-  const refreshed = await pb.collection("users").authRefresh().catch(() => null);
-  const email = refreshed?.record?.email ? String(refreshed.record.email).trim().toLowerCase() : "";
-
-  if (!email) {
-    redirect("/login?error=Necesitas iniciar sesion para reenviar la verificacion.");
-  }
-
-  try {
-    await pb.collection("users").requestVerification(email);
-  } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-
-    redirect(
-      `/admin/dashboard?error=${encodeURIComponent(
-        error instanceof Error ? error.message : "No pudimos reenviar la verificacion."
-      )}`
-    );
-  }
-
-  redirect(
-    `/admin/dashboard?success=${encodeURIComponent(
-      "Te reenviamos el correo de verificación."
-    )}`
-  );
+  redirect("/admin/dashboard");
 }
 
-export async function confirmEmailVerificationAction(token: string) {
-  if (!isPocketBaseConfigured()) {
-    redirect("/login?error=La verificacion requiere PocketBase configurado.");
-  }
-
-  if (!token) {
-    redirect("/login?error=Falta el token de verificacion.");
-  }
-
-  const pb = await createPocketBaseServerClient();
-
-  try {
-    await pb.collection("users").confirmVerification(token);
-  } catch (error) {
-    redirect(
-      `/login?error=${encodeURIComponent(
-        error instanceof Error ? error.message : "No pudimos verificar tu email."
-      )}`
-    );
-  }
-
-  redirect(
-    `/login?success=${encodeURIComponent(
-      "Email verificado correctamente. Ya puedes seguir usando tu cuenta."
-    )}`
-  );
+// token is passed by the caller but not used in Supabase mode (auth handles it via magic link)
+export async function confirmEmailVerificationAction(_token: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  redirect("/login");
 }

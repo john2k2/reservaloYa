@@ -1,10 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
-import {
-  isPocketBaseAdminConfigured,
-  isPocketBaseConfigured,
-} from "@/lib/pocketbase/config";
+import { getSupabaseAdminClient } from "@/server/supabase-store/_core";
 import { createLogger } from "@/server/logger";
 
 const logger = createLogger("rate-limit");
@@ -21,22 +17,14 @@ type RateLimitBucketState = {
   resetAt: number;
 };
 
-type RateLimitEventRecord = {
-  id: string;
-  bucket: string;
-  identifierHash: string;
-  expiresAt: string;
-};
-
 export type RateLimitResult = {
   ok: boolean;
   remaining: number;
   retryAfterSeconds: number;
-  store: "memory" | "pocketbase";
+  store: "memory" | "supabase";
 };
 
 const rateLimitBuckets = new Map<string, RateLimitBucketState>();
-let lastPocketBaseRateLimitCleanupAt = 0;
 
 function getBucketKey(input: Pick<RateLimitBucketConfig, "bucket" | "identifier">) {
   return `${input.bucket}::${input.identifier}`;
@@ -48,9 +36,7 @@ function hashIdentifier(input: Pick<RateLimitBucketConfig, "bucket" | "identifie
 
 function cleanupExpiredBuckets(now: number) {
   for (const [key, state] of rateLimitBuckets.entries()) {
-    if (state.resetAt <= now) {
-      rateLimitBuckets.delete(key);
-    }
+    if (state.resetAt <= now) rateLimitBuckets.delete(key);
   }
 }
 
@@ -63,17 +49,8 @@ function consumeMemoryRateLimit(input: RateLimitBucketConfig): RateLimitResult {
   const current = rateLimitBuckets.get(bucketKey);
 
   if (!current || current.resetAt <= now) {
-    rateLimitBuckets.set(bucketKey, {
-      count: 1,
-      resetAt: now + input.windowMs,
-    });
-
-    return {
-      ok: true,
-      remaining: Math.max(input.max - 1, 0),
-      retryAfterSeconds: 0,
-      store: "memory",
-    };
+    rateLimitBuckets.set(bucketKey, { count: 1, resetAt: now + input.windowMs });
+    return { ok: true, remaining: Math.max(input.max - 1, 0), retryAfterSeconds: 0, store: "memory" };
   }
 
   if (current.count >= input.max) {
@@ -86,122 +63,70 @@ function consumeMemoryRateLimit(input: RateLimitBucketConfig): RateLimitResult {
   }
 
   current.count += 1;
-
-  return {
-    ok: true,
-    remaining: Math.max(input.max - current.count, 0),
-    retryAfterSeconds: 0,
-    store: "memory",
-  };
+  return { ok: true, remaining: Math.max(input.max - current.count, 0), retryAfterSeconds: 0, store: "memory" };
 }
 
-function shouldUseSharedRateLimitStore() {
-  return (
-    process.env.NODE_ENV !== "test" &&
-    isPocketBaseConfigured() &&
-    isPocketBaseAdminConfigured()
-  );
-}
-
-async function cleanupExpiredPocketBaseRateLimitEvents(nowIso: string) {
-  const now = Date.now();
-
-  if (lastPocketBaseRateLimitCleanupAt > now - 5 * 60 * 1000) {
-    return;
-  }
-
-  lastPocketBaseRateLimitCleanupAt = now;
-
-  try {
-    const pb = await createPocketBaseAdminClient();
-    const expired = await pb.collection("rate_limit_events").getFullList<RateLimitEventRecord>({
-      filter: pb.filter("expiresAt <= {:now}", { now: nowIso }),
-      sort: "expiresAt",
-      batch: 100,
-      requestKey: null,
-    });
-
-    await Promise.all(
-      expired.slice(0, 100).map((record) =>
-        pb.collection("rate_limit_events").delete(record.id)
-      )
-    );
-  } catch {
-    // Best-effort cleanup only.
-  }
-}
-
-async function consumePocketBaseRateLimit(
-  input: RateLimitBucketConfig
-): Promise<RateLimitResult> {
+async function consumeSupabaseRateLimit(input: RateLimitBucketConfig): Promise<RateLimitResult> {
   const now = new Date();
   const nowIso = now.toISOString();
   const expiresAtIso = new Date(now.getTime() + input.windowMs).toISOString();
   const identifierHash = hashIdentifier(input);
-  const pb = await createPocketBaseAdminClient();
+  const client = await getSupabaseAdminClient();
 
-  void cleanupExpiredPocketBaseRateLimitEvents(nowIso);
+  // best-effort cleanup of expired events
+  void client
+    .from("rate_limit_events")
+    .delete()
+    .lte("expiresAt", nowIso);
 
-  const activeEvents = await pb
-    .collection("rate_limit_events")
-    .getFullList<RateLimitEventRecord>({
-      filter: pb.filter(
-        "bucket = {:bucket} && identifierHash = {:identifierHash} && expiresAt > {:now}",
-        {
-          bucket: input.bucket,
-          identifierHash,
-          now: nowIso,
-        }
-      ),
-      sort: "expiresAt",
-      batch: input.max + 1,
-      requestKey: null,
-    });
+  const { data: activeEvents } = await client
+    .from("rate_limit_events")
+    .select("id, expiresAt")
+    .eq("bucket", input.bucket)
+    .eq("identifierHash", identifierHash)
+    .gt("expiresAt", nowIso)
+    .limit(input.max + 1);
 
-  if (activeEvents.length >= input.max) {
-    const earliestResetAt = activeEvents.reduce((current, event) => {
-      const eventResetAt = new Date(event.expiresAt).getTime();
-      return Math.min(current, eventResetAt);
+  const count = (activeEvents ?? []).length;
+
+  if (count >= input.max) {
+    const earliestReset = (activeEvents ?? []).reduce((min, e) => {
+      const t = new Date(e.expiresAt).getTime();
+      return Math.min(min, t);
     }, Number.POSITIVE_INFINITY);
 
     return {
       ok: false,
       remaining: 0,
-      retryAfterSeconds: Number.isFinite(earliestResetAt)
-        ? Math.max(Math.ceil((earliestResetAt - now.getTime()) / 1000), 1)
+      retryAfterSeconds: Number.isFinite(earliestReset)
+        ? Math.max(Math.ceil((earliestReset - now.getTime()) / 1000), 1)
         : Math.max(Math.ceil(input.windowMs / 1000), 1),
-      store: "pocketbase",
+      store: "supabase",
     };
   }
 
-  await pb.collection("rate_limit_events").create({
+  await client.from("rate_limit_events").insert({
     bucket: input.bucket,
-    identifierHash,
+    identifierHash: identifierHash,
     expiresAt: expiresAtIso,
   });
 
   return {
     ok: true,
-    remaining: Math.max(input.max - activeEvents.length - 1, 0),
+    remaining: Math.max(input.max - count - 1, 0),
     retryAfterSeconds: 0,
-    store: "pocketbase",
+    store: "supabase",
   };
 }
 
-export async function consumeRateLimit(
-  input: RateLimitBucketConfig
-): Promise<RateLimitResult> {
-  if (!shouldUseSharedRateLimitStore()) {
+export async function consumeRateLimit(input: RateLimitBucketConfig): Promise<RateLimitResult> {
+  if (process.env.NODE_ENV === "test") {
     return consumeMemoryRateLimit(input);
   }
 
   try {
-    return await consumePocketBaseRateLimit(input);
+    return await consumeSupabaseRateLimit(input);
   } catch (error) {
-    // Si el shared store no está disponible (colección inexistente, credenciales,
-    // conectividad), caemos a memoria. En Railway (single instance) y Vercel
-    // (serverless, sin estado compartido entre invocaciones) el bypass
-    // cross-instance no es un riesgo real.
     logger.warn("Rate limit store no disponible — usando memoria como fallback", {
       bucket: input.bucket,
       message: error instanceof Error ? error.message : String(error),
@@ -220,11 +145,7 @@ export class RateLimitError extends Error {
   }
 }
 
-export async function assertRateLimit(
-  input: RateLimitBucketConfig & {
-    message: string;
-  }
-) {
+export async function assertRateLimit(input: RateLimitBucketConfig & { message: string }) {
   const result = await consumeRateLimit(input);
 
   if (!result.ok) {
@@ -248,6 +169,5 @@ export function getRateLimitIdentifier(headers: Headers, fallback = "anonymous")
 export function resetRateLimitStoreForTests() {
   if (process.env.NODE_ENV === "test") {
     rateLimitBuckets.clear();
-    lastPocketBaseRateLimitCleanupAt = 0;
   }
 }

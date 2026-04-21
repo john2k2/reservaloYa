@@ -1,4 +1,5 @@
 import { Clock3, LockKeyhole, Trash2 } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { removeBlockedSlotAction, saveAvailabilityRulesAction } from "@/app/admin/(panel)/availability/actions";
 import { AvailabilityBlockForm } from "@/app/admin/(panel)/availability/availability-block-form";
@@ -38,6 +39,11 @@ function buildNotice(params: { savedDay?: string; savedWeek?: string; blocked?: 
 
 export default async function AdminAvailabilityPage({ searchParams }: AdminAvailabilityPageProps) {
   const [availability, params] = await Promise.all([getAdminAvailabilityData(), searchParams]);
+
+  if (!availability) {
+    redirect("/admin/onboarding");
+  }
+
   const rulesByDay = new Map(availability.rules.map((rule) => [rule.dayOfWeek, rule]));
   const weekSchedule = weekDays.map((label, dayOfWeek) => {
     const existingRule = rulesByDay.get(dayOfWeek);

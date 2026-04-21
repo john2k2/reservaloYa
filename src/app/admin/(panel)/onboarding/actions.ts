@@ -1,27 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { getBrandingPalette } from "@/constants/branding-palettes";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { saveBrandingImageUpload } from "@/server/branding-upload";
-import { setLocalActiveBusinessSlug } from "@/server/local-admin-context";
 import {
-  createLocalBusinessFromTemplate,
-  getLocalAdminSettingsData,
-  updateLocalBusiness,
-  updateLocalBusinessBranding,
-} from "@/server/local-store";
-import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
-import {
-  createPocketBaseBusinessFromTemplate,
-  getPocketBaseAdminSettingsData,
-  updatePocketBaseBusiness,
-  updatePocketBaseBusinessBranding,
-} from "@/server/pocketbase-store";
+  createSupabaseRecord,
+  listSupabaseRecords,
+  updateSupabaseRecord,
+} from "@/server/supabase-store/_core";
+import { clearSupabaseBusinessMPTokens } from "@/server/supabase-store";
+import type { BusinessRecord } from "@/server/supabase-domain";
+import { demoPresets } from "@/constants/demo";
+import { slugify } from "@/lib/utils";
 
 const onboardingSchema = z.object({
   templateSlug: z.string().min(1),
@@ -95,6 +89,15 @@ type SaveOnboardingBrandingResult = {
   message: string;
 };
 
+async function getBusinessBySlug(slug: string) {
+  const normalizedSlug = slugify(slug);
+  const businesses = await listSupabaseRecords<BusinessRecord>("businesses", {
+    filter: `slug=eq.${normalizedSlug}`,
+  });
+  if (!businesses[0]) throw new Error("Business not found");
+  return businesses[0];
+}
+
 async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboardedBusinessResult> {
   await requireAdminRouteAccess("/admin/onboarding");
 
@@ -115,32 +118,15 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
   const email = parsed.data.email ?? "";
   const cancellationPolicy = parsed.data.cancellationPolicy ?? "";
 
-  if (isPocketBaseConfigured()) {
-    const user = await getAuthenticatedPocketBaseUser();
-    const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+  const business = await getBusinessBySlug(businessSlug);
 
-    if (!businessId) {
-      throw new Error("No encontramos el negocio activo.");
-    }
-
-    await updatePocketBaseBusiness({
-      businessId: String(businessId),
-      name,
-      phone,
-      email,
-      address,
-      cancellationPolicy,
-    });
-  } else {
-    await updateLocalBusiness({
-      businessSlug,
-      name,
-      phone,
-      email,
-      address,
-      cancellationPolicy,
-    });
-  }
+  await updateSupabaseRecord("businesses", business.id, {
+    name,
+    phone,
+    email,
+    address,
+    ...(cancellationPolicy && { cancellationPolicy }),
+  });
 
   revalidatePath("/admin/onboarding");
   revalidatePath(`/${businessSlug}`);
@@ -228,19 +214,10 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     throw new Error("Revisa colores, textos e imagenes antes de guardar identidad.");
   }
 
-  const settings = isPocketBaseConfigured()
-    ? await (async () => {
-        const user = await getAuthenticatedPocketBaseUser();
-        const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
-
-        if (!businessId) {
-          throw new Error("No encontramos el negocio activo.");
-        }
-
-        return getPocketBaseAdminSettingsData(String(businessId));
-      })()
-    : await getLocalAdminSettingsData(parsed.data.businessSlug);
-  const profile = settings.profile;
+  const business = await getBusinessBySlug(parsed.data.businessSlug);
+  const profile = business.publicProfileOverrides
+    ? JSON.parse(business.publicProfileOverrides)
+    : {};
   const palette =
     parsed.data.palette === "custom"
       ? {
@@ -264,7 +241,7 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
       alt:
         galleryDescriptions[index] ||
         existingItem?.alt ||
-        `Foto ${index + 1} de ${settings.businessName}`,
+        `Foto ${index + 1} de ${business.name}`,
     };
   }).filter(
     (
@@ -275,76 +252,38 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     } => Boolean(item)
   );
 
-  if (isPocketBaseConfigured()) {
-    const user = await getAuthenticatedPocketBaseUser();
-    const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+  const updates = {
+    badge: parsed.data.badge,
+    eyebrow: parsed.data.eyebrow,
+    headline: parsed.data.headline,
+    description: parsed.data.description,
+    primaryCta: parsed.data.primaryCta,
+    secondaryCta: parsed.data.secondaryCta,
+    instagram: parsed.data.instagram ?? profile.instagram ?? "",
+    facebook: parsed.data.facebook || profile.facebook,
+    tiktok: parsed.data.tiktok || profile.tiktok,
+    accent: palette.accent,
+    accentSoft: palette.accentSoft,
+    surfaceTint: palette.surfaceTint,
+    trustPoints: profile.trustPoints,
+    benefits: profile.benefits,
+    policies: profile.policies,
+    website: parsed.data.website || profile.website,
+    logoLabel: profile.logoLabel,
+    logoUrl: clearLogo ? null : uploadedLogoUrl || profile.logoUrl,
+    heroImageUrl: clearHero ? null : uploadedHeroUrl || profile.heroImageUrl,
+    heroImageAlt: profile.heroImageAlt,
+    gallery:
+      nextGallery.length > 0 ? nextGallery : clearGallery.some(Boolean) ? null : profile.gallery,
+    mapQuery: parsed.data.mapQuery || profile.mapQuery || business.address,
+    mapEmbedUrl: profile.mapEmbedUrl,
+    enableDarkMode: parsed.data.enableDarkMode ?? false,
+    darkModeColors: parsed.data.darkModeColors,
+  };
 
-    if (!businessId) {
-      throw new Error("No encontramos el negocio activo.");
-    }
-
-    await updatePocketBaseBusinessBranding({
-      businessId: String(businessId),
-      updates: {
-        badge: parsed.data.badge,
-        eyebrow: parsed.data.eyebrow,
-        headline: parsed.data.headline,
-        description: parsed.data.description,
-        primaryCta: parsed.data.primaryCta,
-        secondaryCta: parsed.data.secondaryCta,
-        instagram: parsed.data.instagram ?? profile.instagram ?? "",
-        facebook: parsed.data.facebook || profile.facebook,
-        tiktok: parsed.data.tiktok || profile.tiktok,
-        accent: palette.accent,
-        accentSoft: palette.accentSoft,
-        surfaceTint: palette.surfaceTint,
-        trustPoints: profile.trustPoints,
-        benefits: profile.benefits,
-        policies: profile.policies,
-        website: parsed.data.website || profile.website,
-        logoLabel: profile.logoLabel,
-        logoUrl: clearLogo ? null : uploadedLogoUrl || profile.logoUrl,
-        heroImageUrl: clearHero ? null : uploadedHeroUrl || profile.heroImageUrl,
-        heroImageAlt: profile.heroImageAlt,
-        gallery:
-          nextGallery.length > 0 ? nextGallery : clearGallery.some(Boolean) ? null : profile.gallery,
-        mapQuery: parsed.data.mapQuery || profile.mapQuery || settings.address,
-        mapEmbedUrl: profile.mapEmbedUrl,
-        enableDarkMode: parsed.data.enableDarkMode ?? false,
-        darkModeColors: parsed.data.darkModeColors,
-      },
-    });
-  } else {
-    await updateLocalBusinessBranding({
-      businessSlug: parsed.data.businessSlug,
-      badge: parsed.data.badge,
-      eyebrow: parsed.data.eyebrow,
-      headline: parsed.data.headline,
-      description: parsed.data.description,
-      primaryCta: parsed.data.primaryCta,
-      secondaryCta: parsed.data.secondaryCta,
-      instagram: parsed.data.instagram ?? profile.instagram ?? "",
-      facebook: parsed.data.facebook || profile.facebook,
-      tiktok: parsed.data.tiktok || profile.tiktok,
-      accent: palette.accent,
-      accentSoft: palette.accentSoft,
-      surfaceTint: palette.surfaceTint,
-      trustPoints: profile.trustPoints,
-      benefits: profile.benefits,
-      policies: profile.policies,
-      website: parsed.data.website || profile.website,
-      logoLabel: profile.logoLabel,
-      logoUrl: clearLogo ? null : uploadedLogoUrl || profile.logoUrl,
-      heroImageUrl: clearHero ? null : uploadedHeroUrl || profile.heroImageUrl,
-      heroImageAlt: profile.heroImageAlt,
-      gallery:
-        nextGallery.length > 0 ? nextGallery : clearGallery.some(Boolean) ? null : profile.gallery,
-      mapQuery: parsed.data.mapQuery || profile.mapQuery || settings.address,
-      mapEmbedUrl: profile.mapEmbedUrl,
-      enableDarkMode: parsed.data.enableDarkMode ?? false,
-      darkModeColors: parsed.data.darkModeColors,
-    });
-  }
+  await updateSupabaseRecord("businesses", business.id, {
+    publicProfileOverrides: JSON.stringify(updates),
+  });
 
   revalidatePath("/admin/onboarding");
   revalidatePath(`/${businessSlug}`);
@@ -353,6 +292,35 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     businessSlug,
     message: "Identidad visual actualizada.",
   };
+}
+
+async function createSupabaseBusinessFromTemplate(input: {
+  templateSlug: string;
+  name: string;
+  slug: string;
+  phone: string;
+  email: string;
+  address: string;
+}) {
+  const preset = demoPresets[input.templateSlug];
+
+  if (!preset) {
+    throw new Error("La demo base no existe.");
+  }
+
+  const business = await createSupabaseRecord<BusinessRecord>("businesses", {
+    name: input.name.trim(),
+    slug: input.slug.trim(),
+    templateSlug: input.templateSlug,
+    phone: input.phone.trim(),
+    email: input.email.trim(),
+    address: input.address.trim(),
+    timezone: preset.business.timezone,
+    active: true,
+    publicProfileOverrides: "",
+  });
+
+  return business.slug;
 }
 
 export async function createOnboardedBusinessAction(formData: FormData) {
@@ -379,17 +347,11 @@ export async function createOnboardedBusinessAction(formData: FormData) {
   let businessSlug: string;
 
   try {
-    businessSlug = isPocketBaseConfigured()
-      ? await createPocketBaseBusinessFromTemplate({
-          ...parsed.data,
-          slug: parsed.data.slug ?? "",
-          email: parsed.data.email ?? "",
-        })
-      : await createLocalBusinessFromTemplate({
-          ...parsed.data,
-          slug: parsed.data.slug ?? "",
-          email: parsed.data.email ?? "",
-        });
+    businessSlug = await createSupabaseBusinessFromTemplate({
+      ...parsed.data,
+      slug: parsed.data.slug ?? "",
+      email: parsed.data.email ?? "",
+    });
   } catch (error) {
     redirect(
       `/admin/onboarding?error=${encodeURIComponent(
@@ -398,19 +360,11 @@ export async function createOnboardedBusinessAction(formData: FormData) {
     );
   }
 
-  await setLocalActiveBusinessSlug(businessSlug);
   redirect(`/admin/onboarding?created=${businessSlug}`);
 }
 
-export async function activateLocalBusinessAction(formData: FormData) {
+export async function activateLocalBusinessAction(_formData: FormData) { // eslint-disable-line @typescript-eslint/no-unused-vars
   await requireAdminRouteAccess("/admin/onboarding");
-  const businessSlug = String(formData.get("businessSlug") ?? "").trim();
-
-  if (!businessSlug) {
-    redirect(`/admin/onboarding?error=${encodeURIComponent("Negocio invalido.")}`);
-  }
-
-  await setLocalActiveBusinessSlug(businessSlug);
   redirect("/admin/dashboard");
 }
 
@@ -419,6 +373,8 @@ export async function updateOnboardedBusinessAction(formData: FormData) {
     const result = await updateOnboardedBusiness(formData);
     redirect(`/admin/onboarding?businessUpdated=${encodeURIComponent(result.name)}`);
   } catch (error) {
+    unstable_rethrow(error);
+
     redirect(
       `/admin/onboarding?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No se pudo actualizar el negocio."
@@ -434,6 +390,8 @@ export async function saveOnboardingBrandingAction(formData: FormData) {
       `/admin/onboarding?brandingSaved=${encodeURIComponent(result.message)}`
     );
   } catch (error) {
+    unstable_rethrow(error);
+
     redirect(
       `/admin/onboarding?error=${encodeURIComponent(
         error instanceof Error ? error.message : "No se pudo guardar la identidad."
@@ -450,26 +408,14 @@ export async function saveOnboardingBrandingInlineAction(formData: FormData) {
   return saveOnboardingBranding(formData);
 }
 
-/**
- * Desconecta la cuenta de MercadoPago del negocio (acción inline, sin redirect).
- */
 export async function disconnectMercadoPagoInlineAction(formData: FormData) {
   await requireAdminRouteAccess("/admin/onboarding");
 
-  if (isPocketBaseConfigured()) {
-    const user = await getAuthenticatedPocketBaseUser();
-    const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
-    if (!businessId) throw new Error("No encontramos el negocio activo.");
+  const businessSlug = String(formData.get("businessSlug") ?? "").trim();
+  if (!businessSlug) throw new Error("businessSlug requerido.");
 
-    const { clearPocketBaseBusinessMPTokens } = await import("@/server/pocketbase-store");
-    await clearPocketBaseBusinessMPTokens(String(businessId));
-  } else {
-    const businessSlug = String(formData.get("businessSlug") ?? "").trim();
-    if (!businessSlug) throw new Error("businessSlug requerido.");
-
-    const { clearLocalBusinessMPTokens } = await import("@/server/local-store");
-    await clearLocalBusinessMPTokens(businessSlug);
-  }
+  const business = await getBusinessBySlug(businessSlug);
+  await clearSupabaseBusinessMPTokens(business.id);
 
   revalidatePath("/admin/onboarding");
 }

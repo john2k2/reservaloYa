@@ -13,6 +13,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
   const customers = await getAdminCustomersDataWithFilter(query);
+
+  if (!customers) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const filename = `${shellData.businessSlug}-clientes-${today}.csv`;
   const csv = buildCsv(

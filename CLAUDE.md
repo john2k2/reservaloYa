@@ -26,26 +26,20 @@ npm test -- src/server/actions/public-booking.test.ts  # Run single test file
 npm run test:coverage    # Coverage report (v8)
 npm run test:e2e         # Playwright e2e tests
 npm run check            # lint + typecheck + test + build (full CI check)
-npm run demo:reset       # Reset local demo data
-npm run pb:up            # Start PocketBase via Docker
-npm run pb:bootstrap     # Seed PocketBase collections
 ```
 
 ## Architecture
 
 **Multi-tenant booking system** for small businesses (barber shops, salons, spas). Spanish-language UI.
 
-### Dual Backend Modes
+### Backend
 
-The app runs in one of two modes determined by env vars:
+The app is `Supabase-only` for auth, persistence, and multi-tenant data access.
 
-- **Local mode** (default): File-based JSON store at `data/local-store.json`. No external deps needed. Used for demo and local dev.
-- **PocketBase mode**: When `NEXT_PUBLIC_POCKETBASE_URL` is set. Real auth and persistence.
-
-Both backends implement the same interface. The store abstraction lives in:
-- `src/server/local-store.ts` - file-based implementation
-- `src/server/pocketbase-store.ts` - PocketBase implementation
-- `src/server/local-domain.ts` - shared types (`Local*` types), `normalizeStore()`, and domain logic used by both stores
+Key server modules:
+- `src/server/supabase-store/` - store and data access layer
+- `src/server/supabase-auth.ts` - auth/session helpers
+- `src/lib/supabase/` - client/config helpers
 
 ### Routing
 

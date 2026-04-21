@@ -1,99 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const isPocketBaseConfiguredMock = vi.fn(() => false);
-const isValidBookingConfirmationTokenMock = vi.fn(() => true);
-const isValidBookingManageTokenMock = vi.fn(() => true);
-const getLocalBookingConfirmationDataMock = vi.fn<() => Promise<unknown>>(async () => null);
-const getLocalPublicBookingFlowDataMock = vi.fn(async () => null);
-const getLocalPublicBusinessPageDataMock = vi.fn(async () => null);
-const getLocalPublicManageBookingDataMock = vi.fn(async () => null);
-const getPocketBaseBookingConfirmationDataMock = vi.fn<() => Promise<unknown>>(async () => null);
-const getPocketBaseManageBookingDataMock = vi.fn(async () => null);
-const getPocketBasePublicBookingFlowDataMock = vi.fn(async () => null);
-const getPocketBasePublicBusinessPageDataMock = vi.fn(async () => null);
+const getSupabaseBookingConfirmationDataMock = vi.fn();
 
 vi.mock("next/cache", () => ({
   unstable_cache: (fn: unknown) => fn,
   unstable_noStore: vi.fn(),
 }));
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: isPocketBaseConfiguredMock,
-}));
-
-vi.mock("@/server/public-booking-links", () => ({
-  isValidBookingConfirmationToken: isValidBookingConfirmationTokenMock,
-  isValidBookingManageToken: isValidBookingManageTokenMock,
-}));
-
-vi.mock("@/server/local-store", () => ({
-  getLocalBookingConfirmationData: getLocalBookingConfirmationDataMock,
-  getLocalPublicBookingFlowData: getLocalPublicBookingFlowDataMock,
-  getLocalPublicBusinessPageData: getLocalPublicBusinessPageDataMock,
-  getLocalPublicManageBookingData: getLocalPublicManageBookingDataMock,
-}));
-
-vi.mock("@/server/pocketbase-store", () => ({
-  getPocketBaseBookingConfirmationData: getPocketBaseBookingConfirmationDataMock,
-  getPocketBaseManageBookingData: getPocketBaseManageBookingDataMock,
-  getPocketBasePublicBookingFlowData: getPocketBasePublicBookingFlowDataMock,
-  getPocketBasePublicBusinessPageData: getPocketBasePublicBusinessPageDataMock,
+vi.mock("@/server/supabase-store", () => ({
+  getSupabaseBookingConfirmationData: getSupabaseBookingConfirmationDataMock,
 }));
 
 describe("getBookingConfirmationData", () => {
   beforeEach(() => {
     vi.resetModules();
-    isPocketBaseConfiguredMock.mockReset();
-    isValidBookingConfirmationTokenMock.mockReset();
-    isValidBookingManageTokenMock.mockReset();
-    getLocalBookingConfirmationDataMock.mockReset();
-    getPocketBaseBookingConfirmationDataMock.mockReset();
-
-    isPocketBaseConfiguredMock.mockReturnValue(false);
-    isValidBookingConfirmationTokenMock.mockReturnValue(true);
-    isValidBookingManageTokenMock.mockReturnValue(true);
-    getLocalBookingConfirmationDataMock.mockResolvedValue(null);
-    getPocketBaseBookingConfirmationDataMock.mockResolvedValue(null);
+    getSupabaseBookingConfirmationDataMock.mockReset();
   });
 
-  it("devuelve null si el token de confirmación es inválido", async () => {
-    isValidBookingConfirmationTokenMock.mockReturnValue(false);
+  it("returns null when no bookingId is provided", async () => {
     const { getBookingConfirmationData } = await import("./public");
 
     await expect(
       getBookingConfirmationData({
         slug: "demo-barberia",
-        bookingId: "booking-1",
-        token: "bad-token",
-      })
-    ).resolves.toBeNull();
-
-    expect(getLocalBookingConfirmationDataMock).not.toHaveBeenCalled();
-    expect(getPocketBaseBookingConfirmationDataMock).not.toHaveBeenCalled();
-  });
-
-  it("rechaza bookings de otro slug en modo local", async () => {
-    getLocalBookingConfirmationDataMock.mockResolvedValue({
-      bookingId: "booking-1",
-      businessSlug: "otro-negocio",
-    });
-
-    const { getBookingConfirmationData } = await import("./public");
-
-    await expect(
-      getBookingConfirmationData({
-        slug: "demo-barberia",
-        bookingId: "booking-1",
-        token: "confirmation-token",
+        bookingId: undefined,
       })
     ).resolves.toBeNull();
   });
 
-  it("permite uso interno sin token si se indica skipTokenValidation", async () => {
-    getLocalBookingConfirmationDataMock.mockResolvedValue({
+  it("returns confirmation data for valid booking", async () => {
+    const mockData = {
       bookingId: "booking-1",
       businessSlug: "demo-barberia",
-    });
+      customerName: "John Doe",
+    };
+
+    getSupabaseBookingConfirmationDataMock.mockResolvedValue(mockData);
 
     const { getBookingConfirmationData } = await import("./public");
 
@@ -101,13 +43,26 @@ describe("getBookingConfirmationData", () => {
       getBookingConfirmationData({
         slug: "demo-barberia",
         bookingId: "booking-1",
-        skipTokenValidation: true,
+        token: "valid-token",
       })
-    ).resolves.toEqual({
-      bookingId: "booking-1",
-      businessSlug: "demo-barberia",
-    });
+    ).resolves.toEqual(mockData);
 
-    expect(isValidBookingConfirmationTokenMock).not.toHaveBeenCalled();
+    expect(getSupabaseBookingConfirmationDataMock).toHaveBeenCalledWith({
+      slug: "demo-barberia",
+      bookingId: "booking-1",
+    });
+  });
+
+  it("returns null when booking not found", async () => {
+    getSupabaseBookingConfirmationDataMock.mockResolvedValue(null);
+
+    const { getBookingConfirmationData } = await import("./public");
+
+    await expect(
+      getBookingConfirmationData({
+        slug: "demo-barberia",
+        bookingId: "non-existent",
+      })
+    ).resolves.toBeNull();
   });
 });

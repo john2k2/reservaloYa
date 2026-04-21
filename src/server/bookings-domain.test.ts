@@ -22,7 +22,7 @@ describe("bookings domain helpers", () => {
       bookingDate: "2026-03-30",
       startTime: "10:30",
       status: "confirmed",
-      source: "local",
+      source: "supabase",
     });
 
     expect(view).toMatchObject({
@@ -33,7 +33,7 @@ describe("bookings domain helpers", () => {
       durationMinutes: 60,
       currency: "ARS",
       timezone: "America/Argentina/Buenos_Aires",
-      source: "local",
+      source: "supabase",
     });
   });
 

@@ -1,27 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { resetPasswordAction } from "@/app/login/actions";
-import { LoadingButton } from "@/components/ui/loading-button";
 import { productName } from "@/constants/site";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { ResetPasswordForm } from "./reset-password-form";
 
-type ResetPasswordPageProps = {
-  searchParams: Promise<{ token?: string; error?: string }>;
-};
-
-export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
-  const params = await searchParams;
-  const configured = isPocketBaseConfigured();
-
-  if (configured) {
-    const pb = await createPocketBaseServerClient();
-    const isAuthenticated = await refreshPocketBaseAuth(pb);
-
-    if (isAuthenticated && pb.authStore.record) {
-      redirect("/admin/dashboard");
-    }
+export default async function ResetPasswordPage() {
+  const user = await getAuthenticatedSupabaseUser();
+  if (user) {
+    redirect("/admin/dashboard");
   }
 
   return (
@@ -38,67 +25,11 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
           <div className="mt-12 space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">Nueva contraseña</h1>
             <p className="text-sm text-muted-foreground">
-              Define una nueva contraseña para volver a entrar al panel.
+              Definí una nueva contraseña para volver a entrar al panel.
             </p>
           </div>
 
-          {params.error && (
-            <div
-              className="mt-6 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive"
-              role="alert"
-              aria-live="polite"
-            >
-              {params.error}
-            </div>
-          )}
-
-          {!params.token ? (
-            <div className="mt-8 rounded-md border border-border/70 bg-background/80 p-4 text-sm text-muted-foreground">
-              Falta el token de recuperación. Abre el enlace que recibiste por correo.
-            </div>
-          ) : (
-            <form action={resetPasswordAction} className="mt-8 space-y-6">
-              <input type="hidden" name="token" value={params.token} />
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Nueva contraseña
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Minimo 8 caracteres"
-                  className="minimalist-input"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="passwordConfirm" className="text-sm font-medium text-foreground">
-                  Repite la contraseña
-                </label>
-                <input
-                  id="passwordConfirm"
-                  name="passwordConfirm"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Repite tu nueva contraseña"
-                  className="minimalist-input"
-                  required
-                />
-              </div>
-
-              <LoadingButton
-                pendingLabel="Actualizando contraseña..."
-                className="h-12 w-full rounded-md bg-foreground font-medium text-background"
-                disabled={!configured}
-              >
-                Guardar nueva contraseña
-              </LoadingButton>
-            </form>
-          )}
+          <ResetPasswordForm />
 
           <div className="mt-6">
             <Link

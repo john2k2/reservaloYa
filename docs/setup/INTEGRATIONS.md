@@ -143,6 +143,5 @@ Si llegan `utm_source`, `utm_medium` o `utm_campaign`, se guardan. Si no, la fue
 
 ### Limitaciones
 
-- Funciona en modo local/demo
 - Sin integracion con GA4 o PostHog todavia
 - Sin filtros por fecha ni comparativas en admin

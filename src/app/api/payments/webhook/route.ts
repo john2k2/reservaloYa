@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import {
   getMPPaymentInfo,
   isValidMPWebhookSignature,
@@ -8,47 +7,32 @@ import {
   type MPWebhookPayload,
   shouldVerifyMPWebhookSignature,
 } from "@/server/mercadopago";
-import {
-  getLocalBusinessPaymentSettingsByCollectorId,
-  getLocalBookingPaymentValidationContext,
-  getLocalBookingBusinessSlug,
-  updateLocalBookingPayment,
-  updateLocalBusinessMPTokens,
-} from "@/server/local-store";
 import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
-  getBusinessSubscription,
-  getPocketBaseBookingPaymentValidationContext,
-  getPocketBaseBookingBusinessSlug,
-  getPocketBaseBusinessPaymentSettingsByCollectorId,
-  updatePocketBaseBookingPayment,
-  updatePocketBaseBusinessMPTokens,
-} from "@/server/pocketbase-store";
+  getSupabaseBusinessPaymentSettingsByCollectorId,
+  getSupabaseBookingPaymentValidationContext,
+  getSupabaseBookingBusinessSlug,
+  updateSupabaseBookingPayment,
+  updateSupabaseBusinessMPTokens,
+} from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
 import { getBookingConfirmationData } from "@/server/queries/public";
+import type { BookingPaymentValidationContext } from "@/server/payments-domain";
 
 const logger = createLogger("MP Webhook");
 
 function amountsMatch(expectedAmount: number | undefined, actualAmount: number) {
-  if (expectedAmount == null) {
-    return false;
-  }
-
+  if (expectedAmount == null) return false;
   return Math.abs(expectedAmount - actualAmount) < 0.01;
 }
 
 function canApplyBookingPayment(input: {
-  booking:
-    | Awaited<ReturnType<typeof getLocalBookingPaymentValidationContext>>
-    | Awaited<ReturnType<typeof getPocketBaseBookingPaymentValidationContext>>;
+  booking: BookingPaymentValidationContext | null;
   collectorId?: string | null;
   paymentInfo: Awaited<ReturnType<typeof getMPPaymentInfo>>;
   paymentStatus: ReturnType<typeof mapMPStatusToPaymentStatus>;
-  businessPaymentSettings:
-    | Awaited<ReturnType<typeof getLocalBusinessPaymentSettingsByCollectorId>>
-    | Awaited<ReturnType<typeof getPocketBaseBusinessPaymentSettingsByCollectorId>>
-    | null;
+  businessPaymentSettings: Awaited<ReturnType<typeof getSupabaseBusinessPaymentSettingsByCollectorId>>;
 }) {
   const { booking, collectorId, paymentInfo, paymentStatus, businessPaymentSettings } = input;
 
@@ -82,10 +66,7 @@ function canApplyBookingPayment(input: {
     return { ok: false, reason: "business_mismatch" } as const;
   }
 
-  if (
-    paymentInfo.metadata?.bookingId &&
-    paymentInfo.metadata.bookingId !== booking.bookingId
-  ) {
+  if (paymentInfo.metadata?.bookingId && paymentInfo.metadata.bookingId !== booking.bookingId) {
     return { ok: false, reason: "metadata_booking_mismatch" } as const;
   }
 
@@ -106,23 +87,9 @@ function canApplyBookingPayment(input: {
   return { ok: true } as const;
 }
 
-/**
- * Webhook de MercadoPago: se llama cuando hay cambios en un pago.
- * Docs: https://www.mercadopago.com.ar/developers/es/docs/notifications/webhooks
- *
- * Maneja dos tipos de pagos:
- * 1. Pagos de bookings (external_reference = bookingId)
- * 2. Pagos de suscripciones (external_reference = businessId)
- *
- * MP puede enviar el mismo evento mas de una vez, por eso el handler es idempotente.
- * Responde 401 si la firma configurada no valida.
- * Responde 500 ante errores de infraestructura para que MP reintente el evento.
- * Responde 200 en todos los casos donde el evento fue procesado (exito, rechazo, skip).
- */
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const body = (await request.json().catch(() => null)) as MPWebhookPayload | null;
-  const isPocketBase = isPocketBaseConfigured();
 
   const isPaymentEvent =
     body?.type === "payment" ||
@@ -146,9 +113,8 @@ export async function POST(request: Request) {
   }
 
   if (!shouldVerifyMPWebhookSignature()) {
-    const isRealDeployment = isPocketBase || process.env.NODE_ENV === "production";
-    if (isRealDeployment) {
-      logger.error("MP_WEBHOOK_SECRET no configurado en deployment real: rechazando webhook");
+    if (process.env.NODE_ENV === "production") {
+      logger.error("MP_WEBHOOK_SECRET no configurado en production: rechazando webhook");
       return NextResponse.json({ ok: false, error: "Webhook signature required" }, { status: 401 });
     }
     logger.warn("MP_WEBHOOK_SECRET no configurado: webhook sin verificacion de firma (solo dev local)");
@@ -168,27 +134,15 @@ export async function POST(request: Request) {
       (body?.user_id != null ? String(body.user_id) : null) ?? url.searchParams.get("user_id");
 
     let businessPaymentSettings = collectorIdFromRequest
-      ? isPocketBase
-        ? await getPocketBaseBusinessPaymentSettingsByCollectorId(collectorIdFromRequest)
-        : await getLocalBusinessPaymentSettingsByCollectorId(collectorIdFromRequest)
+      ? await getSupabaseBusinessPaymentSettingsByCollectorId(collectorIdFromRequest)
       : null;
 
-    const initialBusinessPaymentSettings = businessPaymentSettings;
-
-    const businessAccessToken = initialBusinessPaymentSettings
+    const businessAccessToken = businessPaymentSettings
       ? await getUsableBusinessMercadoPagoAccessToken(
-          initialBusinessPaymentSettings,
+          businessPaymentSettings,
           async (tokens) => {
-            if (isPocketBase) {
-              await updatePocketBaseBusinessMPTokens({
-                businessId: initialBusinessPaymentSettings.businessId,
-                ...tokens,
-              });
-              return;
-            }
-
-            await updateLocalBusinessMPTokens({
-              businessSlug: initialBusinessPaymentSettings.businessSlug,
+            await updateSupabaseBusinessMPTokens({
+              businessId: businessPaymentSettings!.businessId,
               ...tokens,
             });
           }
@@ -207,9 +161,8 @@ export async function POST(request: Request) {
     const resolvedCollectorId = collectorIdFromRequest ?? paymentInfo.collectorId ?? null;
 
     if (!businessPaymentSettings && resolvedCollectorId) {
-      businessPaymentSettings = isPocketBase
-        ? await getPocketBaseBusinessPaymentSettingsByCollectorId(resolvedCollectorId)
-        : await getLocalBusinessPaymentSettingsByCollectorId(resolvedCollectorId);
+      businessPaymentSettings =
+        await getSupabaseBusinessPaymentSettingsByCollectorId(resolvedCollectorId);
     }
 
     if (!externalReference) {
@@ -219,34 +172,7 @@ export async function POST(request: Request) {
 
     const paymentStatus = mapMPStatusToPaymentStatus(status);
 
-    const subscription = isPocketBase ? await getBusinessSubscription(externalReference) : null;
-
-    if (subscription) {
-      logger.info(
-        `Procesando pago de suscripcion ${paymentId} -> ${paymentStatus} para business ${externalReference}`
-      );
-
-      if (paymentStatus === "approved") {
-        const nextBillingDate = new Date();
-        nextBillingDate.setDate(nextBillingDate.getDate() + 30);
-
-        await subscription.update({
-          status: "active",
-          trialEndsAt: null,
-          nextBillingDate: nextBillingDate.toISOString().split("T")[0],
-        });
-
-        logger.info(`Suscripcion ${subscription.id} activada para business ${externalReference}`);
-      } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
-        logger.info(`Pago rechazado/cancelado para suscripcion ${subscription.id}`);
-      }
-
-      return NextResponse.json({ ok: true }, { status: 200 });
-    }
-
-    const bookingValidation = isPocketBase
-      ? await getPocketBaseBookingPaymentValidationContext(externalReference)
-      : await getLocalBookingPaymentValidationContext(externalReference);
+    const bookingValidation = await getSupabaseBookingPaymentValidationContext(externalReference);
 
     const paymentValidation = canApplyBookingPayment({
       booking: bookingValidation,
@@ -265,26 +191,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
     }
 
-    const paymentData = {
+    await updateSupabaseBookingPayment({
       bookingId: externalReference,
       paymentStatus,
       paymentAmount: transactionAmount,
       paymentCurrency: currencyId,
-      paymentProvider: "mercadopago" as const,
+      paymentProvider: "mercadopago",
       paymentExternalId: paymentId,
-    };
-
-    if (isPocketBase) {
-      await updatePocketBaseBookingPayment(paymentData);
-    } else {
-      await updateLocalBookingPayment(paymentData);
-    }
+    });
 
     if (paymentStatus === "approved") {
       try {
-        const slug = isPocketBase
-          ? await getPocketBaseBookingBusinessSlug(externalReference).catch(() => null)
-          : await getLocalBookingBusinessSlug(externalReference).catch(() => null);
+        const slug = await getSupabaseBookingBusinessSlug(externalReference).catch(() => null);
 
         if (slug) {
           const confirmation = await getBookingConfirmationData({

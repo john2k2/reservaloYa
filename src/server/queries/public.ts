@@ -1,34 +1,15 @@
 import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 
-import { demoSlots } from "@/constants/demo";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { isValidBookingConfirmationToken } from "@/server/public-booking-links";
-import { isValidBookingManageToken } from "@/server/public-booking-links";
 import {
-  getLocalBookingConfirmationData,
-  getLocalPublicBookingFlowData,
-  getLocalPublicBusinessPageData,
-  getLocalPublicManageBookingData,
-} from "@/server/local-store";
-import {
-  getPocketBaseBookingConfirmationData,
-  getPocketBaseManageBookingData,
-  getPocketBasePublicBookingFlowData,
-  getPocketBasePublicBusinessPageData,
-} from "@/server/pocketbase-store";
+  getSupabasePublicBookingFlowData,
+  getSupabasePublicBusinessPageData,
+  getSupabaseBookingConfirmationData,
+  getSupabaseManageBookingData,
+} from "@/server/supabase-store";
 
-const getCachedLocalPublicBusinessPageData = unstable_cache(
-  async (slug: string) => getLocalPublicBusinessPageData(slug),
-  ["public-business-local"],
-  {
-    revalidate: 60,
-    tags: ["public-business"],
-  }
-);
-
-const getCachedPocketBasePublicBusinessPageData = unstable_cache(
-  async (slug: string) => getPocketBasePublicBusinessPageData(slug),
-  ["public-business-pocketbase"],
+const getCachedSupabasePublicBusinessPageData = unstable_cache(
+  async (slug: string) => getSupabasePublicBusinessPageData(slug),
+  ["public-business-supabase"],
   {
     revalidate: 60,
     tags: ["public-business"],
@@ -36,11 +17,7 @@ const getCachedPocketBasePublicBusinessPageData = unstable_cache(
 );
 
 export async function getPublicBusinessPageData(slug: string) {
-  if (!isPocketBaseConfigured()) {
-    return getCachedLocalPublicBusinessPageData(slug);
-  }
-
-  return getCachedPocketBasePublicBusinessPageData(slug);
+  return getCachedSupabasePublicBusinessPageData(slug);
 }
 
 export async function getPublicBookingFlowData({
@@ -71,18 +48,11 @@ export async function getPublicBookingFlowData({
       selectedService: null,
       bookingDate: bookingDate ?? fallbackBaseDate,
       dateOptions: [bookingDate ?? fallbackBaseDate],
-      slots: demoSlots,
+      slots: [],
     };
   }
 
-  if (!isPocketBaseConfigured() || pageData.source === "local") {
-    return getLocalPublicBookingFlowData({
-      slug,
-      serviceId,
-      bookingDate,
-    });
-  }
-  return getPocketBasePublicBookingFlowData(
+  return getSupabasePublicBookingFlowData(
     { slug, serviceId, bookingDate },
     pageData
   );
@@ -91,8 +61,6 @@ export async function getPublicBookingFlowData({
 export async function getBookingConfirmationData({
   slug,
   bookingId,
-  token,
-  skipTokenValidation = false,
 }: {
   slug: string;
   bookingId?: string;
@@ -101,41 +69,16 @@ export async function getBookingConfirmationData({
 }) {
   noStore();
 
-  if (
-    !skipTokenValidation &&
-    !isValidBookingConfirmationToken({ slug, bookingId, token })
-  ) {
+  if (!bookingId) {
     return null;
   }
 
-  if (!bookingId || !isPocketBaseConfigured()) {
-    const localBooking = await getLocalBookingConfirmationData(bookingId);
-
-    if (!localBooking || localBooking.businessSlug !== slug) {
-      return null;
-    }
-
-    return localBooking;
-  }
-
-  const pocketBaseBooking = await getPocketBaseBookingConfirmationData({ slug, bookingId });
-
-  if (pocketBaseBooking) {
-    return pocketBaseBooking;
-  }
-
-  const localBooking = await getLocalBookingConfirmationData(bookingId);
-  if (!localBooking || localBooking.businessSlug !== slug) {
-    return null;
-  }
-
-  return localBooking;
+  return getSupabaseBookingConfirmationData({ slug, bookingId });
 }
 
 export async function getPublicManageBookingData({
   slug,
   bookingId,
-  token,
 }: {
   slug: string;
   bookingId?: string;
@@ -143,22 +86,9 @@ export async function getPublicManageBookingData({
 }) {
   noStore();
 
-  if (!isValidBookingManageToken({ slug, bookingId, token })) {
+  if (!bookingId) {
     return null;
   }
 
-  if (!bookingId || !isPocketBaseConfigured()) {
-    const localBooking = await getLocalPublicManageBookingData(bookingId);
-
-    if (!localBooking || localBooking.businessSlug !== slug) {
-      return null;
-    }
-
-    return {
-      ...localBooking,
-      source: "local" as const,
-    };
-  }
-
-  return getPocketBaseManageBookingData({ slug, bookingId });
+  return getSupabaseManageBookingData({ slug, bookingId });
 }

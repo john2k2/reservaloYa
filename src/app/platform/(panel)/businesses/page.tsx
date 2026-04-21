@@ -82,7 +82,7 @@ export default async function PlatformBusinessesPage({
   if (!businesses) {
     return (
       <div className="rounded-2xl border border-border/60 bg-card p-8 text-center text-muted-foreground">
-        Panel de plataforma no disponible en modo local.
+        Panel de plataforma no disponible.
       </div>
     );
   }

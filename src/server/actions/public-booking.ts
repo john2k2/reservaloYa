@@ -3,27 +3,22 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { isPocketBaseInfraError } from "@/lib/pocketbase/shared";
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
 import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
-  cancelLocalPublicBooking,
-  createLocalPublicBooking,
-  updateLocalBusinessMPTokens,
-} from "@/server/local-store";
-import {
   buildBookingConfirmationHref,
   isValidBookingManageToken,
 } from "@/server/public-booking-links";
 import {
-  cancelPocketBasePublicBooking,
-  createPocketBasePublicBooking,
-  reschedulePocketBasePublicBooking,
-  updatePocketBaseBusinessMPTokens,
-} from "@/server/pocketbase-store";
+  cancelSupabasePublicBooking,
+  createSupabasePublicBooking,
+  rescheduleSupabasePublicBooking,
+  updateSupabaseBookingPayment,
+  getSupabaseBusinessPaymentSettingsBySlug,
+  updateSupabaseBusinessMPTokens,
+} from "@/server/supabase-store";
 import { getBookingConfirmationData } from "@/server/queries/public";
 import {
   RateLimitError,
@@ -31,9 +26,7 @@ import {
   getRateLimitIdentifier,
 } from "@/server/rate-limit";
 import { createLogger } from "@/server/logger";
-import {
-  createPaymentPreferenceForBusiness,
-} from "@/server/mercadopago";
+import { createPaymentPreferenceForBusiness } from "@/server/mercadopago";
 
 const logger = createLogger("Public Booking");
 
@@ -73,40 +66,16 @@ function buildBookingPageHref(input: {
 }) {
   const params = new URLSearchParams();
 
-  if (input.serviceId) {
-    params.set("service", input.serviceId);
-  }
-
-  if (input.bookingDate) {
-    params.set("date", input.bookingDate);
-  }
-
-  if (input.rescheduleBookingId) {
-    params.set("reschedule", input.rescheduleBookingId);
-  }
-
-  if (input.manageToken) {
-    params.set("token", input.manageToken);
-  }
-
-  if (input.source) {
-    params.set("utm_source", input.source);
-  }
-
-  if (input.medium) {
-    params.set("utm_medium", input.medium);
-  }
-
-  if (input.campaign) {
-    params.set("utm_campaign", input.campaign);
-  }
-
-  if (input.error) {
-    params.set("error", input.error);
-  }
+  if (input.serviceId) params.set("service", input.serviceId);
+  if (input.bookingDate) params.set("date", input.bookingDate);
+  if (input.rescheduleBookingId) params.set("reschedule", input.rescheduleBookingId);
+  if (input.manageToken) params.set("token", input.manageToken);
+  if (input.source) params.set("utm_source", input.source);
+  if (input.medium) params.set("utm_medium", input.medium);
+  if (input.campaign) params.set("utm_campaign", input.campaign);
+  if (input.error) params.set("error", input.error);
 
   const query = params.toString();
-
   return query ? `/${input.businessSlug}/reservar?${query}` : `/${input.businessSlug}/reservar`;
 }
 
@@ -122,13 +91,8 @@ function buildManagePageHref(input: {
     token: input.manageToken,
   });
 
-  if (input.error) {
-    params.set("error", input.error);
-  }
-
-  if (input.status) {
-    params.set("status", input.status);
-  }
+  if (input.error) params.set("error", input.error);
+  if (input.status) params.set("status", input.status);
 
   return `/${input.businessSlug}/mi-turno?${params.toString()}`;
 }
@@ -176,41 +140,14 @@ async function sendConfirmationEmailIfPossible(input: {
     return;
   }
 
-  // Enviar email al cliente si tiene email
   if (input.customerEmail) {
     await sendBookingConfirmationEmail(confirmation, input.mode);
   }
 
-  // Enviar notificación al negocio
   if (confirmation.businessNotificationEmail) {
     const { sendBusinessNotificationEmail } = await import("@/server/booking-notifications");
     await sendBusinessNotificationEmail(confirmation, input.mode);
   }
-}
-
-async function reschedulePocketBaseBooking(input: {
-  businessSlug: string;
-  serviceId: string;
-  bookingDate: string;
-  startTime: string;
-  fullName: string;
-  phone?: string;
-  email: string;
-  notes?: string;
-  rescheduleBookingId: string;
-  manageToken: string;
-}) {
-  if (
-    !isValidBookingManageToken({
-      slug: input.businessSlug,
-      bookingId: input.rescheduleBookingId,
-      token: input.manageToken,
-    })
-  ) {
-    throw new Error("Link de gestion invalido.");
-  }
-
-  return reschedulePocketBasePublicBooking(input);
 }
 
 export async function createPublicBookingAction(formData: FormData) {
@@ -269,47 +206,29 @@ export async function createPublicBookingAction(formData: FormData) {
     );
   }
 
-  // Cargar datos del negocio/servicio antes de crear el booking
-  // para determinar si el cobro ser? online o en efectivo
   const { getPublicBusinessPageData: getPageDataEarly } = await import("@/server/queries/public");
   const pageDataEarly = await getPageDataEarly(parsed.data.businessSlug);
   const serviceEarly = pageDataEarly?.services.find((s) => s.id === parsed.data.serviceId);
 
   const businessPaymentSettings = !parsed.data.rescheduleBookingId
-    ? isPocketBaseConfigured()
-      ? await (async () => {
-          const { getPocketBaseBusinessPaymentSettingsBySlug } = await import(
-            "@/server/pocketbase-store"
-          );
-          return getPocketBaseBusinessPaymentSettingsBySlug(parsed.data.businessSlug);
-        })()
-      : await (async () => {
-          const { getLocalBusinessPaymentSettings } = await import("@/server/local-store");
-          return getLocalBusinessPaymentSettings(parsed.data.businessSlug);
-        })()
+    ? await getSupabaseBusinessPaymentSettingsBySlug(parsed.data.businessSlug).catch(() => null)
     : null;
 
   const serviceHasPrice =
     !parsed.data.rescheduleBookingId && serviceEarly?.price != null && serviceEarly.price > 0;
+
   const businessMPAccessToken = businessPaymentSettings
     ? await getUsableBusinessMercadoPagoAccessToken(
         businessPaymentSettings,
         async (tokens) => {
-          if (isPocketBaseConfigured()) {
-            await updatePocketBaseBusinessMPTokens({
-              businessId: businessPaymentSettings.businessId,
-              ...tokens,
-            });
-            return;
-          }
-
-          await updateLocalBusinessMPTokens({
-            businessSlug: businessPaymentSettings.businessSlug,
+          await updateSupabaseBusinessMPTokens({
+            businessId: businessPaymentSettings.businessId,
             ...tokens,
           });
         }
       )
     : null;
+
   const businessHasMercadoPago = Boolean(businessMPAccessToken);
   const requiresPayment = serviceHasPrice && businessHasMercadoPago;
 
@@ -328,26 +247,14 @@ export async function createPublicBookingAction(formData: FormData) {
       initialStatus: requiresPayment ? ("pending_payment" as const) : ("confirmed" as const),
     };
 
-    if (!isPocketBaseConfigured()) {
-      bookingId = await createLocalPublicBooking(bookingInput);
-      if (!parsed.data.rescheduleBookingId) {
-        await trackAnalyticsEvent({
-          businessSlug: parsed.data.businessSlug,
-          eventName: "booking_created",
-          pagePath: `/${parsed.data.businessSlug}/confirmacion`,
-          source: raw.source,
-          medium: raw.medium,
-          campaign: raw.campaign,
-        });
-      }
-    } else if (parsed.data.rescheduleBookingId) {
-      bookingId = await reschedulePocketBaseBooking({
+    if (parsed.data.rescheduleBookingId) {
+      bookingId = await rescheduleSupabasePublicBooking({
         ...parsed.data,
         rescheduleBookingId: parsed.data.rescheduleBookingId,
         manageToken: parsed.data.manageToken ?? "",
       });
     } else {
-      bookingId = await createPocketBasePublicBooking(bookingInput);
+      bookingId = await createSupabasePublicBooking(bookingInput);
       await trackAnalyticsEvent({
         businessSlug: parsed.data.businessSlug,
         eventName: "booking_created",
@@ -361,11 +268,9 @@ export async function createPublicBookingAction(formData: FormData) {
     const errorMessage =
       error instanceof RateLimitError
         ? `${error.message} Reintenta en ${error.retryAfterSeconds}s.`
-        : isPocketBaseInfraError(error)
-          ? "No pudimos procesar tu reserva por un problema del servidor. Intentá de nuevo en unos minutos."
-          : error instanceof Error
-            ? error.message
-            : "No se pudo crear la reserva.";
+        : error instanceof Error
+          ? error.message
+          : "No se pudo crear la reserva.";
 
     redirect(
       buildBookingPageHref({
@@ -384,51 +289,34 @@ export async function createPublicBookingAction(formData: FormData) {
 
   const isReschedule = !!parsed.data.rescheduleBookingId;
 
-  // Si el negocio tiene Mercado Pago conectado, redirigir al checkout online.
   if (requiresPayment && serviceEarly && businessMPAccessToken) {
     const businessName =
       (pageDataEarly as { profile?: { businessName?: string } } | null)?.profile?.businessName ||
       parsed.data.businessSlug;
 
-    const preferenceInput = {
-      bookingId,
-      businessSlug: parsed.data.businessSlug,
-      businessName,
-      serviceName: serviceEarly.name,
-      customerEmail: parsed.data.email || undefined,
-      customerName: parsed.data.fullName,
-      customerPhone: parsed.data.phone || undefined,
-      priceAmount: serviceEarly.price!,
-    };
-
     const preferenceResult = await createPaymentPreferenceForBusiness(
-      preferenceInput,
+      {
+        bookingId,
+        businessSlug: parsed.data.businessSlug,
+        businessName,
+        serviceName: serviceEarly.name,
+        customerEmail: parsed.data.email || undefined,
+        customerName: parsed.data.fullName,
+        customerPhone: parsed.data.phone || undefined,
+        priceAmount: serviceEarly.price!,
+      },
       businessMPAccessToken
     );
 
     if (preferenceResult.ok) {
-      // Actualizar el booking con el preferenceId antes de redirigir
-      if (!isPocketBaseConfigured()) {
-        const { updateLocalBookingPayment } = await import("@/server/local-store");
-        await updateLocalBookingPayment({
-          bookingId,
-          paymentStatus: "pending",
-          paymentProvider: "mercadopago",
-          paymentPreferenceId: preferenceResult.preferenceId,
-          paymentAmount: serviceEarly.price!,
-          paymentCurrency: "ARS",
-        });
-      } else {
-        const { updatePocketBaseBookingPayment } = await import("@/server/pocketbase-store");
-        await updatePocketBaseBookingPayment({
-          bookingId,
-          paymentStatus: "pending",
-          paymentProvider: "mercadopago",
-          paymentPreferenceId: preferenceResult.preferenceId,
-          paymentAmount: serviceEarly.price!,
-          paymentCurrency: "ARS",
-        });
-      }
+      await updateSupabaseBookingPayment({
+        bookingId,
+        paymentStatus: "pending",
+        paymentProvider: "mercadopago",
+        paymentPreferenceId: preferenceResult.preferenceId,
+        paymentAmount: serviceEarly.price!,
+        paymentCurrency: "ARS",
+      });
 
       redirect(preferenceResult.checkoutUrl);
     }
@@ -436,17 +324,10 @@ export async function createPublicBookingAction(formData: FormData) {
     logger.error("No se pudo crear la preferencia de pago", preferenceResult.error);
 
     try {
-      if (!isPocketBaseConfigured()) {
-        await cancelLocalPublicBooking({
-          businessSlug: parsed.data.businessSlug,
-          bookingId,
-        });
-      } else {
-        await cancelPocketBasePublicBooking({
-          businessSlug: parsed.data.businessSlug,
-          bookingId,
-        });
-      }
+      await cancelSupabasePublicBooking({
+        businessSlug: parsed.data.businessSlug,
+        bookingId,
+      });
     } catch (revertErr) {
       logger.error("No se pudo cancelar el booking tras fallar el pago", revertErr);
     }
@@ -495,19 +376,16 @@ export async function cancelPublicBookingAction(formData: FormData) {
   }
 
   try {
-    if (!isPocketBaseConfigured()) {
-      await cancelLocalPublicBooking({ businessSlug, bookingId });
-    } else {
-      await cancelPocketBasePublicBooking({ businessSlug, bookingId });
-    }
+    await cancelSupabasePublicBooking({ businessSlug, bookingId });
   } catch (error) {
-    const errorMessage = isPocketBaseInfraError(error)
-      ? "No pudimos cancelar el turno por un problema del servidor. Intentá de nuevo en unos minutos."
-      : error instanceof Error
-        ? error.message
-        : "No se pudo cancelar el turno.";
-
-    redirect(buildManagePageHref({ businessSlug, bookingId, manageToken, error: errorMessage }));
+    redirect(
+      buildManagePageHref({
+        businessSlug,
+        bookingId,
+        manageToken,
+        error: error instanceof Error ? error.message : "No se pudo cancelar el turno.",
+      })
+    );
   }
 
   redirect(

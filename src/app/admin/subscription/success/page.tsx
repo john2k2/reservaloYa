@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
-import { getBusinessSubscription } from "@/server/pocketbase-store";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getMPPaymentInfo, isMercadoPagoConfigured } from "@/server/mercadopago";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { createLogger } from "@/server/logger";
 
 const logger = createLogger("Subscription Success");
@@ -22,18 +21,9 @@ interface PageProps {
 }
 
 export default async function SubscriptionSuccessPage({ searchParams }: PageProps) {
-  const pb = await createPocketBaseServerClient();
-  const refreshed = await refreshPocketBaseAuth(pb);
+  const user = await getAuthenticatedSupabaseUser();
 
-  if (!refreshed || !pb.authStore.record) {
-    redirect("/login");
-  }
-
-  const businessId = Array.isArray(pb.authStore.record.business)
-    ? pb.authStore.record.business[0]
-    : pb.authStore.record.business;
-
-  if (!businessId) {
+  if (!user?.businessId) {
     redirect("/login");
   }
 
@@ -60,28 +50,6 @@ export default async function SubscriptionSuccessPage({ searchParams }: PageProp
 
   if (!paymentVerified) {
     redirect("/admin/subscription/pay?error=payment_not_verified");
-  }
-
-  const subscription = await getBusinessSubscription(businessId as string);
-
-  if (subscription) {
-    const nextBillingDate = new Date();
-    nextBillingDate.setDate(nextBillingDate.getDate() + 30);
-
-    await pb.collection("subscriptions").update(subscription.id, {
-      status: "active",
-      trialEndsAt: null,
-      nextBillingDate: nextBillingDate.toISOString().split("T")[0],
-    });
-  } else {
-    const nextBillingDate = new Date();
-    nextBillingDate.setDate(nextBillingDate.getDate() + 30);
-
-    await pb.collection("subscriptions").create({
-      businessId: businessId,
-      status: "active",
-      nextBillingDate: nextBillingDate.toISOString().split("T")[0],
-    });
   }
 
   const blueRate = await getBlueDollarRate();

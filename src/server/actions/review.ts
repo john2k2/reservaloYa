@@ -1,10 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 import { isValidBookingManageToken } from "@/server/public-booking-links";
-import { createLocalReview } from "@/server/local-store";
-import { createPocketBaseReview } from "@/server/pocketbase-store";
+import { createSupabaseReview } from "@/server/supabase-store";
 
 const reviewSchema = z.object({
   businessSlug: z.string().min(2).max(80),
@@ -47,21 +45,12 @@ export async function submitReviewAction(
   }
 
   try {
-    if (isPocketBaseConfigured()) {
-      await createPocketBaseReview({
-        businessSlug: parsed.data.businessSlug,
-        bookingId: parsed.data.bookingId,
-        rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
-        comment: parsed.data.comment,
-      });
-    } else {
-      await createLocalReview({
-        businessSlug: parsed.data.businessSlug,
-        bookingId: parsed.data.bookingId,
-        rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
-        comment: parsed.data.comment,
-      });
-    }
+    await createSupabaseReview({
+      businessSlug: parsed.data.businessSlug,
+      bookingId: parsed.data.bookingId,
+      rating: parsed.data.rating as 1 | 2 | 3 | 4 | 5,
+      comment: parsed.data.comment,
+    });
 
     return { success: true };
   } catch (err) {

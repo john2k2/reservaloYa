@@ -2,10 +2,7 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
-import { hasPocketBasePublicAuthCredentials } from "@/lib/pocketbase/config";
-import { isDemoModeEnabled } from "@/lib/runtime";
-import { createLocalWaitlistEntry } from "@/server/local-store";
-import { createPocketBaseWaitlistEntry } from "@/server/pocketbase-store";
+import { createSupabaseWaitlistEntry } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 
@@ -69,18 +66,11 @@ export async function joinWaitlistAction(
       bookingDate: parsed.data.bookingDate,
     });
 
-    const canUsePocketBase = hasPocketBasePublicAuthCredentials() && !isDemoModeEnabled();
-    if (canUsePocketBase) {
-      await createPocketBaseWaitlistEntry({
-        ...parsed.data,
-        phone: parsed.data.phone || undefined,
-      });
-    } else {
-      await createLocalWaitlistEntry({
-        ...parsed.data,
-        phone: parsed.data.phone || undefined,
-      });
-    }
+    await createSupabaseWaitlistEntry({
+      ...parsed.data,
+      phone: parsed.data.phone || undefined,
+    });
+
     return { success: true };
   } catch (err) {
     if (err instanceof RateLimitError) {

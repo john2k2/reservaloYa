@@ -113,9 +113,8 @@ src/
   server/
     actions/
     queries/
-    local-store.ts
-    pocketbase-store.ts
-    pocketbase-auth.ts
+    supabase-store/
+    supabase-auth.ts
 ```
 
 `/admin/settings` hoy existe como compatibilidad, pero el editor real esta centralizado en `/admin/onboarding`.

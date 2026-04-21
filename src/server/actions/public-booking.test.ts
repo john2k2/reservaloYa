@@ -6,9 +6,11 @@ const redirectMock = vi.fn((url: string) => {
   throw new Error(`REDIRECT:${url}`);
 });
 
-const createLocalPublicBookingMock = vi.fn(async () => "booking-test-id");
-const cancelLocalPublicBookingMock = vi.fn(async () => "booking-test-id");
-const getLocalBusinessPaymentSettingsMock = vi.fn<
+const createSupabasePublicBookingMock = vi.fn(async () => "booking-test-id");
+const cancelSupabasePublicBookingMock = vi.fn(async () => "booking-test-id");
+const rescheduleSupabasePublicBookingMock = vi.fn(async () => "booking-test-id");
+const updateSupabaseBookingPaymentMock = vi.fn(async () => undefined);
+const getSupabaseBusinessPaymentSettingsBySlugMock = vi.fn<
   () => Promise<{
     businessId: string;
     businessSlug: string;
@@ -20,7 +22,7 @@ const getLocalBusinessPaymentSettingsMock = vi.fn<
     mpTokenExpiresAt?: string | null;
   } | null>
 >(async () => null);
-const updateLocalBusinessMPTokensMock = vi.fn(async () => undefined);
+const updateSupabaseBusinessMPTokensMock = vi.fn(async () => undefined);
 const createPaymentPreferenceForBusinessMock = vi.fn(async () => ({
   ok: false as const,
   error: "business payment provider unavailable",
@@ -34,22 +36,13 @@ vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Headers({ "x-forwarded-for": "203.0.113.11" })),
 }));
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: vi.fn(() => false),
-}));
-
-vi.mock("@/server/local-store", () => ({
-  createLocalPublicBooking: createLocalPublicBookingMock,
-  cancelLocalPublicBooking: cancelLocalPublicBookingMock,
-  getLocalBusinessPaymentSettings: getLocalBusinessPaymentSettingsMock,
-  updateLocalBusinessMPTokens: updateLocalBusinessMPTokensMock,
-}));
-
-vi.mock("@/server/pocketbase-store", () => ({
-  createPocketBasePublicBooking: vi.fn(),
-  reschedulePocketBasePublicBooking: vi.fn(),
-  cancelPocketBasePublicBooking: vi.fn(),
-  updatePocketBaseBusinessMPTokens: vi.fn(),
+vi.mock("@/server/supabase-store", () => ({
+  createSupabasePublicBooking: createSupabasePublicBookingMock,
+  cancelSupabasePublicBooking: cancelSupabasePublicBookingMock,
+  rescheduleSupabasePublicBooking: rescheduleSupabasePublicBookingMock,
+  updateSupabaseBookingPayment: updateSupabaseBookingPaymentMock,
+  getSupabaseBusinessPaymentSettingsBySlug: getSupabaseBusinessPaymentSettingsBySlugMock,
+  updateSupabaseBusinessMPTokens: updateSupabaseBusinessMPTokensMock,
 }));
 
 vi.mock("@/server/analytics", () => ({
@@ -126,13 +119,15 @@ function buildRescheduleFormData(overrides: Record<string, string> = {}) {
 const sharedBeforeEach = () => {
   resetRateLimitStoreForTests();
   redirectMock.mockClear();
-  createLocalPublicBookingMock.mockClear();
-  cancelLocalPublicBookingMock.mockClear();
-  getLocalBusinessPaymentSettingsMock.mockReset();
-  updateLocalBusinessMPTokensMock.mockClear();
+  createSupabasePublicBookingMock.mockClear();
+  cancelSupabasePublicBookingMock.mockClear();
+  rescheduleSupabasePublicBookingMock.mockClear();
+  updateSupabaseBookingPaymentMock.mockClear();
+  getSupabaseBusinessPaymentSettingsBySlugMock.mockReset();
+  updateSupabaseBusinessMPTokensMock.mockClear();
   createPaymentPreferenceForBusinessMock.mockReset();
 
-  getLocalBusinessPaymentSettingsMock.mockResolvedValue(null);
+  getSupabaseBusinessPaymentSettingsBySlugMock.mockResolvedValue(null);
   createPaymentPreferenceForBusinessMock.mockResolvedValue({
     ok: false,
     error: "business payment provider unavailable",
@@ -169,17 +164,17 @@ describe("public booking action rate limit", () => {
       /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id&token=confirmation-token/
     );
 
-    expect(createLocalPublicBookingMock).toHaveBeenCalledWith(
+    expect(createSupabasePublicBookingMock).toHaveBeenCalledWith(
       expect.objectContaining({
         initialStatus: "confirmed",
       })
     );
     expect(createPaymentPreferenceForBusinessMock).not.toHaveBeenCalled();
-    expect(cancelLocalPublicBookingMock).not.toHaveBeenCalled();
+    expect(cancelSupabasePublicBookingMock).not.toHaveBeenCalled();
   });
 
   it("returns to booking and cancels the provisional booking when online payment init fails", async () => {
-    getLocalBusinessPaymentSettingsMock.mockResolvedValue({
+    getSupabaseBusinessPaymentSettingsBySlugMock.mockResolvedValue({
       businessId: "business-1",
       businessSlug: "demo-barberia",
       businessName: "Demo Barberia",
@@ -197,7 +192,7 @@ describe("public booking action rate limit", () => {
     );
 
     const redirectedUrl = String(redirectMock.mock.calls.at(-1)?.[0] ?? "");
-    expect(createLocalPublicBookingMock).toHaveBeenCalledWith(
+    expect(createSupabasePublicBookingMock).toHaveBeenCalledWith(
       expect.objectContaining({
         initialStatus: "pending_payment",
       })
@@ -210,7 +205,7 @@ describe("public booking action rate limit", () => {
       }),
       "APP_USR_test_token"
     );
-    expect(cancelLocalPublicBookingMock).toHaveBeenCalledWith({
+    expect(cancelSupabasePublicBookingMock).toHaveBeenCalledWith({
       businessSlug: "demo-barberia",
       bookingId: "booking-test-id",
     });
@@ -223,14 +218,14 @@ describe("public booking action rate limit", () => {
 describe("reschedule booking", () => {
   beforeEach(sharedBeforeEach);
 
-  it("reschedula correctamente en el store local", async () => {
+  it("reschedula correctamente en el store", async () => {
     const { createPublicBookingAction } = await import("./public-booking");
 
     await expect(createPublicBookingAction(buildRescheduleFormData())).rejects.toThrow(
       /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id&token=confirmation-token/
     );
 
-    expect(createLocalPublicBookingMock).toHaveBeenCalledWith(
+    expect(rescheduleSupabasePublicBookingMock).toHaveBeenCalledWith(
       expect.objectContaining({
         rescheduleBookingId: "existing-booking-id",
         businessSlug: "demo-barberia",
@@ -242,7 +237,7 @@ describe("reschedule booking", () => {
 
   it("no intenta cobro online en un reschedule", async () => {
     // Simular que el negocio tiene MP conectado — no debería importar en un reschedule
-    getLocalBusinessPaymentSettingsMock.mockResolvedValue({
+    getSupabaseBusinessPaymentSettingsBySlugMock.mockResolvedValue({
       businessId: "business-1",
       businessSlug: "demo-barberia",
       businessName: "Demo Barberia",
@@ -274,6 +269,6 @@ describe("reschedule booking", () => {
     const url = new URL(redirectedUrl, "http://localhost");
     expect(url.pathname).toBe("/demo-barberia/reservar");
     expect(url.searchParams.get("error")).toContain("Link de gestion invalido");
-    expect(createLocalPublicBookingMock).not.toHaveBeenCalled();
+    expect(rescheduleSupabasePublicBookingMock).not.toHaveBeenCalled();
   });
 });

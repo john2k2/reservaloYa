@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { isDemoModeEnabled } from "@/lib/runtime";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { runLocalBookingReminderSweep } from "@/server/local-store";
-import { getPocketBaseBusinessBySlug, runPocketBaseBookingReminderSweep } from "@/server/pocketbase-store";
+import { runSupabaseBookingReminderSweep } from "@/server/supabase-store";
 
 function isAuthorized(request: Request) {
   const secret = process.env.BOOKING_JOBS_SECRET;
@@ -11,7 +8,7 @@ function isAuthorized(request: Request) {
   const expectedSecrets = [secret, cronSecret].filter(Boolean);
 
   if (expectedSecrets.length === 0) {
-    return !isPocketBaseConfigured() && isDemoModeEnabled();
+    return process.env.NODE_ENV !== "production";
   }
 
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -19,30 +16,15 @@ function isAuthorized(request: Request) {
   const matchesExpectedSecret = (candidate: string | null | undefined) =>
     candidate ? expectedSecrets.includes(candidate) : false;
 
-  return (
-    matchesExpectedSecret(bearer) ||
-    matchesExpectedSecret(headerSecret)
-  );
+  return matchesExpectedSecret(bearer) || matchesExpectedSecret(headerSecret);
 }
 
-async function runReminderJob(body: { businessSlug?: string; now?: string; dryRun?: boolean } | null) {
-  return isPocketBaseConfigured()
-    ? await (async () => {
-        const business = body?.businessSlug
-          ? await getPocketBaseBusinessBySlug(body.businessSlug)
-          : null;
-
-        return runPocketBaseBookingReminderSweep({
-          businessId: business?.id,
-          now: body?.now,
-          dryRun: body?.dryRun,
-        });
-      })()
-    : await runLocalBookingReminderSweep({
-        businessSlug: body?.businessSlug,
-        now: body?.now,
-        dryRun: body?.dryRun,
-      });
+async function runReminderJob(body: { businessId?: string; now?: string; dryRun?: boolean } | null) {
+  return runSupabaseBookingReminderSweep({
+    businessId: body?.businessId,
+    now: body?.now,
+    dryRun: body?.dryRun,
+  });
 }
 
 export async function GET(request: Request) {
@@ -52,12 +34,11 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const dryRun = url.searchParams.get("dryRun");
-  const body = {
-    businessSlug: url.searchParams.get("businessSlug") ?? undefined,
+  const result = await runReminderJob({
+    businessId: url.searchParams.get("businessId") ?? undefined,
     now: url.searchParams.get("now") ?? undefined,
     dryRun: dryRun === "1" || dryRun === "true",
-  };
-  const result = await runReminderJob(body);
+  });
 
   return NextResponse.json({ ok: true, result });
 }
@@ -68,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => null)) as
-    | { businessSlug?: string; now?: string; dryRun?: boolean }
+    | { businessId?: string; now?: string; dryRun?: boolean }
     | null;
   const result = await runReminderJob(body);
 

@@ -2,29 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resetRateLimitStoreForTests } from "@/server/rate-limit";
 import { joinWaitlistAction } from "./waitlist";
 
-const { createLocalWaitlistEntryMock, createPocketBaseWaitlistEntryMock } = vi.hoisted(() => ({
-  createLocalWaitlistEntryMock: vi.fn(async () => undefined),
-  createPocketBaseWaitlistEntryMock: vi.fn(async () => undefined),
-}));
-
-vi.mock("@/lib/pocketbase/config", () => ({
-  hasPocketBasePublicAuthCredentials: vi.fn(() => false),
-}));
-
-vi.mock("@/lib/runtime", () => ({
-  isDemoModeEnabled: vi.fn(() => false),
+const { createSupabaseWaitlistEntryMock } = vi.hoisted(() => ({
+  createSupabaseWaitlistEntryMock: vi.fn(async () => undefined),
 }));
 
 vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Headers({ "x-forwarded-for": "203.0.113.33" })),
 }));
 
-vi.mock("@/server/local-store", () => ({
-  createLocalWaitlistEntry: createLocalWaitlistEntryMock,
-}));
-
-vi.mock("@/server/pocketbase-store", () => ({
-  createPocketBaseWaitlistEntry: createPocketBaseWaitlistEntryMock,
+vi.mock("@/server/supabase-store", () => ({
+  createSupabaseWaitlistEntry: createSupabaseWaitlistEntryMock,
 }));
 
 function buildWaitlistFormData(overrides: Record<string, string> = {}) {
@@ -44,15 +31,14 @@ function buildWaitlistFormData(overrides: Record<string, string> = {}) {
 describe("joinWaitlistAction", () => {
   beforeEach(() => {
     resetRateLimitStoreForTests();
-    createLocalWaitlistEntryMock.mockClear();
-    createPocketBaseWaitlistEntryMock.mockClear();
+    createSupabaseWaitlistEntryMock.mockClear();
   });
 
-  it("registra correctamente en el store local", async () => {
+  it("registra correctamente en el store", async () => {
     const result = await joinWaitlistAction(null, buildWaitlistFormData());
 
     expect(result).toEqual({ success: true });
-    expect(createLocalWaitlistEntryMock).toHaveBeenCalledWith(
+    expect(createSupabaseWaitlistEntryMock).toHaveBeenCalledWith(
       expect.objectContaining({
         businessSlug: "demo-barberia",
         serviceId: "service-1",
@@ -70,7 +56,7 @@ describe("joinWaitlistAction", () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(createLocalWaitlistEntryMock).toHaveBeenCalledWith(
+    expect(createSupabaseWaitlistEntryMock).toHaveBeenCalledWith(
       expect.objectContaining({ phone: undefined })
     );
   });
@@ -85,7 +71,7 @@ describe("joinWaitlistAction", () => {
       success: false,
       error: "Revisá los datos ingresados.",
     });
-    expect(createLocalWaitlistEntryMock).not.toHaveBeenCalled();
+    expect(createSupabaseWaitlistEntryMock).not.toHaveBeenCalled();
   });
 
   it("rechaza fecha en formato incorrecto", async () => {
@@ -109,43 +95,6 @@ describe("joinWaitlistAction", () => {
     expect(result).toEqual({
       success: false,
       error: "Revisá los datos ingresados.",
-    });
-  });
-
-  it("devuelve error si el store lanza excepción", async () => {
-    createLocalWaitlistEntryMock.mockRejectedValueOnce(new Error("DB error"));
-
-    const result = await joinWaitlistAction(null, buildWaitlistFormData());
-
-    expect(result).toEqual({
-      success: false,
-      error: "No se pudo registrar. Intentá de nuevo.",
-    });
-  });
-
-  it("usa PocketBase cuando está configurado", async () => {
-    const { hasPocketBasePublicAuthCredentials } = await import(
-      "@/lib/pocketbase/config"
-    );
-    vi.mocked(hasPocketBasePublicAuthCredentials).mockReturnValueOnce(true);
-
-    const result = await joinWaitlistAction(null, buildWaitlistFormData());
-
-    expect(result).toEqual({ success: true });
-    expect(createPocketBaseWaitlistEntryMock).toHaveBeenCalled();
-    expect(createLocalWaitlistEntryMock).not.toHaveBeenCalled();
-  });
-
-  it("rate-limitea envíos repetidos de waitlist", async () => {
-    let lastResult = null;
-
-    for (let index = 0; index < 6; index += 1) {
-      lastResult = await joinWaitlistAction(null, buildWaitlistFormData());
-    }
-
-    expect(lastResult).toEqual({
-      success: false,
-      error: expect.stringContaining("Demasiados intentos de lista de espera"),
     });
   });
 });

@@ -1,30 +1,17 @@
 import { unstable_noStore as noStore } from "next/cache";
 
-import { isDemoModeEnabled } from "@/lib/runtime";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import {
-  getLocalAdminAvailabilityData,
-  getLocalAdminBookingsData,
-  getLocalAdminCustomersData,
-  getLocalAdminDashboardData,
-  getLocalOnboardingData,
-  getLocalAdminServicesData,
-  getLocalAdminSettingsData,
-  getLocalAdminShellData,
-} from "@/server/local-store";
-import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
-import {
-  getPocketBaseAdminAvailabilityData,
-  getPocketBaseAdminBookingsData,
-  getPocketBaseAdminCustomersData,
-  getPocketBaseAdminDashboardData,
-  getPocketBaseAdminServicesData,
-  getPocketBaseAdminSettingsData,
-  getPocketBaseAdminShellData,
-  getPocketBaseAdminTeamData,
-  getPocketBaseOnboardingData,
-} from "@/server/pocketbase-store";
+  getSupabaseAdminShellData,
+  getSupabaseAdminBookingsData,
+  getSupabaseAdminCustomersData,
+  getSupabaseAdminServicesData,
+  getSupabaseAdminAvailabilityData,
+  getSupabaseAdminSettingsData,
+  getSupabaseAdminDashboardData,
+  getSupabaseOnboardingData,
+  getSupabaseAdminTeamData,
+} from "@/server/supabase-store";
 
 type AdminShellData = {
   demoMode: boolean;
@@ -44,29 +31,16 @@ type AdminShellData = {
   subscriptionExpired?: boolean;
 };
 
-function canUseLocalAdminMode() {
-  return process.env.NODE_ENV !== "production" && isDemoModeEnabled();
-}
-
 export async function getAdminShellData(): Promise<AdminShellData | null> {
   noStore();
 
-  if (!isPocketBaseConfigured()) {
-    if (!canUseLocalAdminMode()) {
-      return null;
-    }
-
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminShellData(activeBusinessSlug);
-  }
-
-  const user = await getAuthenticatedPocketBaseUser();
+  const user = await getAuthenticatedSupabaseUser();
 
   if (!user) {
     return null;
   }
 
-  return getPocketBaseAdminShellData(user);
+  return getSupabaseAdminShellData(user);
 }
 
 async function getLiveBusinessId() {
@@ -88,11 +62,10 @@ export async function getAdminDashboardData() {
   const shellData = await getAdminShellData();
 
   if (!shellData || shellData.demoMode || !shellData.businessId) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminDashboardData(activeBusinessSlug);
+    return null;
   }
 
-  return getPocketBaseAdminDashboardData(shellData.businessId);
+  return getSupabaseAdminDashboardData(shellData.businessId);
 }
 
 export async function getAdminTeamData() {
@@ -104,7 +77,7 @@ export async function getAdminTeamData() {
     return [];
   }
 
-  return getPocketBaseAdminTeamData(shellData.businessId);
+  return getSupabaseAdminTeamData(shellData.businessId);
 }
 
 export async function getAdminServicesData() {
@@ -113,11 +86,10 @@ export async function getAdminServicesData() {
   const shellData = await getLiveBusinessId();
 
   if (!shellData) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminServicesData(activeBusinessSlug);
+    return null;
   }
 
-  return getPocketBaseAdminServicesData(shellData.businessId);
+  return getSupabaseAdminServicesData(shellData.businessId);
 }
 
 export type AdminBookingsFilters = {
@@ -141,11 +113,10 @@ export async function getAdminBookingsData(filters?: AdminBookingsFilters) {
   const shellData = await getLiveBusinessId();
 
   if (!shellData) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminBookingsData(activeBusinessSlug, normalizedFilters);
+    return null;
   }
 
-  return getPocketBaseAdminBookingsData(shellData.businessId, normalizedFilters);
+  return getSupabaseAdminBookingsData(shellData.businessId, normalizedFilters);
 }
 
 export async function getAdminCustomersData() {
@@ -153,11 +124,10 @@ export async function getAdminCustomersData() {
   const shellData = await getLiveBusinessId();
 
   if (!shellData) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminCustomersData(activeBusinessSlug);
+    return null;
   }
 
-  return getPocketBaseAdminCustomersData(shellData.businessId);
+  return getSupabaseAdminCustomersData(shellData.businessId);
 }
 
 export async function getAdminCustomersDataWithFilter(query?: string) {
@@ -167,11 +137,10 @@ export async function getAdminCustomersDataWithFilter(query?: string) {
   const shellData = await getLiveBusinessId();
 
   if (!shellData) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminCustomersData(activeBusinessSlug, normalizedQuery);
+    return null;
   }
 
-  return getPocketBaseAdminCustomersData(shellData.businessId, normalizedQuery);
+  return getSupabaseAdminCustomersData(shellData.businessId, normalizedQuery);
 }
 
 export async function getAdminAvailabilityData() {
@@ -180,11 +149,10 @@ export async function getAdminAvailabilityData() {
   const shellData = await getLiveBusinessId();
 
   if (!shellData) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminAvailabilityData(activeBusinessSlug);
+    return null;
   }
 
-  return getPocketBaseAdminAvailabilityData(shellData.businessId);
+  return getSupabaseAdminAvailabilityData(shellData.businessId);
 }
 
 export async function getAdminSettingsData() {
@@ -193,11 +161,10 @@ export async function getAdminSettingsData() {
   const shellData = await getLiveBusinessId();
 
   if (!shellData) {
-    const activeBusinessSlug = await getLocalActiveBusinessSlug();
-    return getLocalAdminSettingsData(activeBusinessSlug);
+    return null;
   }
 
-  return getPocketBaseAdminSettingsData(shellData.businessId);
+  return getSupabaseAdminSettingsData(shellData.businessId);
 }
 
 export async function getAdminOnboardingData() {
@@ -205,27 +172,7 @@ export async function getAdminOnboardingData() {
 
   const shellData = await getAdminShellData();
 
-  if (!isPocketBaseConfigured()) {
-    if (!isDemoModeEnabled()) {
-      return {
-        demoMode: false,
-        businesses: [],
-        templates: [],
-        activeBusinessSlug: shellData?.businessSlug ?? null,
-      };
-    }
-
-    const localOnboardingData = await getLocalOnboardingData();
-
-    return {
-      demoMode: true,
-      businesses: localOnboardingData.businesses,
-      templates: localOnboardingData.templates,
-      activeBusinessSlug: shellData?.businessSlug ?? null,
-    };
-  }
-
-  const onboardingData = await getPocketBaseOnboardingData(shellData?.businessId);
+  const onboardingData = await getSupabaseOnboardingData(shellData?.businessId);
 
   return {
     demoMode: false,

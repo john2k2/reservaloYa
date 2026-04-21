@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { getPublicAppUrl } from "@/lib/runtime";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
 
 type BookingManageTokenPayload = {
   slug: string;
@@ -13,22 +12,18 @@ type BookingManageTokenPayload = {
 const DEV_BOOKING_LINK_SECRET = "reservaya-demo-booking-link-secret";
 const DEFAULT_BOOKING_LINK_TTL_DAYS = 30;
 const MISSING_BOOKING_LINK_SECRET_ERROR =
-  "Missing environment variable: BOOKING_LINK_SECRET (required outside local/demo runtime)";
-
-function requiresConfiguredBookingLinkSecret() {
-  return isPocketBaseConfigured() && process.env.RESERVAYA_ENABLE_DEMO_MODE !== "true";
-}
+  "Missing environment variable: BOOKING_LINK_SECRET (required in production runtime)";
 
 function getBookingLinkSecret() {
   if (process.env.BOOKING_LINK_SECRET) {
     return process.env.BOOKING_LINK_SECRET;
   }
 
-  if (requiresConfiguredBookingLinkSecret()) {
-    return null;
+  if (process.env.NODE_ENV !== "production") {
+    return DEV_BOOKING_LINK_SECRET;
   }
 
-  return DEV_BOOKING_LINK_SECRET;
+  return null;
 }
 
 function getRequiredBookingLinkSecret() {

@@ -1,36 +1,22 @@
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { createLogger } from "@/server/logger";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { createSubscriptionPreference, isMercadoPagoConfigured } from "@/server/mercadopago";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 
 export const dynamic = "force-dynamic";
 
 const logger = createLogger("MP Payment");
 
-async function getBusinessIdFromSession(): Promise<string | null> {
-  const pb = await createPocketBaseServerClient();
-  const refreshed = await refreshPocketBaseAuth(pb);
-
-  if (!refreshed || !pb.authStore.record) {
-    return null;
-  }
-
-  const businessId = Array.isArray(pb.authStore.record.business)
-    ? pb.authStore.record.business[0]
-    : pb.authStore.record.business;
-
-  return businessId as string | null;
-}
-
 export async function GET() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const businessId = await getBusinessIdFromSession();
 
-  if (!businessId) {
+  const user = await getAuthenticatedSupabaseUser();
+
+  if (!user?.businessId) {
     redirect("/admin/login");
   }
 
@@ -43,7 +29,7 @@ export async function GET() {
   const arsPrice = getSubscriptionArsPrice(blueRate);
 
   const result = await createSubscriptionPreference({
-    businessId,
+    businessId: user.businessId,
     priceAmount: arsPrice,
   });
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildBookingPaymentPatch,
@@ -7,6 +7,11 @@ import {
   buildBusinessPaymentSettings,
   normalizeMercadoPagoCollectorId,
 } from "@/server/payments-domain";
+
+vi.mock("@/server/mp-token-crypto", () => ({
+  encryptMPToken: vi.fn((s: string) => s),
+  decryptMPToken: vi.fn((s: string) => s),
+}));
 
 describe("payments domain helpers", () => {
   it("builds normalized business payment settings", () => {

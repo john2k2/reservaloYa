@@ -2,37 +2,27 @@
 
 import { redirect } from "next/navigation";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
-import { runLocalBookingReminderSweep } from "@/server/local-store";
-import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
-import { runPocketBaseBookingReminderSweep } from "@/server/pocketbase-store";
+import { requireAdminRouteAccess } from "@/server/admin-access";
+import { runSupabaseBookingReminderSweep } from "@/server/supabase-store";
 
 export async function runLocalReminderSweepAction() {
-  const result = isPocketBaseConfigured()
-    ? await (async () => {
-        const user = await getAuthenticatedPocketBaseUser();
-        const businessId = Array.isArray(user?.business) ? user?.business[0] : user?.business;
+  const shellData = await requireAdminRouteAccess("/admin/dashboard");
 
-        return runPocketBaseBookingReminderSweep({
-          businessId: businessId ? String(businessId) : undefined,
-        });
-      })()
-    : await (async () => {
-        const businessSlug = await getLocalActiveBusinessSlug();
-        return runLocalBookingReminderSweep({
-          businessSlug: businessSlug ?? undefined,
-        });
-      })();
+  if (!shellData.businessId || shellData.demoMode) {
+    redirect("/admin/dashboard?error=Los recordatorios solo estan disponibles en modo Supabase.");
+  }
 
-  const message =
-    result.sent > 0
-      ? `Se enviaron ${result.sent} recordatorios.`
-      : result.readyWithoutProvider > 0
-        ? `Hay ${result.readyWithoutProvider} recordatorios listos. Solo falta configurar email o WhatsApp.`
-        : result.missingEmail > 0
-          ? `Hay ${result.missingEmail} turnos sin canal disponible para recordar.`
-          : "No había recordatorios pendientes en las próximas 24 hs.";
+  try {
+    const result = await runSupabaseBookingReminderSweep({ businessId: shellData.businessId });
+    const message =
+      result.sent > 0
+        ? `Se enviaron ${result.sent} recordatorio${result.sent !== 1 ? "s" : ""}.`
+        : result.candidates > 0
+          ? `Hay ${result.candidates} turno${result.candidates !== 1 ? "s" : ""} con recordatorio pendiente pero no hay proveedor configurado.`
+          : "No hay turnos con recordatorio pendiente para las próximas 24hs.";
 
-  redirect(`/admin/dashboard?reminders=${encodeURIComponent(message)}`);
+    redirect(`/admin/dashboard?reminders=${encodeURIComponent(message)}`);
+  } catch {
+    redirect("/admin/dashboard?error=No%20se%20pudo%20enviar%20los%20recordatorios.");
+  }
 }

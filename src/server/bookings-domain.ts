@@ -23,7 +23,7 @@ export type BookingConfirmationView = {
   timezone: string;
   status: string;
   manageToken?: string;
-  source: "local" | "pocketbase";
+  source: "pocketbase" | "supabase";
   paymentStatus?: PaymentStatus;
   paymentAmount?: number;
   paymentCurrency?: string;
@@ -47,7 +47,7 @@ export type ManageBookingView = {
   phone: string;
   email: string;
   notes: string;
-  source?: "local" | "pocketbase";
+  source?: "pocketbase" | "supabase";
 };
 
 export function buildBookingStartsAt(bookingDate: string, startTime: string) {
@@ -76,7 +76,7 @@ export function buildBookingConfirmationView(input: {
   startTime: string;
   status: string;
   manageToken?: string;
-  source: "local" | "pocketbase";
+  source?: "pocketbase" | "supabase";
   paymentStatus?: PaymentStatus;
   paymentAmount?: number;
   paymentCurrency?: string;
@@ -107,7 +107,7 @@ export function buildBookingConfirmationView(input: {
     timezone: input.businessTimezone,
     status: input.status,
     manageToken: input.manageToken,
-    source: input.source,
+    source: input.source ?? "supabase",
     paymentStatus: input.paymentStatus,
     paymentAmount: input.paymentAmount,
     paymentCurrency: input.paymentCurrency,
@@ -132,7 +132,7 @@ export function buildManageBookingView(input: {
   phone?: string | null;
   email?: string | null;
   notes?: string | null;
-  source?: "local" | "pocketbase";
+  source?: "pocketbase" | "supabase";
 }): ManageBookingView {
   return {
     id: input.id,
@@ -151,6 +151,6 @@ export function buildManageBookingView(input: {
     phone: input.phone ?? "",
     email: input.email ?? "",
     notes: input.notes ?? "",
-    source: input.source,
+    source: input.source ?? "supabase",
   };
 }

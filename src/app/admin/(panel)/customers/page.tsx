@@ -1,5 +1,6 @@
 import { Search, Calendar, FileText, Download, Phone, CalendarClock } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,10 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const customers = await getAdminCustomersDataWithFilter(query);
+
+  if (customers === null) {
+    redirect("/admin/onboarding");
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-10">

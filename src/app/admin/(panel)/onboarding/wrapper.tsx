@@ -14,7 +14,7 @@ interface OnboardingWrapperProps {
 }
 
 export default async function OnboardingWrapper({ searchParams }: OnboardingWrapperProps) {
-  const shellData = await requireAdminRouteAccess("/admin/onboarding");
+  await requireAdminRouteAccess("/admin/onboarding");
   const params = await searchParams;
   const [onboardingData, settingsData] = await Promise.all([
     getAdminOnboardingData(),

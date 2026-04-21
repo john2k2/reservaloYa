@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -38,6 +39,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     getAdminServicesData(),
     getAdminAvailabilityData(),
   ]);
+
+  if (!dashboardData || !services || !availability) {
+    redirect("/admin/onboarding");
+  }
+
   const params = await searchParams;
   const reminderMessage = params.reminders ?? "";
   const errorMessage = params.error ?? "";

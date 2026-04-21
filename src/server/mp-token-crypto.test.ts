@@ -12,7 +12,6 @@ describe("encryptMPToken", () => {
   it("devuelve el plaintext sin modificar si no hay clave configurada", () => {
     vi.stubEnv("MP_TOKEN_ENCRYPTION_KEY", "");
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("NEXT_PUBLIC_POCKETBASE_URL", "");
     expect(encryptMPToken("my-token")).toBe("my-token");
   });
 
@@ -38,7 +37,6 @@ describe("encryptMPToken", () => {
   it("devuelve plaintext si la clave tiene longitud incorrecta", () => {
     vi.stubEnv("MP_TOKEN_ENCRYPTION_KEY", "short-key");
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("NEXT_PUBLIC_POCKETBASE_URL", "");
     expect(encryptMPToken("my-token")).toBe("my-token");
   });
 
@@ -47,18 +45,15 @@ describe("encryptMPToken", () => {
     vi.stubEnv("NODE_ENV", "production");
 
     expect(() => encryptMPToken("my-token")).toThrow(
-      "MP_TOKEN_ENCRYPTION_KEY es obligatoria fuera de local/demo y debe tener 64 caracteres hex."
+      "MP_TOKEN_ENCRYPTION_KEY es obligatoria en producción y debe tener 64 caracteres hex."
     );
   });
 
-  it("lanza error en runtime real si la clave es inválida", () => {
+  it("permite desarrollo sin clave válida", () => {
     vi.stubEnv("MP_TOKEN_ENCRYPTION_KEY", "short-key");
-    vi.stubEnv("NEXT_PUBLIC_POCKETBASE_URL", "https://pb.example.com");
-    vi.stubEnv("RESERVAYA_ENABLE_DEMO_MODE", "false");
+    vi.stubEnv("NODE_ENV", "development");
 
-    expect(() => encryptMPToken("my-token")).toThrow(
-      "MP_TOKEN_ENCRYPTION_KEY es obligatoria fuera de local/demo y debe tener 64 caracteres hex."
-    );
+    expect(encryptMPToken("my-token")).toBe("my-token");
   });
 });
 
@@ -92,7 +87,6 @@ describe("decryptMPToken", () => {
     vi.unstubAllEnvs();
     vi.stubEnv("MP_TOKEN_ENCRYPTION_KEY", "");
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("NEXT_PUBLIC_POCKETBASE_URL", "");
     expect(decryptMPToken(encrypted)).toBeNull();
   });
 

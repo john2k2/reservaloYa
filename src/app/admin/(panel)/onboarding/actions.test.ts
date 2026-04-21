@@ -2,66 +2,62 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   redirectMock,
+  revalidatePathMock,
   requireAdminRouteAccessMock,
-  setLocalActiveBusinessSlugMock,
-  createLocalBusinessFromTemplateMock,
+  saveBrandingImageUploadMock,
+  listSupabaseRecordsMock,
+  createSupabaseRecordMock,
+  updateSupabaseRecordMock,
+  getSupabaseRecordMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
   }),
+  revalidatePathMock: vi.fn(),
   requireAdminRouteAccessMock: vi.fn(),
-  setLocalActiveBusinessSlugMock: vi.fn(),
-  createLocalBusinessFromTemplateMock: vi.fn(),
+  saveBrandingImageUploadMock: vi.fn(),
+  listSupabaseRecordsMock: vi.fn(),
+  createSupabaseRecordMock: vi.fn(),
+  updateSupabaseRecordMock: vi.fn(),
+  getSupabaseRecordMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
+  unstable_rethrow: (error: unknown) => {
+    throw error;
+  },
 }));
 
 vi.mock("next/cache", () => ({
-  revalidatePath: vi.fn(),
+  revalidatePath: revalidatePathMock,
 }));
 
 vi.mock("@/server/admin-access", () => ({
   requireAdminRouteAccess: requireAdminRouteAccessMock,
 }));
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: vi.fn(() => false),
-}));
-
-vi.mock("@/server/local-admin-context", () => ({
-  setLocalActiveBusinessSlug: setLocalActiveBusinessSlugMock,
-}));
-
-vi.mock("@/server/local-store", () => ({
-  createLocalBusinessFromTemplate: createLocalBusinessFromTemplateMock,
-  getLocalAdminSettingsData: vi.fn(),
-  updateLocalBusiness: vi.fn(),
-  updateLocalBusinessBranding: vi.fn(),
-}));
-
-vi.mock("@/server/pocketbase-store", () => ({
-  createPocketBaseBusinessFromTemplate: vi.fn(),
-  getPocketBaseAdminSettingsData: vi.fn(),
-  updatePocketBaseBusiness: vi.fn(),
-  updatePocketBaseBusinessBranding: vi.fn(),
-}));
-
-vi.mock("@/server/pocketbase-auth", () => ({
-  getAuthenticatedPocketBaseUser: vi.fn(),
-}));
-
 vi.mock("@/server/branding-upload", () => ({
-  saveBrandingImageUpload: vi.fn(),
+  saveBrandingImageUpload: saveBrandingImageUploadMock,
+}));
+
+vi.mock("@/server/supabase-store/_core", () => ({
+  listSupabaseRecords: listSupabaseRecordsMock,
+  createSupabaseRecord: createSupabaseRecordMock,
+  updateSupabaseRecord: updateSupabaseRecordMock,
+  getSupabaseRecord: getSupabaseRecordMock,
 }));
 
 describe("onboarding owner-only actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
+    revalidatePathMock.mockReset();
     requireAdminRouteAccessMock.mockReset();
-    setLocalActiveBusinessSlugMock.mockReset();
-    createLocalBusinessFromTemplateMock.mockReset();
+    saveBrandingImageUploadMock.mockReset();
+    listSupabaseRecordsMock.mockReset();
+    createSupabaseRecordMock.mockReset();
+    updateSupabaseRecordMock.mockReset();
+    getSupabaseRecordMock.mockReset();
   });
 
   it("blocks staff from creating businesses from onboarding", async () => {
@@ -81,8 +77,7 @@ describe("onboarding owner-only actions", () => {
     formData.set("address", "Calle 123");
 
     await expect(createOnboardedBusinessAction(formData)).rejects.toThrow("REDIRECT:");
-    expect(createLocalBusinessFromTemplateMock).not.toHaveBeenCalled();
-    expect(setLocalActiveBusinessSlugMock).not.toHaveBeenCalled();
+    expect(createSupabaseRecordMock).not.toHaveBeenCalled();
   });
 
   it("lets owners create businesses from onboarding", async () => {
@@ -91,7 +86,15 @@ describe("onboarding owner-only actions", () => {
       userRole: "owner",
       demoMode: false,
     });
-    createLocalBusinessFromTemplateMock.mockResolvedValue("nueva-barberia");
+    listSupabaseRecordsMock.mockResolvedValue([
+      {
+        id: "biz_existing",
+        slug: "demo-barberia",
+        name: "Demo Barberia",
+        active: true,
+      },
+    ]);
+    createSupabaseRecordMock.mockResolvedValue({ id: "biz_new", slug: "nueva-barberia" });
 
     const { createOnboardedBusinessAction } = await import("./actions");
     const formData = new FormData();
@@ -105,7 +108,36 @@ describe("onboarding owner-only actions", () => {
     await expect(createOnboardedBusinessAction(formData)).rejects.toThrow(
       "REDIRECT:/admin/onboarding?created=nueva-barberia"
     );
-    expect(createLocalBusinessFromTemplateMock).toHaveBeenCalled();
-    expect(setLocalActiveBusinessSlugMock).toHaveBeenCalledWith("nueva-barberia");
+    expect(createSupabaseRecordMock).toHaveBeenCalled();
+  });
+
+  it("updates an existing business settings", async () => {
+    requireAdminRouteAccessMock.mockResolvedValue({
+      businessId: "biz_123",
+      userRole: "owner",
+      demoMode: false,
+    });
+    listSupabaseRecordsMock.mockResolvedValue([
+      {
+        id: "biz_123",
+        slug: "demo-barberia",
+        name: "Demo Barberia",
+        active: true,
+      },
+    ]);
+    updateSupabaseRecordMock.mockResolvedValue({ id: "biz_123" });
+
+    const { updateOnboardedBusinessAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("businessSlug", "demo-barberia");
+    formData.set("name", "Nueva Barberia");
+    formData.set("phone", "1122334455");
+    formData.set("email", "nuevo@example.com");
+    formData.set("address", "Calle 456");
+
+    await expect(updateOnboardedBusinessAction(formData)).rejects.toThrow(
+      "REDIRECT:/admin/onboarding?businessUpdated=Nueva%20Barberia"
+    );
+    expect(updateSupabaseRecordMock).toHaveBeenCalledWith("businesses", "biz_123", expect.any(Object));
   });
 });

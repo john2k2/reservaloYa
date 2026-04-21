@@ -4,19 +4,26 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { createSupabasePublicBooking } from "@/server/supabase-store";
 import {
-  getLocalAdminSettingsData,
-  updateLocalAdminBooking,
-  createLocalPublicBooking,
-} from "@/server/local-store";
-import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
+  getSupabaseRecord,
+  updateSupabaseRecord,
+} from "@/server/supabase-store/_core";
+import type { BookingRecord, ServiceRecord } from "@/server/supabase-domain";
+import { getDayOfWeek } from "@/lib/bookings/format";
 import {
-  getPocketBaseAdminSettingsData,
-  updatePocketBaseAdminBooking,
-  createPocketBasePublicBooking,
-} from "@/server/pocketbase-store";
+  buildBookingTimeWindow,
+  hasBlockedSlotConflict,
+  hasBookingConflict,
+  fitsBookingWithinAvailability,
+} from "@/server/booking-mutations-domain";
+import {
+  isActiveRecord,
+  type AvailabilityRuleRecord,
+  type BlockedSlotRecord,
+} from "@/server/supabase-domain";
+import { listSupabaseRecords } from "@/server/supabase-store/_core";
 
 const bookingSchema = z.object({
   bookingId: z.string().trim().min(1),
@@ -65,29 +72,15 @@ function buildBookingsRedirectPath(params: {
 }
 
 async function getBookingContext() {
-  if (isPocketBaseConfigured()) {
-    const user = await getAuthenticatedPocketBaseUser();
-    const businessId = Array.isArray(user?.business) ? user.business[0] : user?.business;
+  const user = await getAuthenticatedSupabaseUser();
 
-    if (!businessId) {
-      throw new Error("No encontramos el negocio activo.");
-    }
-
-    const settings = await getPocketBaseAdminSettingsData(String(businessId));
-
-    return {
-      businessId: String(businessId),
-      businessSlug: settings.businessSlug,
-      live: true as const,
-    };
+  if (!user?.businessId) {
+    throw new Error("No encontramos el negocio activo.");
   }
 
-  const activeBusinessSlug = await getLocalActiveBusinessSlug();
-  const settings = await getLocalAdminSettingsData(activeBusinessSlug);
-
   return {
-    businessSlug: settings.businessSlug,
-    live: false as const,
+    businessId: user.businessId,
+    businessSlug: user.businessSlug ?? "",
   };
 }
 
@@ -95,6 +88,86 @@ function revalidateBookingViews(businessSlug: string) {
   revalidatePath("/admin/bookings");
   revalidatePath("/admin/dashboard");
   revalidatePath(`/${businessSlug}`);
+}
+
+async function updateSupabaseAdminBooking(input: {
+  businessId: string;
+  bookingId: string;
+  bookingDate: string;
+  startTime: string;
+  status: string;
+  notes: string;
+}) {
+  const booking = await getSupabaseRecord<BookingRecord & { service: Pick<ServiceRecord, "id" | "business_id" | "name" | "durationMinutes"> | null }>(
+    "bookings",
+    input.bookingId
+  );
+
+  if (booking.business_id !== input.businessId) {
+    throw new Error("No encontramos el turno a actualizar.");
+  }
+
+  const service = booking.service;
+
+  if (!service || service.business_id !== input.businessId) {
+    throw new Error("No encontramos el servicio del turno.");
+  }
+
+  const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
+  const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
+
+  const [rules, blockedSlots, bookings] = await Promise.all([
+    listSupabaseRecords<AvailabilityRuleRecord>("availability_rules", {
+      filter: `business_id=eq.${input.businessId}`,
+    }),
+    listSupabaseRecords<BlockedSlotRecord>("blocked_slots", {
+      filter: `business_id=eq.${input.businessId}`,
+    }),
+    listSupabaseRecords<BookingRecord>("bookings", {
+      filter: `business_id=eq.${input.businessId}`,
+    }),
+  ]);
+
+  const dayRules = rules.filter(
+    (rule) => rule.dayOfWeek === selectedDayOfWeek && isActiveRecord(rule)
+  );
+  const dayBlockedSlots = blockedSlots.filter(
+    (slot) => slot.blockedDate === input.bookingDate
+  );
+  const dayBookings = bookings.filter(
+    (b) => b.bookingDate === input.bookingDate
+  );
+
+  const fitsWithinAvailability = fitsBookingWithinAvailability(dayRules, bookingWindow);
+
+  if (!fitsWithinAvailability) {
+    throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
+  }
+
+  const blockedConflict = hasBlockedSlotConflict(dayBlockedSlots, bookingWindow);
+
+  if (blockedConflict) {
+    throw new Error("Ese horario esta bloqueado.");
+  }
+
+  const bookingConflict = hasBookingConflict(dayBookings, {
+    ...bookingWindow,
+    excludeBookingId: booking.id,
+    allowedStatuses: ["pending", "confirmed"],
+  });
+
+  if (bookingConflict) {
+    throw new Error("Ese horario ya no esta disponible.");
+  }
+
+  await updateSupabaseRecord("bookings", input.bookingId, {
+    bookingDate: input.bookingDate,
+    startTime: input.startTime,
+    status: input.status,
+    notes: input.notes,
+  });
+
+  return input.bookingId;
 }
 
 const manualBookingSchema = z.object({
@@ -126,31 +199,17 @@ export async function createManualBookingAction(formData: FormData) {
 
     const context = await getBookingContext();
 
-    if (context.live) {
-      await createPocketBasePublicBooking({
-        businessSlug: context.businessSlug,
-        serviceId: parsed.data.serviceId,
-        bookingDate: parsed.data.bookingDate,
-        startTime: parsed.data.startTime,
-        fullName: parsed.data.fullName,
-        phone: parsed.data.phone,
-        email: parsed.data.email,
-        notes: parsed.data.notes,
-        initialStatus: "confirmed",
-      });
-    } else {
-      await createLocalPublicBooking({
-        businessSlug: context.businessSlug,
-        serviceId: parsed.data.serviceId,
-        bookingDate: parsed.data.bookingDate,
-        startTime: parsed.data.startTime,
-        fullName: parsed.data.fullName,
-        phone: parsed.data.phone,
-        email: parsed.data.email,
-        notes: parsed.data.notes,
-        initialStatus: "confirmed",
-      });
-    }
+    await createSupabasePublicBooking({
+      businessSlug: context.businessSlug,
+      serviceId: parsed.data.serviceId,
+      bookingDate: parsed.data.bookingDate,
+      startTime: parsed.data.startTime,
+      fullName: parsed.data.fullName,
+      phone: parsed.data.phone,
+      email: parsed.data.email,
+      notes: parsed.data.notes,
+      initialStatus: "confirmed",
+    });
 
     revalidateBookingViews(context.businessSlug);
     redirect(buildBookingsRedirectPath({ saved: "nuevo", date: parsed.data.bookingDate }));
@@ -187,25 +246,14 @@ export async function updateBookingAction(formData: FormData) {
 
     const context = await getBookingContext();
 
-    if (context.live) {
-      await updatePocketBaseAdminBooking({
-        businessId: context.businessId,
-        bookingId: parsed.data.bookingId,
-        bookingDate: parsed.data.bookingDate,
-        startTime: parsed.data.startTime,
-        status: parsed.data.status,
-        notes: parsed.data.notes,
-      });
-    } else {
-      await updateLocalAdminBooking({
-        businessSlug: context.businessSlug,
-        bookingId: parsed.data.bookingId,
-        bookingDate: parsed.data.bookingDate,
-        startTime: parsed.data.startTime,
-        status: parsed.data.status,
-        notes: parsed.data.notes,
-      });
-    }
+    await updateSupabaseAdminBooking({
+      businessId: context.businessId,
+      bookingId: parsed.data.bookingId,
+      bookingDate: parsed.data.bookingDate,
+      startTime: parsed.data.startTime,
+      status: parsed.data.status,
+      notes: parsed.data.notes,
+    });
 
     revalidateBookingViews(context.businessSlug);
 

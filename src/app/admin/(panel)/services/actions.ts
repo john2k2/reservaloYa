@@ -4,19 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { getLocalActiveBusinessSlug } from "@/server/local-admin-context";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import {
-  deactivateLocalService,
-  getLocalAdminSettingsData,
-  upsertLocalService,
-} from "@/server/local-store";
-import { getAuthenticatedPocketBaseUser } from "@/server/pocketbase-auth";
-import {
-  deactivatePocketBaseService,
-  getPocketBaseAdminSettingsData,
-  upsertPocketBaseService,
-} from "@/server/pocketbase-store";
+  createSupabaseRecord,
+  getSupabaseRecord,
+  listSupabaseRecords,
+  updateSupabaseRecord,
+} from "@/server/supabase-store/_core";
+import { countFeaturedRecords, isActiveRecord } from "@/server/supabase-domain";
+import type { ServiceRecord } from "@/server/supabase-domain";
 
 const serviceSchema = z.object({
   serviceId: z.string().trim().optional(),
@@ -29,30 +25,96 @@ const serviceSchema = z.object({
 });
 
 async function getServiceContext() {
-  if (isPocketBaseConfigured()) {
-    const user = await getAuthenticatedPocketBaseUser();
-    const businessId = Array.isArray(user?.business) ? user.business[0] : user?.business;
+  const user = await getAuthenticatedSupabaseUser();
 
-    if (!businessId) {
-      throw new Error("No encontramos el negocio activo.");
-    }
-
-    const settings = await getPocketBaseAdminSettingsData(String(businessId));
-
-    return {
-      businessId: String(businessId),
-      businessSlug: settings.businessSlug,
-      live: true as const,
-    };
+  if (!user?.businessId) {
+    throw new Error("No encontramos el negocio activo.");
   }
 
-  const activeBusinessSlug = await getLocalActiveBusinessSlug();
-  const settings = await getLocalAdminSettingsData(activeBusinessSlug);
-
   return {
-    businessSlug: settings.businessSlug,
-    live: false as const,
+    businessId: user.businessId,
+    businessSlug: user.businessSlug ?? "",
   };
+}
+
+async function upsertSupabaseService(input: {
+  businessId: string;
+  serviceId?: string;
+  name: string;
+  description: string;
+  durationMinutes: number;
+  price: number | null;
+  featured: boolean;
+  featuredLabel: string;
+}) {
+  const existingServices = await listSupabaseRecords<ServiceRecord>("services", {
+    filter: `business_id=eq.${input.businessId}`,
+  });
+
+  const activeServices = existingServices.filter(isActiveRecord);
+  const duplicateService = activeServices.find(
+    (service) =>
+      service.id !== input.serviceId &&
+      service.name.trim().toLocaleLowerCase("es-AR") ===
+        input.name.trim().toLocaleLowerCase("es-AR")
+  );
+
+  if (duplicateService) {
+    throw new Error("Ya existe un servicio activo con ese nombre.");
+  }
+
+  if (input.featured && countFeaturedRecords(activeServices, input.serviceId) >= 3) {
+    throw new Error("Puedes destacar hasta 3 servicios activos.");
+  }
+
+  if (input.serviceId) {
+    const existingService = await getSupabaseRecord<ServiceRecord>("services", input.serviceId);
+
+    if (existingService.business_id !== input.businessId || !isActiveRecord(existingService)) {
+      throw new Error("No encontramos el servicio a editar.");
+    }
+
+    await updateSupabaseRecord("services", input.serviceId, {
+      name: input.name,
+      description: input.description,
+      durationMinutes: input.durationMinutes,
+      price: input.price,
+      featured: input.featured,
+      featuredLabel: input.featured ? input.featuredLabel : "",
+    });
+
+    return input.serviceId;
+  }
+
+  const createdService = await createSupabaseRecord<ServiceRecord>("services", {
+    business_id: input.businessId,
+    name: input.name,
+    description: input.description,
+    durationMinutes: input.durationMinutes,
+    price: input.price ?? undefined,
+    featured: input.featured,
+    featuredLabel: input.featured ? input.featuredLabel : "",
+    active: true,
+  });
+
+  return createdService.id;
+}
+
+async function deactivateSupabaseService(input: {
+  businessId: string;
+  serviceId: string;
+}) {
+  const existingService = await getSupabaseRecord<ServiceRecord>("services", input.serviceId);
+
+  if (existingService.business_id !== input.businessId || !isActiveRecord(existingService)) {
+    throw new Error("No encontramos el servicio a desactivar.");
+  }
+
+  await updateSupabaseRecord("services", input.serviceId, {
+    active: false,
+  });
+
+  return input.serviceId;
 }
 
 function parsePriceValue(rawValue: FormDataEntryValue | null) {
@@ -96,29 +158,16 @@ export async function saveServiceAction(formData: FormData) {
 
     const context = await getServiceContext();
 
-    if (context.live) {
-      await upsertPocketBaseService({
-        businessId: context.businessId,
-        serviceId: parsed.data.serviceId,
-        name: parsed.data.name,
-        description: parsed.data.description,
-        durationMinutes: parsed.data.durationMinutes,
-        price: parsed.data.price,
-        featured: parsed.data.featured,
-        featuredLabel: parsed.data.featuredLabel,
-      });
-    } else {
-      await upsertLocalService({
-        businessSlug: context.businessSlug,
-        serviceId: parsed.data.serviceId,
-        name: parsed.data.name,
-        description: parsed.data.description,
-        durationMinutes: parsed.data.durationMinutes,
-        price: parsed.data.price,
-        featured: parsed.data.featured,
-        featuredLabel: parsed.data.featuredLabel,
-      });
-    }
+    await upsertSupabaseService({
+      businessId: context.businessId,
+      serviceId: parsed.data.serviceId,
+      name: parsed.data.name,
+      description: parsed.data.description,
+      durationMinutes: parsed.data.durationMinutes,
+      price: parsed.data.price,
+      featured: parsed.data.featured,
+      featuredLabel: parsed.data.featuredLabel,
+    });
 
     revalidateServiceViews(context.businessSlug);
 
@@ -145,17 +194,10 @@ export async function deactivateServiceAction(formData: FormData) {
   try {
     const context = await getServiceContext();
 
-    if (context.live) {
-      await deactivatePocketBaseService({
-        businessId: context.businessId,
-        serviceId,
-      });
-    } else {
-      await deactivateLocalService({
-        businessSlug: context.businessSlug,
-        serviceId,
-      });
-    }
+    await deactivateSupabaseService({
+      businessId: context.businessId,
+      serviceId,
+    });
 
     revalidateServiceViews(context.businessSlug);
 

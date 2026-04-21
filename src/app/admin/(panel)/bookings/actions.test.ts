@@ -2,16 +2,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   redirectMock,
-  updateLocalAdminBookingMock,
-  getLocalAdminSettingsDataMock,
   revalidatePathMock,
+  getAuthenticatedSupabaseUserMock,
+  getSupabaseRecordMock,
+  updateSupabaseRecordMock,
+  listSupabaseRecordsMock,
+  createSupabasePublicBookingMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
   }),
-  updateLocalAdminBookingMock: vi.fn(),
-  getLocalAdminSettingsDataMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  getAuthenticatedSupabaseUserMock: vi.fn(),
+  getSupabaseRecordMock: vi.fn(),
+  updateSupabaseRecordMock: vi.fn(),
+  listSupabaseRecordsMock: vi.fn(),
+  createSupabasePublicBookingMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -25,37 +31,35 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: vi.fn(() => false),
+vi.mock("@/server/supabase-auth", () => ({
+  getAuthenticatedSupabaseUser: getAuthenticatedSupabaseUserMock,
 }));
 
-vi.mock("@/server/local-admin-context", () => ({
-  getLocalActiveBusinessSlug: vi.fn(async () => "demo-barberia"),
+vi.mock("@/server/supabase-store", () => ({
+  createSupabasePublicBooking: createSupabasePublicBookingMock,
 }));
 
-vi.mock("@/server/local-store", () => ({
-  updateLocalAdminBooking: updateLocalAdminBookingMock,
-  getLocalAdminSettingsData: getLocalAdminSettingsDataMock,
-}));
-
-vi.mock("@/server/pocketbase-store", () => ({
-  updatePocketBaseAdminBooking: vi.fn(),
-  getPocketBaseAdminSettingsData: vi.fn(),
-}));
-
-vi.mock("@/server/pocketbase-auth", () => ({
-  getAuthenticatedPocketBaseUser: vi.fn(),
+vi.mock("@/server/supabase-store/_core", () => ({
+  getSupabaseRecord: getSupabaseRecordMock,
+  updateSupabaseRecord: updateSupabaseRecordMock,
+  listSupabaseRecords: listSupabaseRecordsMock,
 }));
 
 describe("admin bookings actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
-    updateLocalAdminBookingMock.mockReset();
-    getLocalAdminSettingsDataMock.mockReset();
     revalidatePathMock.mockReset();
+    getAuthenticatedSupabaseUserMock.mockReset();
+    getSupabaseRecordMock.mockReset();
+    updateSupabaseRecordMock.mockReset();
+    listSupabaseRecordsMock.mockReset();
+    createSupabasePublicBookingMock.mockReset();
 
-    getLocalAdminSettingsDataMock.mockResolvedValue({
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "user_1",
+      businessId: "biz_123",
       businessSlug: "demo-barberia",
+      role: "owner",
     });
   });
 
@@ -71,11 +75,33 @@ describe("admin bookings actions", () => {
     await expect(updateBookingAction(formData)).rejects.toThrow(
       "Revisa el estado y las notas antes de guardar."
     );
-    expect(updateLocalAdminBookingMock).not.toHaveBeenCalled();
+    expect(updateSupabaseRecordMock).not.toHaveBeenCalled();
   });
 
-  it("updates a local booking and preserves filters on redirect", async () => {
-    updateLocalAdminBookingMock.mockResolvedValue("booking_1");
+  it("updates a booking and preserves filters on redirect", async () => {
+    const booking = {
+      id: "booking_1",
+      business_id: "biz_123",
+      bookingDate: "2026-03-20",
+      startTime: "10:00",
+      status: "pending",
+      notes: "",
+      service: { id: "svc_1", business_id: "biz_123", durationMinutes: 30 },
+    };
+    getSupabaseRecordMock.mockResolvedValue(booking);
+    const mockRules = Array.from({ length: 7 }, (_, i) => ({
+      id: `rule_${i}`,
+      business_id: "biz_123",
+      dayOfWeek: i,
+      startTime: "00:00",
+      endTime: "23:59",
+      active: true,
+    }));
+    listSupabaseRecordsMock
+      .mockResolvedValueOnce(mockRules)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    updateSupabaseRecordMock.mockResolvedValue(booking);
 
     const { updateBookingAction } = await import("./actions");
     const formData = new FormData();
@@ -89,16 +115,37 @@ describe("admin bookings actions", () => {
     formData.set("redirectQ", "Juan");
 
     await expect(updateBookingAction(formData)).rejects.toThrow("REDIRECT:");
-    expect(updateLocalAdminBookingMock).toHaveBeenCalledWith({
-      businessSlug: "demo-barberia",
-      bookingId: "booking_1",
-      bookingDate: "2026-03-20",
-      startTime: "10:00",
-      status: "confirmed",
-      notes: "Cliente confirmado",
-    });
+    expect(updateSupabaseRecordMock).toHaveBeenCalledWith("bookings", "booking_1", expect.any(Object));
     expect(String(redirectMock.mock.calls.at(-1)?.[0] ?? "")).toContain(
       "/admin/bookings?saved=booking_1&status=pending&date=2026-03-20&q=Juan"
+    );
+  });
+
+  it("creates a manual booking and redirects", async () => {
+    createSupabasePublicBookingMock.mockResolvedValue("booking_new");
+
+    const { createManualBookingAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("serviceId", "svc_1");
+    formData.set("bookingDate", "2026-03-20");
+    formData.set("startTime", "10:00");
+    formData.set("fullName", "Juan Perez");
+    formData.set("phone", "1122334455");
+    formData.set("email", "juan@example.com");
+    formData.set("businessSlug", "demo-barberia");
+
+    await expect(createManualBookingAction(formData)).rejects.toThrow("REDIRECT:");
+    expect(createSupabasePublicBookingMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        businessSlug: "demo-barberia",
+        serviceId: "svc_1",
+        bookingDate: "2026-03-20",
+        startTime: "10:00",
+        fullName: "Juan Perez",
+        phone: "1122334455",
+        email: "juan@example.com",
+        initialStatus: "confirmed",
+      })
     );
   });
 });

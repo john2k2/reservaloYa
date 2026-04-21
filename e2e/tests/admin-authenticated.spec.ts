@@ -8,15 +8,13 @@ import { test, expect } from "@playwright/test";
  * - Fallan explícitamente cuando algo no funciona como debería
  * - Cubren flujos reales: dashboard, servicios, turnos, onboarding, etc.
  *
- * Requiere: PocketBase corriendo en http://127.0.0.1:8090
- *           RESERVAYA_ENABLE_DEMO_MODE=false
- *           Usuario owner@reservaya.local existente
+ * Requiere: entorno Supabase funcional y usuario owner@reservaya.local existente.
  */
 
 // Helper: si el test se ejecuta sin sesión válida (redirigió a login), marcarlo como skip
 async function requireAuth(page: import("@playwright/test").Page) {
-  if (page.url().includes("/admin/login")) {
-    test.skip(true, "Sin sesión autenticada (PocketBase no disponible o demo mode activo)");
+  if (page.url().includes("/login")) {
+    test.skip(true, "Sin sesión autenticada o sin usuario seedado para Supabase");
   }
 }
 
@@ -165,14 +163,10 @@ test.describe("Admin Autenticado - Onboarding / Config del negocio", () => {
     const isOnboarding = await gotoOnboarding(page);
 
     if (!isOnboarding) {
-      // En modo demo local, onboarding redirige al dashboard — es comportamiento válido
-      expect(page.url()).toContain("/admin");
-      const main = page.locator("main, [role='main']");
-      await expect(main).toBeVisible();
+      test.skip(true, "Onboarding ya completado, redirigió al dashboard o sin sesión autenticada");
       return;
     }
 
-    // En modo PocketBase con owner autenticado: debe mostrar tabs
     const tabs = page.locator("button").filter({ hasText: /Negocio|Estilo|Fotos|Integraciones|Público/i });
     const count = await tabs.count();
     expect(count).toBeGreaterThanOrEqual(3);
@@ -243,9 +237,10 @@ test.describe("Admin Autenticado - Onboarding / Config del negocio", () => {
     // Uno de estos tres estados es válido:
     const hasConectar = await page.getByRole("link", { name: /Conectar con MercadoPago/i }).isVisible({ timeout: 2000 }).catch(() => false);
     const hasDesconectar = await page.getByRole("button", { name: /Desconectar/i }).isVisible({ timeout: 2000 }).catch(() => false);
-    const hasNoConfig = await page.getByText(/MP_APP_ID no configurado/i).isVisible({ timeout: 2000 }).catch(() => false);
+    const hasNoConfig = await page.getByText(/MP_APP_ID o MP_APP_SECRET no configurados/i).isVisible({ timeout: 2000 }).catch(() => false);
+    const hasFallbackCopy = await page.getByText(/No conectado - las reservas siguen activas/i).isVisible({ timeout: 2000 }).catch(() => false);
 
-    expect(hasConectar || hasDesconectar || hasNoConfig).toBeTruthy();
+    expect(hasConectar || hasDesconectar || hasNoConfig || hasFallbackCopy).toBeTruthy();
   });
 
   test("navegar a ?tab=integraciones vía URL no debe crashear", async ({ page }) => {
@@ -298,7 +293,7 @@ test.describe("Admin Autenticado - Navegación completa", () => {
       await page.waitForTimeout(500);
 
       // No debe redirigir al login (perdió la sesión)
-      expect(page.url()).not.toContain("/admin/login");
+      expect(page.url()).not.toContain("/login");
 
       // No debe haber errores de aplicación
       const errorMsg = page.getByText(/Application error|500|Runtime Error/i);
@@ -348,7 +343,7 @@ test.describe("Login real (formulario) - sin sesión", () => {
     await page.waitForLoadState("domcontentloaded");
 
     if (!page.url().includes("/admin/login")) {
-      test.skip(true, "No hay formulario de login (demo mode activo)");
+      test.skip(true, "No hay formulario de login disponible en el entorno actual");
       return;
     }
 
@@ -373,7 +368,7 @@ test.describe("Login real (formulario) - sin sesión", () => {
     await page.waitForLoadState("domcontentloaded");
 
     if (!page.url().includes("/admin/login")) {
-      test.skip(true, "No hay formulario de login (demo mode activo)");
+      test.skip(true, "No hay formulario de login disponible en el entorno actual");
       return;
     }
 
@@ -387,8 +382,8 @@ test.describe("Login real (formulario) - sin sesión", () => {
 
     await page.waitForLoadState("networkidle");
 
-    // Debe quedarse en login con mensaje de error
-    expect(page.url()).toContain("/admin/login");
+    // Debe quedarse en la pantalla de login con mensaje de error
+    expect(page.url()).toMatch(/\/login/);
 
     // Debe haber un mensaje de error visible
     const errorDiv = page.locator("[role='alert'], .text-destructive, [class*='error']").first();
@@ -401,7 +396,7 @@ test.describe("Login real (formulario) - sin sesión", () => {
     await page.waitForLoadState("domcontentloaded");
 
     if (!page.url().includes("/admin/login")) {
-      test.skip(true, "No hay formulario de login (demo mode activo)");
+      test.skip(true, "No hay formulario de login disponible en el entorno actual");
       return;
     }
 

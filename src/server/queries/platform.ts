@@ -1,22 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 
-import { isPocketBaseConfigured, isPocketBaseAdminConfigured } from "@/lib/pocketbase/config";
-import { createPocketBaseAdminClient } from "@/lib/pocketbase/admin";
-import type { BusinessRecord, BookingRecord, UserRecord, SubscriptionRecord } from "@/server/pocketbase-domain";
-
-async function getAdminClient() {
-  if (!isPocketBaseAdminConfigured()) {
-    throw new Error(
-      "Faltan variables de entorno: POCKETBASE_ADMIN_EMAIL y/o POCKETBASE_ADMIN_PASSWORD"
-    );
-  }
-  try {
-    return await createPocketBaseAdminClient();
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Error autenticando cliente admin de PocketBase: ${msg}`);
-  }
-}
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type PlatformSubscriptionInfo = {
   status: "trial" | "active" | "cancelled" | "suspended" | "none";
@@ -55,180 +39,130 @@ export type PlatformDashboardData = {
   totalUsers: number;
   bookingsLast30d: number;
   newBusinessesThisWeek: number;
-  // Revenue/subscription breakdown
   subscriptionActive: number;
   subscriptionTrial: number;
   subscriptionSuspended: number;
   recentBusinesses: PlatformBusinessRow[];
 };
 
-export async function getPlatformDashboardData(): Promise<PlatformDashboardData | null> {
-  noStore();
-
-  if (!isPocketBaseConfigured()) return null;
-
-  const pb = await getAdminClient();
-
+async function fetchPlatformData() {
+  const client = createAdminClient();
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [businesses, users, recentBookings, subscriptions] = await Promise.all([
-    pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-id", requestKey: null }).catch(() => [] as BusinessRecord[]),
-    pb.collection("users").getFullList<UserRecord>({ sort: "-created", requestKey: null }).catch(() => [] as UserRecord[]),
-    pb.collection("bookings").getFullList<BookingRecord>({
-      filter: pb.filter("created >= {:since}", { since: since30d }),
-      requestKey: null,
-    }).catch(() => [] as BookingRecord[]),
-    pb.collection("subscriptions").getFullList<SubscriptionRecord>({ requestKey: null }).catch(() => [] as SubscriptionRecord[]),
+  const [businessesRes, appUsersRes, bookingsRes, authUsersRes] = await Promise.all([
+    client.from("businesses").select("*").order("created", { ascending: false }),
+    client.from("app_users").select("*"),
+    client.from("bookings").select("id, created").gte("created", since30d),
+    client.auth.admin.listUsers({ perPage: 1000 }),
   ]);
 
-  // Build owner map: businessId -> owner user
-  const ownerMap = new Map<string, UserRecord>();
-  for (const user of users) {
-    if (user.role === "owner" && user.business) {
-      const bizId = Array.isArray(user.business) ? user.business[0] : user.business;
-      if (bizId) ownerMap.set(String(bizId), user);
+  const businesses = businessesRes.data ?? [];
+  const appUsers = appUsersRes.data ?? [];
+  const bookings = bookingsRes.data ?? [];
+  const authUsers = authUsersRes.data?.users ?? [];
+
+  const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? ""]));
+
+  const ownerMap = new Map<string, { name: string; email: string }>();
+  for (const user of appUsers) {
+    if (user.role === "owner" && user.business_id) {
+      ownerMap.set(user.business_id, {
+        name: String(user.name ?? emailMap.get(user.id) ?? "—"),
+        email: emailMap.get(user.id) ?? "—",
+      });
     }
   }
 
-  // Build subscription map: businessId -> subscription
-  const subMap = new Map<string, SubscriptionRecord>();
-  for (const sub of subscriptions) {
-    subMap.set(sub.businessId, sub);
-  }
+  return { businesses, appUsers, bookings, emailMap, ownerMap };
+}
 
-  function buildSubscriptionInfo(businessId: string): PlatformSubscriptionInfo {
-    const sub = subMap.get(businessId);
-    if (!sub) return { status: "none" };
-    return {
-      status: sub.status,
-      trialEndsAt: sub.trialEndsAt,
-      nextBillingDate: sub.nextBillingDate,
-    };
-  }
+function buildBusinessRow(
+  b: Record<string, unknown>,
+  ownerMap: Map<string, { name: string; email: string }>
+): PlatformBusinessRow {
+  const owner = ownerMap.get(b.id as string);
+  return {
+    id: b.id as string,
+    name: b.name as string,
+    slug: b.slug as string,
+    active: b.active !== false,
+    templateSlug: String(b.templateSlug ?? ""),
+    createdAt: b.created as string,
+    ownerEmail: owner?.email ?? "—",
+    ownerName: owner?.name ?? "—",
+    mpConnected: Boolean(b.mpConnected),
+    subscription: { status: "none" as const },
+  };
+}
 
-  const recentBusinesses: PlatformBusinessRow[] = businesses.slice(0, 10).map((b) => {
-    const owner = ownerMap.get(b.id);
-    return {
-      id: b.id,
-      name: b.name,
-      slug: b.slug,
-      active: b.active !== false,
-      templateSlug: b.templateSlug ?? "",
-      createdAt: b.created,
-      ownerEmail: owner?.email ?? "—",
-      ownerName: String(owner?.name ?? owner?.email ?? "—"),
-      mpConnected: Boolean(b.mpConnected),
-      subscription: buildSubscriptionInfo(b.id),
-    };
-  });
+export async function getPlatformDashboardData(): Promise<PlatformDashboardData | null> {
+  noStore();
 
-  // Subscription counts
-  const subActive = subscriptions.filter((s) => s.status === "active").length;
-  const subTrial = subscriptions.filter((s) => s.status === "trial").length;
-  const subSuspended = subscriptions.filter((s) => s.status === "suspended" || s.status === "cancelled").length;
+  const { businesses, appUsers, bookings, ownerMap } = await fetchPlatformData();
+
+  const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   return {
     totalBusinesses: businesses.length,
     activeBusinesses: businesses.filter((b) => b.active !== false).length,
-    totalUsers: users.filter((u) => u.role !== "public_app").length,
-    bookingsLast30d: recentBookings.length,
-    newBusinessesThisWeek: businesses.filter((b) => b.created >= since7d).length,
-    subscriptionActive: subActive,
-    subscriptionTrial: subTrial,
-    subscriptionSuspended: subSuspended,
-    recentBusinesses,
+    totalUsers: appUsers.filter((u) => u.role !== "public_app").length,
+    bookingsLast30d: bookings.length,
+    newBusinessesThisWeek: businesses.filter((b) => (b.created as string) >= since7d).length,
+    subscriptionActive: 0,
+    subscriptionTrial: 0,
+    subscriptionSuspended: 0,
+    recentBusinesses: businesses.slice(0, 10).map((b) => buildBusinessRow(b, ownerMap)),
   };
 }
 
 export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[] | null> {
   noStore();
 
-  if (!isPocketBaseConfigured()) return null;
-
-  const pb = await getAdminClient();
-
-  const [businesses, users, subscriptions] = await Promise.all([
-    pb.collection("businesses").getFullList<BusinessRecord>({ sort: "-id", requestKey: null }).catch(() => [] as BusinessRecord[]),
-    pb.collection("users").getFullList<UserRecord>({
-      filter: "role = 'owner'",
-      sort: "email",
-      requestKey: null,
-    }).catch(() => [] as UserRecord[]),
-    pb.collection("subscriptions").getFullList<SubscriptionRecord>({ requestKey: null }).catch(() => [] as SubscriptionRecord[]),
-  ]);
-
-  const ownerMap = new Map<string, UserRecord>();
-  for (const user of users) {
-    const bizId = Array.isArray(user.business) ? user.business[0] : user.business;
-    if (bizId) ownerMap.set(String(bizId), user);
-  }
-
-  const subMap = new Map<string, SubscriptionRecord>();
-  for (const sub of subscriptions) {
-    subMap.set(sub.businessId, sub);
-  }
-
-  return businesses.map((b) => {
-    const owner = ownerMap.get(b.id);
-    const sub = subMap.get(b.id);
-    return {
-      id: b.id,
-      name: b.name,
-      slug: b.slug,
-      active: b.active !== false,
-      templateSlug: b.templateSlug ?? "",
-      createdAt: b.created,
-      ownerEmail: owner?.email ?? "—",
-      ownerName: String(owner?.name ?? owner?.email ?? "—"),
-      mpConnected: Boolean(b.mpConnected),
-      subscription: sub
-        ? { status: sub.status, trialEndsAt: sub.trialEndsAt, nextBillingDate: sub.nextBillingDate }
-        : { status: "none" as const },
-    };
-  });
+  const { businesses, ownerMap } = await fetchPlatformData();
+  return businesses.map((b) => buildBusinessRow(b, ownerMap));
 }
 
 export async function getPlatformUsersList(): Promise<PlatformUserRow[] | null> {
   noStore();
 
-  if (!isPocketBaseConfigured()) return null;
+  const client = createAdminClient();
 
-  const pb = await getAdminClient();
-
-  const [users, businesses] = await Promise.all([
-    pb.collection("users").getFullList<UserRecord>({
-      filter: "role != 'public_app'",
-      sort: "-created",
-      requestKey: null,
-    }),
-    pb.collection("businesses").getFullList<BusinessRecord>({ requestKey: null }),
+  const [appUsersRes, businessesRes, authUsersRes] = await Promise.all([
+    client.from("app_users").select("*").order("created", { ascending: false }),
+    client.from("businesses").select("id, name, slug"),
+    client.auth.admin.listUsers({ perPage: 1000 }),
   ]);
 
-  const businessMap = new Map<string, BusinessRecord>();
-  for (const b of businesses) businessMap.set(b.id, b);
+  const appUsers = appUsersRes.data ?? [];
+  const businesses = businessesRes.data ?? [];
+  const authUsers = authUsersRes.data?.users ?? [];
 
-  return users.map((u) => {
-    const bizId = String(Array.isArray(u.business) ? u.business[0] : u.business ?? "");
-    const biz = businessMap.get(bizId);
-    return {
-      id: u.id,
-      name: String(u.name ?? u.email ?? "—"),
-      email: u.email,
-      businessName: biz?.name ?? "—",
-      businessSlug: biz?.slug ?? "—",
-      role: String(u.role ?? "staff"),
-      active: u.active !== false,
-      verified: Boolean(u.verified),
-      createdAt: u.created,
-    };
-  });
+  const businessMap = new Map(businesses.map((b) => [b.id, b]));
+  const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? ""]));
+
+  return appUsers
+    .filter((u) => u.role !== "public_app")
+    .map((u) => {
+      const biz = u.business_id ? businessMap.get(u.business_id) : null;
+      return {
+        id: u.id,
+        name: String(u.name ?? emailMap.get(u.id) ?? "—"),
+        email: emailMap.get(u.id) ?? "—",
+        businessName: biz?.name ?? "—",
+        businessSlug: biz?.slug ?? "—",
+        role: String(u.role ?? "staff"),
+        active: u.active !== false,
+        verified: true,
+        createdAt: u.created as string,
+      };
+    });
 }
 
-export async function togglePlatformBusinessActive(
-  businessId: string,
-  active: boolean
-): Promise<void> {
-  const pb = await getAdminClient();
-  await pb.collection("businesses").update(businessId, { active });
+export async function togglePlatformBusinessActive(businessId: string, active: boolean) {
+  const client = createAdminClient();
+  const { error } = await client
+    .from("businesses")
+    .update({ active, updated: new Date().toISOString() })
+    .eq("id", businessId);
+  if (error) throw error;
 }

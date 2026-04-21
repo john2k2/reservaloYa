@@ -1,36 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
-import type PocketBase from "pocketbase";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { getSupabaseAdminClient } from "@/server/supabase-store/_core";
 
 export const dynamic = "force-dynamic";
 
-async function checkSubscriptionExpired(pb: PocketBase, businessId: string): Promise<boolean> {
-  try {
-    const filter = pb.filter("businessId = {:businessId}", { businessId });
-    const subs = await pb.collection("subscriptions").getFullList({
-      filter,
-    });
-    
-    if (subs.length === 0) return false;
-    
-    const sub = subs[0];
-    if (sub.status === "suspended") return true;
-    if (sub.status === "trial" && sub.trialEndsAt) {
-      return new Date(sub.trialEndsAt) < new Date();
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
 export async function GET() {
   try {
-    const pb = await createPocketBaseServerClient();
-    const refreshed = await refreshPocketBaseAuth(pb);
+    const user = await getAuthenticatedSupabaseUser();
 
-    if (!refreshed || !pb.authStore.record) {
+    if (!user) {
       return NextResponse.json({
         loggedIn: false,
         isPlatformAdmin: false,
@@ -39,11 +18,9 @@ export async function GET() {
       });
     }
 
-    const record = pb.authStore.record;
-    const email = String(record.email ?? "").toLowerCase();
     const superadminEmail = (process.env.PLATFORM_SUPERADMIN_EMAIL ?? "").toLowerCase();
-
-    const isPlatformAdmin = email === superadminEmail;
+    const email = String(user.email ?? "").toLowerCase();
+    const isPlatformAdmin = superadminEmail ? email === superadminEmail : false;
 
     if (isPlatformAdmin) {
       return NextResponse.json({
@@ -54,47 +31,26 @@ export async function GET() {
       });
     }
 
-    const role = String((record as { role?: string }).role ?? "staff");
-    const name = String(record.name ?? record.email ?? "Usuario");
+    let displayName = String(user.name ?? user.email ?? "Usuario");
 
-    const businessId = Array.isArray(record.business)
-      ? record.business[0]
-      : record.business;
-
-    if (role === "owner" && businessId) {
-      const expired = await checkSubscriptionExpired(pb, businessId as string);
-      
-      if (expired) {
-        return NextResponse.json({
-          loggedIn: false,
-          isPlatformAdmin: false,
-          displayName: "",
-          subscriptionExpired: true,
-        });
-      }
-
+    if (user.businessId) {
       try {
-        const business = await pb.collection("businesses").getOne<{ name: string }>(businessId as string);
-        return NextResponse.json({
-          loggedIn: true,
-          isPlatformAdmin: false,
-          displayName: business.name,
-          subscriptionExpired: false,
-        });
+        const client = await getSupabaseAdminClient();
+        const { data } = await client
+          .from("businesses")
+          .select("name")
+          .eq("id", user.businessId)
+          .single();
+        if (data?.name) displayName = data.name;
       } catch {
-        return NextResponse.json({
-          loggedIn: true,
-          isPlatformAdmin: false,
-          displayName: name,
-          subscriptionExpired: false,
-        });
+        // fallback to user name
       }
     }
 
     return NextResponse.json({
       loggedIn: true,
       isPlatformAdmin: false,
-      displayName: name,
+      displayName,
       subscriptionExpired: false,
     });
   } catch {

@@ -1,8 +1,6 @@
 "use server";
 
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { trackPocketBaseAnalyticsEvent } from "@/server/pocketbase-store";
-import { trackLocalAnalyticsEvent } from "@/server/local-store";
+import { trackSupabaseAnalyticsEvent } from "@/server/supabase-store";
 
 export type AnalyticsEventInput = {
   businessSlug: string;
@@ -15,10 +13,5 @@ export type AnalyticsEventInput = {
 };
 
 export async function trackAnalyticsEvent(input: AnalyticsEventInput) {
-  if (!isPocketBaseConfigured()) {
-    await trackLocalAnalyticsEvent(input);
-    return;
-  }
-
-  await trackPocketBaseAnalyticsEvent(input);
+  await trackSupabaseAnalyticsEvent(input);
 }

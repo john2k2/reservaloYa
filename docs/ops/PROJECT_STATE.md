@@ -10,7 +10,7 @@ Producto-servicio para vender turnos online a negocios chicos que hoy operan por
 
 ## Decision tecnica principal
 
-Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persistente como fallback para demo comercial.
+Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y operación.
 
 ## Estado actual (2026-03-26)
 
@@ -53,14 +53,13 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 
 ### Infraestructura
 
-- Modo local (archivo JSON, sin dependencias externas) para demo
-- Modo PocketBase para produccion multi-tenant real
+- Supabase para auth, base de datos y multi-tenant real
 - Rate limiting en creacion de turnos
 - Tokens HMAC firmados para links de gestion y resena
 - Endpoint de cron `/api/jobs/booking-reminders` para Vercel
 - Analytics de embudo: page_view -> cta_click -> booking_page -> booking_created
 - Tracking UTM en toda la cadena de reserva
-- Deploy en Vercel, PocketBase via Docker local
+- Deploy en Vercel + Supabase
 - CI: lint + typecheck + test + build + coverage thresholds + smoke E2E
 
 ---
@@ -76,14 +75,14 @@ Arquitectura multi-tenant sobre PocketBase self-hosted, con modo local persisten
 
 ### Antes del primer cliente pago
 
-5. PocketBase deployado con backups y reglas least-privilege completas
+5. Supabase validado con backups, RLS y credenciales correctas en todos los entornos
 6. Dominio propio en Resend para emails sin restriccion de destinatarios
 7. Video demo 30-45s para lanzamiento comercial
 
 ### Post-lanzamiento
 
-- Implementar lista de espera en PocketBase (hoy solo modo local)
-- Implementar resenas en PocketBase (hoy solo modo local)
+- Profundizar analytics y observabilidad sobre Supabase
+- Seleccion de profesional/staff por parte del cliente
 - Seleccion de profesional/staff por parte del cliente
 - GA4 o PostHog para analytics avanzado
 - SEO: meta tags y OG por pagina de negocio
@@ -111,7 +110,7 @@ Que el producto ya haga mucho, pero el operador no active los servicios clave (e
 
 Cada proximo cambio debe empujar una de estas metas:
 
-- demo mas convincente
+- onboarding mas convincente
 - producto mas vendible
 - flujo de reserva mas real
 - admin mas operable

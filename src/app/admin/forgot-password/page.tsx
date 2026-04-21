@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import { forgotPasswordAction } from "@/app/login/actions";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { productName } from "@/constants/site";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
-import { createPocketBaseServerClient, refreshPocketBaseAuth } from "@/lib/pocketbase/server";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 
 type ForgotPasswordPageProps = {
   searchParams: Promise<{ error?: string; success?: string }>;
@@ -13,15 +12,10 @@ type ForgotPasswordPageProps = {
 
 export default async function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
   const params = await searchParams;
-  const configured = isPocketBaseConfigured();
 
-  if (configured) {
-    const pb = await createPocketBaseServerClient();
-    const isAuthenticated = await refreshPocketBaseAuth(pb);
-
-    if (isAuthenticated && pb.authStore.record) {
-      redirect("/admin/dashboard");
-    }
+  const user = await getAuthenticatedSupabaseUser();
+  if (user) {
+    redirect("/admin/dashboard");
   }
 
   return (
@@ -82,7 +76,6 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
             <LoadingButton
               pendingLabel="Enviando instrucciones..."
               className="h-12 w-full rounded-md bg-foreground font-medium text-background"
-              disabled={!configured}
             >
               Enviar enlace de recuperacion
             </LoadingButton>

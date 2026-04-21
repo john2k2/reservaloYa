@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CalendarClock, Clock3, MessageSquareText, Download, Phone, Plus } from "lucide-react";
 
 import { updateBookingAction } from "@/app/admin/(panel)/bookings/actions";
@@ -59,6 +60,11 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
     getAdminBookingsData(activeFilters),
     getAdminServicesData(),
   ]);
+
+  if (bookings === null || services === null) {
+    redirect("/admin/onboarding");
+  }
+
   const notice = buildNotice(params);
   const savedBookingId = params.saved ?? "";
   const hasActiveFilters = Boolean(activeFilters.status || activeFilters.date || activeFilters.q);

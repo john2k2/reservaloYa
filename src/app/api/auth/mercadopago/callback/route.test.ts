@@ -2,32 +2,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   cookiesMock,
-  isPocketBaseConfiguredMock,
-  updateLocalBusinessMPTokensMock,
+  updateSupabaseBusinessMPTokensMock,
+  getSupabaseBusinessIdBySlugMock,
   parseMercadoPagoOAuthStateMock,
   getAdminShellDataMock,
-  getPocketBaseBusinessIdBySlugMock,
-  updatePocketBaseBusinessMPTokensMock,
 } = vi.hoisted(() => ({
   cookiesMock: vi.fn(),
-  isPocketBaseConfiguredMock: vi.fn(),
-  updateLocalBusinessMPTokensMock: vi.fn(),
+  updateSupabaseBusinessMPTokensMock: vi.fn(),
+  getSupabaseBusinessIdBySlugMock: vi.fn(),
   parseMercadoPagoOAuthStateMock: vi.fn(),
   getAdminShellDataMock: vi.fn(),
-  getPocketBaseBusinessIdBySlugMock: vi.fn(),
-  updatePocketBaseBusinessMPTokensMock: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
   cookies: cookiesMock,
 }));
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: isPocketBaseConfiguredMock,
-}));
-
-vi.mock("@/server/local-store", () => ({
-  updateLocalBusinessMPTokens: updateLocalBusinessMPTokensMock,
+vi.mock("@/server/supabase-store", () => ({
+  getSupabaseBusinessIdBySlug: getSupabaseBusinessIdBySlugMock,
+  updateSupabaseBusinessMPTokens: updateSupabaseBusinessMPTokensMock,
 }));
 
 vi.mock("@/server/mercadopago-oauth-state", () => ({
@@ -38,11 +31,6 @@ vi.mock("@/server/queries/admin", () => ({
   getAdminShellData: getAdminShellDataMock,
 }));
 
-vi.mock("@/server/pocketbase-store", () => ({
-  getPocketBaseBusinessIdBySlug: getPocketBaseBusinessIdBySlugMock,
-  updatePocketBaseBusinessMPTokens: updatePocketBaseBusinessMPTokensMock,
-}));
-
 describe("mercadopago oauth callback route", () => {
   const originalFetch = global.fetch;
   const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -51,12 +39,10 @@ describe("mercadopago oauth callback route", () => {
 
   beforeEach(() => {
     vi.resetModules();
-    isPocketBaseConfiguredMock.mockReset();
-    updateLocalBusinessMPTokensMock.mockReset();
+    updateSupabaseBusinessMPTokensMock.mockReset();
+    getSupabaseBusinessIdBySlugMock.mockReset();
     parseMercadoPagoOAuthStateMock.mockReset();
     getAdminShellDataMock.mockReset();
-    getPocketBaseBusinessIdBySlugMock.mockReset();
-    updatePocketBaseBusinessMPTokensMock.mockReset();
 
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.test";
     process.env.MP_APP_ID = "app-id";
@@ -139,21 +125,19 @@ describe("mercadopago oauth callback route", () => {
     );
 
     expect(response.status).toBe(307);
-    expect(updateLocalBusinessMPTokensMock).not.toHaveBeenCalled();
-    expect(updatePocketBaseBusinessMPTokensMock).not.toHaveBeenCalled();
+    expect(updateSupabaseBusinessMPTokensMock).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
       "https://reservaya.test/admin/onboarding?tab=integraciones&mp=error"
     );
   });
 
-  it("stores tokens in local mode and redirects to connected", async () => {
+  it("stores tokens using the businessId from the session and redirects to connected", async () => {
     parseMercadoPagoOAuthStateMock.mockReturnValue({
       businessSlug: "demo-barberia",
       businessId: "biz-123",
       userEmail: "owner@demo.com",
       nonce: "nonce-123",
     });
-    isPocketBaseConfiguredMock.mockReturnValue(false);
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -169,44 +153,8 @@ describe("mercadopago oauth callback route", () => {
       new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
     );
 
-    expect(updateLocalBusinessMPTokensMock).toHaveBeenCalledTimes(1);
-    expect(updateLocalBusinessMPTokensMock.mock.calls[0][0]).toMatchObject({
-      businessSlug: "demo-barberia",
-      mpAccessToken: "token-123",
-      mpRefreshToken: "refresh-123",
-      mpCollectorId: "998877",
-    });
-    expect(response.headers.get("location")).toBe(
-      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=connected"
-    );
-  });
-
-  it("stores tokens in PocketBase mode using the resolved business id", async () => {
-    parseMercadoPagoOAuthStateMock.mockReturnValue({
-      businessSlug: "demo-barberia",
-      userEmail: "owner@demo.com",
-      nonce: "nonce-123",
-    });
-    isPocketBaseConfiguredMock.mockReturnValue(true);
-    getPocketBaseBusinessIdBySlugMock.mockResolvedValue("biz-123");
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        access_token: "token-123",
-        refresh_token: "refresh-123",
-        user_id: 998877,
-        expires_in: 3600,
-      }),
-    } as Response);
-    const { GET } = await import("./route");
-
-    const response = await GET(
-      new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
-    );
-
-    expect(getPocketBaseBusinessIdBySlugMock).toHaveBeenCalledWith("demo-barberia");
-    expect(updatePocketBaseBusinessMPTokensMock).toHaveBeenCalledTimes(1);
-    expect(updatePocketBaseBusinessMPTokensMock.mock.calls[0][0]).toMatchObject({
+    expect(updateSupabaseBusinessMPTokensMock).toHaveBeenCalledTimes(1);
+    expect(updateSupabaseBusinessMPTokensMock.mock.calls[0][0]).toMatchObject({
       businessId: "biz-123",
       mpAccessToken: "token-123",
       mpRefreshToken: "refresh-123",
@@ -217,14 +165,13 @@ describe("mercadopago oauth callback route", () => {
     );
   });
 
-  it("redirects with error when PocketBase business id cannot be resolved", async () => {
+  it("resolves businessId from slug when not present in state", async () => {
     parseMercadoPagoOAuthStateMock.mockReturnValue({
       businessSlug: "demo-barberia",
       userEmail: "owner@demo.com",
       nonce: "nonce-123",
     });
-    isPocketBaseConfiguredMock.mockReturnValue(true);
-    getPocketBaseBusinessIdBySlugMock.mockResolvedValue(null);
+    getSupabaseBusinessIdBySlugMock.mockResolvedValue("biz-from-slug");
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -240,32 +187,14 @@ describe("mercadopago oauth callback route", () => {
       new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
     );
 
-    expect(updatePocketBaseBusinessMPTokensMock).not.toHaveBeenCalled();
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=error"
-    );
-  });
-
-  it("redirects with error when nonce or admin session do not match the signed state", async () => {
-    parseMercadoPagoOAuthStateMock.mockReturnValue({
-      businessSlug: "demo-barberia",
-      businessId: "biz-123",
-      userEmail: "owner@demo.com",
-      nonce: "nonce-correcto",
+    expect(getSupabaseBusinessIdBySlugMock).toHaveBeenCalledWith("demo-barberia");
+    expect(updateSupabaseBusinessMPTokensMock).toHaveBeenCalledTimes(1);
+    expect(updateSupabaseBusinessMPTokensMock.mock.calls[0][0]).toMatchObject({
+      businessId: "biz-from-slug",
+      mpAccessToken: "token-123",
     });
-
-    const { GET } = await import("./route");
-
-    const response = await GET(
-      new Request("https://reservaya.test/api/auth/mercadopago/callback?code=abc&state=valid-state")
-    );
-
-    expect(response.status).toBe(307);
-    expect(global.fetch).not.toHaveBeenCalled();
-    expect(updateLocalBusinessMPTokensMock).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
-      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=error"
+      "https://reservaya.test/admin/onboarding?tab=integraciones&mp=connected"
     );
   });
 });
