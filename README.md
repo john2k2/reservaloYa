@@ -143,7 +143,7 @@ Colecciones principales, todas filtradas por `business`:
 | `analytics_events` | Funnel: page_view → cta → booking_page → booking_created |
 | `waitlist_entries` | Lista de espera cuando no hay horarios disponibles |
 | `reviews` | Resenas post-turno |
-| `subscriptions` | Suscripciones de los negocios a la plataforma |
+| `subscriptions` | Suscripciones de los negocios (status: trial/active/cancelled/suspended, trialEndsAt, lockedAt) |
 
 ---
 
@@ -224,7 +224,7 @@ gh pr list
 
 ---
 
-## Estado del proyecto (2026-04-09)
+## Estado del proyecto (2026-04-17)
 
 ### Funcionalidades completadas
 - [x] Flujo publico de reserva completo (landing → servicio → fecha → hora → datos → confirmacion)
@@ -252,15 +252,17 @@ gh pr list
 - [x] Onboarding: opcion "Personalizado" en selector de paleta de colores
 - [x] Bug fix: dias cerrados en disponibilidad ya no fallan validacion Zod
 - [x] Lanzamiento publico en LinkedIn (2026-04-09)
+- [x] Sistema de trials/suscripciones para negocios (trial 7-90 dias, lock automatico, extender/cancelar)
+- [x] Panel de plataforma (`/platform/*`) con dashboard de metricas y gestion de businesses
+- [x] UI responsive verificada en mobile (375px), tablet (768px) y desktop (1920px)
 
 ### Proximos pasos
-- [ ] ImprovMX: click en "Check Again" en el dashboard para confirmar verificacion
-- [ ] Cambiar password del superuser de PocketBase en Railway
 - [ ] Crear negocios reales para pilotos (suegra + peluqueria externa)
-- [ ] Verificar cron de recordatorios manualmente en produccion
-- [ ] Configurar Sentry authToken para source maps (observabilidad)
+- [ ] Implementar flow de upgrade a pago via MercadoPago
+- [ ] Configurar webhook de MercadoPago para confirmar pagos automaticamente
 - [ ] Video demo 30-45 segundos para publicaciones
 - [ ] Seguimiento de pilotos y feedback
+- [ ] Verificar dominio de sending en Resend (DKIM/SPF propagados)
 
 ---
 

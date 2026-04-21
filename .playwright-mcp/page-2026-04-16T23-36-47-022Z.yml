@@ -1,0 +1,111 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - alert [ref=e29]: Platform Dashboard | ReservaYa
+  - generic [ref=e31]:
+    - banner [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - paragraph [ref=e35]: Plataforma
+          - heading "ReservaYa" [level=1] [ref=e36]
+        - button [ref=e37]:
+          - img [ref=e38]
+    - main [ref=e39]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - generic [ref=e45]: Plataforma
+          - heading "Dashboard" [level=1] [ref=e46]
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - generic [ref=e50]: Negocios activos
+              - img [ref=e51]
+            - paragraph [ref=e55]: "5"
+            - paragraph [ref=e56]: 5 total
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]: Usuarios registrados
+              - img [ref=e60]
+            - paragraph [ref=e65]: "2"
+            - paragraph [ref=e66]: Sin public_app
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: Reservas (30d)
+              - img [ref=e70]
+            - paragraph [ref=e73]: "0"
+            - paragraph [ref=e74]: Últimos 30 días
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]: Nuevos esta semana
+              - img [ref=e78]
+            - paragraph [ref=e81]: "0"
+            - paragraph [ref=e82]: Negocios creados
+        - generic [ref=e83]:
+          - heading "Suscripciones" [level=2] [ref=e84]
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]:
+                - generic [ref=e88]: Suscripciones activas
+                - img [ref=e90]
+              - paragraph [ref=e92]: "0"
+              - paragraph [ref=e93]: Pagando mensual
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - generic [ref=e96]: En período de prueba
+                - img [ref=e98]
+              - paragraph [ref=e101]: "1"
+              - paragraph [ref=e102]: Trial activo
+            - generic [ref=e103]:
+              - generic [ref=e104]:
+                - generic [ref=e105]: Suspendidos / Cancelados
+                - img [ref=e107]
+              - paragraph [ref=e109]: "0"
+              - paragraph [ref=e110]: Churn
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - heading "Negocios recientes" [level=2] [ref=e113]
+            - link "Ver todos →" [ref=e114] [cursor=pointer]:
+              - /url: /platform/businesses
+          - generic [ref=e115]:
+            - generic [ref=e116]:
+              - generic [ref=e117]:
+                - paragraph [ref=e118]: Consultorio Norte
+                - paragraph [ref=e119]: /demo-consultorio · —
+              - generic [ref=e120]:
+                - generic [ref=e121]: Sin sub
+                - link "Ver →" [ref=e122] [cursor=pointer]:
+                  - /url: /demo-consultorio
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - paragraph [ref=e125]: Nude Nails Studio
+                - paragraph [ref=e126]: /demo-nails · —
+              - generic [ref=e127]:
+                - generic [ref=e128]: Sin sub
+                - link "Ver →" [ref=e129] [cursor=pointer]:
+                  - /url: /demo-nails
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: Mi Negocio
+                - paragraph [ref=e133]: /mi-negocio · ortiz.jonathan2k@gmail.com
+              - generic [ref=e134]:
+                - generic [ref=e135]: Sin sub
+                - link "Ver →" [ref=e136] [cursor=pointer]:
+                  - /url: /mi-negocio
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - paragraph [ref=e139]: Barberia Libertador
+                - paragraph [ref=e140]: /demo-barberia · owner@reservaya.local
+              - generic [ref=e141]:
+                - generic [ref=e142]: Trial
+                - link "Ver →" [ref=e143] [cursor=pointer]:
+                  - /url: /demo-barberia
+            - generic [ref=e144]:
+              - generic [ref=e145]:
+                - paragraph [ref=e146]: Aura Estetica
+                - paragraph [ref=e147]: /demo-estetica · —
+              - generic [ref=e148]:
+                - generic [ref=e149]: Sin sub
+                - link "Ver →" [ref=e150] [cursor=pointer]:
+                  - /url: /demo-estetica

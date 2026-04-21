@@ -9,6 +9,9 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/server/supabase-store", () => ({
   getSupabaseBookingConfirmationData: getSupabaseBookingConfirmationDataMock,
+  getSupabasePublicBusinessPageData: vi.fn(),
+  getSupabasePublicBookingFlowData: vi.fn(),
+  getSupabaseManageBookingData: vi.fn(),
 }));
 
 describe("getBookingConfirmationData", () => {

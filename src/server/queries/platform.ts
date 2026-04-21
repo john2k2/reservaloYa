@@ -6,6 +6,7 @@ export type PlatformSubscriptionInfo = {
   status: "trial" | "active" | "cancelled" | "suspended" | "none";
   trialEndsAt?: string;
   nextBillingDate?: string;
+  lockedAt?: string;
 };
 
 export type PlatformBusinessRow = {
@@ -49,17 +50,19 @@ async function fetchPlatformData() {
   const client = createAdminClient();
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [businessesRes, appUsersRes, bookingsRes, authUsersRes] = await Promise.all([
+  const [businessesRes, appUsersRes, bookingsRes, authUsersRes, subsRes] = await Promise.all([
     client.from("businesses").select("*").order("created", { ascending: false }),
     client.from("app_users").select("*"),
     client.from("bookings").select("id, created").gte("created", since30d),
     client.auth.admin.listUsers({ perPage: 1000 }),
+    client.from("subscriptions").select("*"),
   ]);
 
   const businesses = businessesRes.data ?? [];
   const appUsers = appUsersRes.data ?? [];
   const bookings = bookingsRes.data ?? [];
   const authUsers = authUsersRes.data?.users ?? [];
+  const subscriptions = subsRes.data ?? [];
 
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? ""]));
 
@@ -73,12 +76,32 @@ async function fetchPlatformData() {
     }
   }
 
-  return { businesses, appUsers, bookings, emailMap, ownerMap };
+  const subMap = new Map<string, Record<string, unknown>>();
+  for (const sub of subscriptions) {
+    subMap.set(sub.businessId as string, sub as Record<string, unknown>);
+  }
+
+  return { businesses, appUsers, bookings, emailMap, ownerMap, subMap };
+}
+
+function buildSubscriptionInfo(
+  businessId: string,
+  subMap: Map<string, Record<string, unknown>>
+): PlatformSubscriptionInfo {
+  const sub = subMap.get(businessId);
+  if (!sub) return { status: "none" };
+  return {
+    status: sub.status as PlatformSubscriptionInfo["status"],
+    trialEndsAt: sub.trialEndsAt as string | undefined,
+    nextBillingDate: sub.nextBillingDate as string | undefined,
+    lockedAt: sub.lockedAt as string | undefined,
+  };
 }
 
 function buildBusinessRow(
   b: Record<string, unknown>,
-  ownerMap: Map<string, { name: string; email: string }>
+  ownerMap: Map<string, { name: string; email: string }>,
+  subMap: Map<string, Record<string, unknown>>
 ): PlatformBusinessRow {
   const owner = ownerMap.get(b.id as string);
   return {
@@ -91,16 +114,17 @@ function buildBusinessRow(
     ownerEmail: owner?.email ?? "—",
     ownerName: owner?.name ?? "—",
     mpConnected: Boolean(b.mpConnected),
-    subscription: { status: "none" as const },
+    subscription: buildSubscriptionInfo(b.id as string, subMap),
   };
 }
 
 export async function getPlatformDashboardData(): Promise<PlatformDashboardData | null> {
   noStore();
 
-  const { businesses, appUsers, bookings, ownerMap } = await fetchPlatformData();
+  const { businesses, appUsers, bookings, ownerMap, subMap } = await fetchPlatformData();
 
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const allSubs = Array.from(subMap.values());
 
   return {
     totalBusinesses: businesses.length,
@@ -108,18 +132,18 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
     totalUsers: appUsers.filter((u) => u.role !== "public_app").length,
     bookingsLast30d: bookings.length,
     newBusinessesThisWeek: businesses.filter((b) => (b.created as string) >= since7d).length,
-    subscriptionActive: 0,
-    subscriptionTrial: 0,
-    subscriptionSuspended: 0,
-    recentBusinesses: businesses.slice(0, 10).map((b) => buildBusinessRow(b, ownerMap)),
+    subscriptionActive: allSubs.filter((s) => s.status === "active").length,
+    subscriptionTrial: allSubs.filter((s) => s.status === "trial").length,
+    subscriptionSuspended: allSubs.filter((s) => s.status === "suspended").length,
+    recentBusinesses: businesses.slice(0, 10).map((b) => buildBusinessRow(b, ownerMap, subMap)),
   };
 }
 
 export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[] | null> {
   noStore();
 
-  const { businesses, ownerMap } = await fetchPlatformData();
-  return businesses.map((b) => buildBusinessRow(b, ownerMap));
+  const { businesses, ownerMap, subMap } = await fetchPlatformData();
+  return businesses.map((b) => buildBusinessRow(b, ownerMap, subMap));
 }
 
 export async function getPlatformUsersList(): Promise<PlatformUserRow[] | null> {
@@ -165,4 +189,78 @@ export async function togglePlatformBusinessActive(businessId: string, active: b
     .update({ active, updated: new Date().toISOString() })
     .eq("id", businessId);
   if (error) throw error;
+}
+
+export async function enableTrial(businessId: string, days: number): Promise<void> {
+  const client = createAdminClient();
+  const now = new Date();
+  const trialEndsAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: existing } = await client
+    .from("subscriptions")
+    .select("id")
+    .eq("businessId", businessId)
+    .single();
+
+  if (existing) {
+    const { error } = await client
+      .from("subscriptions")
+      .update({ status: "trial", trialStartedAt: now.toISOString(), trialEndsAt, lockedAt: null })
+      .eq("businessId", businessId);
+    if (error) throw new Error(`Error habilitando trial: ${error.message}`);
+  } else {
+    const { error } = await client
+      .from("subscriptions")
+      .insert({ businessId, status: "trial", trialStartedAt: now.toISOString(), trialEndsAt });
+    if (error) throw new Error(`Error habilitando trial: ${error.message}`);
+  }
+}
+
+export async function extendTrial(businessId: string, days: number): Promise<void> {
+  const client = createAdminClient();
+
+  const { data: sub, error } = await client
+    .from("subscriptions")
+    .select("trialEndsAt")
+    .eq("businessId", businessId)
+    .single();
+
+  if (error || !sub) throw new Error("No existe suscripción para este negocio");
+
+  const currentEndsAt = sub.trialEndsAt ? new Date(sub.trialEndsAt) : new Date();
+  const newEndsAt = new Date(currentEndsAt.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { error: updateError } = await client
+    .from("subscriptions")
+    .update({ trialEndsAt: newEndsAt })
+    .eq("businessId", businessId);
+
+  if (updateError) throw new Error(`Error extendiendo trial: ${updateError.message}`);
+}
+
+export async function cancelSubscription(businessId: string): Promise<void> {
+  const client = createAdminClient();
+
+  const { data: sub, error } = await client
+    .from("subscriptions")
+    .select("lockedAt")
+    .eq("businessId", businessId)
+    .single();
+
+  if (error || !sub) throw new Error("No existe suscripción para este negocio");
+
+  const { error: updateError } = await client
+    .from("subscriptions")
+    .update({ status: "cancelled", lockedAt: sub.lockedAt ?? new Date().toISOString() })
+    .eq("businessId", businessId);
+
+  if (updateError) throw new Error(`Error cancelando suscripción: ${updateError.message}`);
+}
+
+export async function unlockBusinessSubscription(businessId: string): Promise<void> {
+  const client = createAdminClient();
+  await client
+    .from("subscriptions")
+    .update({ lockedAt: null })
+    .eq("businessId", businessId);
 }

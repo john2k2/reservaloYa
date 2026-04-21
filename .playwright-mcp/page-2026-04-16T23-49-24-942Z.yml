@@ -1,0 +1,17 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e8]:
+          - paragraph [ref=e9]: Admin
+          - heading "Mi Negocio" [level=1] [ref=e10]
+        - generic [ref=e11]:
+          - link "Ver página pública" [ref=e12] [cursor=pointer]:
+            - /url: /mi-negocio
+            - img [ref=e13]
+          - button [ref=e17]:
+            - img [ref=e18]
+    - main [ref=e19]
+  - alert [ref=e66]
