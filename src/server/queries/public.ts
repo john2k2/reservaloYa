@@ -1,7 +1,10 @@
 import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 
 import { demoSlots } from "@/constants/demo";
-import { isPocketBaseConfigured } from "@/lib/pocketbase/config";
+import {
+  hasPocketBasePublicAuthCredentials,
+  isPocketBaseConfigured,
+} from "@/lib/pocketbase/config";
 import { isValidBookingConfirmationToken } from "@/server/public-booking-links";
 import { isValidBookingManageToken } from "@/server/public-booking-links";
 import {
@@ -35,12 +38,30 @@ const getCachedPocketBasePublicBusinessPageData = unstable_cache(
   }
 );
 
+function canUsePocketBasePublicReads() {
+  return isPocketBaseConfigured() && hasPocketBasePublicAuthCredentials();
+}
+
+async function getPocketBasePublicBusinessPageDataSafe(slug: string) {
+  try {
+    return await getCachedPocketBasePublicBusinessPageData(slug);
+  } catch {
+    return null;
+  }
+}
+
 export async function getPublicBusinessPageData(slug: string) {
-  if (!isPocketBaseConfigured()) {
+  if (!canUsePocketBasePublicReads()) {
     return getCachedLocalPublicBusinessPageData(slug);
   }
 
-  return getCachedPocketBasePublicBusinessPageData(slug);
+  const pocketBaseData = await getPocketBasePublicBusinessPageDataSafe(slug);
+
+  if (pocketBaseData) {
+    return pocketBaseData;
+  }
+
+  return getCachedLocalPublicBusinessPageData(slug);
 }
 
 export async function getPublicBookingFlowData({
@@ -75,17 +96,26 @@ export async function getPublicBookingFlowData({
     };
   }
 
-  if (!isPocketBaseConfigured() || pageData.source === "local") {
+  if (!canUsePocketBasePublicReads() || pageData.source === "local") {
     return getLocalPublicBookingFlowData({
       slug,
       serviceId,
       bookingDate,
     });
   }
-  return getPocketBasePublicBookingFlowData(
-    { slug, serviceId, bookingDate },
-    pageData
-  );
+
+  try {
+    return await getPocketBasePublicBookingFlowData(
+      { slug, serviceId, bookingDate },
+      pageData
+    );
+  } catch {
+    return getLocalPublicBookingFlowData({
+      slug,
+      serviceId,
+      bookingDate,
+    });
+  }
 }
 
 export async function getBookingConfirmationData({
@@ -108,7 +138,7 @@ export async function getBookingConfirmationData({
     return null;
   }
 
-  if (!bookingId || !isPocketBaseConfigured()) {
+  if (!bookingId || !canUsePocketBasePublicReads()) {
     const localBooking = await getLocalBookingConfirmationData(bookingId);
 
     if (!localBooking || localBooking.businessSlug !== slug) {
@@ -118,7 +148,9 @@ export async function getBookingConfirmationData({
     return localBooking;
   }
 
-  const pocketBaseBooking = await getPocketBaseBookingConfirmationData({ slug, bookingId });
+  const pocketBaseBooking = await getPocketBaseBookingConfirmationData({ slug, bookingId }).catch(
+    () => null
+  );
 
   if (pocketBaseBooking) {
     return pocketBaseBooking;
@@ -147,7 +179,7 @@ export async function getPublicManageBookingData({
     return null;
   }
 
-  if (!bookingId || !isPocketBaseConfigured()) {
+  if (!bookingId || !canUsePocketBasePublicReads()) {
     const localBooking = await getLocalPublicManageBookingData(bookingId);
 
     if (!localBooking || localBooking.businessSlug !== slug) {
@@ -159,6 +191,5 @@ export async function getPublicManageBookingData({
       source: "local" as const,
     };
   }
-
-  return getPocketBaseManageBookingData({ slug, bookingId });
+  return getPocketBaseManageBookingData({ slug, bookingId }).catch(() => null);
 }

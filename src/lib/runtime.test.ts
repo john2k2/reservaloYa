@@ -56,6 +56,23 @@ describe("getPublicAppUrl", () => {
       if (original !== undefined) process.env.NEXT_PUBLIC_APP_URL = original;
     }
   });
+
+  it("sanea espacios y saltos de línea en la URL pública", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "  https://reservaya.ar\n ");
+    expect(getPublicAppUrl()).toBe("https://reservaya.ar");
+  });
+
+  it("usa la URL de Vercel si NEXT_PUBLIC_APP_URL no está definida", () => {
+    const original = process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "reservaya.ar");
+
+    try {
+      expect(getPublicAppUrl()).toBe("https://reservaya.ar");
+    } finally {
+      if (original !== undefined) process.env.NEXT_PUBLIC_APP_URL = original;
+    }
+  });
 });
 
 describe("isPocketBaseConfigured (lib/runtime)", () => {

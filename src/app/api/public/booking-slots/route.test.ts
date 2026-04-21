@@ -61,4 +61,17 @@ describe("public booking slots route", () => {
       slots: ["10:00", "10:30"],
     });
   });
+
+  it("returns 503 when the availability lookup throws", async () => {
+    getPublicBookingFlowDataMock.mockRejectedValue(new Error("boom"));
+    const { GET } = await import("./route");
+
+    const response = await GET(
+      new Request("http://localhost/api/public/booking-slots?slug=demo-barberia&serviceId=svc-1&date=2026-03-30")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toEqual({ error: "No pudimos cargar los horarios en este momento." });
+  });
 });

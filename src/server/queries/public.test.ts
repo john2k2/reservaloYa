@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const isPocketBaseConfiguredMock = vi.fn(() => false);
+const hasPocketBasePublicAuthCredentialsMock = vi.fn(() => false);
 const isValidBookingConfirmationTokenMock = vi.fn(() => true);
 const isValidBookingManageTokenMock = vi.fn(() => true);
 const getLocalBookingConfirmationDataMock = vi.fn<() => Promise<unknown>>(async () => null);
@@ -18,6 +19,7 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("@/lib/pocketbase/config", () => ({
+  hasPocketBasePublicAuthCredentials: hasPocketBasePublicAuthCredentialsMock,
   isPocketBaseConfigured: isPocketBaseConfiguredMock,
 }));
 
@@ -44,12 +46,14 @@ describe("getBookingConfirmationData", () => {
   beforeEach(() => {
     vi.resetModules();
     isPocketBaseConfiguredMock.mockReset();
+    hasPocketBasePublicAuthCredentialsMock.mockReset();
     isValidBookingConfirmationTokenMock.mockReset();
     isValidBookingManageTokenMock.mockReset();
     getLocalBookingConfirmationDataMock.mockReset();
     getPocketBaseBookingConfirmationDataMock.mockReset();
 
     isPocketBaseConfiguredMock.mockReturnValue(false);
+    hasPocketBasePublicAuthCredentialsMock.mockReturnValue(false);
     isValidBookingConfirmationTokenMock.mockReturnValue(true);
     isValidBookingManageTokenMock.mockReturnValue(true);
     getLocalBookingConfirmationDataMock.mockResolvedValue(null);
@@ -109,5 +113,29 @@ describe("getBookingConfirmationData", () => {
     });
 
     expect(isValidBookingConfirmationTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("usa fallback local si PocketBase está configurado pero faltan credenciales públicas", async () => {
+    isPocketBaseConfiguredMock.mockReturnValue(true);
+    hasPocketBasePublicAuthCredentialsMock.mockReturnValue(false);
+    getLocalBookingConfirmationDataMock.mockResolvedValue({
+      bookingId: "booking-1",
+      businessSlug: "demo-barberia",
+    });
+
+    const { getBookingConfirmationData } = await import("./public");
+
+    await expect(
+      getBookingConfirmationData({
+        slug: "demo-barberia",
+        bookingId: "booking-1",
+        token: "confirmation-token",
+      })
+    ).resolves.toEqual({
+      bookingId: "booking-1",
+      businessSlug: "demo-barberia",
+    });
+
+    expect(getPocketBaseBookingConfirmationDataMock).not.toHaveBeenCalled();
   });
 });
