@@ -25,9 +25,18 @@ export async function ensureStoreFile() {
   }
 }
 
+async function readStoreContent() {
+  try {
+    await ensureStoreFile();
+    return await readFile(runtimePath, "utf8");
+  } catch {
+    // Vercel and other read-only runtimes can still serve the demo seed file.
+    return await readFile(seedPath, "utf8");
+  }
+}
+
 export async function readStore() {
-  await ensureStoreFile();
-  const content = await readFile(runtimePath, "utf8");
+  const content = await readStoreContent();
   const rawStore = JSON.parse(content) as LocalStore | LegacyLocalStore;
 
   return ensureDemoPresetData(normalizeStore(rawStore));
