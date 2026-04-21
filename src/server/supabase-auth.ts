@@ -214,7 +214,9 @@ export async function updateSupabaseTeamUserStatus(userId: string, active: boole
 
 export async function resetSupabaseUserPassword(email: string) {
   const client = createPublicClient();
-  const { error } = await client.auth.resetPasswordForEmail(email);
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://reservaya.ar"}/admin/reset-password`,
+  });
   if (error) {
     throw error;
   }
