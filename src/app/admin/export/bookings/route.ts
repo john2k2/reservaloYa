@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { buildCsv, buildCsvHeaders } from "@/server/admin-exports";
+import { checkExportRateLimit } from "@/server/export-rate-limit";
 import { getAdminBookingsData, getAdminShellData } from "@/server/queries/admin";
 
 const bookingExportFiltersSchema = z.object({
@@ -15,6 +16,17 @@ export async function GET(request: Request) {
 
   if (!shellData) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+
+  const rateLimit = checkExportRateLimit(shellData.businessId ?? shellData.userEmail);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas exportaciones. Esperá un momento e intentá de nuevo." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(rateLimit.retryAfterMs / 1000)) },
+      }
+    );
   }
 
   const { searchParams } = new URL(request.url);

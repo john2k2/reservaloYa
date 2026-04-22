@@ -2,22 +2,25 @@
 
 import { redirect } from "next/navigation";
 
+import { writeAuditLog } from "@/server/audit-log";
 import { createSupabaseStaffAccount, updateSupabaseTeamUserStatus } from "@/server/supabase-auth";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { requireAdminRouteAccess } from "@/server/admin-access";
 
-async function getOwnerContext(): Promise<{
-  businessId: string;
-  userRole: "owner";
-}> {
+async function getOwnerContext() {
   const shellData = await requireAdminRouteAccess("/admin/team");
 
   if (!shellData.businessId || shellData.demoMode) {
     redirect("/admin/dashboard?error=La gestion de equipo solo esta disponible en modo Supabase.");
   }
 
+  const user = await getAuthenticatedSupabaseUser();
+
   return {
     businessId: shellData.businessId,
-    userRole: "owner",
+    userRole: "owner" as const,
+    userId: user?.id ?? "",
+    userEmail: user?.email ?? shellData.userEmail,
   };
 }
 
@@ -43,6 +46,13 @@ export async function createStaffAction(formData: FormData) {
       password,
       role: "staff",
     });
+
+    await writeAuditLog(
+      { userId: shellData.userId, userEmail: shellData.userEmail, businessId: shellData.businessId },
+      "team.staff_created",
+      email,
+      { name, role: "staff" }
+    );
   } catch (error) {
     redirect(
       `/admin/team?error=${encodeURIComponent(
@@ -55,7 +65,7 @@ export async function createStaffAction(formData: FormData) {
 }
 
 export async function updateStaffStatusAction(formData: FormData) {
-  await getOwnerContext();
+  const shellData = await getOwnerContext();
   const userId = String(formData.get("userId") ?? "").trim();
   const nextActive = String(formData.get("nextActive") ?? "").trim() === "true";
 
@@ -65,6 +75,13 @@ export async function updateStaffStatusAction(formData: FormData) {
 
   try {
     await updateSupabaseTeamUserStatus(userId, nextActive);
+
+    await writeAuditLog(
+      { userId: shellData.userId, userEmail: shellData.userEmail, businessId: shellData.businessId },
+      "team.staff_status_changed",
+      userId,
+      { active: nextActive }
+    );
   } catch (error) {
     redirect(
       `/admin/team?error=${encodeURIComponent(

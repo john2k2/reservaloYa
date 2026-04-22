@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
+import { writeAuditLog } from "@/server/audit-log";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { createSupabasePublicBooking } from "@/server/supabase-store";
 import {
@@ -81,6 +82,8 @@ async function getBookingContext() {
   return {
     businessId: user.businessId,
     businessSlug: user.businessSlug ?? "",
+    userId: user.id,
+    userEmail: user.email,
   };
 }
 
@@ -211,6 +214,13 @@ export async function createManualBookingAction(formData: FormData) {
       initialStatus: "confirmed",
     });
 
+    await writeAuditLog(
+      { userId: context.userId, userEmail: context.userEmail, businessId: context.businessId },
+      "booking.created",
+      "manual",
+      { date: parsed.data.bookingDate, time: parsed.data.startTime, customer: parsed.data.fullName }
+    );
+
     revalidateBookingViews(context.businessSlug);
     redirect(buildBookingsRedirectPath({ saved: "nuevo", date: parsed.data.bookingDate }));
   } catch (error) {
@@ -254,6 +264,13 @@ export async function updateBookingAction(formData: FormData) {
       status: parsed.data.status,
       notes: parsed.data.notes,
     });
+
+    await writeAuditLog(
+      { userId: context.userId, userEmail: context.userEmail, businessId: context.businessId },
+      "booking.updated",
+      parsed.data.bookingId,
+      { status: parsed.data.status, date: parsed.data.bookingDate, time: parsed.data.startTime }
+    );
 
     revalidateBookingViews(context.businessSlug);
 

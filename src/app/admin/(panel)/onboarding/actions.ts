@@ -33,6 +33,7 @@ const updateBusinessSchema = z.object({
   email: z.union([z.string().email(), z.literal("")]).optional(),
   address: z.string().min(4).max(160),
   cancellationPolicy: z.string().max(600).optional(),
+  autoConfirmBookings: z.boolean().optional(),
 });
 
 const colorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color invalido.");
@@ -108,6 +109,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
     email: String(formData.get("email") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim(),
     cancellationPolicy: String(formData.get("cancellationPolicy") ?? "").trim(),
+    autoConfirmBookings: formData.get("autoConfirmBookings") === "on",
   });
 
   if (!parsed.success) {
@@ -125,6 +127,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
     phone,
     email,
     address,
+    autoConfirmBookings: parsed.data.autoConfirmBookings ?? false,
     ...(cancellationPolicy && { cancellationPolicy }),
   });
 

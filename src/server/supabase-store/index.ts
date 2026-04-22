@@ -547,6 +547,12 @@ export async function createSupabasePublicBooking(input: {
         });
       }
 
+      // Si el negocio tiene auto-confirmación activada y el caller no forzó un estado,
+      // la reserva entra directamente como "confirmed" en vez de "pending"
+      const resolvedStatus =
+        input.initialStatus ??
+        (business.autoConfirmBookings ? "confirmed" : undefined);
+
       const booking = await createSupabaseRecord<BookingRecord>("bookings", {
         business_id: business.id,
         customer_id: customer.id,
@@ -555,7 +561,7 @@ export async function createSupabasePublicBooking(input: {
           bookingDate: input.bookingDate,
           startTime: input.startTime,
           durationMinutes: Number(service.durationMinutes),
-          status: input.initialStatus,
+          status: resolvedStatus,
           notes: input.notes,
           paymentPreferenceId: input.paymentPreferenceId,
         }),
@@ -960,7 +966,60 @@ async function resolveSubscriptionStatus(
     return { subscriptionStatus: "trial", subscriptionExpired: expired };
   }
 
+  if (status === "cancelled") {
+    const stillActive = sub.nextBillingDate ? new Date(sub.nextBillingDate) > new Date() : false;
+    return { subscriptionStatus: "cancelled", subscriptionExpired: !stillActive };
+  }
+
   return { subscriptionStatus: status, subscriptionExpired: true };
+}
+
+export async function getSupabaseSubscriptionData(businessId: string) {
+  const client = await createServerClient();
+  const { data: sub } = await client
+    .from("subscriptions")
+    .select("*")
+    .eq("businessId", businessId)
+    .single();
+
+  if (!sub) {
+    return null;
+  }
+
+  return {
+    status: sub.status as "trial" | "active" | "cancelled" | "suspended",
+    trialEndsAt: sub.trialEndsAt as string | null,
+    nextBillingDate: sub.nextBillingDate as string | null,
+    mpSubscriptionId: sub.mpSubscriptionId as string | null,
+    created: sub.created as string,
+  };
+}
+
+export async function cancelSupabaseSubscription(businessId: string) {
+  const client = await createServerClient();
+
+  const { data: sub, error } = await client
+    .from("subscriptions")
+    .select("id, status, nextBillingDate")
+    .eq("businessId", businessId)
+    .single();
+
+  if (error || !sub) {
+    throw new Error("No encontramos la suscripción.");
+  }
+
+  if (sub.status === "cancelled") {
+    throw new Error("La suscripción ya está cancelada.");
+  }
+
+  if (sub.status === "suspended") {
+    throw new Error("No se puede cancelar una suscripción suspendida.");
+  }
+
+  await client
+    .from("subscriptions")
+    .update({ status: "cancelled" })
+    .eq("id", sub.id);
 }
 
 export async function getSupabaseAdminDashboardData(businessId: string) {
@@ -1247,6 +1306,7 @@ export async function getSupabaseAdminSettingsData(businessId: string) {
       address: business.address,
       timezone: business.timezone,
       cancellationPolicy: business.cancellationPolicy,
+      autoConfirmBookings: business.autoConfirmBookings,
       mpConnected: business.mpConnected,
       mpCollectorId: business.mpCollectorId,
     },

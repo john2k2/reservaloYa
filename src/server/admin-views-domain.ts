@@ -67,6 +67,7 @@ type AdminSettingsBusinessInput = {
   address?: string | null;
   timezone?: string | null;
   cancellationPolicy?: string | null;
+  autoConfirmBookings?: boolean | null;
   mpConnected?: boolean | null;
   mpCollectorId?: string | null;
 };
@@ -240,6 +241,7 @@ export function buildAdminSettingsView<TProfile>(
     publicUrl: `/${business.slug}`,
     profile,
     cancellationPolicy: business.cancellationPolicy ?? undefined,
+    autoConfirmBookings: business.autoConfirmBookings ?? false,
     mpConnected: business.mpConnected ?? false,
     mpCollectorId: business.mpCollectorId ?? undefined,
   };

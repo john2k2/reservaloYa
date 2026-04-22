@@ -106,6 +106,7 @@ interface OnboardingPageClientProps {
     email: string;
     address: string;
     cancellationPolicy?: string;
+    autoConfirmBookings?: boolean;
     publicUrl: string;
     mpConnected?: boolean;
     mpCollectorId?: string;

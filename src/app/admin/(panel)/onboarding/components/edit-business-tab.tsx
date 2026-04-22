@@ -12,6 +12,7 @@ type BusinessData = {
   email: string;
   address: string;
   cancellationPolicy: string;
+  autoConfirmBookings: boolean;
 };
 
 type EditBusinessTabProps = {
@@ -107,6 +108,25 @@ export function EditBusinessTab({
           <p className="text-xs text-muted-foreground">
             Se muestra en la página pública de tu negocio. Máx. 300 caracteres.
           </p>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-xl border border-input bg-background px-4 py-3">
+          <input
+            type="checkbox"
+            id="autoConfirmBookings"
+            name="autoConfirmBookings"
+            checked={businessData.autoConfirmBookings}
+            onChange={(e) => setBusinessData((d) => ({ ...d, autoConfirmBookings: e.target.checked }))}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+          />
+          <div>
+            <label htmlFor="autoConfirmBookings" className="block text-sm font-medium text-foreground cursor-pointer">
+              Confirmar turnos automáticamente
+            </label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Los nuevos turnos quedan confirmados al instante. Si está desactivado, quedán en estado "Pendiente" hasta que vos los apruebes.
+            </p>
+          </div>
         </div>
       </div>
     </article>

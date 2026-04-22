@@ -4,6 +4,7 @@ export const ownerOnlyAdminRoutes = [
   "/admin/team",
   "/admin/onboarding",
   "/admin/settings",
+  "/admin/billing",
 ] as const;
 
 export function normalizeAdminRole(role?: string | null): UserRole {

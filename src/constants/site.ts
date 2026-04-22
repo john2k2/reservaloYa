@@ -4,6 +4,7 @@ import {
   CalendarClock,
   Clock3,
   ClipboardList,
+  CreditCard,
   LayoutDashboard,
   MessageCircle,
   Scissors,
@@ -143,6 +144,12 @@ export const adminNavigation: Array<{
     href: "/admin/onboarding",
     label: "Mi negocio",
     icon: Sparkles,
+    group: "Configuración",
+  },
+  {
+    href: "/admin/billing",
+    label: "Plan",
+    icon: CreditCard,
     group: "Configuración",
   },
 ];

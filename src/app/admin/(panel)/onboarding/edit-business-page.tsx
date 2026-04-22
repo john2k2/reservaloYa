@@ -32,6 +32,7 @@ interface EditBusinessPageProps {
     email: string;
     address: string;
     cancellationPolicy?: string;
+    autoConfirmBookings?: boolean;
     publicUrl: string;
     mpConnected?: boolean;
     mpCollectorId?: string;
@@ -144,6 +145,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
     email: settingsData.email,
     address: settingsData.address,
     cancellationPolicy: settingsData.cancellationPolicy ?? "",
+    autoConfirmBookings: settingsData.autoConfirmBookings ?? false,
   });
 
   const currentPaletteId = getPaletteIdFromColors({
@@ -214,6 +216,9 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
       businessFormData.append("email", businessData.email);
       businessFormData.append("address", businessData.address);
       businessFormData.append("cancellationPolicy", businessData.cancellationPolicy);
+      if (businessData.autoConfirmBookings) {
+        businessFormData.append("autoConfirmBookings", "on");
+      }
 
       await updateOnboardedBusinessInlineAction(businessFormData);
 

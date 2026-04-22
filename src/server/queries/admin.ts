@@ -11,6 +11,7 @@ import {
   getSupabaseAdminDashboardData,
   getSupabaseOnboardingData,
   getSupabaseAdminTeamData,
+  getSupabaseSubscriptionData,
 } from "@/server/supabase-store";
 
 type AdminShellData = {
@@ -165,6 +166,23 @@ export async function getAdminSettingsData() {
   }
 
   return getSupabaseAdminSettingsData(shellData.businessId);
+}
+
+export async function getAdminBillingData() {
+  noStore();
+
+  const shellData = await getLiveBusinessId();
+
+  if (!shellData) {
+    return null;
+  }
+
+  const subscription = await getSupabaseSubscriptionData(shellData.businessId);
+
+  return {
+    businessId: shellData.businessId,
+    subscription,
+  };
 }
 
 export async function getAdminOnboardingData() {

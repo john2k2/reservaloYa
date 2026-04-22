@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
+import { writeAuditLog } from "@/server/audit-log";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import {
   createSupabaseRecord,
@@ -34,6 +35,8 @@ async function getServiceContext() {
   return {
     businessId: user.businessId,
     businessSlug: user.businessSlug ?? "",
+    userId: user.id,
+    userEmail: user.email,
   };
 }
 
@@ -169,6 +172,13 @@ export async function saveServiceAction(formData: FormData) {
       featuredLabel: parsed.data.featuredLabel,
     });
 
+    await writeAuditLog(
+      { userId: context.userId, userEmail: context.userEmail, businessId: context.businessId },
+      parsed.data.serviceId ? "service.updated" : "service.created",
+      parsed.data.serviceId ?? parsed.data.name,
+      { name: parsed.data.name, price: parsed.data.price, durationMinutes: parsed.data.durationMinutes }
+    );
+
     revalidateServiceViews(context.businessSlug);
 
     redirect(`/admin/services?saved=${encodeURIComponent(parsed.data.name)}`);
@@ -198,6 +208,13 @@ export async function deactivateServiceAction(formData: FormData) {
       businessId: context.businessId,
       serviceId,
     });
+
+    await writeAuditLog(
+      { userId: context.userId, userEmail: context.userEmail, businessId: context.businessId },
+      "service.deactivated",
+      serviceId,
+      { name: serviceName }
+    );
 
     revalidateServiceViews(context.businessSlug);
 

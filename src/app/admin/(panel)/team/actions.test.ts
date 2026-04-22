@@ -5,6 +5,7 @@ const {
   requireAdminRouteAccessMock,
   createSupabaseStaffAccountMock,
   updateSupabaseTeamUserStatusMock,
+  getAuthenticatedSupabaseUserMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
@@ -12,6 +13,7 @@ const {
   requireAdminRouteAccessMock: vi.fn(),
   createSupabaseStaffAccountMock: vi.fn(),
   updateSupabaseTeamUserStatusMock: vi.fn(),
+  getAuthenticatedSupabaseUserMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -25,6 +27,7 @@ vi.mock("@/server/admin-access", () => ({
 vi.mock("@/server/supabase-auth", () => ({
   createSupabaseStaffAccount: createSupabaseStaffAccountMock,
   updateSupabaseTeamUserStatus: updateSupabaseTeamUserStatusMock,
+  getAuthenticatedSupabaseUser: getAuthenticatedSupabaseUserMock,
 }));
 
 describe("team management actions", () => {
@@ -38,6 +41,11 @@ describe("team management actions", () => {
       businessId: "biz_123",
       demoMode: false,
       userRole: "owner",
+    });
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "user_owner_1",
+      email: "owner@example.com",
+      businessId: "biz_123",
     });
   });
 

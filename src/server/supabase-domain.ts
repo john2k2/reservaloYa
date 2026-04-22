@@ -30,6 +30,7 @@ export type BusinessRecord = {
   mpCollectorId?: string;
   mpTokenExpiresAt?: string;
   mpConnected?: boolean;
+  autoConfirmBookings?: boolean;
 };
 
 export type ServiceRecord = {

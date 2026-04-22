@@ -33,6 +33,7 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
     mpConnected?: boolean;
     mpCollectorId?: string;
     cancellationPolicy?: string;
+    autoConfirmBookings?: boolean;
   } & typeof settingsData;
 
   return (
@@ -54,6 +55,7 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
         address: sd.address,
         publicUrl: sd.publicUrl,
         cancellationPolicy: sd.cancellationPolicy,
+        autoConfirmBookings: sd.autoConfirmBookings ?? false,
         mpConnected: sd.mpConnected ?? false,
         mpCollectorId: sd.mpCollectorId,
         mpOAuthUrl,
