@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ interface Toast {
   id: string;
   message: string;
   type: ToastType;
+  exiting?: boolean;
 }
 
 interface ToastContextType {
@@ -27,22 +28,32 @@ export function useToast() {
   return context;
 }
 
+const DURATIONS: Record<ToastType, number> = {
+  success: 4000,
+  info: 4000,
+  error: 8000,
+};
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const hideToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, exiting: true } : t))
+    );
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 300);
   }, []);
 
-  const showToast = useCallback((message: string, type: ToastType = "info") => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
-
-    // Auto-hide after 4 seconds
-    setTimeout(() => {
-      hideToast(id);
-    }, 4000);
-  }, [hideToast]);
+  const showToast = useCallback(
+    (message: string, type: ToastType = "info") => {
+      const id = Math.random().toString(36).substring(2, 9);
+      setToasts((prev) => [...prev, { id, message, type }]);
+      setTimeout(() => hideToast(id), DURATIONS[type]);
+    },
+    [hideToast]
+  );
 
   return (
     <ToastContext.Provider value={{ showToast, hideToast }}>
@@ -63,13 +74,13 @@ function ToastContainer({ toasts, onHide }: { toasts: Toast[]; onHide: (id: stri
 }
 
 function ToastItem({ toast, onHide }: { toast: Toast; onHide: () => void }) {
-  const icons = {
-    success: <CheckCircle className="h-5 w-5 text-success" />,
-    error: <AlertCircle className="h-5 w-5 text-destructive" />,
-    info: <Info className="h-5 w-5 text-foreground" />,
+  const icons: Record<ToastType, ReactNode> = {
+    success: <CheckCircle className="size-5 shrink-0 text-success" />,
+    error: <AlertCircle className="size-5 shrink-0 text-destructive" />,
+    info: <Info className="size-5 shrink-0 text-foreground" />,
   };
 
-  const styles = {
+  const styles: Record<ToastType, string> = {
     success: "border-success/20 bg-success/10",
     error: "border-destructive/20 bg-destructive/10",
     info: "border-border/60 bg-card",
@@ -78,7 +89,10 @@ function ToastItem({ toast, onHide }: { toast: Toast; onHide: () => void }) {
   return (
     <div
       className={cn(
-        "flex min-w-[300px] max-w-md items-center gap-3 rounded-lg border p-4 shadow-lg animate-in slide-in-from-bottom-2",
+        "flex min-w-[300px] max-w-md items-center gap-3 rounded-lg border p-4 shadow-lg transition-all duration-300",
+        toast.exiting
+          ? "translate-x-2 opacity-0"
+          : "animate-in slide-in-from-bottom-2",
         styles[toast.type]
       )}
       role="alert"
@@ -90,7 +104,7 @@ function ToastItem({ toast, onHide }: { toast: Toast; onHide: () => void }) {
         className="rounded p-1 text-muted-foreground transition-colors hover:bg-background/80"
         aria-label="Cerrar notificación"
       >
-        <X className="h-4 w-4" />
+        <X className="size-4" />
       </button>
     </div>
   );

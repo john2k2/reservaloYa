@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Calendar, Check, Clock } from "lucide-react";
+import { Calendar, Check, XCircle } from "lucide-react";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -146,7 +146,7 @@ export default async function ConfirmationPage({
           isPaymentFailed ? "bg-destructive/10" : "bg-secondary"
         )}>
           {isPaymentFailed ? (
-            <Clock aria-hidden="true" className="size-6 sm:size-8 text-destructive" strokeWidth={2.5} />
+            <XCircle aria-hidden="true" className="size-6 sm:size-8 text-destructive" strokeWidth={2.5} />
           ) : (
             <Check aria-hidden="true" className="size-6 sm:size-8 text-foreground" strokeWidth={2.5} />
           )}
@@ -198,7 +198,7 @@ export default async function ConfirmationPage({
             )}
             {isCashPayment && (
               <p className="mt-1 text-xs opacity-80">
-                Tu turno quedo reservado. El cobro se realiza presencialmente en el negocio.
+                Tu turno quedó reservado. El cobro se realiza presencialmente en el negocio.
               </p>
             )}
           </div>
@@ -243,6 +243,18 @@ export default async function ConfirmationPage({
         </div>
 
         <div className="mt-8 sm:mt-10 flex w-full flex-col justify-center gap-3">
+          {query.booking && query.token && (
+            <Link
+              href={`/${slug}/mi-turno?booking=${query.booking}&token=${query.token}`}
+              className={cn(
+                buttonVariants({ variant: "default", size: "lg" }),
+                "h-11 sm:h-12 w-full gap-2 rounded-xl px-6 sm:px-8"
+              )}
+            >
+              Ver mi turno
+            </Link>
+          )}
+
           <a
             href={calendarHref}
             target="_blank"

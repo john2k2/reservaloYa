@@ -1,4 +1,4 @@
-﻿import { Scissors, Star } from "lucide-react";
+﻿import { Scissors, Star, Clock } from "lucide-react";
 
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -34,6 +34,32 @@ export function ServicesSection({
   mobilePreviewCount = 4,
 }: ServicesSectionProps) {
   const hiddenOnMobile = Math.max(services.length - mobilePreviewCount, 0);
+
+  if (services.length === 0) {
+    return (
+      <section className="border-y border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: surfaceTint }}>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-6 sm:mb-10">
+            <p className="text-xs font-semibold uppercase tracking-widest sm:text-sm" style={{ color: accentColor }}>
+              Servicios
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:mt-3 sm:text-2xl lg:text-3xl">
+              Elegí el turno que mejor encaja con tu agenda
+            </h2>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-background/60 px-6 py-14 text-center sm:rounded-3xl sm:py-20">
+            <Clock className="size-10 text-muted-foreground/40 sm:size-12" />
+            <p className="mt-4 text-base font-semibold text-foreground sm:text-lg">
+              Los servicios están por llegar
+            </p>
+            <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+              Este negocio está terminando de configurar su catálogo. Volvé pronto o escribinos por WhatsApp.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="border-y border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: surfaceTint }}>

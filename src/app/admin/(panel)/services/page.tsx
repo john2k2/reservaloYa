@@ -10,24 +10,8 @@ import { cn } from "@/lib/utils";
 import { getAdminServicesData, getAdminShellData } from "@/server/queries/admin";
 
 type AdminServicesPageProps = {
-  searchParams: Promise<{
-    edit?: string;
-    saved?: string;
-    archived?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<{ edit?: string }>;
 };
-
-function buildNotice(params: {
-  saved?: string;
-  archived?: string;
-  error?: string;
-}) {
-  if (params.error) return { tone: "error" as const, message: params.error };
-  if (params.saved) return { tone: "success" as const, message: `Servicio guardado: ${params.saved}.` };
-  if (params.archived) return { tone: "success" as const, message: `Servicio desactivado: ${params.archived}.` };
-  return null;
-}
 
 export default async function AdminServicesPage({ searchParams }: AdminServicesPageProps) {
   const [services, shellData, params] = await Promise.all([
@@ -41,7 +25,6 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
   }
 
   const editingService = services.find((s) => s.id === params.edit) ?? null;
-  const notice = buildNotice(params);
   const featuredCount = services.filter((s) => s.featured).length;
 
   return (
@@ -67,20 +50,6 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
           )}
         </div>
       </header>
-
-      {notice && (
-        <div
-          className={cn(
-            "rounded-xl border px-4 py-3 text-sm",
-            notice.tone === "error"
-              ? "border-destructive/30 bg-destructive/10 text-destructive"
-              : "border-success/30 bg-success/10 text-success"
-          )}
-          role="alert"
-        >
-          {notice.message}
-        </div>
-      )}
 
       {/* Layout de 2 columnas */}
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">

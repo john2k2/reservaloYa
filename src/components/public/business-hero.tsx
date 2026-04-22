@@ -309,8 +309,12 @@ export function BusinessHero({
               </div>
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm sm:p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Oferta real</p>
-                <p className="mt-2 text-base font-bold text-foreground sm:text-lg">{servicesCount} servicios</p>
-                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Opciones claras con duración definida</p>
+                <p className="mt-2 text-base font-bold text-foreground sm:text-lg">
+                  {servicesCount > 0 ? `${servicesCount} servicios` : "Próximamente"}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                  {servicesCount > 0 ? "Opciones claras con duración definida" : "Catálogo en preparación"}
+                </p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm sm:p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Desde</p>

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { CalendarClock, Clock3, MessageSquareText, Download, Phone, Plus } from "lucide-react";
 
 import { updateBookingAction } from "@/app/admin/(panel)/bookings/actions";
-import { BookingsNotice } from "@/app/admin/(panel)/bookings/bookings-notice";
 import { BookingSubmitButton } from "@/app/admin/(panel)/bookings/booking-submit-button";
 import { ManualBookingWrapper } from "@/app/admin/(panel)/bookings/manual-booking-wrapper";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -39,16 +38,6 @@ function formatDateLabel(date: string) {
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
-function buildNotice(params: { saved?: string; error?: string }) {
-  if (params.error) {
-    return { tone: "error" as const, message: params.error };
-  }
-  if (params.saved) {
-    return { tone: "success" as const, message: "Turno actualizado correctamente." };
-  }
-  return null;
-}
-
 export default async function AdminBookingsPage({ searchParams }: AdminBookingsPageProps) {
   const params = await searchParams;
   const activeFilters = {
@@ -65,7 +54,6 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
     redirect("/admin/onboarding");
   }
 
-  const notice = buildNotice(params);
   const savedBookingId = params.saved ?? "";
   const hasActiveFilters = Boolean(activeFilters.status || activeFilters.date || activeFilters.q);
 
@@ -116,8 +104,6 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
           </Link>
         </div>
       </header>
-
-      {notice && <BookingsNotice message={notice.message} tone={notice.tone} />}
 
       {/* Formulario turno manual (se muestra si ?nuevo=1) */}
       <ManualBookingWrapper services={services} />

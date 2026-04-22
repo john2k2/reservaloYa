@@ -24,15 +24,7 @@ import {
   getAdminAvailabilityData,
 } from "@/server/queries/admin";
 
-type AdminDashboardPageProps = {
-  searchParams: Promise<{
-    reminders?: string;
-    error?: string;
-    success?: string;
-  }>;
-};
-
-export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+export default async function AdminDashboardPage() {
   const [dashboardData, , services, availability] = await Promise.all([
     getAdminDashboardData(),
     getAdminShellData(),
@@ -44,10 +36,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     redirect("/admin/onboarding");
   }
 
-  const params = await searchParams;
-  const reminderMessage = params.reminders ?? "";
-  const errorMessage = params.error ?? "";
-  const successMessage = params.success ?? "";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   const hasServices = services.length > 0;
@@ -96,22 +84,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       {/* Link de reservas */}
       <BookingLinkBar businessSlug={dashboardData.businessSlug} appUrl={appUrl} />
 
-      {/* Alertas */}
-      {(reminderMessage || errorMessage || successMessage) && (
-        <div
-          className={cn(
-            "rounded-xl border px-4 py-3 text-sm",
-            errorMessage
-              ? "border-destructive/20 bg-destructive/10 text-destructive"
-              : successMessage
-                ? "border-success/20 bg-success/10 text-success"
-                : "border-border/60 bg-card text-card-foreground"
-          )}
-          role="alert"
-        >
-          {errorMessage || successMessage || reminderMessage}
-        </div>
-      )}
 
       {/* Checklist de configuración inicial */}
       {!setupDone && (

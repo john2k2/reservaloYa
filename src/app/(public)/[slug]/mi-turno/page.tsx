@@ -6,11 +6,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-import { PublicSubmitButton } from "@/components/public/public-submit-button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { formatDateLabel, formatTimeLabel } from "@/lib/bookings/format";
 import { cn } from "@/lib/utils";
-import { cancelPublicBookingAction } from "@/server/actions/public-booking";
+import { CancelBookingConfirmButton } from "@/app/(public)/[slug]/mi-turno/cancel-booking-confirm-button";
 import { getPublicManageBookingData, getPublicBusinessPageData } from "@/server/queries/public";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
@@ -143,20 +142,11 @@ export default async function ManageBookingPage({
                 Cancelar turno
               </div>
             ) : (
-              <form action={cancelPublicBookingAction} className="w-full">
-                <input type="hidden" name="businessSlug" value={slug} />
-                <input type="hidden" name="bookingId" value={booking.id} />
-                <input type="hidden" name="manageToken" value={query.token ?? ""} />
-                <PublicSubmitButton
-                  className="h-11 sm:h-12 w-full rounded-xl sm:rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  pendingLabel="Cancelando turno..."
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <CalendarX2 aria-hidden="true" className="size-4" />
-                    Cancelar turno
-                  </span>
-                </PublicSubmitButton>
-              </form>
+              <CancelBookingConfirmButton
+                slug={slug}
+                bookingId={booking.id}
+                manageToken={query.token ?? ""}
+              />
             )}
           </div>
 

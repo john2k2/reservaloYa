@@ -56,32 +56,6 @@ export async function generateMetadata({
   }
 }
 
-const demoServices = [
-  {
-    id: "22222222-2222-2222-2222-222222222221",
-    name: "Corte clásico",
-    priceLabel: "$ 12.000",
-    description: "Corte con terminación prolija para uso diario.",
-    durationMinutes: 45,
-    popular: false,
-  },
-  {
-    id: "22222222-2222-2222-2222-222222222222",
-    name: "Corte + barba",
-    priceLabel: "$ 18.000",
-    description: "Servicio completo con perfilado y terminación.",
-    durationMinutes: 60,
-    popular: true,
-  },
-  {
-    id: "22222222-2222-2222-2222-222222222223",
-    name: "Perfilado premium",
-    priceLabel: "$ 8.000",
-    description: "Repaso rápido para mantener prolijo el look.",
-    durationMinutes: 30,
-    popular: false,
-  },
-];
 
 type BusinessPageProps = {
   params: Promise<{ slug: string }>;
@@ -208,18 +182,15 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     notFound();
   }
 
-  const services = (pageData.services.length > 0 ? pageData.services : demoServices).map(
-    (service, index) => ({
-      ...service,
-      popular: Boolean("featured" in service ? service.featured : false) || index === 0,
-      featureBadge:
-        "featured" in service && service.featured
-          ? service.featuredLabel || "Destacado"
-          : index === 0
-            ? "Más elegido"
-            : "",
-    })
-  );
+  const services = pageData.services.map((service, index) => ({
+    ...service,
+    popular: Boolean(service.featured) || index === 0,
+    featureBadge: service.featured
+      ? service.featuredLabel || "Destacado"
+      : index === 0
+        ? "Más elegido"
+        : "",
+  }));
 
   const startingPriceLabel = getStartingPriceLabel(services);
   const firstActiveDay = getFirstActiveDayLabel(pageData.weeklyHours);

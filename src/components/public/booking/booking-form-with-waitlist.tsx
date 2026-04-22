@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -9,6 +9,7 @@ import {
   FileText,
   Mail,
   User,
+  Pencil,
 } from "lucide-react";
 
 import { WhatsAppIcon } from "@/components/icons";
@@ -74,6 +75,21 @@ export function BookingFormWithWaitlist({
 }: BookingFormWithWaitlistProps) {
   const [noSlotsDate, setNoSlotsDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string>(rescheduleStartTime ?? "");
+  const [confirming, setConfirming] = useState(false);
+  const [confirmSummary, setConfirmSummary] = useState<{ date: string; name: string } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function handleReviewClick() {
+    const form = formRef.current;
+    if (!form) return;
+    if (!form.reportValidity()) return;
+    const fd = new FormData(form);
+    setConfirmSummary({
+      date: String(fd.get("bookingDate") ?? ""),
+      name: String(fd.get("fullName") ?? ""),
+    });
+    setConfirming(true);
+  }
 
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split("-").map(Number);
@@ -112,6 +128,7 @@ export function BookingFormWithWaitlist({
   return (
     <>
       <form
+        ref={formRef}
         action={createPublicBookingAction}
         className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"
       >
@@ -314,30 +331,82 @@ export function BookingFormWithWaitlist({
             </div>
 
             <div className="mt-6">
-              {selectedSlot ? (
-                <PublicSubmitButton
-                  className="h-12 rounded-2xl text-sm font-semibold sm:text-base"
-                  style={{ backgroundColor: accentColor, borderColor: accentColor }}
+              {confirming && confirmSummary ? (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-4 space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      ¿Todo correcto?
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="font-medium text-foreground">
+                          {formatDate(confirmSummary.date)} · {selectedSlot}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock3 className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="text-foreground">{service.name} — {service.durationMinutes} min</span>
+                      </div>
+                      {confirmSummary.name && (
+                        <div className="flex items-center gap-2">
+                          <User className="size-4 shrink-0 text-muted-foreground" />
+                          <span className="text-foreground">{confirmSummary.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    {paymentMode === "mercadopago" && (
+                      <p className="text-xs text-muted-foreground border-t border-border/60 pt-3">
+                        Al confirmar serás redirigido a Mercado Pago para completar el pago.
+                      </p>
+                    )}
+                  </div>
+
+                  <PublicSubmitButton
+                    className="h-12 rounded-2xl text-sm font-semibold sm:text-base"
+                    style={{ backgroundColor: accentColor, borderColor: accentColor }}
+                    pendingLabel={paymentMode === "mercadopago" ? "Redirigiendo a MercadoPago..." : "Confirmando reserva..."}
+                  >
+                    {paymentMode === "mercadopago" ? "Confirmar y pagar" : "Sí, confirmar turno"}
+                  </PublicSubmitButton>
+
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(false)}
+                    className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Pencil aria-hidden="true" className="size-3.5" />
+                    Volver a editar
+                  </button>
+                </div>
+              ) : selectedSlot ? (
+                <button
+                  type="button"
+                  onClick={handleReviewClick}
+                  className="h-12 w-full rounded-2xl text-sm font-semibold sm:text-base inline-flex items-center justify-center text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: accentColor }}
                 >
                   {paymentSummary.buttonLabel}
-                </PublicSubmitButton>
+                </button>
               ) : (
                 <div className="flex h-12 w-full items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground/50 cursor-not-allowed">
                   Elegí un horario para continuar
                 </div>
               )}
-              <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
-                Al confirmar aceptás las{" "}
-                <a
-                  href="/terminos"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-foreground transition-colors"
-                >
-                  condiciones de uso
-                </a>{" "}
-                y las políticas del negocio.
-              </p>
+              {!confirming && (
+                <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
+                  Al confirmar aceptás las{" "}
+                  <a
+                    href="/terminos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground transition-colors"
+                  >
+                    condiciones de uso
+                  </a>{" "}
+                  y las políticas del negocio.
+                </p>
+              )}
             </div>
             </section>
 

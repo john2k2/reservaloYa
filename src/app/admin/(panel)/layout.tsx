@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { AdminShell } from "@/components/layout/admin-shell";
+import { AdminToastReader } from "@/components/layout/admin-toast-reader";
 import { ToastProvider } from "@/components/ui/toast";
 import { getAdminShellData } from "@/server/queries/admin";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
@@ -27,6 +29,9 @@ export default async function AdminPanelLayout({
 
   return (
     <ToastProvider>
+      <Suspense>
+        <AdminToastReader />
+      </Suspense>
       <AdminShell
         businessName={shellData.businessName}
         businessSlug={shellData.businessSlug}

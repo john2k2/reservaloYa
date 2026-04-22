@@ -6,13 +6,8 @@ import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminTeamData } from "@/server/queries/admin";
 import { createStaffAction, updateStaffStatusAction } from "./actions";
 
-type AdminTeamPageProps = {
-  searchParams: Promise<{ error?: string; success?: string }>;
-};
-
-export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps) {
+export default async function AdminTeamPage() {
   const shellData = await requireAdminRouteAccess("/admin/team");
-  const params = await searchParams;
 
   if (!shellData || shellData.demoMode) {
     redirect("/admin/dashboard");
@@ -28,20 +23,6 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
           Crea usuarios de staff para operar el negocio sin compartir la cuenta principal.
         </p>
       </header>
-
-      {(params.error || params.success) && (
-        <div
-          className={cn(
-            "rounded-xl border px-4 py-3 text-sm",
-            params.error
-              ? "border-destructive/20 bg-destructive/10 text-destructive"
-              : "border-success/20 bg-success/10 text-success"
-          )}
-          role="alert"
-        >
-          {params.error || params.success}
-        </div>
-      )}
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
@@ -89,7 +70,7 @@ export default async function AdminTeamPage({ searchParams }: AdminTeamPageProps
                 type="password"
                 autoComplete="new-password"
                 className="minimalist-input"
-                placeholder="Minimo 8 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 required
               />
             </div>

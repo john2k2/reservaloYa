@@ -10,35 +10,15 @@ import { getAdminAvailabilityData } from "@/server/queries/admin";
 
 const weekDays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-type AdminAvailabilityPageProps = {
-  searchParams: Promise<{
-    savedDay?: string;
-    savedWeek?: string;
-    blocked?: string;
-    blockedMessage?: string;
-    unblocked?: string;
-    error?: string;
-  }>;
-};
-
 function formatBlockedDateLabel(date: string) {
   return new Intl.DateTimeFormat("es-AR", {
     weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC",
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
-function buildNotice(params: { savedDay?: string; savedWeek?: string; blocked?: string; blockedMessage?: string; unblocked?: string; error?: string }) {
-  if (params.error) return { tone: "error" as const, message: params.error };
-  if (params.savedWeek) return { tone: "success" as const, message: "Disponibilidad semanal actualizada." };
-  if (params.savedDay) return { tone: "success" as const, message: `Horario actualizado para ${params.savedDay}.` };
-  if (params.blockedMessage) return { tone: "success" as const, message: params.blockedMessage };
-  if (params.blocked) return { tone: "success" as const, message: `Bloqueo agregado para ${params.blocked}.` };
-  if (params.unblocked) return { tone: "success" as const, message: `Bloqueo quitado de ${params.unblocked}.` };
-  return null;
-}
 
-export default async function AdminAvailabilityPage({ searchParams }: AdminAvailabilityPageProps) {
-  const [availability, params] = await Promise.all([getAdminAvailabilityData(), searchParams]);
+export default async function AdminAvailabilityPage() {
+  const availability = await getAdminAvailabilityData();
 
   if (!availability) {
     redirect("/admin/onboarding");
@@ -55,7 +35,6 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
       active: existingRule?.active ?? false,
     };
   });
-  const notice = buildNotice(params);
   const defaultBlockedDate = new Date().toISOString().slice(0, 10);
   const defaultDayOfWeek = new Date(`${defaultBlockedDate}T12:00:00`).getDay();
   const activeDays = weekSchedule.filter((r) => r.active).length;
@@ -74,18 +53,6 @@ export default async function AdminAvailabilityPage({ searchParams }: AdminAvail
           {activeDays} días activos
         </span>
       </header>
-
-      {notice && (
-        <div
-          className={cn(
-            "rounded-xl border px-4 py-3 text-sm",
-            notice.tone === "error" ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-success/30 bg-success/10 text-success"
-          )}
-          role="alert"
-        >
-          {notice.message}
-        </div>
-      )}
 
       {/* Layout 2 columnas */}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">

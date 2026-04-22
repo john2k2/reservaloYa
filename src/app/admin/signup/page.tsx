@@ -149,7 +149,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
                   type="password"
                   autoComplete="new-password"
                   className="minimalist-input"
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   required
                 />
               </div>
