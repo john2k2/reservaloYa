@@ -14,6 +14,8 @@ import {
   getSupabaseBookingBusinessSlug,
   updateSupabaseBookingPayment,
   updateSupabaseBusinessMPTokens,
+  getSupabaseSubscriptionByBusinessId,
+  activateSupabaseSubscription,
 } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
 import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
@@ -183,6 +185,19 @@ export async function POST(request: Request) {
     });
 
     if (!paymentValidation.ok) {
+      if (paymentValidation.reason === "booking_not_found" && paymentStatus === "approved") {
+        const subscription = await getSupabaseSubscriptionByBusinessId(externalReference);
+        if (subscription) {
+          try {
+            await activateSupabaseSubscription(externalReference);
+            logger.info(`Suscripcion activada via webhook para negocio ${externalReference}`);
+          } catch (activateErr) {
+            logger.error("Error activando suscripcion", activateErr);
+          }
+          return NextResponse.json({ ok: true }, { status: 200 });
+        }
+      }
+
       logger.warn("Webhook MP ignorado por validación de booking", {
         paymentId,
         bookingId: externalReference,

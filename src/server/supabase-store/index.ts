@@ -128,7 +128,7 @@ interface JoinedBookingWithBusiness {
   customer_id?: string;
   service_id?: string;
   notes?: string;
-  business: Pick<BusinessRecord, "id" | "slug">;
+  business: Pick<BusinessRecord, "id" | "slug" | "name">;
 }
 
 interface JoinedBookingWithBusinessStatus {
@@ -183,13 +183,20 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
   }
   const business = businessData as BusinessRecord;
 
-  const [servicesResult, rulesResult] = await Promise.all([
+  const [servicesResult, rulesResult, reviewsResult] = await Promise.all([
     client.from("services").select("*").eq("business_id", business.id).order("featured", { ascending: false }).order("name"),
     client.from("availability_rules").select("*").eq("business_id", business.id).order("dayOfWeek").order("startTime"),
+    client.from("reviews").select("customerName, rating, comment, created").eq("business_id", business.id).gte("rating", 4).order("created", { ascending: false }).limit(6),
   ]);
 
   const services = (servicesResult.data ?? []) as ServiceRecord[];
   const businessAvailabilityRules = (rulesResult.data ?? []) as AvailabilityRuleRecord[];
+  const reviews = (reviewsResult.data ?? []) as Array<{
+    customerName: string;
+    rating: number;
+    comment?: string;
+    created: string;
+  }>;
 
   return {
     business: {
@@ -221,6 +228,7 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
       featuredLabel: service.featuredLabel ?? "",
       priceLabel: toMoney(service.price),
     })),
+    reviews,
     source: "supabase" as const,
   };
 }
@@ -855,6 +863,47 @@ export async function cancelSupabasePublicBooking(input: {
   await updateSupabaseRecord("bookings", booking.id, {
     status: "cancelled",
   });
+
+  notifyWaitlistForDate({
+    businessId: business.id,
+    businessSlug: business.slug,
+    businessName: business.name,
+    bookingDate: booking.bookingDate,
+  }).catch(() => {});
+}
+
+async function notifyWaitlistForDate(input: {
+  businessId: string;
+  businessSlug: string;
+  businessName: string;
+  bookingDate: string;
+}) {
+  const client = await getSupabaseAdminClient();
+
+  const { data: entries } = await client
+    .from("waitlist_entries")
+    .select("*")
+    .eq("business_id", input.businessId)
+    .eq("bookingDate", input.bookingDate)
+    .eq("notified", false)
+    .order("created", { ascending: true })
+    .limit(1);
+
+  const entry = entries?.[0] as WaitlistEntryRecord | undefined;
+  if (!entry?.email) return;
+
+  const { sendWaitlistAvailabilityEmail } = await import("@/server/booking-notifications");
+  const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/${input.businessSlug}/reservar`;
+
+  await sendWaitlistAvailabilityEmail({
+    customerEmail: entry.email,
+    customerName: entry.fullName,
+    businessName: input.businessName,
+    bookingDate: input.bookingDate,
+    bookingUrl,
+  });
+
+  await client.from("waitlist_entries").update({ notified: true }).eq("id", entry.id);
 }
 
 export async function trackSupabaseAnalyticsEvent(input: {
@@ -993,6 +1042,35 @@ export async function getSupabaseSubscriptionData(businessId: string) {
     mpSubscriptionId: sub.mpSubscriptionId as string | null,
     created: sub.created as string,
   };
+}
+
+export async function getSupabaseSubscriptionByBusinessId(businessId: string) {
+  const client = await createServerClient();
+  const { data, error } = await client
+    .from("subscriptions")
+    .select("id, status, businessId")
+    .eq("businessId", businessId)
+    .single();
+
+  if (error || !data) return null;
+  return data as { id: string; status: string; businessId: string };
+}
+
+export async function activateSupabaseSubscription(businessId: string) {
+  const client = await createServerClient();
+
+  const nextBillingDate = new Date();
+  nextBillingDate.setDate(nextBillingDate.getDate() + 30);
+
+  const { error } = await client
+    .from("subscriptions")
+    .update({
+      status: "active",
+      nextBillingDate: nextBillingDate.toISOString(),
+    })
+    .eq("businessId", businessId);
+
+  if (error) throw new Error("No se pudo activar la suscripción.");
 }
 
 export async function cancelSupabaseSubscription(businessId: string) {
@@ -1519,6 +1597,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
   const FOLLOWUP_MAX_MS = 25 * 60 * 60 * 1000;
 
   let expiredPaymentsCancelled = 0;
+  let autoCompleted = 0;
 
   if (!dryRun) {
     const { data: expiredPayments } = await client
@@ -1531,6 +1610,21 @@ export async function runSupabaseBookingReminderSweep(input?: {
       if (now.getTime() - createdAt > PENDING_PAYMENT_EXPIRY_MS) {
         await client.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
         expiredPaymentsCancelled += 1;
+      }
+    }
+
+    const { data: pastConfirmed } = await client
+      .from("bookings")
+      .select("id, bookingDate, endTime")
+      .in("status", ["pending", "confirmed"]);
+
+    for (const booking of pastConfirmed ?? []) {
+      const endTime = booking.endTime as string | undefined;
+      if (!endTime) continue;
+      const endMs = new Date(`${booking.bookingDate}T${endTime}:00`).getTime();
+      if (now.getTime() > endMs + 60 * 60 * 1000) {
+        await client.from("bookings").update({ status: "completed" }).eq("id", booking.id);
+        autoCompleted += 1;
       }
     }
   }
@@ -1547,6 +1641,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
     reminderWindowHours: 24,
     businesses: businesses.length,
     expiredPaymentsCancelled,
+    autoCompleted,
     candidates: 0,
     missingEmail: 0,
     readyWithoutProvider: 0,

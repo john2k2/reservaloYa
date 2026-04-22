@@ -5,6 +5,7 @@ import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getMPPaymentInfo, isMercadoPagoConfigured } from "@/server/mercadopago";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { activateSupabaseSubscription } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
 
 const logger = createLogger("Subscription Success");
@@ -50,6 +51,12 @@ export default async function SubscriptionSuccessPage({ searchParams }: PageProp
 
   if (!paymentVerified) {
     redirect("/admin/subscription/pay?error=payment_not_verified");
+  }
+
+  try {
+    await activateSupabaseSubscription(user.businessId);
+  } catch (err) {
+    logger.error("Error activando suscripcion en success page", err);
   }
 
   const blueRate = await getBlueDollarRate();
