@@ -1,8 +1,8 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 
-import { CheckCircle2, ImagePlus, Instagram, X, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, ImagePlus, Instagram, X, XCircle } from "lucide-react";
 
 import { ImageUpload } from "./image-upload";
 
@@ -34,6 +34,29 @@ type ImageData = {
 
 const INSTAGRAM_SLOTS = 9;
 
+const INSTAGRAM_STEPS = [
+  {
+    step: "1",
+    title: "Abrí la app de Instagram",
+    detail: "Entrá a tu perfil y buscá el post o reel que querés mostrar.",
+  },
+  {
+    step: "2",
+    title: 'Tocá los tres puntos "···"',
+    detail: 'En la esquina superior derecha del post, tocá el ícono de tres puntos.',
+  },
+  {
+    step: "3",
+    title: '"Copiar enlace"',
+    detail: "Elegí esa opción del menú. El link se copia al portapapeles.",
+  },
+  {
+    step: "4",
+    title: "Pegá el link acá",
+    detail: 'Tocá el campo de texto y elegí "Pegar". Debe verse como instagram.com/p/... o /reel/...',
+  },
+];
+
 type EditImagesTabProps = {
   imageData: ImageData;
   setImageData: Dispatch<SetStateAction<ImageData>>;
@@ -57,6 +80,8 @@ export function EditImagesTab({
   setInstagramPosts,
   settingsData,
 }: EditImagesTabProps) {
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
   function updatePost(index: number, value: string) {
     setInstagramPosts((prev) => {
       const next = [...prev];
@@ -247,6 +272,41 @@ export function EditImagesTab({
               {filledPosts.length} post{filledPosts.length !== 1 ? "s" : ""} configurado{filledPosts.length !== 1 ? "s" : ""}. Las imágenes se cargan automáticamente en tu página pública.
             </p>
           )}
+
+          {/* Tutorial cómo copiar link desde el celular */}
+          <div className="rounded-xl border border-border/40 bg-secondary/20 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setTutorialOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-sm font-medium text-foreground">
+                ¿Cómo copio el link desde el celular?
+              </span>
+              <ChevronDown
+                className={`size-4 text-muted-foreground transition-transform duration-200 ${tutorialOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {tutorialOpen && (
+              <div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-3">
+                {INSTAGRAM_STEPS.map((s) => (
+                  <div key={s.step} className="flex gap-3">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background mt-0.5">
+                      {s.step}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{s.title}</p>
+                      <p className="text-xs text-muted-foreground">{s.detail}</p>
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground pt-1 border-t border-border/30">
+                  El link tiene que empezar con <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px]">instagram.com/p/</code> o <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px]">instagram.com/reel/</code>
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </article>

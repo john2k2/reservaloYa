@@ -111,6 +111,7 @@ interface OnboardingPageClientProps {
     mpConnected?: boolean;
     mpCollectorId?: string;
     mpOAuthUrl?: string | null;
+    whatsappConfigured?: boolean;
     defaultTab?: "business" | "style" | "images" | "public" | "integrations";
     profile: {
       accent: string;

@@ -18,7 +18,7 @@ import {
   activateSupabaseSubscription,
 } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
-import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
+import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
 import { getBookingConfirmationData } from "@/server/queries/public";
 import type { BookingPaymentValidationContext } from "@/server/payments-domain";
 
@@ -227,6 +227,9 @@ export async function POST(request: Request) {
           });
           if (confirmation) {
             await sendBookingConfirmationEmail(confirmation, "created");
+            if (confirmation.businessNotificationEmail) {
+              await sendBusinessNotificationEmail(confirmation, "created");
+            }
           }
         }
       } catch (emailErr) {

@@ -25,6 +25,9 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
   const mpAppId = process.env.MP_APP_ID?.trim();
   const mpAppSecret = process.env.MP_APP_SECRET?.trim();
   const mpOAuthUrl = mpAppId && mpAppSecret ? "/api/auth/mercadopago/start" : null;
+  const whatsappConfigured = !!(
+    process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN
+  );
 
   // Si el callback OAuth redirige con ?tab=integraciones, abrir ese tab por defecto
   const defaultTab = params.tab === "integraciones" ? "integrations" as const : undefined;
@@ -59,6 +62,7 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
         mpConnected: sd.mpConnected ?? false,
         mpCollectorId: sd.mpCollectorId,
         mpOAuthUrl,
+        whatsappConfigured,
         defaultTab,
         profile: {
           accent: sd.profile.accent,

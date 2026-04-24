@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, ExternalLink, Plug, Unplug } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, ExternalLink, MessageCircle, Plug, Unplug } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -11,14 +11,34 @@ interface EditIntegrationsTabProps {
   mpConnected: boolean;
   mpCollectorId?: string;
   mpOAuthUrl: string | null;
+  whatsappConfigured: boolean;
   onDisconnect: () => Promise<void>;
 }
+
+const WA_TEMPLATES = [
+  {
+    name: "reservaya_confirmacion",
+    label: "Confirmación de turno",
+    description: "Se envía al cliente cuando su reserva queda confirmada.",
+  },
+  {
+    name: "reservaya_recordatorio",
+    label: "Recordatorio de turno",
+    description: "Se envía 24 hs antes del turno.",
+  },
+  {
+    name: "reservaya_resena",
+    label: "Pedido de reseña",
+    description: "Se envía después del servicio para pedir una opinión.",
+  },
+];
 
 export function EditIntegrationsTab({
   businessSlug,
   mpConnected,
   mpCollectorId,
   mpOAuthUrl,
+  whatsappConfigured,
   onDisconnect,
 }: EditIntegrationsTabProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -134,6 +154,62 @@ export function EditIntegrationsTab({
         <p className="text-xs text-blue-800 dark:text-blue-200">
           Al conectar tu cuenta, los pagos online van directo a tu Mercado Pago. Si prefieres no conectarlo todavía, ReservaYa mantiene el flujo de reservas y muestra el pago en efectivo como alternativa.
         </p>
+      </div>
+
+      {/* WhatsApp */}
+      <div className="mt-6 rounded-2xl border border-border/60 bg-background p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#25D366]/10">
+              <MessageCircle className="size-5 text-[#25D366]" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">WhatsApp Business</p>
+              <p className="text-xs text-muted-foreground">
+                {whatsappConfigured
+                  ? "API configurada — notificaciones activas cuando los templates sean aprobados"
+                  : "No configurado — contactá a ReservaYa para activarlo"}
+              </p>
+            </div>
+          </div>
+          {whatsappConfigured ? (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <CheckCircle2 className="size-4 text-success" />
+              <span className="text-sm font-medium text-success">Configurado</span>
+            </div>
+          ) : (
+            <AlertCircle className="size-4 shrink-0 text-muted-foreground" />
+          )}
+        </div>
+
+        {whatsappConfigured && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              Templates de mensaje
+            </p>
+            {WA_TEMPLATES.map((tpl) => (
+              <div
+                key={tpl.name}
+                className="flex items-start gap-3 rounded-xl border border-border/50 bg-secondary/20 px-4 py-3"
+              >
+                <Clock className="size-4 shrink-0 text-amber-500 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{tpl.label}</p>
+                  <p className="text-xs text-muted-foreground">{tpl.description}</p>
+                  <code className="mt-1 inline-block text-[11px] text-muted-foreground font-mono">
+                    {tpl.name}
+                  </code>
+                </div>
+                <span className="ml-auto shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                  Pendiente aprobación
+                </span>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground pt-1">
+              Los templates deben ser aprobados por Meta antes de enviarse. El proceso tarda entre 24 y 72 horas. Una vez aprobados, las notificaciones funcionan automáticamente.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Hidden field to pass businessSlug to onDisconnect */}

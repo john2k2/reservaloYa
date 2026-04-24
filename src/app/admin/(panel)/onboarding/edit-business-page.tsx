@@ -37,6 +37,7 @@ interface EditBusinessPageProps {
     mpConnected?: boolean;
     mpCollectorId?: string;
     mpOAuthUrl?: string | null;
+    whatsappConfigured?: boolean;
     defaultTab?: "business" | "style" | "images" | "public" | "integrations";
     profile: {
       accent: string;
@@ -418,6 +419,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
               mpConnected={settingsData.mpConnected ?? false}
               mpCollectorId={settingsData.mpCollectorId}
               mpOAuthUrl={settingsData.mpOAuthUrl ?? null}
+              whatsappConfigured={settingsData.whatsappConfigured ?? false}
               onDisconnect={async () => {
                 const fd = new FormData();
                 fd.append("businessSlug", business.slug);
