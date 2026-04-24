@@ -16,6 +16,7 @@ const {
   sendBookingConfirmationEmailMock,
   sendBusinessNotificationEmailMock,
   getBookingConfirmationDataMock,
+  getBlueDollarRateMock,
 } = vi.hoisted(() => ({
   getMPPaymentInfoMock: vi.fn(),
   isValidMPWebhookSignatureMock: vi.fn(),
@@ -32,6 +33,7 @@ const {
   sendBookingConfirmationEmailMock: vi.fn(),
   sendBusinessNotificationEmailMock: vi.fn(),
   getBookingConfirmationDataMock: vi.fn(),
+  getBlueDollarRateMock: vi.fn(),
 }));
 
 vi.mock("@/server/mercadopago", () => ({
@@ -64,6 +66,10 @@ vi.mock("@/server/queries/public", () => ({
   getBookingConfirmationData: getBookingConfirmationDataMock,
 }));
 
+vi.mock("@/lib/dollar-rate", () => ({
+  getBlueDollarRate: getBlueDollarRateMock,
+}));
+
 describe("mercadopago webhook route", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -82,6 +88,7 @@ describe("mercadopago webhook route", () => {
     sendBookingConfirmationEmailMock.mockReset();
     sendBusinessNotificationEmailMock.mockReset();
     getBookingConfirmationDataMock.mockReset();
+    getBlueDollarRateMock.mockReset();
 
     shouldVerifyMPWebhookSignatureMock.mockReturnValue(false);
     mapMPStatusToPaymentStatusMock.mockImplementation((status: string) =>
@@ -102,6 +109,7 @@ describe("mercadopago webhook route", () => {
       mpCollectorId: "collector-1",
     });
     getUsableBusinessMercadoPagoAccessTokenMock.mockResolvedValue(null);
+    getBlueDollarRateMock.mockResolvedValue(1000);
   });
 
   it("returns webhook health info on GET", async () => {
@@ -366,6 +374,161 @@ describe("mercadopago webhook route", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({ ok: true, skipped: true });
     expect(updateSupabaseBookingPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("activates a valid subscription payment when no booking matches", async () => {
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue(null);
+    getSupabaseSubscriptionByBusinessIdMock.mockResolvedValue({
+      id: "sub-1",
+      status: "trial",
+      businessId: "biz-1",
+    });
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-sub-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "biz-1",
+      transactionAmount: 17000,
+      currencyId: "ARS",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-sub-1" } }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(activateSupabaseSubscriptionMock).toHaveBeenCalledWith("biz-1");
+    expect(updateSupabaseBookingPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("does not activate a subscription when the amount does not match", async () => {
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue(null);
+    getSupabaseSubscriptionByBusinessIdMock.mockResolvedValue({
+      id: "sub-1",
+      status: "trial",
+      businessId: "biz-1",
+    });
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-sub-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "biz-1",
+      transactionAmount: 9999,
+      currencyId: "ARS",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-sub-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(activateSupabaseSubscriptionMock).not.toHaveBeenCalled();
+  });
+
+  it("does not activate a subscription when the currency does not match", async () => {
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue(null);
+    getSupabaseSubscriptionByBusinessIdMock.mockResolvedValue({
+      id: "sub-1",
+      status: "trial",
+      businessId: "biz-1",
+    });
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-sub-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "biz-1",
+      transactionAmount: 17000,
+      currencyId: "USD",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-sub-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(activateSupabaseSubscriptionMock).not.toHaveBeenCalled();
+  });
+
+  it("does not activate a subscription when it does not exist", async () => {
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue(null);
+    getSupabaseSubscriptionByBusinessIdMock.mockResolvedValue(null);
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-sub-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "biz-1",
+      transactionAmount: 17000,
+      currencyId: "ARS",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-sub-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(activateSupabaseSubscriptionMock).not.toHaveBeenCalled();
+  });
+
+  it("does not reactivate an already active subscription", async () => {
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue(null);
+    getSupabaseSubscriptionByBusinessIdMock.mockResolvedValue({
+      id: "sub-1",
+      status: "active",
+      businessId: "biz-1",
+    });
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-sub-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "biz-1",
+      transactionAmount: 17000,
+      currencyId: "ARS",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-sub-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(activateSupabaseSubscriptionMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when MP_WEBHOOK_SECRET is not configured in production", async () => {

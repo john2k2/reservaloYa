@@ -20,7 +20,8 @@ import {
 import { createLogger } from "@/server/logger";
 import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
 import { getBookingConfirmationData } from "@/server/queries/public";
-import type { BookingPaymentValidationContext } from "@/server/payments-domain";
+import { getBlueDollarRate } from "@/lib/dollar-rate";
+import { getSubscriptionArsPrice, type BookingPaymentValidationContext } from "@/server/payments-domain";
 
 const logger = createLogger("MP Webhook");
 
@@ -87,6 +88,47 @@ function canApplyBookingPayment(input: {
   }
 
   return { ok: true } as const;
+}
+
+async function canApplySubscriptionPayment(input: {
+  businessId: string;
+  paymentInfo: Awaited<ReturnType<typeof getMPPaymentInfo>>;
+  paymentStatus: ReturnType<typeof mapMPStatusToPaymentStatus>;
+}) {
+  const { businessId, paymentInfo, paymentStatus } = input;
+
+  if (!paymentInfo) {
+    return { ok: false, reason: "payment_not_found" } as const;
+  }
+
+  if (paymentStatus !== "approved") {
+    return { ok: false, reason: "subscription_payment_not_approved" } as const;
+  }
+
+  if (!businessId || paymentInfo.externalReference !== businessId) {
+    return { ok: false, reason: "subscription_external_reference_mismatch" } as const;
+  }
+
+  const subscription = await getSupabaseSubscriptionByBusinessId(businessId);
+  if (!subscription) {
+    return { ok: false, reason: "subscription_not_found" } as const;
+  }
+
+  if (subscription.status === "active") {
+    return { ok: false, reason: "subscription_already_active" } as const;
+  }
+
+  if (paymentInfo.currencyId !== "ARS") {
+    return { ok: false, reason: "subscription_currency_mismatch" } as const;
+  }
+
+  const blueRate = await getBlueDollarRate();
+  const expectedAmount = getSubscriptionArsPrice(blueRate);
+  if (!amountsMatch(expectedAmount, paymentInfo.transactionAmount)) {
+    return { ok: false, reason: "subscription_amount_mismatch" } as const;
+  }
+
+  return { ok: true, subscription } as const;
 }
 
 export async function POST(request: Request) {
@@ -186,8 +228,13 @@ export async function POST(request: Request) {
 
     if (!paymentValidation.ok) {
       if (paymentValidation.reason === "booking_not_found" && paymentStatus === "approved") {
-        const subscription = await getSupabaseSubscriptionByBusinessId(externalReference);
-        if (subscription && subscription.status !== "active") {
+        const subscriptionValidation = await canApplySubscriptionPayment({
+          businessId: externalReference,
+          paymentInfo,
+          paymentStatus,
+        });
+
+        if (subscriptionValidation.ok) {
           try {
             await activateSupabaseSubscription(externalReference);
             logger.info(`Suscripcion activada via webhook para negocio ${externalReference}`);
@@ -196,6 +243,13 @@ export async function POST(request: Request) {
           }
           return NextResponse.json({ ok: true }, { status: 200 });
         }
+
+        logger.warn("Webhook MP ignorado por validación de suscripción", {
+          paymentId,
+          businessId: externalReference,
+          reason: subscriptionValidation.reason,
+        });
+        return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
       }
 
       logger.warn("Webhook MP ignorado por validación de booking", {

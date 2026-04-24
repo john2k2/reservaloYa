@@ -1078,7 +1078,7 @@ export async function getSupabaseSubscriptionData(businessId: string) {
 }
 
 export async function getSupabaseSubscriptionByBusinessId(businessId: string) {
-  const client = await createServerClient();
+  const client = await getSupabaseAdminClient();
   const { data, error } = await client
     .from("subscriptions")
     .select("id, status, businessId")
@@ -1090,7 +1090,7 @@ export async function getSupabaseSubscriptionByBusinessId(businessId: string) {
 }
 
 export async function activateSupabaseSubscription(businessId: string) {
-  const client = await createServerClient();
+  const client = await getSupabaseAdminClient();
 
   const nextBillingDate = new Date();
   nextBillingDate.setDate(nextBillingDate.getDate() + 30);
