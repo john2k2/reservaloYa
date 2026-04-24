@@ -83,7 +83,7 @@ export default async function PlatformDashboardPage() {
     {
       label: "MRR estimado",
       value: data.mrr > 0 ? `$${data.mrr.toLocaleString("es-AR")}` : "—",
-      sub: "Ingresos mensuales",
+      sub: data.mrr > 0 ? `${data.subscriptionActive} × U$D 17 · dólar blue` : "Sin precio configurado",
       icon: DollarSign,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-500/10",

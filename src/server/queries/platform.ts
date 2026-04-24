@@ -2,6 +2,19 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/server";
 
+async function fetchBlueDollarRate(): Promise<number> {
+  try {
+    const res = await fetch("https://dolarapi.com/v1/dolares/blue", {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return 0;
+    const data = await res.json() as { venta?: number };
+    return data.venta ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export type PlatformSubscriptionInfo = {
   status: "trial" | "active" | "cancelled" | "suspended" | "none";
   trialEndsAt?: string;
@@ -163,7 +176,9 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
   const in7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const allSubs = Array.from(subMap.values());
   const subscriptionActiveCount = allSubs.filter((s) => s.status === "active").length;
-  const pricePerMonth = Number(process.env.SUBSCRIPTION_MONTHLY_PRICE ?? "0");
+  const priceUsd = Number(process.env.SUBSCRIPTION_PRICE_USD ?? "0");
+  const blueRate = priceUsd > 0 ? await fetchBlueDollarRate() : 0;
+  const pricePerMonth = Math.round(priceUsd * blueRate);
 
   const trialsExpiringSoon = businesses
     .filter((b) => {
