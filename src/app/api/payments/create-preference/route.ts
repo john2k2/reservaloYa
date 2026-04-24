@@ -6,6 +6,7 @@ import { createLogger } from "@/server/logger";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { createSubscriptionPreference, isMercadoPagoConfigured } from "@/server/mercadopago";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { createSupabaseSubscriptionPaymentAttempt } from "@/server/supabase-store";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,20 @@ export async function GET() {
   if (!result.ok) {
     logger.error("Error creando preferencia de suscripcion", result.error);
     return NextResponse.redirect(`${appUrl}/admin/subscription/pay?error=preference_failed`);
+  }
+
+  try {
+    await createSupabaseSubscriptionPaymentAttempt({
+      businessId: user.businessId,
+      preferenceId: result.preferenceId,
+      amountArs: arsPrice,
+      currency: "ARS",
+      blueRate,
+      status: "pending",
+    });
+  } catch (err) {
+    logger.error("Error registrando intento de pago de suscripcion", err);
+    return NextResponse.redirect(`${appUrl}/admin/subscription/pay?error=attempt_failed`);
   }
 
   return NextResponse.redirect(result.checkoutUrl);

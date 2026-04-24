@@ -1106,6 +1106,119 @@ export async function activateSupabaseSubscription(businessId: string) {
   if (error) throw new Error("No se pudo activar la suscripción.");
 }
 
+export type SupabaseSubscriptionPaymentAttempt = {
+  id: string;
+  businessId: string;
+  preferenceId: string;
+  amountArs: number;
+  currency: string;
+  blueRate: number | null;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  paymentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function normalizeSubscriptionPaymentAttempt(
+  attempt: SupabaseSubscriptionPaymentAttempt
+): SupabaseSubscriptionPaymentAttempt {
+  return {
+    ...attempt,
+    amountArs: Number(attempt.amountArs),
+    blueRate: attempt.blueRate == null ? null : Number(attempt.blueRate),
+  };
+}
+
+export async function createSupabaseSubscriptionPaymentAttempt(input: {
+  businessId: string;
+  preferenceId: string;
+  amountArs: number;
+  currency?: string;
+  blueRate?: number | null;
+  status?: SupabaseSubscriptionPaymentAttempt["status"];
+}) {
+  const client = await getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("subscription_payment_attempts")
+    .insert({
+      businessId: input.businessId,
+      preferenceId: input.preferenceId,
+      amountArs: input.amountArs,
+      currency: input.currency ?? "ARS",
+      blueRate: input.blueRate ?? null,
+      status: input.status ?? "pending",
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) throw error ?? new Error("No se pudo registrar el intento de pago.");
+  return normalizeSubscriptionPaymentAttempt(data as SupabaseSubscriptionPaymentAttempt);
+}
+
+export async function listSupabaseSubscriptionPaymentAttempts(businessId: string) {
+  const client = await getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("subscription_payment_attempts")
+    .select("*")
+    .eq("businessId", businessId)
+    .order("createdAt", { ascending: false });
+
+  if (error) throw error;
+  return ((data ?? []) as SupabaseSubscriptionPaymentAttempt[]).map(
+    normalizeSubscriptionPaymentAttempt
+  );
+}
+
+export async function getSupabaseSubscriptionPaymentAttemptForWebhook(input: {
+  businessId: string;
+  preferenceId?: string | null;
+}) {
+  const client = await getSupabaseAdminClient();
+
+  if (input.preferenceId) {
+    const { data } = await client
+      .from("subscription_payment_attempts")
+      .select("*")
+      .eq("businessId", input.businessId)
+      .eq("preferenceId", input.preferenceId)
+      .single();
+
+    if (data) return normalizeSubscriptionPaymentAttempt(data as SupabaseSubscriptionPaymentAttempt);
+  }
+
+  const { data } = await client
+    .from("subscription_payment_attempts")
+    .select("*")
+    .eq("businessId", input.businessId)
+    .eq("status", "pending")
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .single();
+
+  return data ? normalizeSubscriptionPaymentAttempt(data as SupabaseSubscriptionPaymentAttempt) : null;
+}
+
+export async function updateSupabaseSubscriptionPaymentAttemptStatus(input: {
+  attemptId: string;
+  status: SupabaseSubscriptionPaymentAttempt["status"];
+  paymentId?: string | null;
+}) {
+  const client = await getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("subscription_payment_attempts")
+    .update({
+      status: input.status,
+      paymentId: input.paymentId ?? null,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", input.attemptId)
+    .select("*")
+    .single();
+
+  if (error || !data) throw error ?? new Error("No se pudo actualizar el intento de pago.");
+  return normalizeSubscriptionPaymentAttempt(data as SupabaseSubscriptionPaymentAttempt);
+}
+
 export async function cancelSupabaseSubscription(businessId: string) {
   const client = await createServerClient();
 

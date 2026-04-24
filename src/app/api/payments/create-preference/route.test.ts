@@ -19,6 +19,10 @@ const { createSubscriptionPreferenceMock, isMercadoPagoConfiguredMock } = vi.hoi
   isMercadoPagoConfiguredMock: vi.fn(),
 }));
 
+const { createSupabaseSubscriptionPaymentAttemptMock } = vi.hoisted(() => ({
+  createSupabaseSubscriptionPaymentAttemptMock: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
@@ -36,6 +40,10 @@ vi.mock("@/server/mercadopago", () => ({
   isMercadoPagoConfigured: isMercadoPagoConfiguredMock,
 }));
 
+vi.mock("@/server/supabase-store", () => ({
+  createSupabaseSubscriptionPaymentAttempt: createSupabaseSubscriptionPaymentAttemptMock,
+}));
+
 describe("create preference route", () => {
   const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -46,9 +54,11 @@ describe("create preference route", () => {
     getBlueDollarRateMock.mockReset();
     createSubscriptionPreferenceMock.mockReset();
     isMercadoPagoConfiguredMock.mockReset();
+    createSupabaseSubscriptionPaymentAttemptMock.mockReset();
 
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.test";
     isMercadoPagoConfiguredMock.mockReturnValue(true);
+    createSupabaseSubscriptionPaymentAttemptMock.mockResolvedValue({ id: "attempt-1" });
   });
 
   afterEach(() => {
@@ -112,8 +122,40 @@ describe("create preference route", () => {
       businessId: "biz-1",
       priceAmount: 17 * 1200,
     });
+    expect(createSupabaseSubscriptionPaymentAttemptMock).toHaveBeenCalledWith({
+      businessId: "biz-1",
+      preferenceId: "pref-123",
+      amountArs: 17 * 1200,
+      currency: "ARS",
+      blueRate: 1200,
+      status: "pending",
+    });
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("https://mp.test/checkout/123");
+  });
+
+  it("redirects to error page when the payment attempt cannot be stored", async () => {
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "u1",
+      email: "owner@demo.com",
+      role: "owner",
+      businessId: "biz-1",
+    });
+    getBlueDollarRateMock.mockResolvedValue(1200);
+    createSubscriptionPreferenceMock.mockResolvedValue({
+      ok: true,
+      preferenceId: "pref-123",
+      checkoutUrl: "https://mp.test/checkout/123",
+    });
+    createSupabaseSubscriptionPaymentAttemptMock.mockRejectedValue(new Error("db down"));
+    const { GET } = await import("./route");
+
+    const response = await GET();
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://reservaya.test/admin/subscription/pay?error=attempt_failed"
+    );
   });
 
   it("redirects to error page when preference creation fails", async () => {

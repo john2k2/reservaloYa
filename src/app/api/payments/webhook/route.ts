@@ -16,18 +16,29 @@ import {
   updateSupabaseBusinessMPTokens,
   getSupabaseSubscriptionByBusinessId,
   activateSupabaseSubscription,
+  getSupabaseSubscriptionPaymentAttemptForWebhook,
+  updateSupabaseSubscriptionPaymentAttemptStatus,
 } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
 import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
 import { getBookingConfirmationData } from "@/server/queries/public";
-import { getBlueDollarRate } from "@/lib/dollar-rate";
-import { getSubscriptionArsPrice, type BookingPaymentValidationContext } from "@/server/payments-domain";
+import { type BookingPaymentValidationContext } from "@/server/payments-domain";
 
 const logger = createLogger("MP Webhook");
 
 function amountsMatch(expectedAmount: number | undefined, actualAmount: number) {
   if (expectedAmount == null) return false;
   return Math.abs(expectedAmount - actualAmount) < 0.01;
+}
+
+function mapPaymentStatusToSubscriptionAttemptStatus(
+  paymentStatus: ReturnType<typeof mapMPStatusToPaymentStatus>
+) {
+  if (["approved", "rejected", "cancelled"].includes(paymentStatus)) {
+    return paymentStatus as "approved" | "rejected" | "cancelled";
+  }
+
+  return null;
 }
 
 function canApplyBookingPayment(input: {
@@ -101,12 +112,49 @@ async function canApplySubscriptionPayment(input: {
     return { ok: false, reason: "payment_not_found" } as const;
   }
 
+  if (!businessId || paymentInfo.externalReference !== businessId) {
+    return { ok: false, reason: "subscription_external_reference_mismatch" } as const;
+  }
+
+  const attempt = await getSupabaseSubscriptionPaymentAttemptForWebhook({
+    businessId,
+    preferenceId: paymentInfo.preferenceId,
+  });
+
+  if (!attempt) {
+    return { ok: false, reason: "subscription_payment_attempt_not_found" } as const;
+  }
+
+  const attemptStatus = mapPaymentStatusToSubscriptionAttemptStatus(paymentStatus);
+
   if (paymentStatus !== "approved") {
+    if (attemptStatus) {
+      await updateSupabaseSubscriptionPaymentAttemptStatus({
+        attemptId: attempt.id,
+        status: attemptStatus,
+        paymentId: paymentInfo.id,
+      });
+    }
+
     return { ok: false, reason: "subscription_payment_not_approved" } as const;
   }
 
-  if (!businessId || paymentInfo.externalReference !== businessId) {
-    return { ok: false, reason: "subscription_external_reference_mismatch" } as const;
+  if (paymentInfo.currencyId !== attempt.currency) {
+    await updateSupabaseSubscriptionPaymentAttemptStatus({
+      attemptId: attempt.id,
+      status: "rejected",
+      paymentId: paymentInfo.id,
+    });
+    return { ok: false, reason: "subscription_currency_mismatch" } as const;
+  }
+
+  if (!amountsMatch(attempt.amountArs, paymentInfo.transactionAmount)) {
+    await updateSupabaseSubscriptionPaymentAttemptStatus({
+      attemptId: attempt.id,
+      status: "rejected",
+      paymentId: paymentInfo.id,
+    });
+    return { ok: false, reason: "subscription_amount_mismatch" } as const;
   }
 
   const subscription = await getSupabaseSubscriptionByBusinessId(businessId);
@@ -118,17 +166,7 @@ async function canApplySubscriptionPayment(input: {
     return { ok: false, reason: "subscription_already_active" } as const;
   }
 
-  if (paymentInfo.currencyId !== "ARS") {
-    return { ok: false, reason: "subscription_currency_mismatch" } as const;
-  }
-
-  const blueRate = await getBlueDollarRate();
-  const expectedAmount = getSubscriptionArsPrice(blueRate);
-  if (!amountsMatch(expectedAmount, paymentInfo.transactionAmount)) {
-    return { ok: false, reason: "subscription_amount_mismatch" } as const;
-  }
-
-  return { ok: true, subscription } as const;
+  return { ok: true, attempt, subscription } as const;
 }
 
 export async function POST(request: Request) {
@@ -227,7 +265,7 @@ export async function POST(request: Request) {
     });
 
     if (!paymentValidation.ok) {
-      if (paymentValidation.reason === "booking_not_found" && paymentStatus === "approved") {
+      if (paymentValidation.reason === "booking_not_found") {
         const subscriptionValidation = await canApplySubscriptionPayment({
           businessId: externalReference,
           paymentInfo,
@@ -237,6 +275,11 @@ export async function POST(request: Request) {
         if (subscriptionValidation.ok) {
           try {
             await activateSupabaseSubscription(externalReference);
+            await updateSupabaseSubscriptionPaymentAttemptStatus({
+              attemptId: subscriptionValidation.attempt.id,
+              status: "approved",
+              paymentId,
+            });
             logger.info(`Suscripcion activada via webhook para negocio ${externalReference}`);
           } catch (activateErr) {
             logger.error("Error activando suscripcion", activateErr);

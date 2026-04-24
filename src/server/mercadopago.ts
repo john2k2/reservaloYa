@@ -318,6 +318,7 @@ export type MPPaymentInfo = {
   status: MPPaymentStatus;
   statusDetail: string;
   externalReference: string; // = bookingId
+  preferenceId?: string;
   transactionAmount: number;
   currencyId: string;
   collectorId?: string;
@@ -411,6 +412,12 @@ export async function getMPPaymentInfo(
       status: (response.status ?? "pending") as MPPaymentStatus,
       statusDetail: response.status_detail ?? "",
       externalReference: response.external_reference ?? "",
+      preferenceId:
+        String(
+          (response as { preference_id?: string; preferenceId?: string }).preference_id ??
+            (response as { preference_id?: string; preferenceId?: string }).preferenceId ??
+            ""
+        ) || undefined,
       transactionAmount: response.transaction_amount ?? 0,
       currencyId: response.currency_id ?? "ARS",
       collectorId: response.collector_id != null ? String(response.collector_id) : undefined,
