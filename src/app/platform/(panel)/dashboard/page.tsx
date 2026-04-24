@@ -1,4 +1,4 @@
-import { BarChart2, Building2, CalendarCheck, TrendingUp, Users, CreditCard, Clock, AlertCircle } from "lucide-react";
+import { BarChart2, Building2, CalendarCheck, TrendingUp, Users, CreditCard, Clock, AlertCircle, DollarSign, Ghost, Timer } from "lucide-react";
 import Link from "next/link";
 
 import { getPlatformDashboardData } from "@/server/queries/platform";
@@ -80,6 +80,14 @@ export default async function PlatformDashboardPage() {
       color: "text-red-600 dark:text-red-400",
       bg: "bg-red-500/10",
     },
+    {
+      label: "MRR estimado",
+      value: data.mrr > 0 ? `$${data.mrr.toLocaleString("es-AR")}` : "—",
+      sub: "Ingresos mensuales",
+      icon: DollarSign,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-500/10",
+    },
   ];
 
   return (
@@ -142,6 +150,70 @@ export default async function PlatformDashboardPage() {
           })}
         </div>
       </div>
+
+      {/* Trials expirando pronto */}
+      {data.trialsExpiringSoon.length > 0 && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5">
+          <div className="flex items-center gap-2 border-b border-amber-500/20 px-6 py-4">
+            <Timer className="size-4 text-amber-600 dark:text-amber-400" />
+            <h2 className="font-semibold text-amber-800 dark:text-amber-300">
+              Trials por vencer ({data.trialsExpiringSoon.length})
+            </h2>
+            <span className="text-xs text-amber-600 dark:text-amber-400">— próximos 7 días</span>
+          </div>
+          <div className="divide-y divide-amber-500/10">
+            {data.trialsExpiringSoon.map((b) => (
+              <div key={b.id} className="flex items-center justify-between gap-4 px-6 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{b.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{b.ownerEmail}</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {b.subscription.trialEndsAt && (
+                    <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                      Vence {new Date(b.subscription.trialEndsAt).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                  <Link
+                    href="/platform/businesses"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Gestionar →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Negocios dormantes */}
+      {data.dormantBusinesses.length > 0 && (
+        <div className="rounded-2xl border border-border/60 bg-card">
+          <div className="flex items-center gap-2 border-b border-border/60 px-6 py-4">
+            <Ghost className="size-4 text-muted-foreground" />
+            <h2 className="font-semibold">Negocios sin configurar ({data.dormantBusinesses.length})</h2>
+            <span className="text-xs text-muted-foreground">— sin servicios o sin disponibilidad activa</span>
+          </div>
+          <div className="divide-y divide-border/40">
+            {data.dormantBusinesses.map((b) => (
+              <div key={b.id} className="flex items-center justify-between gap-4 px-6 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{b.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{b.ownerEmail}</p>
+                </div>
+                <div className="flex items-center gap-4 shrink-0 text-[10px] text-muted-foreground">
+                  <span>{b.servicesCount} servicio{b.servicesCount !== 1 ? "s" : ""}</span>
+                  <span>{b.activeAvailabilityRules} regla{b.activeAvailabilityRules !== 1 ? "s" : ""} activa{b.activeAvailabilityRules !== 1 ? "s" : ""}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {new Date(b.createdAt).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent businesses */}
       <div className="rounded-2xl border border-border/60 bg-card">

@@ -1,8 +1,9 @@
-import { Building2, ExternalLink, Wifi, WifiOff } from "lucide-react";
+import { Building2, Bell, ExternalLink, Wifi, WifiOff } from "lucide-react";
 import Link from "next/link";
 
 import { getPlatformBusinessesList, type PlatformSubscriptionInfo } from "@/server/queries/platform";
 import { BusinessSearchFilter } from "./business-search-filter";
+import { ImpersonateButton } from "./impersonate-button";
 import { ToggleBusinessButton } from "./toggle-business-button";
 import { TrialActions } from "./trial-actions";
 
@@ -126,11 +127,12 @@ export default async function PlatformBusinessesPage({
 
       <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
         {/* Header */}
-        <div className="hidden lg:grid grid-cols-[1.5fr_1fr_120px_60px_80px_100px] gap-4 border-b border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="hidden lg:grid grid-cols-[1.5fr_1fr_120px_60px_60px_80px_160px] gap-4 border-b border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <span>Negocio</span>
           <span>Responsable</span>
           <span>Suscripción</span>
           <span>MP</span>
+          <span>Notif.</span>
           <span>Estado</span>
           <span>Acciones</span>
         </div>
@@ -144,7 +146,7 @@ export default async function PlatformBusinessesPage({
             filtered.map((b) => (
               <div
                 key={b.id}
-                className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_120px_60px_80px_100px] gap-3 lg:gap-4 items-center px-6 py-4"
+                className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_120px_60px_60px_80px_160px] gap-3 lg:gap-4 items-center px-6 py-4"
               >
                 {/* Negocio */}
                 <div className="min-w-0">
@@ -185,6 +187,15 @@ export default async function PlatformBusinessesPage({
                   )}
                 </div>
 
+                {/* Notificaciones 30d */}
+                <Link
+                  href={`/platform/businesses/${b.slug}/notifications`}
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Bell className="size-3" />
+                  {b.notificationsSent30d}
+                </Link>
+
                 {/* Estado activo/inactivo */}
                 <span
                   className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
@@ -206,6 +217,7 @@ export default async function PlatformBusinessesPage({
                     <ExternalLink className="size-3.5" />
                     Ver
                   </Link>
+                  <ImpersonateButton businessId={b.id} ownerEmail={b.ownerEmail} />
                   <ToggleBusinessButton
                     businessId={b.id}
                     active={b.active}

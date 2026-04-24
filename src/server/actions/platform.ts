@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
-import { togglePlatformBusinessActive, enableTrial, extendTrial, cancelSubscription, unlockBusinessSubscription } from "@/server/queries/platform";
+import { togglePlatformBusinessActive, enableTrial, extendTrial, cancelSubscription, unlockBusinessSubscription, generateImpersonationLink } from "@/server/queries/platform";
 
 export async function toggleBusinessActiveAction(businessId: string, active: boolean) {
   const user = await getAuthenticatedPlatformAdmin();
@@ -48,4 +48,11 @@ export async function unlockSubscriptionAction(businessId: string) {
   await unlockBusinessSubscription(businessId);
   revalidatePath("/platform/businesses");
   revalidatePath("/platform/dashboard");
+}
+
+export async function impersonateBusinessOwnerAction(businessId: string): Promise<string> {
+  const user = await getAuthenticatedPlatformAdmin();
+  if (!user) throw new Error("No autorizado");
+
+  return generateImpersonationLink(businessId);
 }
