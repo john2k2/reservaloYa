@@ -124,7 +124,7 @@ export function EditBusinessTab({
               Confirmar turnos automáticamente
             </label>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Los nuevos turnos quedan confirmados al instante. Si está desactivado, quedán en estado "Pendiente" hasta que vos los apruebes.
+              Los nuevos turnos quedan confirmados al instante. Si está desactivado, quedán en estado &quot;Pendiente&quot; hasta que vos los apruebes.
             </p>
           </div>
         </div>

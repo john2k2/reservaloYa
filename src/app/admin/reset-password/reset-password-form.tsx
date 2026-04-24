@@ -17,6 +17,7 @@ export function ResetPasswordForm() {
     const type = params.get("type");
 
     if (!accessToken || type !== "recovery") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTokenError("Falta el token de recuperación. Abrí el enlace que recibiste por correo.");
       return;
     }
