@@ -11,7 +11,14 @@ export type AuditAction =
   | "blocked_slot.created"
   | "blocked_slot.removed"
   | "team.staff_created"
-  | "team.staff_status_changed";
+  | "team.staff_status_changed"
+  | "platform.business_activated"
+  | "platform.business_deactivated"
+  | "platform.trial_enabled"
+  | "platform.trial_extended"
+  | "platform.subscription_cancelled"
+  | "platform.subscription_unlocked"
+  | "platform.impersonation_link_created";
 
 export type AuditActor = {
   userId: string;
