@@ -55,6 +55,7 @@ export type PublicBusinessProfile = {
     url: string;
     alt: string;
   }> | null;
+  instagramGallery?: string[] | null;
   mapQuery?: string;
   mapEmbedUrl?: string;
 };

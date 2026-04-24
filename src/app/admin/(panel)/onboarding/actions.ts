@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getBrandingPalette } from "@/constants/branding-palettes";
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { saveBrandingImageUpload } from "@/server/branding-upload";
+import { isInstagramUrl } from "@/lib/instagram-oembed";
 import {
   createSupabaseRecord,
   listSupabaseRecords,
@@ -229,6 +230,10 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
           surfaceTint: colorSchema.parse(parsed.data.customSurfaceTint),
         }
       : getBrandingPalette(parsed.data.palette);
+  const instagramGallery = Array.from({ length: 9 }, (_, index) =>
+    String(formData.get(`instagramPost${index + 1}`) ?? "").trim()
+  ).filter((url) => isInstagramUrl(url));
+
   const nextGallery = Array.from({ length: 3 }, (_, index) => {
     const existingItem = profile.gallery?.[index] ?? null;
     const url = clearGallery[index]
@@ -278,6 +283,7 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     heroImageAlt: profile.heroImageAlt,
     gallery:
       nextGallery.length > 0 ? nextGallery : clearGallery.some(Boolean) ? null : profile.gallery,
+    instagramGallery: instagramGallery.length > 0 ? instagramGallery : profile.instagramGallery ?? null,
     mapQuery: parsed.data.mapQuery || profile.mapQuery || business.address,
     mapEmbedUrl: profile.mapEmbedUrl,
     enableDarkMode: parsed.data.enableDarkMode ?? false,

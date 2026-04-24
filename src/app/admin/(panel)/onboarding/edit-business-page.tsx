@@ -54,6 +54,7 @@ interface EditBusinessPageProps {
       website?: string;
       mapQuery?: string;
       gallery?: { url: string; alt: string }[] | null;
+      instagramGallery?: string[] | null;
       logoUrl?: string | null;
       heroImageUrl?: string | null;
       enableDarkMode?: boolean;
@@ -195,6 +196,10 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
     })),
   });
 
+  const [instagramPosts, setInstagramPosts] = useState<string[]>(
+    settingsData.profile.instagramGallery ?? []
+  );
+
   const [publicData, setPublicData] = useState({
     instagram: settingsData.profile.instagram ?? "",
     facebook: settingsData.profile.facebook ?? "",
@@ -251,6 +256,9 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
         brandingFormData.append(`galleryAlt${i + 1}`, item.alt.trim());
         brandingFormData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
       });
+      instagramPosts.forEach((url, i) => {
+        brandingFormData.append(`instagramPost${i + 1}`, url.trim());
+      });
 
       await saveOnboardingBrandingInlineAction(brandingFormData);
 
@@ -264,7 +272,7 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
     } finally {
       setIsSubmitting(false);
     }
-  }, [business.slug, businessData, styleData, imageData, publicData, router]);
+  }, [business.slug, businessData, styleData, imageData, instagramPosts, publicData, router]);
 
   const tabs = [
     { id: "business" as const, label: "Negocio", icon: Store, description: "Datos básicos" },
@@ -394,6 +402,8 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
               imageData={imageData}
               setImageData={setImageData}
               galleryImageHints={galleryImageHints}
+              instagramPosts={instagramPosts}
+              setInstagramPosts={setInstagramPosts}
               settingsData={settingsData}
             />
           )}

@@ -3,6 +3,12 @@ import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 import { createLogger } from "@/server/logger";
+import {
+  isMetaWhatsAppConfigured,
+  sendConfirmationWhatsApp,
+  sendReminderWhatsApp,
+  sendReviewRequestWhatsApp,
+} from "@/lib/whatsapp-meta";
 
 const logger = createLogger("Booking Notifications");
 
@@ -41,12 +47,14 @@ export function getAvailableReminderChannels(input: {
 }): ReminderChannel[] {
   const channels: ReminderChannel[] = [];
   if (input.customerEmail) channels.push("email");
-  if (input.customerPhone && isTwilioConfigured()) channels.push("whatsapp");
+  if (input.customerPhone && (isMetaWhatsAppConfigured() || isTwilioConfigured())) {
+    channels.push("whatsapp");
+  }
   return channels;
 }
 
 export function hasReminderProviderConfigured(): boolean {
-  return !!process.env.RESEND_API_KEY || isTwilioConfigured();
+  return !!process.env.RESEND_API_KEY || isMetaWhatsAppConfigured() || isTwilioConfigured();
 }
 
 type ReminderResult =
@@ -140,6 +148,35 @@ export async function sendBookingReminderWhatsApp(
 ): Promise<ReminderResult> {
   if (!input.customerPhone) {
     return { status: "skipped", reason: "no_customer_phone" };
+  }
+
+  // Meta WhatsApp Cloud API (preferido sobre Twilio)
+  if (isMetaWhatsAppConfigured()) {
+    const { confirmation } = input;
+    const startsAt = toISOString(confirmation.bookingDate, confirmation.startTime);
+    const dateLabel = formatWhatsAppDate(startsAt, confirmation.businessTimezone);
+    const reminderToken =
+      input.manageToken ??
+      (input.bookingId && canGenerateBookingManageLinks()
+        ? createBookingManageToken(input.businessSlug, input.bookingId)
+        : null);
+    const manageUrl = reminderToken && input.bookingId
+      ? `${getBaseUrl()}/${input.businessSlug}/mi-turno?booking=${input.bookingId}&token=${reminderToken}`
+      : `${getBaseUrl()}/${input.businessSlug}`;
+
+    const result = await sendReminderWhatsApp({
+      customerPhone: input.customerPhone,
+      businessName: confirmation.businessName,
+      customerName: input.customerName,
+      serviceName: confirmation.serviceName,
+      dateLabel,
+      time: confirmation.startTime,
+      manageUrl,
+    });
+
+    if (result.status !== "skipped") {
+      return { ...result, subject: `WhatsApp recordatorio: ${confirmation.businessName}` };
+    }
   }
 
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -382,6 +419,47 @@ export async function sendBusinessNotificationEmail(
   }
 }
 
+/**
+ * Envía confirmación de reserva por WhatsApp vía Meta Cloud API.
+ * Complementa (no reemplaza) el email de confirmación.
+ */
+export async function sendBookingConfirmationWhatsApp(
+  confirmation: BookingConfirmationData,
+): Promise<BookingEmailResult> {
+  if (!confirmation.customerPhone) {
+    return { status: "skipped", reason: "no_customer_phone" };
+  }
+  if (!isMetaWhatsAppConfigured()) {
+    return { status: "skipped", reason: "meta_whatsapp_not_configured" };
+  }
+
+  const token =
+    confirmation.manageToken ??
+    (canGenerateBookingManageLinks()
+      ? createBookingManageToken(confirmation.businessSlug, confirmation.bookingId)
+      : null);
+  const manageUrl = token
+    ? `${getBaseUrl()}/${confirmation.businessSlug}/mi-turno?booking=${confirmation.bookingId}&token=${token}`
+    : `${getBaseUrl()}/${confirmation.businessSlug}`;
+
+  const dateLabel = formatWhatsAppDate(confirmation.startsAt, confirmation.timezone);
+  const time = formatTime(confirmation.startsAt, confirmation.timezone);
+
+  const result = await sendConfirmationWhatsApp({
+    customerPhone: confirmation.customerPhone,
+    businessName: confirmation.businessName,
+    customerName: confirmation.customerName,
+    serviceName: confirmation.serviceName,
+    dateLabel,
+    time,
+    manageUrl,
+  });
+
+  if (result.status === "sent") return { status: "sent", messageId: result.messageId };
+  if (result.status === "skipped") return { status: "skipped", reason: result.reason };
+  return { status: "error", error: result.error };
+}
+
 type FollowUpInput = {
   customerEmail: string;
   customerName: string;
@@ -452,15 +530,29 @@ type FollowUpWhatsAppInput = {
 export async function sendPostBookingFollowUpWhatsApp(
   input: FollowUpWhatsAppInput
 ): Promise<ReminderResult> {
+  const subject = `WhatsApp follow-up: ${input.businessName}`;
+
+  // Meta WhatsApp Cloud API (preferido sobre Twilio)
+  if (isMetaWhatsAppConfigured() && input.reviewUrl) {
+    const result = await sendReviewRequestWhatsApp({
+      customerPhone: input.customerPhone,
+      businessName: input.businessName,
+      customerName: input.customerName,
+      serviceName: input.serviceName,
+      reviewUrl: input.reviewUrl,
+    });
+    if (result.status !== "skipped") {
+      return { ...result, subject };
+    }
+  }
+
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const fromNumber = process.env.TWILIO_WHATSAPP_FROM;
 
   if (!accountSid || !authToken || !fromNumber) {
-    return { status: "skipped", reason: "twilio_not_configured" };
+    return { status: "skipped", reason: "whatsapp_not_configured" };
   }
-
-  const subject = `WhatsApp follow-up: ${input.businessName}`;
 
   try {
     const toNumber = input.customerPhone.replace(/\s/g, "").startsWith("+")

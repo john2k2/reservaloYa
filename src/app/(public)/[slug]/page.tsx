@@ -21,6 +21,7 @@ import {
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
+import { fetchInstagramGallery } from "@/lib/instagram-oembed";
 import { productName } from "@/constants/site";
 
 // cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
@@ -233,6 +234,15 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     campaign: tracking.utm_campaign,
   });
 
+  const instagramGalleryItems =
+    pageData.profile.instagramGallery && pageData.profile.instagramGallery.length > 0
+      ? await fetchInstagramGallery(pageData.profile.instagramGallery)
+      : [];
+  const galleryItems =
+    instagramGalleryItems.length > 0
+      ? instagramGalleryItems.map((item) => ({ url: item.thumbnailUrl, alt: "", postUrl: item.postUrl }))
+      : (pageData.profile.gallery ?? []).map((item) => ({ ...item, postUrl: null }));
+
   // Preparar datos para JSON-LD
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reservaya.app";
   const businessUrl = `${siteUrl}/${slug}`;
@@ -331,7 +341,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         />
 
         {/* Gallery */}
-        {pageData.profile.gallery && pageData.profile.gallery.length > 0 && (
+        {galleryItems.length > 0 && (
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
             <div className="mb-6 sm:mb-10 text-center">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
@@ -342,28 +352,50 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               </h2>
             </div>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {pageData.profile.gallery.map((image, index) => (
-                <article
-                  key={`${image.url}-${index}`}
-                  className={cn(
-                    "group cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm",
-                    index >= pageData.profile.sectionLayout.mobileGalleryItems ? "hidden sm:block" : ""
-                  )}
-                  data-lightbox-index={index}
-                >
-                  <div
-                    className="aspect-[4/3] bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                    role="img"
-                    aria-label={image.alt}
-                    style={{ backgroundImage: `url(${image.url})` }}
-                  />
-                  <div className="p-3 sm:p-4">
-                    <p className="text-xs sm:text-sm text-muted-foreground">{image.alt}</p>
-                  </div>
-                </article>
-              ))}
+              {galleryItems.map((image, index) => {
+                const inner = (
+                  <>
+                    <div
+                      className="aspect-[4/3] bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                      role="img"
+                      aria-label={image.alt || `Foto ${index + 1}`}
+                      style={{ backgroundImage: `url(${image.url})` }}
+                    />
+                    {image.alt && (
+                      <div className="p-3 sm:p-4">
+                        <p className="text-xs sm:text-sm text-muted-foreground">{image.alt}</p>
+                      </div>
+                    )}
+                  </>
+                );
+                const className = cn(
+                  "group overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm",
+                  index >= pageData.profile.sectionLayout.mobileGalleryItems ? "hidden sm:block" : ""
+                );
+                return image.postUrl ? (
+                  <a
+                    key={`${image.url}-${index}`}
+                    href={image.postUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(className, "cursor-pointer")}
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <article
+                    key={`${image.url}-${index}`}
+                    className={cn(className, "cursor-pointer")}
+                    data-lightbox-index={index}
+                  >
+                    {inner}
+                  </article>
+                );
+              })}
             </div>
-            <GalleryLightbox images={pageData.profile.gallery} />
+            {instagramGalleryItems.length === 0 && (
+              <GalleryLightbox images={pageData.profile.gallery ?? []} />
+            )}
           </section>
         )}
 

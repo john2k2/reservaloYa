@@ -34,6 +34,15 @@ const nextConfig: NextConfig = {
         hostname: "127.0.0.1",
         port: "8090",
       },
+      // Meta CDN para thumbnails de Instagram (oEmbed)
+      {
+        protocol: "https",
+        hostname: "**.fbcdn.net",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cdninstagram.com",
+      },
     ],
   },
   // Compress output for better performance
