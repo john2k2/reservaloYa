@@ -10,8 +10,11 @@ const {
   getSupabaseBookingBusinessSlugMock,
   updateSupabaseBookingPaymentMock,
   updateSupabaseBusinessMPTokensMock,
+  getSupabaseSubscriptionByBusinessIdMock,
+  activateSupabaseSubscriptionMock,
   getUsableBusinessMercadoPagoAccessTokenMock,
   sendBookingConfirmationEmailMock,
+  sendBusinessNotificationEmailMock,
   getBookingConfirmationDataMock,
 } = vi.hoisted(() => ({
   getMPPaymentInfoMock: vi.fn(),
@@ -23,8 +26,11 @@ const {
   getSupabaseBookingBusinessSlugMock: vi.fn(),
   updateSupabaseBookingPaymentMock: vi.fn(),
   updateSupabaseBusinessMPTokensMock: vi.fn(),
+  getSupabaseSubscriptionByBusinessIdMock: vi.fn(),
+  activateSupabaseSubscriptionMock: vi.fn(),
   getUsableBusinessMercadoPagoAccessTokenMock: vi.fn(),
   sendBookingConfirmationEmailMock: vi.fn(),
+  sendBusinessNotificationEmailMock: vi.fn(),
   getBookingConfirmationDataMock: vi.fn(),
 }));
 
@@ -41,6 +47,8 @@ vi.mock("@/server/supabase-store", () => ({
   getSupabaseBookingBusinessSlug: getSupabaseBookingBusinessSlugMock,
   updateSupabaseBookingPayment: updateSupabaseBookingPaymentMock,
   updateSupabaseBusinessMPTokens: updateSupabaseBusinessMPTokensMock,
+  getSupabaseSubscriptionByBusinessId: getSupabaseSubscriptionByBusinessIdMock,
+  activateSupabaseSubscription: activateSupabaseSubscriptionMock,
 }));
 
 vi.mock("@/server/mercadopago-business-auth", () => ({
@@ -49,6 +57,7 @@ vi.mock("@/server/mercadopago-business-auth", () => ({
 
 vi.mock("@/server/booking-notifications", () => ({
   sendBookingConfirmationEmail: sendBookingConfirmationEmailMock,
+  sendBusinessNotificationEmail: sendBusinessNotificationEmailMock,
 }));
 
 vi.mock("@/server/queries/public", () => ({
@@ -67,8 +76,11 @@ describe("mercadopago webhook route", () => {
     getSupabaseBookingBusinessSlugMock.mockReset();
     updateSupabaseBookingPaymentMock.mockReset();
     updateSupabaseBusinessMPTokensMock.mockReset();
+    getSupabaseSubscriptionByBusinessIdMock.mockReset();
+    activateSupabaseSubscriptionMock.mockReset();
     getUsableBusinessMercadoPagoAccessTokenMock.mockReset();
     sendBookingConfirmationEmailMock.mockReset();
+    sendBusinessNotificationEmailMock.mockReset();
     getBookingConfirmationDataMock.mockReset();
 
     shouldVerifyMPWebhookSignatureMock.mockReturnValue(false);
@@ -76,6 +88,7 @@ describe("mercadopago webhook route", () => {
       status === "approved" ? "approved" : "pending"
     );
     getSupabaseBusinessPaymentSettingsByCollectorIdMock.mockResolvedValue(null);
+    getSupabaseSubscriptionByBusinessIdMock.mockResolvedValue(null);
     getSupabaseBookingPaymentValidationContextMock.mockResolvedValue({
       bookingId: "booking-1",
       businessId: "biz-1",
@@ -238,6 +251,54 @@ describe("mercadopago webhook route", () => {
       skipTokenValidation: true,
     });
     expect(sendBookingConfirmationEmailMock).toHaveBeenCalledWith({ bookingId: "booking-1" }, "created");
+  });
+
+  it("does not resend confirmations when an approved payment was already processed", async () => {
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue({
+      bookingId: "booking-1",
+      businessId: "biz-1",
+      businessSlug: "demo-barberia",
+      status: "confirmed",
+      paymentAmount: 18000,
+      paymentCurrency: "ARS",
+      paymentProvider: "mercadopago",
+      paymentPreferenceId: "pref-1",
+      paymentExternalId: "pay-1",
+      paymentStatus: "approved",
+      mpCollectorId: "collector-1",
+    });
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+      collectorId: "collector-1",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" }, user_id: "collector-1" }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateSupabaseBookingPaymentMock).toHaveBeenCalledWith({
+      bookingId: "booking-1",
+      paymentStatus: "approved",
+      paymentAmount: 18000,
+      paymentCurrency: "ARS",
+      paymentProvider: "mercadopago",
+      paymentExternalId: "pay-1",
+    });
+    expect(getSupabaseBookingBusinessSlugMock).not.toHaveBeenCalled();
+    expect(sendBookingConfirmationEmailMock).not.toHaveBeenCalled();
+    expect(sendBusinessNotificationEmailMock).not.toHaveBeenCalled();
   });
 
   it("ignores approved payments when the amount does not match the booking", async () => {

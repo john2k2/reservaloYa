@@ -187,7 +187,7 @@ export async function POST(request: Request) {
     if (!paymentValidation.ok) {
       if (paymentValidation.reason === "booking_not_found" && paymentStatus === "approved") {
         const subscription = await getSupabaseSubscriptionByBusinessId(externalReference);
-        if (subscription) {
+        if (subscription && subscription.status !== "active") {
           try {
             await activateSupabaseSubscription(externalReference);
             logger.info(`Suscripcion activada via webhook para negocio ${externalReference}`);
@@ -206,6 +206,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
     }
 
+    const shouldRunApprovedSideEffects =
+      paymentStatus === "approved" && bookingValidation?.status === "pending_payment";
+
     await updateSupabaseBookingPayment({
       bookingId: externalReference,
       paymentStatus,
@@ -215,7 +218,7 @@ export async function POST(request: Request) {
       paymentExternalId: paymentId,
     });
 
-    if (paymentStatus === "approved") {
+    if (shouldRunApprovedSideEffects) {
       try {
         const slug = await getSupabaseBookingBusinessSlug(externalReference).catch(() => null);
 

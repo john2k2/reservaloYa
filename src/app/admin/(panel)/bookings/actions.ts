@@ -156,7 +156,7 @@ async function updateSupabaseAdminBooking(input: {
   const bookingConflict = hasBookingConflict(dayBookings, {
     ...bookingWindow,
     excludeBookingId: booking.id,
-    allowedStatuses: ["pending", "confirmed"],
+    allowedStatuses: ["pending", "pending_payment", "confirmed"],
   });
 
   if (bookingConflict) {

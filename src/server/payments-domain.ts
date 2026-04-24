@@ -118,6 +118,7 @@ export type BookingPaymentValidationContext = {
   paymentProvider?: "mercadopago";
   paymentPreferenceId?: string;
   paymentExternalId?: string;
+  paymentStatus?: PaymentStatus;
   mpCollectorId?: string;
 };
 

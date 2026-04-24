@@ -82,8 +82,8 @@ describe("withBookingDateLock", () => {
     expect(deleteMock).toHaveBeenCalled();
   });
 
-  it("falls back to the memory lock when the booking_locks table is missing", async () => {
-    vi.stubEnv("NODE_ENV", "production");
+  it("falls back to the memory lock in development when the booking_locks table is missing", async () => {
+    vi.stubEnv("NODE_ENV", "development");
 
     const tableError = { code: "42P01", message: "relation does not exist" };
     const selectMock = vi.fn().mockReturnValue({
@@ -107,6 +107,35 @@ describe("withBookingDateLock", () => {
         async () => "fallback-ok"
       )
     ).resolves.toBe("fallback-ok");
+
+    errorSpy.mockRestore();
+  });
+
+  it("fails closed in production when the booking_locks table is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    const tableError = { code: "42P01", message: "relation does not exist" };
+    const selectMock = vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({ data: null, error: tableError }),
+    });
+    const insertMock = vi.fn().mockReturnValue({ select: selectMock });
+    const fromMock = vi.fn(() => ({
+      insert: insertMock,
+      delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) }),
+      lte: vi.fn().mockResolvedValue({}),
+    }));
+
+    getSupabaseAdminClientMock.mockResolvedValue({ from: fromMock });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { withBookingDateLock } = await import("./booking-slot-lock");
+
+    await expect(
+      withBookingDateLock(
+        { businessKey: "demo-barberia", bookingDate: "2026-03-22" },
+        async () => "fallback-ok"
+      )
+    ).rejects.toEqual(tableError);
 
     errorSpy.mockRestore();
   });

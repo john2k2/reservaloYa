@@ -6,6 +6,7 @@ const {
   createSupabaseStaffAccountMock,
   updateSupabaseTeamUserStatusMock,
   getAuthenticatedSupabaseUserMock,
+  writeAuditLogMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
@@ -14,6 +15,7 @@ const {
   createSupabaseStaffAccountMock: vi.fn(),
   updateSupabaseTeamUserStatusMock: vi.fn(),
   getAuthenticatedSupabaseUserMock: vi.fn(),
+  writeAuditLogMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -30,12 +32,17 @@ vi.mock("@/server/supabase-auth", () => ({
   getAuthenticatedSupabaseUser: getAuthenticatedSupabaseUserMock,
 }));
 
+vi.mock("@/server/audit-log", () => ({
+  writeAuditLog: writeAuditLogMock,
+}));
+
 describe("team management actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     requireAdminRouteAccessMock.mockReset();
     createSupabaseStaffAccountMock.mockReset();
     updateSupabaseTeamUserStatusMock.mockReset();
+    writeAuditLogMock.mockReset();
 
     requireAdminRouteAccessMock.mockResolvedValue({
       businessId: "biz_123",
@@ -114,7 +121,7 @@ describe("team management actions", () => {
     formData.set("nextActive", "false");
 
     await expect(updateStaffStatusAction(formData)).rejects.toThrow("REDIRECT:");
-    expect(updateSupabaseTeamUserStatusMock).toHaveBeenCalledWith("user_staff_1", false);
+    expect(updateSupabaseTeamUserStatusMock).toHaveBeenCalledWith("user_staff_1", "biz_123", false);
     expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
       "Usuario desactivado correctamente."
     );

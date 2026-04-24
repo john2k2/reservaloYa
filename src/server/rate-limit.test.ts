@@ -1,26 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { isPocketBaseConfiguredMock, isPocketBaseAdminConfiguredMock, createPocketBaseAdminClientMock } =
-  vi.hoisted(() => ({
-    isPocketBaseConfiguredMock: vi.fn(),
-    isPocketBaseAdminConfiguredMock: vi.fn(),
-    createPocketBaseAdminClientMock: vi.fn(),
-  }));
-
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: isPocketBaseConfiguredMock,
-  isPocketBaseAdminConfigured: isPocketBaseAdminConfiguredMock,
+const { getSupabaseAdminClientMock } = vi.hoisted(() => ({
+  getSupabaseAdminClientMock: vi.fn(),
 }));
 
-vi.mock("@/lib/pocketbase/admin", () => ({
-  createPocketBaseAdminClient: createPocketBaseAdminClientMock,
+vi.mock("@/server/supabase-store/_core", () => ({
+  getSupabaseAdminClient: getSupabaseAdminClientMock,
 }));
 
-describe("consumeRateLimit — memory store (PocketBase no configurado)", () => {
+describe("consumeRateLimit — memory store en test/local", () => {
   beforeEach(async () => {
     vi.resetModules();
-    isPocketBaseConfiguredMock.mockReturnValue(false);
-    isPocketBaseAdminConfiguredMock.mockReturnValue(false);
+    getSupabaseAdminClientMock.mockReset();
 
     const { resetRateLimitStoreForTests } = await import("./rate-limit");
     resetRateLimitStoreForTests();
@@ -65,20 +56,19 @@ describe("consumeRateLimit — memory store (PocketBase no configurado)", () => 
   });
 });
 
-describe("consumeRateLimit — fail closed cuando PocketBase falla", () => {
+describe("consumeRateLimit — fail closed cuando Supabase falla", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv("NODE_ENV", "production");
-    isPocketBaseConfiguredMock.mockReturnValue(true);
-    isPocketBaseAdminConfiguredMock.mockReturnValue(true);
+    getSupabaseAdminClientMock.mockReset();
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it("hace fallback a memoria si el shared store lanza un error", async () => {
-    createPocketBaseAdminClientMock.mockRejectedValue(new Error("DB connection failed"));
+  it("deniega si el shared store lanza un error en producción", async () => {
+    getSupabaseAdminClientMock.mockRejectedValue(new Error("DB connection failed"));
 
     const { consumeRateLimit } = await import("./rate-limit");
     const result = await consumeRateLimit({
@@ -88,18 +78,16 @@ describe("consumeRateLimit — fail closed cuando PocketBase falla", () => {
       windowMs: 60_000,
     });
 
-    // En vez de denegar (fail closed), hace fallback a memoria — primer intento es ok
-    expect(result.ok).toBe(true);
-    expect(result.retryAfterSeconds).toBe(0);
-    expect(result.store).toBe("memory");
+    expect(result.ok).toBe(false);
+    expect(result.retryAfterSeconds).toBe(60);
+    expect(result.store).toBe("supabase");
   });
 });
 
 describe("assertRateLimit", () => {
   beforeEach(async () => {
     vi.resetModules();
-    isPocketBaseConfiguredMock.mockReturnValue(false);
-    isPocketBaseAdminConfiguredMock.mockReturnValue(false);
+    getSupabaseAdminClientMock.mockReset();
 
     const { resetRateLimitStoreForTests } = await import("./rate-limit");
     resetRateLimitStoreForTests();

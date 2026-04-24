@@ -195,8 +195,19 @@ export async function createSupabaseStaffAccount(params: {
   return authUser.user;
 }
 
-export async function updateSupabaseTeamUserStatus(userId: string, active: boolean) {
+export async function updateSupabaseTeamUserStatus(userId: string, businessId: string, active: boolean) {
   const admin = createAdminClient();
+
+  const { data: appUser, error: userError } = await admin
+    .from("app_users")
+    .select("id")
+    .eq("id", userId)
+    .eq("business_id", businessId)
+    .single();
+
+  if (userError || !appUser) {
+    throw new Error("No encontramos el usuario en este negocio.");
+  }
 
   await admin.auth.admin.updateUserById(userId, {
     email_confirm: active,
@@ -205,7 +216,8 @@ export async function updateSupabaseTeamUserStatus(userId: string, active: boole
   const { error } = await admin
     .from("app_users")
     .update({ active, updated: new Date().toISOString() })
-    .eq("id", userId);
+    .eq("id", userId)
+    .eq("business_id", businessId);
 
   if (error) {
     throw error;

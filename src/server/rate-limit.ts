@@ -79,7 +79,7 @@ async function consumeSupabaseRateLimit(input: RateLimitBucketConfig): Promise<R
     .delete()
     .lte("expiresAt", nowIso);
 
-  const { data: activeEvents } = await client
+  const { data: activeEvents, error: selectError } = await client
     .from("rate_limit_events")
     .select("id, expiresAt")
     .eq("bucket", input.bucket)
@@ -87,10 +87,12 @@ async function consumeSupabaseRateLimit(input: RateLimitBucketConfig): Promise<R
     .gt("expiresAt", nowIso)
     .limit(input.max + 1);
 
+  if (selectError) throw selectError;
+
   const count = (activeEvents ?? []).length;
 
   if (count >= input.max) {
-    const earliestReset = (activeEvents ?? []).reduce((min, e) => {
+    const earliestReset = (activeEvents ?? []).reduce((min: number, e: { expiresAt: string }) => {
       const t = new Date(e.expiresAt).getTime();
       return Math.min(min, t);
     }, Number.POSITIVE_INFINITY);
@@ -105,11 +107,13 @@ async function consumeSupabaseRateLimit(input: RateLimitBucketConfig): Promise<R
     };
   }
 
-  await client.from("rate_limit_events").insert({
+  const { error: insertError } = await client.from("rate_limit_events").insert({
     bucket: input.bucket,
     identifierHash: identifierHash,
     expiresAt: expiresAtIso,
   });
+
+  if (insertError) throw insertError;
 
   return {
     ok: true,
@@ -120,18 +124,23 @@ async function consumeSupabaseRateLimit(input: RateLimitBucketConfig): Promise<R
 }
 
 export async function consumeRateLimit(input: RateLimitBucketConfig): Promise<RateLimitResult> {
-  if (process.env.NODE_ENV === "test") {
+  if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") {
     return consumeMemoryRateLimit(input);
   }
 
   try {
     return await consumeSupabaseRateLimit(input);
   } catch (error) {
-    logger.warn("Rate limit store no disponible — usando memoria como fallback", {
+    logger.error("Rate limit store no disponible; denegando request en entorno no local", {
       bucket: input.bucket,
       message: error instanceof Error ? error.message : String(error),
     });
-    return consumeMemoryRateLimit(input);
+    return {
+      ok: false,
+      remaining: 0,
+      retryAfterSeconds: Math.max(Math.ceil(input.windowMs / 1000), 1),
+      store: "supabase",
+    };
   }
 }
 

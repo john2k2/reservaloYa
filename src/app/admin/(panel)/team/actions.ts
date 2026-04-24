@@ -74,7 +74,7 @@ export async function updateStaffStatusAction(formData: FormData) {
   }
 
   try {
-    await updateSupabaseTeamUserStatus(userId, nextActive);
+    await updateSupabaseTeamUserStatus(userId, shellData.businessId, nextActive);
 
     await writeAuditLog(
       { userId: shellData.userId, userEmail: shellData.userEmail, businessId: shellData.businessId },

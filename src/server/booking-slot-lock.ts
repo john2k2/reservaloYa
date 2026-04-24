@@ -131,12 +131,21 @@ export async function withBookingDateLock<T>(
       await releaseSharedBookingLock(handle);
     }
   } catch (error) {
-    // Table missing or Supabase not reachable → fall back to in-memory lock
     const pgError = error as { code?: string; message?: string } | null;
-    if (pgError?.code === "42P01" || pgError?.message?.includes("does not exist")) {
-      logger.error("booking_locks table missing, falling back to memory lock");
+    const canUseLocalFallback = process.env.NODE_ENV === "development";
+
+    if (
+      canUseLocalFallback &&
+      (pgError?.code === "42P01" || pgError?.message?.includes("does not exist"))
+    ) {
+      logger.error("booking_locks table missing, falling back to memory lock in development");
       return withMemoryBookingDateLock(input, operation);
     }
+
+    logger.error("No se pudo adquirir el lock compartido de booking", {
+      lockKey,
+      message: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }

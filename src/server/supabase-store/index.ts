@@ -65,6 +65,7 @@ import {
   buildBookingMutationFields,
   buildBookingTimeWindow,
   canMutatePublicBooking,
+  fitsBookingWithinAvailability,
   hasBlockedSlotConflict,
   hasBookingConflict,
 } from "@/server/booking-mutations-domain";
@@ -139,6 +140,7 @@ interface JoinedBookingWithBusinessStatus {
   paymentAmount?: number;
   paymentCurrency?: string;
   paymentProvider?: string;
+  paymentStatus?: string;
   paymentPreferenceId?: string;
   paymentExternalId?: string;
   business: Pick<BusinessRecord, "id" | "slug" | "mpCollectorId">;
@@ -319,7 +321,7 @@ export async function getSupabasePublicBookingFlowData(
   const activeBookings = bookings.filter(
     (booking) =>
       booking.bookingDate === selectedDate &&
-      ["pending", "confirmed"].includes(booking.status)
+      ["pending", "pending_payment", "confirmed"].includes(booking.status)
   );
 
   const slots = calculateSlots({
@@ -497,7 +499,19 @@ export async function createSupabasePublicBooking(input: {
 
       const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
 
-      const [{ data: blockedData }, { data: bookingsData }, { data: customersData }] = await Promise.all([
+      const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
+
+      const [
+        { data: rulesData },
+        { data: blockedData },
+        { data: bookingsData },
+        { data: customersData },
+      ] = await Promise.all([
+        client
+          .from("availability_rules")
+          .select("*")
+          .eq("business_id", business.id)
+          .eq("dayOfWeek", selectedDayOfWeek),
         client
           .from("blocked_slots")
           .select("*")
@@ -515,10 +529,12 @@ export async function createSupabasePublicBooking(input: {
           .order("fullName"),
       ]);
 
+      const rules = (rulesData ?? []) as AvailabilityRuleRecord[];
       const blockedSlots = (blockedData ?? []) as BlockedSlotRecord[];
       const bookings = (bookingsData ?? []) as BookingRecord[];
       const customers = (customersData ?? []) as CustomerRecord[];
 
+      const dayRules = rules.filter((rule) => isActiveRecord(rule));
       const businessBlockedSlots = blockedSlots.filter(
         (slot) => slot.blockedDate === input.bookingDate
       );
@@ -528,6 +544,10 @@ export async function createSupabasePublicBooking(input: {
       const businessCustomers = customers.filter((customer) =>
         input.phone ? customer.phone === input.phone : customer.email === input.email
       );
+
+      if (!fitsBookingWithinAvailability(dayRules, bookingWindow)) {
+        throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
+      }
 
       if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
         throw new Error("Ese horario esta bloqueado.");
@@ -774,7 +794,14 @@ export async function rescheduleSupabasePublicBooking(input: {
 
       const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
 
-      const [{ data: blockedData }, { data: bookingsData }] = await Promise.all([
+      const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
+
+      const [{ data: rulesData }, { data: blockedData }, { data: bookingsData }] = await Promise.all([
+        client
+          .from("availability_rules")
+          .select("*")
+          .eq("business_id", business.id)
+          .eq("dayOfWeek", selectedDayOfWeek),
         client
           .from("blocked_slots")
           .select("*")
@@ -787,9 +814,11 @@ export async function rescheduleSupabasePublicBooking(input: {
           .eq("bookingDate", input.bookingDate),
       ]);
 
+      const rules = (rulesData ?? []) as AvailabilityRuleRecord[];
       const blockedSlots = (blockedData ?? []) as BlockedSlotRecord[];
       const bookings = (bookingsData ?? []) as BookingRecord[];
 
+      const dayRules = rules.filter((rule) => isActiveRecord(rule));
       const businessBlockedSlots = blockedSlots.filter(
         (slot) => slot.blockedDate === input.bookingDate
       );
@@ -799,6 +828,10 @@ export async function rescheduleSupabasePublicBooking(input: {
           canMutatePublicBooking(candidate.status) &&
           candidate.id !== booking.id
       );
+
+      if (!fitsBookingWithinAvailability(dayRules, bookingWindow)) {
+        throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
+      }
 
       if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
         throw new Error("Ese horario esta bloqueado.");
@@ -1519,6 +1552,7 @@ export async function getSupabaseBookingPaymentValidationContext(
     paymentProvider: booking.paymentProvider as "mercadopago" | undefined,
     paymentPreferenceId: booking.paymentPreferenceId,
     paymentExternalId: booking.paymentExternalId,
+    paymentStatus: booking.paymentStatus as BookingPaymentValidationContext["paymentStatus"],
     mpCollectorId: business.mpCollectorId,
   };
 }
