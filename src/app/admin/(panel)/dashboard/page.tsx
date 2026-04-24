@@ -25,11 +25,16 @@ import {
 } from "@/server/queries/admin";
 
 export default async function AdminDashboardPage() {
-  const [dashboardData, , services, availability] = await Promise.all([
-    getAdminDashboardData(),
-    getAdminShellData(),
-    getAdminServicesData(),
-    getAdminAvailabilityData(),
+  const shellData = await getAdminShellData();
+
+  if (!shellData) {
+    redirect("/admin/onboarding");
+  }
+
+  const [dashboardData, services, availability] = await Promise.all([
+    getAdminDashboardData(shellData),
+    getAdminServicesData(shellData),
+    getAdminAvailabilityData(shellData),
   ]);
 
   if (!dashboardData || !services || !availability) {

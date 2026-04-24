@@ -6,6 +6,7 @@ import type { DarkModeColors } from "@/constants/public-business-profiles";
 
 // Key de localStorage separada para la página pública, para no pisar el tema del admin.
 const PUBLIC_THEME_KEY = "public-theme";
+const PUBLIC_THEME_CHANGE_EVENT = "public-theme-change";
 
 interface PublicBusinessThemeProviderProps {
   children: ReactNode;
@@ -18,7 +19,7 @@ export function PublicBusinessThemeProvider({
   enableDarkMode,
   darkModeColors,
 }: PublicBusinessThemeProviderProps) {
-  const [storedDarkPreference] = useState(() => {
+  const [storedDarkPreference, setStoredDarkPreference] = useState(() => {
     if (typeof window === "undefined" || !enableDarkMode) {
       return false;
     }
@@ -36,6 +37,28 @@ export function PublicBusinessThemeProvider({
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
   const isDark = enableDarkMode && storedDarkPreference;
+
+  useEffect(() => {
+    if (!enableDarkMode) return;
+
+    const updatePreference = () => {
+      const saved = localStorage.getItem(PUBLIC_THEME_KEY);
+
+      if (saved === "dark") {
+        setStoredDarkPreference(true);
+      } else if (saved === "light") {
+        setStoredDarkPreference(false);
+      }
+    };
+
+    window.addEventListener(PUBLIC_THEME_CHANGE_EVENT, updatePreference);
+    window.addEventListener("storage", updatePreference);
+
+    return () => {
+      window.removeEventListener(PUBLIC_THEME_CHANGE_EVENT, updatePreference);
+      window.removeEventListener("storage", updatePreference);
+    };
+  }, [enableDarkMode]);
 
   // Aplicar/quitar la clase "dark" en <html> sin tocar el localStorage del admin.
   // Al desmontar, restaurar la clase según el tema del admin (key "theme").

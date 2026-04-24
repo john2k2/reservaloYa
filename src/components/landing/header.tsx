@@ -23,9 +23,9 @@ interface SessionInfo {
   displayName: string;
 }
 
-async function getSessionInfo(): Promise<SessionInfo> {
+async function getSessionInfo(signal?: AbortSignal): Promise<SessionInfo> {
   try {
-    const res = await fetch("/api/auth/session", { cache: "no-store" });
+    const res = await fetch("/api/auth/session", { cache: "no-store", signal });
     if (!res.ok) return { loggedIn: false, isPlatformAdmin: false, displayName: "" };
     return res.json();
   } catch {
@@ -89,10 +89,21 @@ export function LandingHeader() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     startTransition(() => {
       setMounted(true);
     });
-    getSessionInfo().then(setSession);
+
+    getSessionInfo(controller.signal).then((sessionInfo) => {
+      if (!controller.signal.aborted) {
+        setSession(sessionInfo);
+      }
+    });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   return (

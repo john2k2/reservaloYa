@@ -14,13 +14,18 @@ type AdminServicesPageProps = {
 };
 
 export default async function AdminServicesPage({ searchParams }: AdminServicesPageProps) {
-  const [services, shellData, params] = await Promise.all([
-    getAdminServicesData(),
-    getAdminShellData(),
+  const shellData = await getAdminShellData();
+
+  if (shellData === null) {
+    redirect("/admin/onboarding");
+  }
+
+  const [services, params] = await Promise.all([
+    getAdminServicesData(shellData),
     searchParams,
   ]);
 
-  if (services === null || shellData === null) {
+  if (services === null) {
     redirect("/admin/onboarding");
   }
 

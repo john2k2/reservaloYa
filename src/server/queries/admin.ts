@@ -47,6 +47,10 @@ export async function getAdminShellData(): Promise<AdminShellData | null> {
 async function getLiveBusinessId() {
   const shellData = await getAdminShellData();
 
+  return getLiveBusinessIdFromShell(shellData);
+}
+
+function getLiveBusinessIdFromShell(shellData: AdminShellData | null) {
   if (!shellData || shellData.demoMode || !shellData.businessId) {
     return null;
   }
@@ -57,16 +61,19 @@ async function getLiveBusinessId() {
   };
 }
 
-export async function getAdminDashboardData() {
+export async function getAdminDashboardData(shellData?: AdminShellData | null) {
   noStore();
 
-  const shellData = await getAdminShellData();
+  const liveBusiness =
+    shellData === undefined
+      ? await getLiveBusinessId()
+      : getLiveBusinessIdFromShell(shellData);
 
-  if (!shellData || shellData.demoMode || !shellData.businessId) {
+  if (!liveBusiness) {
     return null;
   }
 
-  return getSupabaseAdminDashboardData(shellData.businessId);
+  return getSupabaseAdminDashboardData(liveBusiness.businessId);
 }
 
 export async function getAdminTeamData() {
@@ -81,16 +88,19 @@ export async function getAdminTeamData() {
   return getSupabaseAdminTeamData(shellData.businessId);
 }
 
-export async function getAdminServicesData() {
+export async function getAdminServicesData(shellData?: AdminShellData | null) {
   noStore();
 
-  const shellData = await getLiveBusinessId();
+  const liveBusiness =
+    shellData === undefined
+      ? await getLiveBusinessId()
+      : getLiveBusinessIdFromShell(shellData);
 
-  if (!shellData) {
+  if (!liveBusiness) {
     return null;
   }
 
-  return getSupabaseAdminServicesData(shellData.businessId);
+  return getSupabaseAdminServicesData(liveBusiness.businessId);
 }
 
 export type AdminBookingsFilters = {
@@ -144,16 +154,19 @@ export async function getAdminCustomersDataWithFilter(query?: string) {
   return getSupabaseAdminCustomersData(shellData.businessId, normalizedQuery);
 }
 
-export async function getAdminAvailabilityData() {
+export async function getAdminAvailabilityData(shellData?: AdminShellData | null) {
   noStore();
 
-  const shellData = await getLiveBusinessId();
+  const liveBusiness =
+    shellData === undefined
+      ? await getLiveBusinessId()
+      : getLiveBusinessIdFromShell(shellData);
 
-  if (!shellData) {
+  if (!liveBusiness) {
     return null;
   }
 
-  return getSupabaseAdminAvailabilityData(shellData.businessId);
+  return getSupabaseAdminAvailabilityData(liveBusiness.businessId);
 }
 
 export async function getAdminSettingsData() {

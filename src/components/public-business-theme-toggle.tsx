@@ -4,6 +4,7 @@ import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 
 const PUBLIC_THEME_KEY = "public-theme";
+const PUBLIC_THEME_CHANGE_EVENT = "public-theme-change";
 
 interface PublicBusinessThemeToggleProps {
   enableDarkMode: boolean;
@@ -41,6 +42,7 @@ export function PublicBusinessThemeToggle({
     const next = !isDark;
     setIsDark(next);
     localStorage.setItem(PUBLIC_THEME_KEY, next ? "dark" : "light");
+    window.dispatchEvent(new Event(PUBLIC_THEME_CHANGE_EVENT));
     if (next) {
       document.documentElement.classList.add("dark");
     } else {
