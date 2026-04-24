@@ -115,20 +115,26 @@ export function buildAdminDashboardBookingPreview<TStatus extends string>(
 }
 
 export function buildAdminDashboardNotifications(input: DashboardNotificationsInput) {
-  return [
-    input.pendingBookings > 0
-      ? `${input.pendingBookings} turnos pendientes de confirmar`
-      : "Sin turnos pendientes de confirmar",
-    input.remindersPending > 0
-      ? input.remindersProviderReady
+  const alerts: string[] = [];
+
+  if (input.pendingBookings > 0) {
+    alerts.push(`${input.pendingBookings} turnos pendientes de confirmar`);
+  }
+  if (input.remindersPending > 0) {
+    alerts.push(
+      input.remindersProviderReady
         ? `${input.remindersPending} recordatorios listos para enviar`
         : `${input.remindersPending} recordatorios listos cuando actives email o WhatsApp`
-      : "Sin recordatorios pendientes en las proximas 24 hs",
-    input.bookingsCreated > 0
-      ? `${input.bookingsCreated} reservas llegaron desde la web`
-      : "Todavia no se registran reservas web",
-    input.visits > 0 ? `Canal principal: ${input.topSource}` : "Todavia no hay visitas registradas",
-  ];
+    );
+  }
+  if (input.bookingsCreated > 0) {
+    alerts.push(`${input.bookingsCreated} reservas llegaron desde la web`);
+  }
+  if (input.visits > 0) {
+    alerts.push(`Canal principal: ${input.topSource}`);
+  }
+
+  return alerts;
 }
 
 export function buildAdminDashboardMetrics(input: DashboardMetricSummaryInput) {

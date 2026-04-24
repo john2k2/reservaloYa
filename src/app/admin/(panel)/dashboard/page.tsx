@@ -149,7 +149,7 @@ export default async function AdminDashboardPage() {
         {/* Columna 1: Turnos + Analytics */}
         <div className="space-y-6">
           {/* Alerta turnos pendientes */}
-          {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes")) && (
+          {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes de confirmar")) && (
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700">
               <AlertCircle className="size-4 shrink-0" />
               Tenés turnos pendientes de confirmar
