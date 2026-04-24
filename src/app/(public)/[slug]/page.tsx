@@ -451,62 +451,67 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           mobilePolicyCount={pageData.profile.sectionLayout.mobilePolicyItems}
         />
 
-        {/* Horarios de atención */}
-        {pageData.weeklyHours && pageData.weeklyHours.length > 0 && (
-          <section className="border-t border-border/40 py-10 sm:py-14 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
-            <div className="mx-auto max-w-6xl px-4 sm:px-6">
-              <div className="mb-8 sm:mb-10 text-center">
-                <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                  Horarios
-                </p>
-                <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                  Días y horarios de atención
-                </h2>
-              </div>
-              <div className="mx-auto max-w-sm sm:max-w-md">
-                <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-border/60 bg-background shadow-sm">
-                  {pageData.weeklyHours.map((slot, idx) => {
-                    const isClosed = slot.hoursLabel.toLowerCase().includes("cerrado");
-                    return (
-                      <div
-                        key={slot.dayLabel}
-                        className={cn(
-                          "flex items-center justify-between px-5 py-3.5 text-sm",
-                          idx !== 0 && "border-t border-border/40",
-                          isClosed && "opacity-50"
-                        )}
-                      >
-                        <span className="font-medium text-foreground">{slot.dayLabel}</span>
-                        <span className={cn("text-right", isClosed ? "text-muted-foreground" : "font-semibold")} style={isClosed ? undefined : { color: pageData.profile.accent }}>
-                          {slot.hoursLabel}
-                        </span>
-                      </div>
-                    );
-                  })}
+        {/* Horarios + Ubicación */}
+        <section className="border-t border-border/40 py-10 sm:py-14 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-14 lg:items-start">
+
+              {/* Horarios */}
+              {pageData.weeklyHours && pageData.weeklyHours.length > 0 && (
+                <div>
+                  <div className="mb-6">
+                    <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
+                      Horarios
+                    </p>
+                    <h2 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                      Días y horarios de atención
+                    </h2>
+                  </div>
+                  <div className="overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm">
+                    {pageData.weeklyHours.map((slot, idx) => {
+                      const isClosed = slot.hoursLabel.toLowerCase().includes("cerrado");
+                      return (
+                        <div
+                          key={slot.dayLabel}
+                          className={cn(
+                            "flex items-center justify-between px-5 py-3.5 text-sm",
+                            idx !== 0 && "border-t border-border/40",
+                            isClosed && "opacity-50"
+                          )}
+                        >
+                          <span className="font-medium text-foreground">{slot.dayLabel}</span>
+                          <span className={cn("text-right", isClosed ? "text-muted-foreground" : "font-semibold")} style={isClosed ? undefined : { color: pageData.profile.accent }}>
+                            {slot.hoursLabel}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Ubicación */}
+              <div className={pageData.weeklyHours && pageData.weeklyHours.length > 0 ? "" : "lg:col-span-2"}>
+                <div className="mb-6">
+                  <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
+                    Ubicación
+                  </p>
+                  <h2 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                    {pageData.business.address ?? "Dirección a definir"}
+                  </h2>
+                </div>
+                <div className="overflow-hidden rounded-2xl border border-border/60 shadow-sm">
+                  <iframe
+                    title={`Mapa de ${pageData.business.name}`}
+                    src={mapEmbedSrc}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="h-56 sm:h-72 lg:h-80 w-full"
+                  />
                 </div>
               </div>
-            </div>
-          </section>
-        )}
 
-        {/* Location */}
-        <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-16">
-          <div className="mb-4 sm:mb-6 text-center">
-            <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-              Ubicación
-            </p>
-            <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-foreground">
-              {pageData.business.address ?? "Dirección a definir"}
-            </h2>
-          </div>
-          <div className="overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 shadow-sm">
-            <iframe
-              title={`Mapa de ${pageData.business.name}`}
-              src={mapEmbedSrc}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="h-48 sm:h-64 lg:h-80 w-full"
-            />
+            </div>
           </div>
         </section>
 
