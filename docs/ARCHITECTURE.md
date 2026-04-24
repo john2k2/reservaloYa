@@ -20,31 +20,25 @@ El objetivo actual no es resolver la arquitectura final para escalar a gran volu
 | Lenguaje | TypeScript |
 | Estilos | Tailwind CSS v4 |
 | UI | shadcn/ui |
-| Backend / Auth / DB | PocketBase |
+| Backend / Auth / DB | Supabase |
 | Email | Resend |
+| Pagos | MercadoPago OAuth per-negocio + cuenta plataforma |
 | Testing | Vitest + Testing Library |
 
 ---
 
-## Modos de operacion
+## Modo de operacion
 
-### 1. Modo local
+### Supabase-only
 
-Se usa cuando PocketBase no esta configurado.
-
-- datos persistidos en archivo JSON
-- util para demo y desarrollo
-- permite mostrar el producto sin backend externo
-
-### 2. Modo PocketBase
-
-Se usa cuando hay variables de entorno configuradas.
+La app usa Supabase como backend unico para auth, datos y operacion multi-tenant.
 
 - auth real de admin
 - datos reales por negocio
-- reservas, analytics y recordatorios sobre PocketBase
+- reservas, analytics, recordatorios, rate-limit y locks sobre Supabase
+- migraciones versionadas en `supabase/migrations/`
 
-La app ya soporta ambos modos, pero la direccion tecnica actual es PocketBase.
+No hay backend operativo PocketBase en el estado actual.
 
 ---
 
@@ -106,7 +100,7 @@ src/
 
   lib/
     bookings/
-    pocketbase/
+    supabase/
     seo/
     utils.ts
 
@@ -139,7 +133,7 @@ src/
 2. entra al dashboard
 3. revisa turnos y clientes
 4. edita la pagina publica del negocio
-5. pendiente de completar: operar servicios, disponibilidad y turnos desde el panel
+5. opera servicios, disponibilidad, turnos, clientes y suscripcion desde el panel
 
 ---
 
@@ -150,21 +144,26 @@ src/
 - login admin
 - dashboard
 - clientes
+- CRUD de servicios en admin
+- gestion de disponibilidad en admin
+- bloqueo de horarios desde admin
+- acciones operativas sobre turnos desde admin
 - pagina publica editable
 - reserva publica
 - confirmacion
 - gestion del turno por link
 - base de analytics
 - base de recordatorios
+- MercadoPago OAuth por negocio para turnos pagos
+- suscripcion plataforma via MercadoPago con attempts historicos
+- rate-limit y locks de slots persistidos en Supabase
 
 ### Todavia incompleto
 
-- CRUD de servicios en admin
-- gestion de disponibilidad en admin
-- bloqueo de horarios desde admin
-- acciones operativas sobre turnos desde admin
+- observabilidad/analytics avanzados post-lanzamiento
+- seleccion publica de profesional/staff
 
-Eso significa que la app ya sirve muy bien como demo avanzada, pero todavia no cumple completo el admin operativo final.
+Eso significa que la app ya sirve para operar pilotos reales, con mejoras post-lanzamiento pendientes.
 
 ---
 
@@ -181,16 +180,13 @@ Eso significa que la app ya sirve muy bien como demo avanzada, pero todavia no c
 
 ## Decision de infraestructura
 
-PocketBase se mantiene como backend actual.
+Supabase es el backend actual y unico para auth, persistencia y operacion multi-tenant.
 
-La decision futura entre:
+Las piezas operativas sensibles estan versionadas como migraciones Supabase, incluyendo:
 
-- seguir con PocketBase en VPS
-- o migrar a otra infraestructura
+- `booking_locks`
+- `rate_limit_events`
+- RPC `consume_rate_limit`
+- `subscription_payment_attempts`
 
-queda para despues de validar ventas y uso real.
-
-Hoy la regla es:
-
-- app funcional primero
-- arquitectura definitiva despues
+Hoy la regla es mantener la arquitectura simple: Supabase + Vercel, sin reintroducir un segundo backend salvo necesidad concreta.

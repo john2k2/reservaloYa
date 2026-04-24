@@ -4,6 +4,8 @@
 
 **Estado actual**: prod corre estable para piloto cerrado. Booking flow, seguridad, persistencia y CI validados.
 
+> Nota 2026-04-24: este plan conserva pasos historicos del pre-lanzamiento. El backend actual es Supabase-only; cualquier referencia a PocketBase/Railway queda obsoleta y no debe ejecutarse.
+
 **Audiencia**: este plan está escrito para ser ejecutado por un agente (Sonnet 4.6) o un humano paso a paso. Cada sección es autocontenida con comandos, archivos y criterios de validación.
 
 ---
@@ -14,7 +16,7 @@
 Día 0   │ WA.1  Arrancar aprobación Meta template WhatsApp (bloqueante externo, 1-3 días)
 Día 1   │ S.1-4 Sentry end-to-end
 Día 1   │ B.1-3 Vercel Blob para branding
-Día 2-3 │ BK.1-5 Backup automático de PocketBase
+Día 2-3 │ BK.1-5 Validación de backups/migrations Supabase
 Día 3-5 │ ⏳ Esperando aprobación Meta; mientras correr piloto suegra
 Día 5-7 │ WA.2-4 WhatsApp productivo configurado y probado
 Día 7   │ ✅ Lanzamiento público (peluquería externa + Linkedin)
@@ -178,7 +180,9 @@ Test desde el panel admin:
 
 ---
 
-## Sección BK — Backup automático de PocketBase
+## Sección BK — Backups y migrations Supabase
+
+> Estado 2026-04-24: la implementacion PocketBase de esta seccion quedo reemplazada por Supabase. Para operacion actual, validar backups del proyecto Supabase y que esten aplicadas las migraciones `20260424000000_add_booking_locks_rate_limit_events.sql` y `20260424001000_add_subscription_payment_attempts.sql`.
 
 **Tiempo estimado**: 3-4h (incluye probar restore)
 **Bloquea lanzamiento**: SÍ (si perdemos datos con clientes reales, game over)
@@ -519,17 +523,13 @@ echo "Todo OK"
 
 ## Apéndice — Qué NO hacemos ahora
 
-1. **Migración a Supabase**: se difiere hasta que PocketBase + Railway demuestren no escalar. Criterios de disparo para reabrir la discusión:
-   - >500 bookings/día (SQLite empieza a tener contención de escritura).
-   - >5 businesses multi-sucursal con queries complejas de analytics.
-   - Railway tiene un segundo incidente de persistencia o latencia >500ms p95.
-   Hasta entonces, PocketBase es más que suficiente y migrar sería optimización prematura.
+1. **Migración a Supabase**: completada. No reintroducir PocketBase/Railway salvo una necesidad concreta que justifique operar dos backends.
 
 2. **Observability avanzada** (OpenTelemetry, traces distribuidos): Sentry + Vercel Logs cubren el 95% de lo que se necesita en pre-PMF.
 
 3. **Tests e2e de todos los flujos**: los 270 unit tests + el smoke manual de V.2 son suficientes. Playwright e2e se agrega cuando haya un bug recurrente que justifique el mantenimiento.
 
-4. **Rate limiting a nivel edge**: Next.js ya tiene rate limit en el código (`src/server/rate-limit.ts`); Vercel agrega protección DDoS. Suficiente para piloto.
+4. **Rate limiting a nivel edge**: el rate-limit de aplicacion usa Supabase (`rate_limit_events` + RPC `consume_rate_limit`) y Vercel agrega proteccion DDoS. Edge rate limiting dedicado queda para una necesidad concreta.
 
 ---
 

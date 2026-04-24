@@ -22,7 +22,7 @@ Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y 
 - Selector de hora agrupado por franja (Manana / Tarde / Noche)
 - Skeleton loading inmediato al cambiar fecha
 - Formulario con email requerido, telefono opcional
-- Pago online via MercadoPago si el servicio tiene precio (por negocio o global)
+- Pago online via MercadoPago si el servicio tiene precio y el negocio conecto OAuth
 - Pagina de confirmacion con link a calendario y gestion del turno
 - Pagina "mi turno": reprogramar y cancelar desde link firmado
 - Pagina de resena post-turno (`/[slug]/resena`) con rating y comentario
@@ -54,13 +54,15 @@ Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y 
 ### Infraestructura
 
 - Supabase para auth, base de datos y multi-tenant real
-- Rate limiting en creacion de turnos
+- Rate limiting en creacion de turnos con eventos/RPC en Supabase
+- Locks de slots persistidos en Supabase para evitar doble reserva concurrente
 - Tokens HMAC firmados para links de gestion y resena
 - Endpoint de cron `/api/jobs/booking-reminders` para Vercel
 - Analytics de embudo: page_view -> cta_click -> booking_page -> booking_created
 - Tracking UTM en toda la cadena de reserva
 - Deploy en Vercel + Supabase
 - CI: lint + typecheck + test + build + coverage thresholds + smoke E2E
+- Suscripciones de plataforma con attempts historicos y webhook MercadoPago validado
 
 ---
 

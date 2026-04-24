@@ -23,7 +23,7 @@ El modelo de negocio es cobrarle una suscripcion mensual a cada negocio que usa 
 | Backend / Auth / DB | Supabase |
 | Email | Resend — desde turnos@reservaya.ar |
 | WhatsApp | Twilio (recordatorios, opcional) |
-| Pagos | MercadoPago OAuth per-negocio |
+| Pagos | MercadoPago OAuth per-negocio + suscripcion plataforma |
 | Testing | Vitest, Testing Library, Playwright |
 | Deploy | Vercel (app) + Supabase |
 
@@ -81,6 +81,7 @@ Todas las variables estan en Vercel Dashboard → reservaya → Settings → Env
 | `CRON_SECRET` | Secret que Vercel envia al cron automaticamente |
 | `MP_APP_ID` | ID de la app de MercadoPago |
 | `MP_APP_SECRET` | Secret de la app de MercadoPago |
+| `MP_ACCESS_TOKEN` | Access token de la cuenta plataforma para cobrar suscripciones |
 | `MP_WEBHOOK_SECRET` | Secret para validar firma del webhook de MP |
 | `TWILIO_ACCOUNT_SID` | SID de cuenta Twilio |
 | `TWILIO_AUTH_TOKEN` | Token de Twilio |
@@ -117,12 +118,14 @@ Endpoint: `GET /api/jobs/booking-reminders` con header `Authorization: Bearer {C
 
 ## Pagos
 
-MercadoPago OAuth per-negocio. Cada negocio conecta su propia cuenta de MP desde el panel admin. El flujo:
+MercadoPago OAuth per-negocio para cobrar turnos. Cada negocio conecta su propia cuenta de MP desde el panel admin. El flujo:
 1. Admin hace click en "Conectar MercadoPago"
 2. OAuth redirect a MP con `MP_APP_ID`
 3. Callback en `/api/auth/mercadopago/callback` guarda los tokens en el registro del negocio
 4. Al crear un turno con precio > 0, se genera una preferencia de pago
 5. Webhook en `/api/payments/webhook` confirma el pago y actualiza el estado del turno
+
+La suscripcion mensual de la plataforma se cobra con la cuenta plataforma (`MP_ACCESS_TOKEN`). Cada intento queda persistido en `subscription_payment_attempts`, y el webhook valida firma, monto, moneda y `external_reference` contra ese intento antes de activar la suscripcion.
 
 ---
 
@@ -144,6 +147,7 @@ Colecciones principales, todas filtradas por `business`:
 | `waitlist_entries` | Lista de espera cuando no hay horarios disponibles |
 | `reviews` | Resenas post-turno |
 | `subscriptions` | Suscripciones de los negocios (status: trial/active/cancelled/suspended, trialEndsAt, lockedAt) |
+| `subscription_payment_attempts` | Intentos historicos de pago de suscripcion usados para validar webhooks |
 
 ---
 
@@ -178,12 +182,7 @@ npm run dev
 La app requiere variables de entorno de Supabase válidas para funcionar correctamente.
 Abri `http://localhost:3000/demo-barberia` para ver el flujo completo.
 
-Para usar PocketBase local:
-```bash
-npm run pb:up        # levanta PocketBase en Docker
-npm run pb:bootstrap # crea las colecciones
-# Agregar NEXT_PUBLIC_POCKETBASE_URL=http://127.0.0.1:8090 en .env.local
-```
+Las migraciones versionadas de Supabase viven en `supabase/migrations/`. Incluyen las tablas/RPC operativas para rate-limit, locks de slots y attempts de suscripcion.
 
 ---
 
@@ -198,11 +197,6 @@ vercel env ls                     # ver variables de entorno
 vercel deploy --prod               # deployar a produccion
 vercel domains inspect reservaya.ar  # estado del dominio
 vercel dns ls reservaya.ar        # ver registros DNS
-
-# Railway (PocketBase)
-railway link --project dynamic-joy   # linkear proyecto
-railway logs                         # ver logs de PocketBase
-railway vars                         # ver variables de entorno
 
 # GitHub
 gh repo view john2k2/reservaloYa
@@ -240,7 +234,7 @@ gh pr list
 - [x] Analytics de embudo con UTM
 - [x] CI: lint + typecheck + tests + coverage thresholds + smoke E2E
 - [x] Dominio propio reservaya.ar en produccion
-- [x] PocketBase en Railway con volumen persistente
+- [x] Supabase como backend unico en produccion
 - [x] ImprovMX email forwarding (hola@reservaya.ar) — MX records propagados
 - [x] Contacto y WhatsApp del sitio configurados (541124057521 / hola@reservaya.ar)
 - [x] Booking UX: boton confirmar deshabilitado hasta elegir horario
@@ -258,8 +252,8 @@ gh pr list
 
 ### Proximos pasos
 - [ ] Crear negocios reales para pilotos (suegra + peluqueria externa)
-- [ ] Implementar flow de upgrade a pago via MercadoPago
-- [ ] Configurar webhook de MercadoPago para confirmar pagos automaticamente
+- [x] Flow de upgrade a pago via MercadoPago para suscripciones de plataforma
+- [x] Webhook de MercadoPago validado para turnos y suscripciones
 - [ ] Video demo 30-45 segundos para publicaciones
 - [ ] Seguimiento de pilotos y feedback
 - [ ] Verificar dominio de sending en Resend (DKIM/SPF propagados)

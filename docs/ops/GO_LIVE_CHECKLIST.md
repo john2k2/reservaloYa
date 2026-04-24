@@ -1,10 +1,10 @@
 # Go Live Checklist
 
-**URL actual:** https://reservaya-kappa.vercel.app
+**URL actual:** https://reservaya.ar
 
 ---
 
-## Estado actual (2026-03-18)
+## Estado actual (2026-04-24)
 
 | Item | Estado |
 |------|--------|
@@ -15,6 +15,7 @@
 | CRUD admin completo | ✅ |
 | Flujo público de reserva completo | ✅ |
 | Pago online via MercadoPago | ✅ |
+| Suscripcion plataforma via MercadoPago | ✅ |
 | Follow-up post-turno con link a reseña | ✅ |
 | Lista de espera (waitlist) | ✅ |
 | Reseñas post-turno | ✅ |
@@ -22,7 +23,7 @@
 | Endpoint cron `/api/jobs/booking-reminders` | ✅ |
 | `vercel.json` con cron `0 13 * * *` (1pm UTC) | ✅ |
 | Variables de entorno en Vercel | ⏳ ver abajo |
-| PocketBase en producción | ⏳ pendiente |
+| Supabase en producción | ✅ |
 | Cron activo y probado | ⏳ pendiente |
 | Dominio propio en Resend | ⏳ pendiente |
 | Sentry configurado en producción | ⏳ pendiente |
@@ -81,24 +82,22 @@ Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variab
 
 > Sin estas variables, solo se envían reminders por email. No bloquea ningún flujo.
 
-### Para MercadoPago (pagos online)
+### Para MercadoPago (pagos online y suscripciones)
 
 | Variable | Valor | Notas |
 |----------|-------|-------|
 | `MP_APP_ID` | ID de la app MP | Desde Mercado Pago Developers |
 | `MP_APP_SECRET` | Secret de la app | Para OAuth por negocio |
-| `MP_ACCESS_TOKEN` | (opcional) | Fallback global si el negocio no conectó MP |
-| `MP_WEBHOOK_SECRET` | Secret del webhook | Validación de firma para `/api/payments/webhook` |
+| `MP_ACCESS_TOKEN` | Access token de plataforma | Para cobrar suscripciones de negocios |
+| `MP_WEBHOOK_SECRET` | Secret del webhook | Validación de firma para `/api/payments/webhook`; requerido en producción |
 
-### Para PocketBase (cuando esté listo)
+### Para Supabase
 
-| Variable | Valor |
-|----------|-------|
-| `NEXT_PUBLIC_POCKETBASE_URL` | URL de tu instancia PocketBase |
-| `POCKETBASE_ADMIN_EMAIL` | Email del superuser |
-| `POCKETBASE_ADMIN_PASSWORD` | Password del superuser |
-| `POCKETBASE_PUBLIC_AUTH_EMAIL` | Email usuario de solo lectura |
-| `POCKETBASE_PUBLIC_AUTH_PASSWORD` | Password usuario de solo lectura |
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase | Cliente y server |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key | Cliente y lecturas publicas |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key | Solo server-side |
 
 ---
 
@@ -145,7 +144,7 @@ Respuesta esperada:
 ## Paso 4 — Verificar el flujo completo
 
 1. Verificar que el negocio demo exista en Supabase y tenga datos consistentes
-2. Abrir https://reservaya-kappa.vercel.app/demo-barberia
+2. Abrir https://reservaya.ar/demo-barberia
 3. Crear una reserva completa con tu email
 4. Verificar que llegue el email de confirmación (cliente y negocio)
 5. Verificar que el link de "mi turno" permita reprogramar y cancelar
@@ -158,12 +157,12 @@ Respuesta esperada:
 
 ## Antes de pasar a producción real con clientes
 
-- [ ] PocketBase deployado en VPS o PaaS con backups diarios
+- [ ] Supabase validado con backups, RLS y migrations aplicadas (`booking_locks`, `rate_limit_events`, `consume_rate_limit`, `subscription_payment_attempts`)
 - [ ] Dominio propio comprado y configurado en Resend
 - [ ] `RESEND_FROM_EMAIL` actualizado con dominio verificado
 - [ ] Cron probado con reservas reales en ventana de 24hs
 - [ ] MercadoPago: probar flujo sandbox completo (reserva → pago → confirmación)
-- [ ] MercadoPago: copiar `MP_WEBHOOK_SECRET` desde Developers y verificar que el webhook firme eventos válidos
+- [ ] MercadoPago: copiar `MP_WEBHOOK_SECRET` desde Developers y verificar que el webhook firme eventos válidos para turnos y suscripciones
 - [ ] WhatsApp Twilio configurado (opcional)
 - [ ] Monitoreo básico activo (Vercel logs + alertas)
 - [ ] Sentry Issues recibiendo errores de cliente y servidor

@@ -1,6 +1,6 @@
 # Engineering Remediation Tracker
 
-Ultima actualizacion: 2026-03-26
+Ultima actualizacion: 2026-04-24
 
 ## Objetivo
 
@@ -17,7 +17,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 | ENG-03 | CI con smoke E2E | P1 | Hecho | PRs bloquean regresiones visibles |
 | ENG-04 | Thresholds de coverage | P1 | Hecho | La cobertura no puede degradarse silenciosamente |
 | ENG-05 | Refactor stores compartidos | P1 | Hecho | 7 modulos domain extraidos |
-| ENG-06 | Unificar integracion Mercado Pago | P1 | Hecho | Precio centralizado, preference unificada, webhook con warning |
+| ENG-06 | Unificar integracion Mercado Pago | P1 | Hecho | Precio centralizado, preferences unificadas, webhook validado |
 | ENG-07 | Logging / observabilidad | P1 | Hecho | Todos los archivos migrados al logger comun |
 | ENG-08 | Documentacion alineada | P2 | Hecho | Consolidada de 22 a 7 archivos |
 | ENG-09 | Higiene del repo | P2 | Hecho | lint, typecheck, build en verde. 0 TODOs/dead code |
@@ -46,13 +46,15 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 3. **Subscriptions usan token global**, bookings usan OAuth per-business
 4. **`MP_WEBHOOK_SECRET` no se valida** cuando MP esta habilitado
 5. **Webhook distingue tipo por heuristica** (`getBusinessSubscription()`), no por campo explicito
+6. **Validacion de suscripciones recalculaba precio actual**, sin attempt historico persistido
 
 ### Resultado
 
 - [x] Precio centralizado en `src/server/payments-domain.ts` (`SUBSCRIPTION_USD_PRICE`, `getSubscriptionArsPrice()`)
 - [x] Preferencias unificadas: `createSubscriptionPreference()` usa el mismo SDK que bookings
-- [x] Webhook loguea warning cuando `MP_WEBHOOK_SECRET` no esta configurado
-- [ ] Subscriptions usan token global (diseño intencional: la plataforma cobra, no el negocio)
+- [x] Webhook valida firma con `MP_WEBHOOK_SECRET` y rechaza falta de secret en produccion
+- [x] Suscripciones usan token global por diseño: cobra la plataforma, no el negocio
+- [x] Attempts de suscripcion persistidos en `subscription_payment_attempts`; webhook valida monto/moneda contra el attempt historico
 
 ---
 
@@ -62,7 +64,8 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 - [x] RY-015: getFullList acotado con batch limits y filtros por business
 - [x] RY-016: Agregaciones server-side, volumen bajo por negocio
 - [x] RY-021: 0 vulnerabilidades en produccion
-- [ ] Configurar `MP_WEBHOOK_SECRET` en Vercel Production (manual, pre-launch)
+- [ ] Configurar/verificar `MP_WEBHOOK_SECRET` en Vercel Production (manual, pre-launch)
+- [x] Rate-limit y locks de slots migrados a Supabase (`booking_locks`, `rate_limit_events`, RPC `consume_rate_limit`)
 
 ---
 

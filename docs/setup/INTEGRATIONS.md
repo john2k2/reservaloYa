@@ -81,7 +81,7 @@ node scripts/dev/test-notifications.mjs --channel whatsapp --phone +549115555010
 
 ### Como funciona
 
-Cada negocio conecta su propia cuenta MercadoPago via OAuth desde el admin.
+Cada negocio conecta su propia cuenta MercadoPago via OAuth desde el admin para cobrar turnos pagos.
 
 Cuando un servicio tiene precio y MP esta conectado:
 1. La reserva se crea con `status: "pending_payment"`
@@ -91,13 +91,16 @@ Cuando un servicio tiene precio y MP esta conectado:
 
 Sin precio o sin MP conectado, el flujo sigue normal (sin pago).
 
+La suscripcion mensual de ReservaYa se cobra con la cuenta plataforma (`MP_ACCESS_TOKEN`). Ese flujo persiste cada intento en `subscription_payment_attempts`; el webhook valida firma, monto, moneda y referencia externa contra el attempt historico antes de activar la suscripcion.
+
 ### Variables
 
 | Variable | Notas |
 |----------|-------|
 | `MP_APP_ID` | ID de la app de plataforma |
 | `MP_APP_SECRET` | Secret de la app de plataforma |
-| `MP_ACCESS_TOKEN` | Fallback si no hay OAuth por negocio |
+| `MP_ACCESS_TOKEN` | Access token de la cuenta plataforma para suscripciones |
+| `MP_WEBHOOK_SECRET` | Secret para validar firmas del webhook; requerido en produccion |
 | `NEXT_PUBLIC_APP_URL` | Requerido para los back_urls de MP |
 
 ### Configurar webhook
