@@ -25,11 +25,12 @@ import {
   type BlockedSlotRecord,
 } from "@/server/supabase-domain";
 import { listSupabaseRecords } from "@/server/supabase-store/_core";
+import { bookingDateSchema, bookingTimeSchema, futureBookingDateSchema } from "@/lib/validations/booking";
 
 const bookingSchema = z.object({
   bookingId: z.string().trim().min(1),
-  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  bookingDate: bookingDateSchema,
+  startTime: bookingTimeSchema,
   status: z.enum(["pending", "confirmed", "completed", "cancelled", "no_show"]),
   notes: z.string().trim().max(400),
 });
@@ -175,8 +176,8 @@ async function updateSupabaseAdminBooking(input: {
 
 const manualBookingSchema = z.object({
   serviceId: z.string().trim().min(1, "Seleccioná un servicio."),
-  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida."),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Hora inválida."),
+  bookingDate: futureBookingDateSchema,
+  startTime: bookingTimeSchema,
   fullName: z.string().trim().min(2, "Ingresá el nombre del cliente.").max(80),
   phone: z.string().trim().max(30).default(""),
   email: z.string().trim().max(120).default(""),

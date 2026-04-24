@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createSupabaseWaitlistEntry } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
+import { futureBookingDateSchema } from "@/lib/validations/booking";
 
 const logger = createLogger("Waitlist");
 const WAITLIST_LIMIT_MAX = 5;
@@ -13,7 +14,7 @@ const WAITLIST_LIMIT_WINDOW_MS = 60_000;
 const waitlistSchema = z.object({
   businessSlug: z.string().min(2).max(80),
   serviceId: z.string().min(1),
-  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  bookingDate: futureBookingDateSchema,
   fullName: z.string().min(2).max(120),
   email: z.string().email(),
   phone: z.union([z.string().min(6).max(30), z.literal("")]).optional(),

@@ -14,11 +14,18 @@ vi.mock("@/server/supabase-store", () => ({
   createSupabaseWaitlistEntry: createSupabaseWaitlistEntryMock,
 }));
 
+function futureDateString(): string {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(20);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildWaitlistFormData(overrides: Record<string, string> = {}) {
   const formData = new FormData();
   formData.set("businessSlug", "demo-barberia");
   formData.set("serviceId", "service-1");
-  formData.set("bookingDate", "2026-04-20");
+  formData.set("bookingDate", futureDateString());
   formData.set("fullName", "Maria Gonzalez");
   formData.set("email", "maria@example.com");
   formData.set("phone", "1155556666");
@@ -35,14 +42,15 @@ describe("joinWaitlistAction", () => {
   });
 
   it("registra correctamente en el store", async () => {
-    const result = await joinWaitlistAction(null, buildWaitlistFormData());
+    const bookingDate = futureDateString();
+    const result = await joinWaitlistAction(null, buildWaitlistFormData({ bookingDate }));
 
     expect(result).toEqual({ success: true });
     expect(createSupabaseWaitlistEntryMock).toHaveBeenCalledWith(
       expect.objectContaining({
         businessSlug: "demo-barberia",
         serviceId: "service-1",
-        bookingDate: "2026-04-20",
+        bookingDate,
         fullName: "Maria Gonzalez",
         email: "maria@example.com",
       })

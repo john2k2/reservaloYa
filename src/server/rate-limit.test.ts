@@ -84,6 +84,80 @@ describe("consumeRateLimit — fail closed cuando Supabase falla", () => {
   });
 });
 
+describe("consumeRateLimit — Supabase RPC en producción", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv("NODE_ENV", "production");
+    getSupabaseAdminClientMock.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("usa consume_rate_limit cuando la RPC está disponible", async () => {
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: [{ ok: true, remaining: 2, retryAfterSeconds: 0 }],
+      error: null,
+    });
+    getSupabaseAdminClientMock.mockResolvedValue({ rpc: rpcMock });
+
+    const { consumeRateLimit } = await import("./rate-limit");
+    const result = await consumeRateLimit({
+      bucket: "public-booking",
+      identifier: "ip-1",
+      max: 3,
+      windowMs: 60_000,
+    });
+
+    expect(result).toEqual({ ok: true, remaining: 2, retryAfterSeconds: 0, store: "supabase" });
+    expect(rpcMock).toHaveBeenCalledWith("consume_rate_limit", {
+      p_bucket: "public-booking",
+      p_identifier_hash: expect.any(String),
+      p_max: 3,
+      p_window_ms: 60_000,
+    });
+  });
+
+  it("mantiene fallback compatible si la RPC todavía no existe", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    const limitMock = vi.fn().mockResolvedValue({ data: [], error: null });
+    const gtMock = vi.fn().mockReturnValue({ limit: limitMock });
+    const eqIdentifierMock = vi.fn().mockReturnValue({ gt: gtMock });
+    const eqBucketMock = vi.fn().mockReturnValue({ eq: eqIdentifierMock });
+    const selectMock = vi.fn().mockReturnValue({ eq: eqBucketMock });
+    const deleteMock = vi.fn().mockReturnValue({ lte: vi.fn().mockResolvedValue({ error: null }) });
+    const fromMock = vi.fn().mockReturnValue({ delete: deleteMock, select: selectMock, insert: insertMock });
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST202", message: "Could not find the function public.consume_rate_limit" },
+    });
+
+    getSupabaseAdminClientMock
+      .mockResolvedValueOnce({ rpc: rpcMock })
+      .mockResolvedValueOnce({ from: fromMock });
+
+    const { consumeRateLimit } = await import("./rate-limit");
+    const result = await consumeRateLimit({
+      bucket: "public-booking",
+      identifier: "ip-1",
+      max: 3,
+      windowMs: 60_000,
+    });
+
+    expect(result).toEqual({ ok: true, remaining: 2, retryAfterSeconds: 0, store: "supabase" });
+    expect(rpcMock).toHaveBeenCalledTimes(1);
+    expect(insertMock).toHaveBeenCalledWith({
+      bucket: "public-booking",
+      identifierHash: expect.any(String),
+      expiresAt: expect.any(String),
+    });
+    expect(warnSpy).toHaveBeenCalled();
+  });
+});
+
 describe("assertRateLimit", () => {
   beforeEach(async () => {
     vi.resetModules();

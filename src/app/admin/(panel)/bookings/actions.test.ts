@@ -45,6 +45,13 @@ vi.mock("@/server/supabase-store/_core", () => ({
   listSupabaseRecords: listSupabaseRecordsMock,
 }));
 
+function futureDateString(): string {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(20);
+  return d.toISOString().slice(0, 10);
+}
+
 describe("admin bookings actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
@@ -122,12 +129,13 @@ describe("admin bookings actions", () => {
   });
 
   it("creates a manual booking and redirects", async () => {
+    const bookingDate = futureDateString();
     createSupabasePublicBookingMock.mockResolvedValue("booking_new");
 
     const { createManualBookingAction } = await import("./actions");
     const formData = new FormData();
     formData.set("serviceId", "svc_1");
-    formData.set("bookingDate", "2026-03-20");
+    formData.set("bookingDate", bookingDate);
     formData.set("startTime", "10:00");
     formData.set("fullName", "Juan Perez");
     formData.set("phone", "1122334455");
@@ -139,7 +147,7 @@ describe("admin bookings actions", () => {
       expect.objectContaining({
         businessSlug: "demo-barberia",
         serviceId: "svc_1",
-        bookingDate: "2026-03-20",
+        bookingDate,
         startTime: "10:00",
         fullName: "Juan Perez",
         phone: "1122334455",

@@ -15,28 +15,29 @@ import {
 } from "@/server/supabase-store/_core";
 import { buildBlockedSlotKey } from "@/server/supabase-domain";
 import type { AvailabilityRuleRecord, BlockedSlotRecord } from "@/server/supabase-domain";
+import { bookingDateSchema, bookingTimeSchema } from "@/lib/validations/booking";
 
 const availabilityRuleSchema = z.object({
   ruleId: z.string().trim().optional(),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  startTime: bookingTimeSchema,
+  endTime: bookingTimeSchema,
   active: z.boolean(),
 });
 
 const blockedSlotSchema = z.object({
-  blockedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  blockedDate: bookingDateSchema,
+  startTime: bookingTimeSchema,
+  endTime: bookingTimeSchema,
   reason: z.string().trim().min(3).max(120),
 });
 
 const recurringBlockedSlotSchema = z.object({
-  repeatFromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  repeatFromDate: bookingDateSchema,
   repeatDayOfWeek: z.coerce.number().int().min(0).max(6),
   repeatWeeks: z.coerce.number().int().min(1).max(26),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  startTime: bookingTimeSchema,
+  endTime: bookingTimeSchema,
   reason: z.string().trim().min(3).max(120),
 });
 

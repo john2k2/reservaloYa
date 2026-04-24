@@ -38,4 +38,31 @@ describe("server logger", () => {
       message: "boom",
     });
   });
+
+  it("sanitizes sensitive strings and metadata", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    createLogger("Test Scope").warn("token=abc123 para juan@example.com", {
+      email: "cliente@example.com",
+      phone: "+54 11 5555-0101",
+      accessToken: "mp-token-real",
+      nested: {
+        authorization: "Bearer super-secret-token",
+        note: "Llamar al 1155550101",
+      },
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[Test Scope] token=[REDACTED_SECRET] para [REDACTED_EMAIL]",
+      {
+        email: "[REDACTED_EMAIL]",
+        phone: "[REDACTED_PHONE]",
+        accessToken: "[REDACTED]",
+        nested: {
+          authorization: "[REDACTED]",
+          note: "Llamar al [REDACTED_PHONE]",
+        },
+      }
+    );
+  });
 });
