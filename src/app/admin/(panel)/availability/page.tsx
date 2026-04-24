@@ -1,9 +1,9 @@
 import { Clock3, LockKeyhole, Trash2 } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { removeBlockedSlotAction, saveAvailabilityRulesAction } from "@/app/admin/(panel)/availability/actions";
+import { removeBlockedSlotAction } from "@/app/admin/(panel)/availability/actions";
 import { AvailabilityBlockForm } from "@/app/admin/(panel)/availability/availability-block-form";
-import { AvailabilitySubmitButton } from "@/app/admin/(panel)/availability/availability-submit-button";
+import { WeekScheduleForm } from "@/app/admin/(panel)/availability/week-schedule-form";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { getAdminAvailabilityData } from "@/server/queries/admin";
@@ -63,64 +63,7 @@ export default async function AdminAvailabilityPage() {
             <p className="text-xs text-muted-foreground">Activá los días que atendés y sus horarios.</p>
           </div>
 
-          <form action={saveAvailabilityRulesAction} className="space-y-2">
-            {weekSchedule.map((rule) => (
-              <div
-                key={rule.dayOfWeek}
-                className={cn(
-                  "grid items-center gap-2 rounded-lg border p-3 sm:grid-cols-[100px_80px_1fr_1fr]",
-                  rule.active ? "border-border/60 bg-secondary/5" : "border-border/30 bg-secondary/20 opacity-70"
-                )}
-              >
-                <input type="hidden" name={`ruleId_${rule.dayOfWeek}`} value={rule.ruleId} />
-
-                <span className="text-sm font-medium">{rule.label}</span>
-
-                <select
-                  name={`active_${rule.dayOfWeek}`}
-                  defaultValue={String(rule.active)}
-                  className={cn(
-                    "h-8 rounded-md border px-2 text-xs outline-none",
-                    rule.active ? "border-border bg-background" : "border-border/50 bg-secondary"
-                  )}
-                >
-                  <option value="true">Abierto</option>
-                  <option value="false">Cerrado</option>
-                </select>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">De</span>
-                  <input
-                    name={`startTime_${rule.dayOfWeek}`}
-                    type="time"
-                    defaultValue={rule.startTime}
-                    disabled={!rule.active}
-                    className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs outline-none disabled:opacity-50"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">a</span>
-                  <input
-                    name={`endTime_${rule.dayOfWeek}`}
-                    type="time"
-                    defaultValue={rule.endTime}
-                    disabled={!rule.active}
-                    className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs outline-none disabled:opacity-50"
-                  />
-                </div>
-              </div>
-            ))}
-
-            <div className="pt-2">
-              <AvailabilitySubmitButton
-                scopeValue="week"
-                idleLabel="Guardar horarios"
-                pendingLabel="Guardando..."
-                className="h-10 text-sm"
-              />
-            </div>
-          </form>
+          <WeekScheduleForm weekSchedule={weekSchedule} />
         </section>
 
         {/* Columna derecha: Bloqueos */}
