@@ -232,7 +232,18 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
       : getBrandingPalette(parsed.data.palette);
   const instagramGallery = Array.from({ length: 9 }, (_, index) =>
     String(formData.get(`instagramPost${index + 1}`) ?? "").trim()
-  ).filter((url) => isInstagramUrl(url));
+  )
+    .filter((url) => isInstagramUrl(url))
+    .map((url) => {
+      try {
+        const parsed = new URL(url);
+        // Quedarse solo con origen + pathname, sin query params ni hash
+        const segments = parsed.pathname.split("/").filter(Boolean);
+        return `https://www.instagram.com/${segments[0]}/${segments[1]}/`;
+      } catch {
+        return url;
+      }
+    });
 
   const nextGallery = Array.from({ length: 3 }, (_, index) => {
     const existingItem = profile.gallery?.[index] ?? null;

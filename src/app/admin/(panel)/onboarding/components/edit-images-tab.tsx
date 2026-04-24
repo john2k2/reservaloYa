@@ -2,9 +2,21 @@
 
 import type { Dispatch, SetStateAction } from "react";
 
-import { ImagePlus, Instagram, X } from "lucide-react";
+import { CheckCircle2, ImagePlus, Instagram, X, XCircle } from "lucide-react";
 
 import { ImageUpload } from "./image-upload";
+
+function isValidInstagramUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      (parsed.hostname === "www.instagram.com" || parsed.hostname === "instagram.com") &&
+      (parsed.pathname.startsWith("/p/") || parsed.pathname.startsWith("/reel/"))
+    );
+  } catch {
+    return false;
+  }
+}
 
 type GalleryImageInput = {
   file: File | null;
@@ -172,26 +184,52 @@ export function EditImagesTab({
         </div>
 
         <div className="space-y-3">
-          {instagramPosts.map((url, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <input
-                type="url"
-                name={`instagramPost${index + 1}`}
-                value={url}
-                onChange={(e) => updatePost(index, e.target.value)}
-                placeholder="https://www.instagram.com/p/..."
-                className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
-              />
-              <button
-                type="button"
-                onClick={() => removePost(index)}
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Quitar post"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          ))}
+          {instagramPosts.map((url, index) => {
+            const trimmed = url.trim();
+            const valid = trimmed.length > 0 && isValidInstagramUrl(trimmed);
+            const invalid = trimmed.length > 0 && !valid;
+            return (
+              <div key={index} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="url"
+                      name={`instagramPost${index + 1}`}
+                      value={url}
+                      onChange={(e) => updatePost(index, e.target.value)}
+                      placeholder="https://www.instagram.com/p/..."
+                      className={`h-10 w-full rounded-xl border bg-background px-3 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
+                        invalid
+                          ? "border-red-400/60 focus:ring-red-400/20"
+                          : valid
+                            ? "border-green-500/60 focus:ring-green-500/20"
+                            : "border-border/60"
+                      }`}
+                    />
+                    {valid && (
+                      <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-green-500" />
+                    )}
+                    {invalid && (
+                      <XCircle className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-red-400" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removePost(index)}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Quitar post"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+                {invalid && (
+                  <p className="pl-1 text-xs text-red-400">
+                    Debe ser una URL de post o reel público de Instagram (instagram.com/p/... o /reel/...)
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
           {instagramPosts.length < INSTAGRAM_SLOTS && (
             <button
