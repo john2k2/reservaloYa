@@ -35,7 +35,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
           <div className="mt-12">
             <h1 className="text-3xl font-bold tracking-tight">Ingresar a tu negocio</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Inicia sesion con tu correo electronico para gestionar tu negocio.
+              Iniciá sesión con tu correo electrónico para gestionar tu negocio.
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
               <form action={loginAction} className="space-y-6">
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-foreground">
-                    Correo electronico
+                    Correo electrónico
                   </label>
                   <input
                     id="email"
@@ -82,14 +82,14 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-foreground">
-                    Contrasena
+                    Contraseña
                   </label>
                   <input
                     id="password"
                     name="password"
                     type="password"
                     autoComplete="current-password"
-                    placeholder="Tu contrasena"
+                    placeholder="Tu contraseña"
                     className="minimalist-input"
                     required
                     aria-invalid={params.error ? "true" : undefined}
@@ -101,25 +101,25 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                     href="/admin/forgot-password"
                     className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-medium text-foreground underline underline-offset-4"
                   >
-                    Olvide mi contrasena
+                    Olvidé mi contraseña
                   </Link>
                 </div>
                 <LoadingButton
-                  pendingLabel="Iniciando sesion..."
+                  pendingLabel="Iniciando sesión..."
                   className="h-12 w-full rounded-md bg-foreground font-medium text-background"
                 >
-                  Iniciar sesion
+                  Iniciar sesión
                 </LoadingButton>
               </form>
 
               <div className="rounded-xl border border-border/70 bg-card p-4 text-sm text-muted-foreground">
                 <div className="space-y-2">
-                  <p>Todavia no tienes cuenta?</p>
+                  <p>¿Todavía no tenés cuenta?</p>
                   <Link
                     href="/admin/signup"
                     className="inline-flex min-h-11 items-center rounded-md font-medium text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
                   >
-                    Crea tu negocio y empieza ahora
+                    Creá tu negocio y empezá ahora
                   </Link>
                 </div>
               </div>
@@ -131,10 +131,10 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
         <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
         <div className="relative max-w-lg p-12">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestion sin complicaciones</h2>
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestión sin complicaciones</h2>
           <p className="text-lg text-muted-foreground">
             Una herramienta pensada para que administres turnos, servicios y clientes con claridad
-            desde el primer dia.
+            desde el primer día.
           </p>
 
           <div className="mt-12 grid grid-cols-2 gap-4">

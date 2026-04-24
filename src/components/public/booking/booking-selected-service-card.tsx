@@ -35,7 +35,7 @@ export function BookingSelectedServiceCard({
             {service.name}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Ya tienes el servicio listo. Ahora solo falta elegir una fecha y un horario publicado.
+            Ya tenés el servicio listo. Ahora solo falta elegir una fecha y un horario publicado.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export function BookingSelectedServiceCard({
         <div className="rounded-2xl border border-border/60 bg-background/85 p-4">
           <Clock3 aria-hidden="true" className="size-4" style={{ color: accentColor }} />
           <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Duracion
+            Duración
           </p>
           <p className="mt-1 text-lg font-semibold text-foreground">{service.durationMinutes} min</p>
         </div>

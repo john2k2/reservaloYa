@@ -106,10 +106,10 @@ export function BookingScheduleSection({
 
       <div className="mb-4 px-2 pt-2 sm:px-3">
         <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-          Elige día y hora
+          Elegí día y hora
         </h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          Solo días con disponibilidad real. Selecciona una fecha y después el horario.
+          Solo días con disponibilidad real. Elegí una fecha y después el horario.
         </p>
       </div>
 

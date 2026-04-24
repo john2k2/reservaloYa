@@ -113,14 +113,15 @@ export function GalleryLightbox({
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-label={`Galería de imágenes — ${current?.alt ?? "imagen"}`}
+      aria-label={`Galería de imágenes - ${current?.alt || `foto ${currentIndex + 1}`}`}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
       onClick={closeLightbox}
     >
       {/* Cerrar */}
       <button
         ref={closeButtonRef}
-        onClick={closeLightbox}
+        type="button"
+        onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
         className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         aria-label="Cerrar galería"
       >
@@ -131,6 +132,7 @@ export function GalleryLightbox({
       {images.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); prevImage(); }}
+          type="button"
           className="absolute left-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           aria-label="Imagen anterior"
         >
@@ -165,6 +167,7 @@ export function GalleryLightbox({
       {images.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); nextImage(); }}
+          type="button"
           className="absolute right-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           aria-label="Siguiente imagen"
         >
@@ -174,13 +177,13 @@ export function GalleryLightbox({
 
       {/* Indicadores */}
       {images.length > 1 && (
-        <div className="absolute bottom-6 flex gap-2" role="tablist" aria-label="Miniaturas de galería">
+        <div className="absolute bottom-6 flex gap-2" aria-label="Miniaturas de galería">
           {images.map((img, idx) => (
             <button
               key={idx}
-              role="tab"
-              aria-selected={idx === currentIndex}
-              aria-label={`Imagen ${idx + 1}: ${img.alt}`}
+              type="button"
+              aria-current={idx === currentIndex ? "true" : undefined}
+              aria-label={`Ver imagen ${idx + 1}${img.alt ? `: ${img.alt}` : ""}`}
               onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); }}
               className={cn(
                 "size-2 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",

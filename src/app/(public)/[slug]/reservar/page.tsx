@@ -134,7 +134,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
       {/* SEO: JSON-LD Structured Data */}
       <WebPageJsonLd
         name={pageTitle}
-        description={`Reserva tu turno en ${pageData.business.name}. Selecciona fecha, horario y servicio. Confirmación inmediata.`}
+        description={`Reservá tu turno en ${pageData.business.name}. Elegí fecha, horario y servicio. Confirmación inmediata.`}
         url={bookingUrl}
       />
       <BreadcrumbJsonLd
@@ -165,7 +165,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 {rescheduleBooking ? "Reprogramación" : "Reserva online"}
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Reserva tu turno para {selectedService.name}.
+                Reservá tu turno para {selectedService.name}.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
                 Elegí fecha y horario, completá tus datos y listo.
@@ -239,7 +239,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <BookingServicePicker
                 businessSlug={slug}
                 accentColor={accentColor}
-                heading="Selecciona el servicio que quieres reservar"
+                heading="Elegí el servicio que querés reservar"
                 description="Cuando elijas un servicio, vas a ver los horarios disponibles para ese día."
                 prefetchDate={selectedDate}
                 services={pageData.services}

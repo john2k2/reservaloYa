@@ -378,18 +378,21 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     href={image.postUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={cn(className, "cursor-pointer")}
+                    className={cn(className, "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background")}
+                    aria-label={`Abrir foto ${index + 1} de ${pageData.business.name} en Instagram`}
                   >
                     {inner}
                   </a>
                 ) : (
-                  <article
+                  <button
                     key={`${image.url}-${index}`}
-                    className={cn(className, "cursor-pointer")}
+                    type="button"
+                    className={cn(className, "cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background")}
+                    aria-label={`Abrir foto ${index + 1} de ${pageData.business.name}`}
                     data-lightbox-index={index}
                   >
                     {inner}
-                  </article>
+                  </button>
                 );
               })}
             </div>
@@ -580,9 +583,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={instagramHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        aria-label={`Abrir Instagram de ${pageData.business.name}`}
                       >
-                        <Instagram className="size-3.5 sm:size-4" />
+                        <Instagram className="size-3.5 sm:size-4" aria-hidden="true" />
                       </a>
                     )}
                     {facebookHref && (
@@ -590,9 +594,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={facebookHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        aria-label={`Abrir Facebook de ${pageData.business.name}`}
                       >
-                        <Facebook className="size-3.5 sm:size-4" />
+                        <Facebook className="size-3.5 sm:size-4" aria-hidden="true" />
                       </a>
                     )}
                     {tiktokHref && (
@@ -600,9 +605,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={tiktokHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        aria-label={`Abrir TikTok de ${pageData.business.name}`}
                       >
-                        <TikTokIcon className="size-3.5 sm:size-4" />
+                        <TikTokIcon className="size-3.5 sm:size-4" aria-hidden="true" />
                       </a>
                     )}
                     {whatsappHref && (
@@ -610,9 +616,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        aria-label={`Contactar a ${pageData.business.name} por WhatsApp`}
                       >
-                        <WhatsAppIcon className="size-3.5 sm:size-4" />
+                        <WhatsAppIcon className="size-3.5 sm:size-4" aria-hidden="true" />
                       </a>
                     )}
                   </div>

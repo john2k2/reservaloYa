@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const bookingSteps = [
-  { id: 1, label: "Servicio", helper: "Que quieres reservar" },
+  { id: 1, label: "Servicio", helper: "Qué querés reservar" },
   { id: 2, label: "Fecha y datos", helper: "Horario y tus datos" },
   { id: 3, label: "Confirmación", helper: "Reserva lista" },
 ] as const;
@@ -37,7 +37,7 @@ export function BookingStepsHeader({
               Reserva guiada
             </p>
             <h2 className="mt-2 text-lg font-semibold text-foreground sm:text-xl">
-              Completa tu turno en 3 pasos simples
+              Completá tu turno en 3 pasos simples
             </h2>
           </div>
           <p className="text-xs text-muted-foreground">Paso {currentStep} de 3</p>

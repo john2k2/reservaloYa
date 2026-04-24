@@ -82,6 +82,23 @@ const PERIOD_LABELS: Record<string, string> = {
   evening: "Noche",
 };
 
+function getDateAriaLabel(dateStr: string, input: { isAvailable: boolean; isSelected: boolean; isToday: boolean }) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const label = new Intl.DateTimeFormat("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+  const state = [
+    input.isToday ? "hoy" : null,
+    input.isSelected ? "fecha seleccionada" : null,
+    input.isAvailable ? "con horarios disponibles" : "sin horarios disponibles",
+  ].filter(Boolean);
+
+  return `${label}, ${state.join(", ")}`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
@@ -177,7 +194,8 @@ export function BookingDateTimePicker({
       style={{ ["--accent" as string]: accentColor }}
     >
       {/* ---- LEFT: Mini Calendar ---- */}
-      <div className="border-b border-border/60 p-5 sm:p-6 md:border-b-0 md:border-r">
+      <fieldset className="border-b border-border/60 p-5 sm:p-6 md:border-b-0 md:border-r">
+        <legend className="sr-only">Elegí una fecha disponible</legend>
         {/* Month navigation */}
         <div className="flex items-center justify-between">
           <button
@@ -223,6 +241,7 @@ export function BookingDateTimePicker({
             const isSelected = dateStr === selectedDate;
             const isToday = dateStr === todayStr;
             const option = dateOptionMap.get(dateStr);
+            const ariaLabel = getDateAriaLabel(dateStr, { isAvailable, isSelected, isToday });
 
             const cellContent = (
               <span
@@ -262,7 +281,9 @@ export function BookingDateTimePicker({
                   key={dateStr}
                   type="button"
                   onClick={() => onSelectDate(dateStr)}
-                  className="flex items-center justify-center py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="flex items-center justify-center rounded-xl py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  aria-label={ariaLabel}
+                  aria-pressed={isSelected}
                 >
                   {cellContent}
                 </button>
@@ -275,7 +296,9 @@ export function BookingDateTimePicker({
                   key={dateStr}
                   href={option.href}
                   scroll={false}
-                  className="flex items-center justify-center py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="flex items-center justify-center rounded-xl py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  aria-label={ariaLabel}
+                  aria-current={isSelected ? "date" : undefined}
                 >
                   {cellContent}
                 </Link>
@@ -289,7 +312,7 @@ export function BookingDateTimePicker({
             );
           })}
         </div>
-      </div>
+      </fieldset>
 
       {/* ---- RIGHT: Time slots ---- */}
       <div className="flex flex-col p-5 sm:p-6">
@@ -324,7 +347,7 @@ export function BookingDateTimePicker({
           </div>
         ) : hasSlots ? (
           <fieldset className="mt-4 flex-1 space-y-4 overflow-y-auto" style={{ maxHeight: "20rem" }}>
-            <legend className="sr-only">Selecciona la hora del turno</legend>
+            <legend className="sr-only">Elegí la hora del turno</legend>
 
             {/* Single style for checked state */}
             <style>{`
@@ -348,12 +371,13 @@ export function BookingDateTimePicker({
                         type="radio"
                         name="startTime"
                         value={slot}
-                        className="sr-only"
+                        className="peer sr-only"
                         defaultChecked={rescheduleStartTime === slot}
                         required
+                        aria-label={`Horario ${slot} para ${selectedDateLabel}`}
                         onChange={() => onSelectSlot?.(slot)}
                       />
-                      <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-card active:scale-[0.97]">
+                      <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-card peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background active:scale-[0.97]">
                         {slot}
                       </span>
                     </label>
@@ -368,7 +392,7 @@ export function BookingDateTimePicker({
               <Clock3 className="mb-3 size-5 text-muted-foreground/40" />
               <p className="text-sm font-medium text-foreground">Sin horarios</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Prueba seleccionando otro día en el calendario.
+                Probá seleccionando otro día en el calendario.
               </p>
             </div>
           </div>

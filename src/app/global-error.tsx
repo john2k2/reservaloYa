@@ -41,10 +41,10 @@ export default function GlobalError({
               ReservaYa
             </p>
             <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
-              Ocurrio un error inesperado
+              Ocurrió un error inesperado
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-              Ya registramos el incidente en los logs del entorno. Podes reintentar ahora o escribirnos para soporte.
+              Ya registramos el incidente en los logs del entorno. Podés reintentar ahora o escribirnos para soporte.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -66,7 +66,7 @@ export default function GlobalError({
             </div>
 
             <p className="mt-6 text-xs text-muted-foreground">
-              Tambien podes escribir a <a className="underline underline-offset-4" href={`mailto:${siteContact.email}`}>{siteContact.email}</a>
+              También podés escribir a <a className="underline underline-offset-4" href={`mailto:${siteContact.email}`}>{siteContact.email}</a>
             </p>
           </div>
         </main>

@@ -175,7 +175,7 @@ export function BookingFormWithWaitlist({
             /* Datos del cliente */
             <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-5 shadow-sm sm:p-6">
               <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                Completa tus datos
+                Completá tus datos
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Solo pedimos la información justa para confirmar y poder contactarte si hace falta.
@@ -196,7 +196,7 @@ export function BookingFormWithWaitlist({
                     id="fullName"
                     name="fullName"
                     autoComplete="name"
-                    placeholder="Ej: Maria Gonzalez…"
+                    placeholder="Ej: María González…"
                     className="minimalist-input pl-7"
                     defaultValue={defaultFullName}
                     required
@@ -265,7 +265,7 @@ export function BookingFormWithWaitlist({
                     id="notes"
                     name="notes"
                     autoComplete="off"
-                    placeholder="Ej: prefiero puntualidad, tengo una indicacion especial o quiero dejar un detalle rapido…"
+                    placeholder="Ej: prefiero puntualidad, tengo una indicación especial o quiero dejar un detalle rápido…"
                     className="minimalist-input min-h-[110px] resize-none pl-7 pt-0"
                     defaultValue={defaultNotes}
                   />
