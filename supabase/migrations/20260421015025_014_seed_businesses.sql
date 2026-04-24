@@ -1,0 +1,5 @@
+INSERT INTO businesses (id, name, slug, "templateSlug", phone, email, address, timezone, active, created) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'Barberia Libertador', 'demo-barberia', 'demo-barberia', '+54 11 5555 0199', 'turnos@barberialibertador.com.ar', 'Av. del Libertador 214, Palermo', 'America/Argentina/Buenos_Aires', TRUE, '2026-03-01T10:00:00.000Z'),
+  ('aaaaaaaa-1111-1111-1111-111111111111', 'Aura Estetica', 'demo-estetica', 'demo-estetica', '+54 11 5555 0288', 'turnos@auraestetica.com.ar', 'Honduras 4821, Palermo', 'America/Argentina/Buenos_Aires', TRUE, '2026-03-01T10:00:00.000Z'),
+  ('bbbbbbbb-1111-1111-1111-111111111111', 'Nude Nails Studio', 'demo-nails', 'demo-nails', '+54 11 5555 0377', 'turnos@nudenailsstudio.com', 'Gorriti 5172, Palermo', 'America/Argentina/Buenos_Aires', TRUE, '2026-03-01T10:00:00.000Z'),
+  ('cccccccc-1111-1111-1111-111111111111', 'Consultorio Norte', 'demo-consultorio', 'demo-consultorio', '+54 11 5555 0466', 'turnos@consultorionorte.com.ar', 'Av. Cabildo 1847, Belgrano', 'America/Argentina/Buenos_Aires', TRUE, '2026-03-01T10:00:00.000Z');

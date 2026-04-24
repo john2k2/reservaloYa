@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created TIMESTAMPTZ DEFAULT NOW(),
+  updated TIMESTAMPTZ DEFAULT NOW(),
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+  service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+  "customerName" TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT
+);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
