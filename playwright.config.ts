@@ -7,6 +7,8 @@ import path from "path";
  */
 
 const authFile = path.join(__dirname, "e2e/.auth/owner.json");
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
+const shouldStartLocalServer = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(baseURL);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -36,7 +38,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL para tests */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
+    baseURL,
 
     /* Capturar traces en fallos */
     trace: "on-first-retry",
@@ -53,25 +55,29 @@ export default defineConfig({
     },
   },
 
-  /* Configure projects for major browsers */
+  /* Proyectos separados: smoke público estable, admin autenticado y suites manuales */
   projects: [
-    // 1. Setup: hacer login real y guardar sesión
     {
       name: "setup",
       testMatch: /auth\.setup\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
 
-    // 2. Tests sin autenticación (páginas públicas + login page)
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
+      name: "public-smoke",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch: /smoke-test\.spec\.ts/,
+      workers: 1,
     },
 
-    // 3. Tests con admin autenticado (usa sesión guardada, 1 worker para no compartir contexto)
     {
-      name: "authenticated",
+      name: "manual-chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts/,
+    },
+
+    {
+      name: "admin-authenticated",
       use: {
         ...devices["Desktop Chrome"],
         storageState: authFile,
@@ -81,33 +87,28 @@ export default defineConfig({
       workers: 1,
     },
 
-    /* Mobile tests */
     {
-      name: "Mobile Chrome",
+      name: "manual-mobile",
       use: { ...devices["Pixel 5"] },
-      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
-    },
-    {
-      name: "ci-smoke",
-      use: { ...devices["Desktop Firefox"] },
-      testMatch: /smoke-test\.spec\.ts/,
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts/,
     },
 
-    // Firefox completo para todos los tests (fallback cuando Chrome/Chromium falla en Windows)
     {
-      name: "firefox",
+      name: "manual-firefox",
       use: { ...devices["Desktop Firefox"], navigationTimeout: 60000 },
-      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts/,
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts/,
       workers: 1,
     },
   ],
 
   /* Local dev server */
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: shouldStartLocalServer
+    ? {
+        command: "npm run dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+      }
+    : undefined,
 });
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 
 import { getBlueDollarRate } from "@/lib/dollar-rate";
+import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { createSubscriptionPreference, isMercadoPagoConfigured } from "@/server/mercadopago";
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 const logger = createLogger("MP Payment");
 
 export async function GET() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
 
   const user = await getAuthenticatedSupabaseUser();
 

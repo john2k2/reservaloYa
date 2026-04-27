@@ -7,6 +7,7 @@ import {
   getDayOfWeek,
 } from "@/lib/bookings/format";
 import { createPublicClient, createServerClient } from "@/lib/supabase/server";
+import { getPublicAppUrl } from "@/lib/runtime";
 import { buildWeeklySchedule } from "@/lib/bookings/schedule";
 import { slugify } from "@/lib/utils";
 import {
@@ -44,6 +45,7 @@ import {
   sendPostBookingFollowUpWhatsApp,
 } from "@/server/booking-notifications";
 import {
+  buildAbsoluteReviewUrl,
   canGenerateBookingManageLinks,
   createBookingManageToken,
 } from "@/server/public-booking-links";
@@ -926,7 +928,7 @@ async function notifyWaitlistForDate(input: {
   if (!entry?.email) return;
 
   const { sendWaitlistAvailabilityEmail } = await import("@/server/booking-notifications");
-  const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/${input.businessSlug}/reservar`;
+  const bookingUrl = `${getPublicAppUrl()}/${input.businessSlug}/reservar`;
 
   await sendWaitlistAvailabilityEmail({
     customerEmail: entry.email,
@@ -1946,10 +1948,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
           ? createBookingManageToken(business.slug, booking.id)
           : undefined;
 
-        const reviewUrl =
-          manageToken
-            ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/${business.slug}/resena?booking=${booking.id}&token=${manageToken}`
-            : undefined;
+        const reviewUrl = manageToken ? buildAbsoluteReviewUrl(business.slug, booking.id) ?? undefined : undefined;
 
         if (customer?.email) {
           const result = await sendPostBookingFollowUpEmail({

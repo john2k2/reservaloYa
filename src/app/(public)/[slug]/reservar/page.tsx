@@ -11,6 +11,7 @@ import { BookingSupportCard } from "@/components/public/booking/booking-support-
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { getSiteWhatsAppHref } from "@/lib/contact";
+import { getPublicAppUrl } from "@/lib/runtime";
 import { BreadcrumbJsonLd, WebPageJsonLd } from "@/lib/seo/business-json-ld";
 import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
@@ -122,7 +123,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const datePickerOptions = buildBookingDateOptions(selectedDate, activeDays);
 
   // Preparar datos para JSON-LD
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reservaya.app";
+  const siteUrl = getPublicAppUrl();
   const businessUrl = `${siteUrl}/${slug}`;
   const bookingUrl = `${siteUrl}/${slug}/reservar`;
   const pageTitle = selectedService

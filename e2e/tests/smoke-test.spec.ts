@@ -32,7 +32,7 @@ test.describe("Smoke Tests - Paginas principales", () => {
     await expect(page.locator("body")).toBeVisible();
     await expectNoRenderedNotFound(page);
     await expect(page.getByText(/reserva online/i)).toBeVisible();
-    await expect(page.getByRole("heading", { name: /selecciona el servicio que quieres reservar/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "¿Qué servicio querés reservar?" })).toBeVisible();
   });
 
   test("Admin login deberia cargar", async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe("Smoke Tests - Paginas principales", () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator("body")).toBeVisible();
     await expect(page.locator("main, form").first()).toBeVisible();
-    await expect(page.getByText(/iniciar sesion|panel de/i).first()).toBeVisible();
+    await expect(page.getByText(/iniciar sesi[oó]n|ingresar a tu negocio/i).first()).toBeVisible();
   });
 
   test("Admin dashboard sin sesión deberia redirigir a login", async ({ page }) => {

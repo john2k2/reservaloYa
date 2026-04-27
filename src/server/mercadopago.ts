@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import MercadoPago, { Preference, Payment } from "mercadopago";
 
+import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
 import { buildAbsoluteBookingConfirmationUrl } from "@/server/public-booking-links";
 
@@ -79,7 +80,7 @@ async function createPreferenceWithClient(
   input: CreatePaymentPreferenceInput
 ): Promise<PaymentPreferenceResult> {
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getPublicAppUrl();
     const currency = input.currency || "ARS";
     const confirmationUrl = buildAbsoluteBookingConfirmationUrl(
       input.businessSlug,
@@ -188,7 +189,7 @@ export async function createSubscriptionPreference(
   input: CreateSubscriptionPreferenceInput
 ): Promise<PaymentPreferenceResult> {
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getPublicAppUrl();
     const client = getMPClient();
     const preference = new Preference(client);
 

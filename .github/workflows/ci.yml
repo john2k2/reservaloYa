@@ -83,5 +83,7 @@ jobs:
         run: npx playwright install --with-deps firefox
 
       - name: Run smoke E2E
+        env:
+          PLAYWRIGHT_BASE_URL: https://reservaya.ar
         run: npm run test:e2e:smoke
 

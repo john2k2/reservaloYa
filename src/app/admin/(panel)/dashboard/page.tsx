@@ -16,6 +16,7 @@ import { MetricCard } from "@/components/dashboard/metric-card";
 import { BookingLinkBar } from "@/components/ui/copy-link-button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { getPublicAppUrl } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 import {
   getAdminDashboardData,
@@ -41,7 +42,7 @@ export default async function AdminDashboardPage() {
     redirect("/admin/onboarding");
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
 
   const hasServices = services.length > 0;
   const hasActiveDays = availability.rules.some((r) => r.active);

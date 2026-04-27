@@ -21,11 +21,20 @@ e2e/
 ## Ejecutar tests
 
 ```bash
-# Todos los E2E definidos en playwright.config.ts
+# Smoke público estable (default)
 npm run test:e2e
 
 # Smoke público/manual
 npm run test:e2e:smoke
+
+# Admin autenticado (requiere sesión/credenciales de prueba)
+npm run test:e2e:admin
+
+# Suites manuales no bloqueantes
+npm run test:e2e:manual
+
+# Todo Playwright, incluyendo manuales/mobile/firefox
+npm run test:e2e:all
 
 # Modo UI
 npm run test:e2e:ui
@@ -50,6 +59,8 @@ Se puede cambiar con:
 ```bash
 PLAYWRIGHT_BASE_URL=https://reservaya.ar npm run test:e2e:smoke
 ```
+
+Cuando `PLAYWRIGHT_BASE_URL` apunta a un host externo, Playwright no levanta el dev server local.
 
 En Windows PowerShell:
 
@@ -76,7 +87,7 @@ npm run test:e2e:report
 
 El smoke E2E no corre automáticamente en cada push para evitar ruido y consumo innecesario de GitHub Actions en plan gratuito.
 
-El job `e2e-smoke` queda disponible manualmente desde GitHub Actions mediante `workflow_dispatch`.
+El job `e2e-smoke` queda disponible manualmente desde GitHub Actions mediante `workflow_dispatch` y ejecuta el proyecto `public-smoke`.
 
 ## Buenas prácticas
 

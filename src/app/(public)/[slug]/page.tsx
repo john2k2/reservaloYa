@@ -18,6 +18,7 @@ import {
   LocalBusinessJsonLd,
   WebPageJsonLd,
 } from "@/lib/seo/business-json-ld";
+import { getPublicAppUrl } from "@/lib/runtime";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
@@ -244,7 +245,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
       : (pageData.profile.gallery ?? []).map((item) => ({ ...item, postUrl: null }));
 
   // Preparar datos para JSON-LD
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://reservaya.app";
+  const siteUrl = getPublicAppUrl();
   const businessUrl = `${siteUrl}/${slug}`;
   
   // hoursLabel tiene formato "09:00 a 18:00" y puede tener múltiples

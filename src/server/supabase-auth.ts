@@ -6,6 +6,7 @@ import {
   persistSupabaseAuth,
   clearSupabaseAuth,
 } from "@/lib/supabase/server";
+import { getPublicAppUrl } from "@/lib/runtime";
 
 const SESSION_COOKIE = "sb_session";
 const TRIAL_DAYS = 15;
@@ -227,7 +228,7 @@ export async function updateSupabaseTeamUserStatus(userId: string, businessId: s
 export async function resetSupabaseUserPassword(email: string) {
   const client = createPublicClient();
   const { error } = await client.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://reservaya.ar"}/admin/reset-password`,
+    redirectTo: `${getPublicAppUrl()}/admin/reset-password`,
   });
   if (error) {
     throw error;

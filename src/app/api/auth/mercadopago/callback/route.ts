@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
 import { parseMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
 import { getAdminShellData } from "@/server/queries/admin";
@@ -13,10 +14,12 @@ const logger = createLogger("MP OAuth");
 const MP_OAUTH_NONCE_COOKIE = "reservaya-mp-oauth-nonce";
 
 function withClearedOAuthNonceCookie(response: NextResponse) {
+  const appUrl = getPublicAppUrl();
+
   response.cookies.set(MP_OAUTH_NONCE_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").startsWith("https://"),
+    secure: appUrl.startsWith("https://"),
     path: "/",
     maxAge: 0,
   });
@@ -29,7 +32,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const state = searchParams.get("state");
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
   const errorRedirect = `${appUrl}/admin/onboarding?tab=integraciones&mp=error`;
   const cookieStore = await cookies();
   const oauthNonce = cookieStore.get(MP_OAUTH_NONCE_COOKIE)?.value ?? null;

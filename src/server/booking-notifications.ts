@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
+import { getPublicAppUrl } from "@/lib/runtime";
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 import { createLogger } from "@/server/logger";
 import {
@@ -611,13 +612,7 @@ export async function sendPostBookingFollowUpWhatsApp(
 // ─── Helper functions ────────────────────────────────────────────────────────
 
 function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
+  return getPublicAppUrl();
 }
 
 function formatDate(isoDate: string, timezone: string): string {
