@@ -137,23 +137,6 @@ function getStartingPriceLabel(
   return `Desde ${cheapestService.priceLabel}`;
 }
 
-function getAggregateRating(
-  reviews: Array<{
-    rating: number;
-  }>
-) {
-  if (reviews.length === 0) {
-    return undefined;
-  }
-
-  const ratingTotal = reviews.reduce((total, review) => total + review.rating, 0);
-
-  return {
-    ratingValue: Math.round((ratingTotal / reviews.length) * 10) / 10,
-    reviewCount: reviews.length,
-  };
-}
-
 function getGalleryAlt(input: {
   alt?: string | null;
   businessName: string;
@@ -299,7 +282,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   // Preparar datos para JSON-LD
   const siteUrl = getPublicAppUrl();
   const businessUrl = `${siteUrl}/${slug}`;
-  const aggregateRating = getAggregateRating(pageData.reviews);
 
   // hoursLabel tiene formato "09:00 a 18:00" y puede tener múltiples
   // franjas separadas por " · " (ej: "09:00 a 12:00 · 14:00 a 18:00")
@@ -328,7 +310,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         image={pageData.profile?.heroImageUrl || pageData.profile?.logoUrl}
         openingHours={openingHoursForJsonLd}
         services={services.map((s) => s.name)}
-        rating={aggregateRating}
       />
       <WebPageJsonLd
         name={pageData.business.name}

@@ -1,7 +1,6 @@
 import {
   LandingHeader,
   HeroSection,
-  SocialProof,
   DemoSelector,
   HowItWorksSection,
   BeforeAfterSection,
@@ -93,7 +92,6 @@ export default async function Home() {
       <FAQPageJsonLd faqs={landingSeoFaqs} />
 
       <HeroSection />
-      <SocialProof />
       <BeforeAfterSection />
       <TargetAudienceSection />
       <VerticalSeoLinksSection />
