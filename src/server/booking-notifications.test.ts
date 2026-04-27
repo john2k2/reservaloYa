@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/pocketbase/config", () => ({
-  isPocketBaseConfigured: vi.fn().mockReturnValue(false),
-}));
-
 const emailSendMock = vi.fn();
 
 vi.mock("resend", () => ({
