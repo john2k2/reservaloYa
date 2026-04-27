@@ -7,6 +7,11 @@ on:
       - master
       - "codex/**"
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality-gate:
@@ -54,9 +59,11 @@ jobs:
           name: coverage-report
           path: coverage
           if-no-files-found: ignore
+          retention-days: 3
 
 
   e2e-smoke:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
