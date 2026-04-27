@@ -211,6 +211,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               }
               initialSelectedDate={selectedDate}
               initialDateOptions={datePickerOptions}
+              todayDate={fallbackDate}
               changeHref={buildBookingHref({
                 slug,
                 bookingDate: selectedDate,

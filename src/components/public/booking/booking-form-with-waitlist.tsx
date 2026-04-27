@@ -35,6 +35,7 @@ interface BookingFormWithWaitlistProps {
   paymentMode: "mercadopago" | "cash" | "none";
   initialSelectedDate: string;
   initialDateOptions: string[];
+  todayDate: string;
   changeHref: string;
   error?: string;
   rescheduleBookingId?: string;
@@ -58,6 +59,7 @@ export function BookingFormWithWaitlist({
   paymentMode,
   initialSelectedDate,
   initialDateOptions,
+  todayDate,
   changeHref,
   error,
   rescheduleBookingId,
@@ -166,6 +168,7 @@ export function BookingFormWithWaitlist({
             accentColor={accentColor}
             initialSelectedDate={initialSelectedDate}
             initialDateOptions={initialDateOptions}
+            todayDate={todayDate}
             rescheduleStartTime={rescheduleStartTime}
             onNoSlots={setNoSlotsDate}
             onSelectSlot={setSelectedSlot}

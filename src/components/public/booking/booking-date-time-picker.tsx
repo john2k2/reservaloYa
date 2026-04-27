@@ -22,6 +22,7 @@ interface DateOption {
 interface BookingDateTimePickerProps {
   accentColor: string;
   dateOptions: DateOption[];
+  todayDate: string;
   /** Currently selected ISO date (yyyy-mm-dd) */
   selectedDate: string;
   selectedDateLabel: string;
@@ -106,6 +107,7 @@ function getDateAriaLabel(dateStr: string, input: { isAvailable: boolean; isSele
 export function BookingDateTimePicker({
   accentColor,
   dateOptions,
+  todayDate,
   selectedDate,
   selectedDateLabel,
   slots,
@@ -136,11 +138,6 @@ export function BookingDateTimePicker({
 
   const grid = useMemo(() => buildCalendarGrid(viewYear, viewMonth), [viewYear, viewMonth]);
   const monthLabel = getMonthLabel(viewYear, viewMonth);
-
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  }, []);
 
   const goToPrevMonth = () => {
     setViewMonth((m) => {
@@ -239,7 +236,7 @@ export function BookingDateTimePicker({
             const dateStr = cell.dateStr!;
             const isAvailable = availableDates.has(dateStr);
             const isSelected = dateStr === selectedDate;
-            const isToday = dateStr === todayStr;
+            const isToday = dateStr === todayDate;
             const option = dateOptionMap.get(dateStr);
             const ariaLabel = getDateAriaLabel(dateStr, { isAvailable, isSelected, isToday });
 

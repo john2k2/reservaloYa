@@ -11,6 +11,7 @@ type BookingScheduleSectionProps = {
   accentColor: string;
   initialSelectedDate: string;
   initialDateOptions: string[];
+  todayDate: string;
   rescheduleStartTime?: string;
   onNoSlots?: (date: string | null) => void;
   onSelectSlot?: (slot: string) => void;
@@ -37,6 +38,7 @@ export function BookingScheduleSection({
   accentColor,
   initialSelectedDate,
   initialDateOptions,
+  todayDate,
   rescheduleStartTime,
   onNoSlots,
   onSelectSlot,
@@ -95,9 +97,9 @@ export function BookingScheduleSection({
       initialDateOptions.map((value) => ({
         value,
         isSelected: value === selectedDate,
-        isToday: value === new Date().toISOString().slice(0, 10),
+        isToday: value === todayDate,
       })),
-    [initialDateOptions, selectedDate]
+    [initialDateOptions, selectedDate, todayDate]
   );
 
   return (
@@ -116,6 +118,7 @@ export function BookingScheduleSection({
       <BookingDateTimePicker
         accentColor={accentColor}
         dateOptions={dateOptions}
+        todayDate={todayDate}
         selectedDate={selectedDate}
         selectedDateLabel={formatDateLabel(selectedDate)}
         slots={slots}
