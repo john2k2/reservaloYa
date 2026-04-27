@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState, startTransition } from "react";
 import { CheckCircle2, Menu, User } from "lucide-react";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Sheet, SheetContent, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
-import { productName } from "@/constants/site";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
+  { href: "#beneficios", label: "Beneficios" },
   { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#precios", label: "Precios" },
   { href: "#faq", label: "Preguntas" },
@@ -109,11 +110,8 @@ export function LandingHeader() {
   return (
     <header className="fixed top-0 z-50 w-full transition-all duration-300 bg-background border-b border-border/40">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-sans text-lg font-bold tracking-tight text-foreground">
-            {productName}
-          </span>
+        <Link href="/" className="inline-flex items-center" aria-label="Ir al inicio de ReservaYa">
+          <ReservaYaLogo size="md" />
         </Link>
 
         {/* Desktop Navigation */}

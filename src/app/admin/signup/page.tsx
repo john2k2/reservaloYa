@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { signupAction } from "@/app/login/actions";
-import { demoBusinessOptions, productName } from "@/constants/site";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
+import { demoBusinessOptions } from "@/constants/site";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { LoadingButton } from "@/components/ui/loading-button";
 
@@ -25,8 +26,8 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
     >
       <div className="flex w-full flex-col justify-center px-8 py-10 sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
         <div className="mx-auto w-full max-w-md">
-          <Link href="/" className="inline-flex h-11 items-center text-2xl font-bold tracking-tight">
-            {productName}
+          <Link href="/" className="inline-flex h-11 items-center" aria-label="Ir al inicio de ReservaYa">
+            <ReservaYaLogo size="md" />
           </Link>
 
           <div className="mt-12">

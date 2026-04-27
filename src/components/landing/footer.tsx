@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { Phone, Mail, Clock } from "lucide-react";
-import { productName, demoBusinessSlug } from "@/constants/site";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
+import { seoLandingPages } from "@/constants/seo-landing-pages";
+import { productName, productTagline, demoBusinessSlug } from "@/constants/site";
 import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
 
 export function Footer() {
   return (
     <footer id="contacto" className="border-t border-border/40 bg-gradient-to-b from-secondary/20 to-background">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 md:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            <span className="font-sans text-base sm:text-lg font-bold tracking-tight text-foreground">
-              {productName}
-            </span>
+            <ReservaYaLogo size="sm" />
             <p className="mt-2 sm:mt-3 text-sm text-muted-foreground">
-              Página de reservas + Agenda + Recordatorios para barberías y estéticas.
+              {productTagline}
             </p>
           </div>
 
@@ -45,8 +45,24 @@ export function Footer() {
             </div>
           </div>
 
+          {/* SEO vertical links */}
+          <div>
+            <p className="font-semibold text-foreground text-sm sm:text-base">Soluciones</p>
+            <div className="mt-3 sm:mt-4 flex flex-col gap-2">
+              {seoLandingPages.map((page) => (
+                <Link
+                  key={page.slug}
+                  href={`/${page.slug}`}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-1 inline-flex min-h-8 items-center"
+                >
+                  {page.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+
           {/* Contact */}
-          <div className="sm:col-span-2 md:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-1">
             <p className="font-semibold text-foreground text-sm sm:text-base">Contacto</p>
             <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
               <a

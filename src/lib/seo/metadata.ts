@@ -9,19 +9,26 @@ const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 export const siteConfig = {
   name: "ReservaYa",
   description:
-    "ReservaYa ordena turnos para barberias, peluquerias y centros de estetica con una experiencia simple, clara y lista para cobrar.",
+    "Sistema de turnos online para barberías, peluquerías y centros de estética. Automatizá reservas, agenda, clientes y recordatorios con ReservaYa.",
   url: siteUrl,
-  ogImage: `${siteUrl}/icon-512x512.png`,
+  ogImage: `${siteUrl}/og-image.png`,
   links: {
     whatsapp: getSiteWhatsAppHref(),
   },
   keywords: [
     "turnos online",
-    "reservas",
-    "barberia",
-    "peluqueria",
-    "estetica",
+    "sistema de turnos online",
+    "sistema de reservas online",
     "agenda online",
+    "software de reservas",
+    "software para barberías",
+    "software para peluquerías",
+    "software para centros de estética",
+    "reservas online Argentina",
+    "agenda para negocios de servicios",
+    "barbería",
+    "peluquería",
+    "estética",
     "sistema de turnos",
     "reserva de citas",
     "software para barberias",
@@ -39,7 +46,7 @@ export const siteConfig = {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | Turnos online para negocios chicos`,
+    default: `${siteConfig.name} | Sistema de turnos online para negocios de servicios`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -56,8 +63,8 @@ export const defaultMetadata: Metadata = {
     images: [
       {
         url: siteConfig.ogImage,
-        width: 512,
-        height: 512,
+        width: 1200,
+        height: 630,
         alt: siteConfig.name,
       },
     ],
@@ -80,19 +87,29 @@ export const defaultMetadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192x192.png", type: "image/png", sizes: "192x192" },
+      { url: "/reservaya-isotype.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/icon-192x192.png", sizes: "192x192", type: "image/png" }],
   },
   manifest: "/site.webmanifest",
   verification: googleVerification ? { google: googleVerification } : undefined,
   alternates: {
     canonical: siteConfig.url,
+    languages: {
+      "x-default": siteConfig.url,
+      "es-AR": siteConfig.url,
+    },
   },
 };
 
 export const defaultViewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
-    { media: "(prefers-color-scheme: dark)", color: "#111111" },
+    { media: "(prefers-color-scheme: light)", color: "#F8FAFC" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F172A" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -104,19 +121,26 @@ export function createPageMetadata({
   description,
   path,
   ogImage,
+  keywords,
 }: {
   title: string;
   description: string;
   path: string;
   ogImage?: string;
+  keywords?: string[];
 }): Metadata {
   const url = `${siteConfig.url}${path}`;
 
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: url,
+      languages: {
+        "x-default": url,
+        "es-AR": url,
+      },
     },
     openGraph: {
       type: "website",
@@ -128,8 +152,8 @@ export function createPageMetadata({
       images: [
         {
           url: ogImage || siteConfig.ogImage,
-          width: 512,
-          height: 512,
+          width: 1200,
+          height: 630,
           alt: title,
         },
       ],

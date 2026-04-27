@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { productName } from "@/constants/site";
+import { createPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: `Términos de uso | ${productName}`,
+export const metadata: Metadata = createPageMetadata({
+  title: "Términos de uso",
   description: `Condiciones de uso de la plataforma ${productName}.`,
-};
+  path: "/terminos",
+});
 
 export default function TermsPage() {
   return (

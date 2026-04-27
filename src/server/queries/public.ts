@@ -3,6 +3,7 @@ import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 import {
   getSupabasePublicBookingFlowData,
   getSupabasePublicBusinessPageData,
+  getSupabasePublicBusinessSitemapEntries,
   getSupabaseBookingConfirmationData,
   getSupabaseManageBookingData,
 } from "@/server/supabase-store";
@@ -18,6 +19,10 @@ const getCachedSupabasePublicBusinessPageData = unstable_cache(
 
 export async function getPublicBusinessPageData(slug: string) {
   return getCachedSupabasePublicBusinessPageData(slug);
+}
+
+export async function getPublicBusinessSitemapEntries() {
+  return getSupabasePublicBusinessSitemapEntries();
 }
 
 export async function getPublicBookingFlowData({

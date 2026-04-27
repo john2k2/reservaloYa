@@ -4,12 +4,18 @@
   "description": "Sistema de turnos online para barberias, peluquerias y centros de estetica",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fafafa",
-  "theme_color": "#fafafa",
+  "background_color": "#F8FAFC",
+  "theme_color": "#14B8A6",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "es",
   "icons": [
+    {
+      "src": "/reservaya-isotype.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
