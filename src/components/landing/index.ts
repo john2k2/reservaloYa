@@ -1,6 +1,5 @@
 export { LandingHeader, HeroSection } from "./header";
 export { DemoSelector } from "./demo-selector";
-export { SocialProof } from "./social-proof";
 export { HowItWorksSection } from "./how-it-works";
 export { BeforeAfterSection } from "./before-after";
 export { TimeCalculatorSection } from "./time-calculator";
