@@ -2,31 +2,9 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { landingSeoFaqs } from "@/constants/site";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
-
-const faqs = [
-  {
-    question: "¿Necesito tarjeta de crédito para ver el producto en acción?",
-    answer: "No. Podés revisar el flujo público completo sin dejar tarjeta y hablar con nosotros antes de activar tu cuenta.",
-  },
-  {
-    question: "¿Cuánto tiempo tarda estar listo mi sistema?",
-    answer: "La configuración inicial de tu negocio se completa en 48hs hábiles. El costo de ese setup es único y no se repite.",
-  },
-  {
-    question: "¿Puedo modificar horarios y servicios después?",
-    answer: "Sí, tenés un panel administrativo completo para gestionar todo en tiempo real.",
-  },
-  {
-    question: "¿Qué pasa si ya tengo clientes habituales?",
-    answer: "Perfecto. Podés seguir atendiendo como siempre mientras nuevos clientes usan la web. Sin obligar a nadie a cambiar.",
-  },
-  {
-    question: "¿Hay permanencia o puedo cancelar cuando quiera?",
-    answer: "No hay permanencia. El setup es único y la mensualidad se paga mes a mes. Cancelás cuando quieras sin penalización.",
-  },
-];
 
 export function FAQSection() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -45,7 +23,7 @@ export function FAQSection() {
       </AnimatedSection>
 
       <div className="mt-8 sm:mt-12 space-y-3">
-        {faqs.map((faq, index) => (
+        {landingSeoFaqs.map((faq, index) => (
           <div
             key={index}
             className="rounded-xl border border-border/60 bg-card overflow-hidden"

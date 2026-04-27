@@ -15,6 +15,33 @@ import {
 
 export const productName = "ReservaYa";
 export const productTagline = "Reservas automatizadas. Más tiempo para vos.";
+export const landingSeoFaqs = [
+  {
+    question: "¿Qué es ReservaYa?",
+    answer:
+      "ReservaYa es un sistema de turnos online para negocios de servicios que necesitan organizar reservas, disponibilidad, clientes y recordatorios desde una agenda web simple.",
+  },
+  {
+    question: "¿Para qué negocios sirve ReservaYa?",
+    answer:
+      "ReservaYa está pensado para barberías, peluquerías, centros de estética, nails studios, spas y profesionales que trabajan con turnos en Argentina y Latinoamérica.",
+  },
+  {
+    question: "¿ReservaYa reemplaza WhatsApp?",
+    answer:
+      "No necesariamente. ReservaYa reduce el ida y vuelta por WhatsApp porque los clientes pueden ver servicios, elegir horarios disponibles y reservar online sin esperar una respuesta manual.",
+  },
+  {
+    question: "¿Los clientes tienen que instalar una app para reservar?",
+    answer:
+      "No. Cada negocio tiene una página de reservas online que funciona desde el navegador del celular, sin descargas ni registros complejos para el cliente.",
+  },
+  {
+    question: "¿ReservaYa ayuda a reducir ausencias?",
+    answer:
+      "Sí. La plataforma está preparada para confirmaciones y recordatorios automáticos, lo que ayuda a reducir olvidos, ausencias y horarios vacíos.",
+  },
+];
 export const demoBusinessSlug = "demo-barberia";
 export const demoBusinessOptions = [
   {

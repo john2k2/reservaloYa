@@ -12,6 +12,7 @@ import { AnimatedSection } from "./animated-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
+  { href: "#beneficios", label: "Beneficios" },
   { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#precios", label: "Precios" },
   { href: "#faq", label: "Preguntas" },

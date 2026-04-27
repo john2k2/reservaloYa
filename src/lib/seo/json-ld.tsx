@@ -29,11 +29,19 @@ export function OrganizationJsonLd(): ReactElement {
   );
 }
 
-export function SoftwareApplicationJsonLd(): ReactElement {
+export function SoftwareApplicationJsonLd({
+  name = siteConfig.name,
+  description = siteConfig.description,
+  url = siteConfig.url,
+}: {
+  name?: string;
+  description?: string;
+  url?: string;
+} = {}): ReactElement {
   const schema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: siteConfig.name,
+    name,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     offers: {
@@ -41,8 +49,8 @@ export function SoftwareApplicationJsonLd(): ReactElement {
       price: String(SUBSCRIPTION_USD_PRICE),
       priceCurrency: "USD",
     },
-    description: siteConfig.description,
-    url: siteConfig.url,
+    description,
+    url,
   };
 
   return (

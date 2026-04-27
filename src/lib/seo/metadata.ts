@@ -9,7 +9,7 @@ const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 export const siteConfig = {
   name: "ReservaYa",
   description:
-    "ReservaYa ordena turnos para barberias, peluquerias y centros de estetica con una experiencia simple, clara y lista para cobrar.",
+    "Sistema de turnos online para barberías, peluquerías y centros de estética. Automatizá reservas, agenda, clientes y recordatorios con ReservaYa.",
   url: siteUrl,
   ogImage: `${siteUrl}/icon-512x512.png`,
   links: {
@@ -17,11 +17,18 @@ export const siteConfig = {
   },
   keywords: [
     "turnos online",
-    "reservas",
-    "barberia",
-    "peluqueria",
-    "estetica",
+    "sistema de turnos online",
+    "sistema de reservas online",
     "agenda online",
+    "software de reservas",
+    "software para barberías",
+    "software para peluquerías",
+    "software para centros de estética",
+    "reservas online Argentina",
+    "agenda para negocios de servicios",
+    "barbería",
+    "peluquería",
+    "estética",
     "sistema de turnos",
     "reserva de citas",
     "software para barberias",
@@ -39,7 +46,7 @@ export const siteConfig = {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | Turnos online para negocios chicos`,
+    default: `${siteConfig.name} | Sistema de turnos online para negocios de servicios`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -110,17 +117,20 @@ export function createPageMetadata({
   description,
   path,
   ogImage,
+  keywords,
 }: {
   title: string;
   description: string;
   path: string;
   ogImage?: string;
+  keywords?: string[];
 }): Metadata {
   const url = `${siteConfig.url}${path}`;
 
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: url,
     },
