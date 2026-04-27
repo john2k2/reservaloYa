@@ -237,6 +237,27 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
   };
 }
 
+export async function getSupabasePublicBusinessSitemapEntries() {
+  const client = createPublicClient();
+
+  const { data, error } = await client
+    .from("businesses")
+    .select("slug, updated")
+    .eq("active", true)
+    .order("updated", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as Array<Pick<BusinessRecord, "slug" | "updated">>)
+    .map((business) => ({
+      slug: slugify(business.slug),
+      updated: business.updated,
+    }))
+    .filter((business) => business.slug.length > 0);
+}
+
 export async function getSupabaseBusinessPaymentSettingsBySlug(slug: string) {
   const business = await getBusinessBySlug(slug);
   return buildBusinessPaymentSettings(business);

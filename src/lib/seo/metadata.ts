@@ -11,7 +11,7 @@ export const siteConfig = {
   description:
     "Sistema de turnos online para barberías, peluquerías y centros de estética. Automatizá reservas, agenda, clientes y recordatorios con ReservaYa.",
   url: siteUrl,
-  ogImage: `${siteUrl}/icon-512x512.png`,
+  ogImage: `${siteUrl}/og-image.png`,
   links: {
     whatsapp: getSiteWhatsAppHref(),
   },
@@ -63,8 +63,8 @@ export const defaultMetadata: Metadata = {
     images: [
       {
         url: siteConfig.ogImage,
-        width: 512,
-        height: 512,
+        width: 1200,
+        height: 630,
         alt: siteConfig.name,
       },
     ],
@@ -99,6 +99,10 @@ export const defaultMetadata: Metadata = {
   verification: googleVerification ? { google: googleVerification } : undefined,
   alternates: {
     canonical: siteConfig.url,
+    languages: {
+      "x-default": siteConfig.url,
+      "es-AR": siteConfig.url,
+    },
   },
 };
 
@@ -133,6 +137,10 @@ export function createPageMetadata({
     keywords,
     alternates: {
       canonical: url,
+      languages: {
+        "x-default": url,
+        "es-AR": url,
+      },
     },
     openGraph: {
       type: "website",
@@ -144,8 +152,8 @@ export function createPageMetadata({
       images: [
         {
           url: ogImage || siteConfig.ogImage,
-          width: 512,
-          height: 512,
+          width: 1200,
+          height: 630,
           alt: title,
         },
       ],

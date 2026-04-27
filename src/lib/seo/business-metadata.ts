@@ -30,13 +30,17 @@ export function generateBusinessMetadata({
   const metaDescription =
     description ||
     `Reserva tu turno en ${businessName}. Agenda online disponible 24/7. Confirmación inmediata.`;
-  const ogImage = image || `${siteUrl}/icon-512x512.png`;
+  const ogImage = image || `${siteUrl}/og-image.png`;
 
   return {
     title,
     description: metaDescription,
     alternates: {
       canonical: url,
+      languages: {
+        "x-default": url,
+        "es-AR": url,
+      },
     },
     openGraph: {
       type: "website",
@@ -102,6 +106,10 @@ export function generateBookingMetadata({
     description,
     alternates: {
       canonical: url,
+      languages: {
+        "x-default": url,
+        "es-AR": url,
+      },
     },
     openGraph: {
       type: "website",
