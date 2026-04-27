@@ -9,6 +9,7 @@ import { useTheme } from "next-themes";
 import { adminNavigation, demoBusinessSlug, productName } from "@/constants/site";
 import { canAccessAdminRoute, getAdminRoleLabel } from "@/lib/admin-permissions";
 import { cn } from "@/lib/utils";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { resendVerificationAction } from "@/app/login/actions";
 
@@ -81,8 +82,8 @@ export function AdminShell({
       {/* Sidebar Desktop */}
       <aside className="hidden w-56 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
         <div className="px-4 py-6">
-          <Link href="/" className="inline-flex items-center text-lg font-bold tracking-tight">
-            {productName}
+          <Link href="/" className="inline-flex items-center" aria-label={`Ir al inicio de ${productName}`}>
+            <ReservaYaLogo size="sm" />
           </Link>
           <div className="mt-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { productName } from "@/constants/site";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { ResetPasswordForm } from "./reset-password-form";
 
@@ -18,8 +18,8 @@ export default async function ResetPasswordPage() {
     >
       <div className="flex w-full flex-col justify-start pt-10 px-8 py-10 sm:justify-center sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
         <div className="mx-auto w-full max-w-md">
-          <Link href="/" className="inline-flex h-11 items-center text-2xl font-bold tracking-tight">
-            {productName}
+          <Link href="/" className="inline-flex h-11 items-center" aria-label="Ir al inicio de ReservaYa">
+            <ReservaYaLogo size="md" />
           </Link>
 
           <div className="mt-12 space-y-2">

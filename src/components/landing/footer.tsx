@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Phone, Mail, Clock } from "lucide-react";
-import { productName, demoBusinessSlug } from "@/constants/site";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
+import { productName, productTagline, demoBusinessSlug } from "@/constants/site";
 import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
 
 export function Footer() {
@@ -12,11 +13,9 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* Brand */}
           <div>
-            <span className="font-sans text-base sm:text-lg font-bold tracking-tight text-foreground">
-              {productName}
-            </span>
+            <ReservaYaLogo size="sm" />
             <p className="mt-2 sm:mt-3 text-sm text-muted-foreground">
-              Página de reservas + Agenda + Recordatorios para barberías y estéticas.
+              {productTagline}
             </p>
           </div>
 

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Facebook, Instagram } from "lucide-react";
 
 import { TikTokIcon, WhatsAppIcon } from "@/components/icons";
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { BusinessHero } from "@/components/public/business-hero";
 import { FaqContactSection } from "@/components/public/faq-contact-section";
@@ -632,8 +633,9 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               <p className="text-xs text-muted-foreground text-center sm:text-left">
                 © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
-              <p className="text-xs font-medium text-muted-foreground">
-                Desarrollado con <span className="font-bold text-foreground">{productName}</span>
+              <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                Desarrollado con <ReservaYaLogo variant="isotype" size="sm" className="size-4" />
+                <span className="font-bold text-foreground">{productName}</span>
               </p>
             </div>
           </div>

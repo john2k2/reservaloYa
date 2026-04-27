@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { BarChart2, Building2, LogOut, Menu, Moon, Sun, Users, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { productName } from "@/constants/site";
 import { cn } from "@/lib/utils";
 
@@ -61,8 +62,8 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
       {/* Sidebar Desktop */}
       <aside className="hidden w-56 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
         <div className="px-4 py-6">
-          <Link href="/" className="inline-flex items-center text-lg font-bold tracking-tight">
-            {productName}
+          <Link href="/" className="inline-flex items-center" aria-label={`Ir al inicio de ${productName}`}>
+            <ReservaYaLogo size="sm" />
           </Link>
           <div className="mt-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

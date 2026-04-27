@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 export const productName = "ReservaYa";
+export const productTagline = "Reservas automatizadas. Más tiempo para vos.";
 export const demoBusinessSlug = "demo-barberia";
 export const demoBusinessOptions = [
   {
