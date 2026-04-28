@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { buildImpersonationRedirectTo } from "@/server/platform-impersonation";
 
 async function fetchBlueDollarRate(): Promise<number> {
   try {
@@ -357,6 +358,9 @@ export async function generateImpersonationLink(businessId: string): Promise<str
   const { data, error } = await client.auth.admin.generateLink({
     type: "magiclink",
     email: authUser.email,
+    options: {
+      redirectTo: buildImpersonationRedirectTo(),
+    },
   });
 
   if (error || !data?.properties?.action_link) {

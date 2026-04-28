@@ -15,8 +15,6 @@ export function ImpersonateButton({
 
   function handleClick() {
     if (ownerEmail === "—") return;
-    const confirmed = window.confirm(`¿Acceder al panel como ${ownerEmail}?`);
-    if (!confirmed) return;
 
     startTransition(async () => {
       try {
