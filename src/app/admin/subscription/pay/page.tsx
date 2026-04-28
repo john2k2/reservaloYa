@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { getAdminShellData } from "@/server/queries/admin";
+import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
-
-const USD_PRICE = 17;
 
 export default async function SubscriptionPayPage() {
   const shellData = await getAdminShellData();
@@ -17,7 +16,7 @@ export default async function SubscriptionPayPage() {
   }
 
   const blueRate = await getBlueDollarRate();
-  const arsPrice = blueRate ? USD_PRICE * blueRate : USD_PRICE * 1435;
+  const arsPrice = getSubscriptionArsPrice(blueRate);
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   async function handlePayAction() {

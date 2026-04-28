@@ -4,15 +4,25 @@ import { decryptMPToken, encryptMPToken } from "@/server/mp-token-crypto";
 // ─── Subscription pricing ────────────────────────────────────────────────────
 
 /** Precio mensual de suscripcion en USD */
-export const SUBSCRIPTION_USD_PRICE = 17;
+export const SUBSCRIPTION_USD_PRICE = 22;
 
-/** Tasa ARS/USD de fallback si la API de dolar blue no responde */
-export const SUBSCRIPTION_FALLBACK_ARS_RATE = 1435;
-
-/** Calcula el precio de suscripcion en ARS dado un rate de dolar blue (o usa fallback) */
+/**
+ * Calcula el precio de suscripcion en ARS dado un rate de dolar blue.
+ *
+ * El rate viene de `getBlueDollarRate()` que:
+ * - Consulta APIs en tiempo real (cache 1hs)
+ * - Si fallan, lee el último valor persistido en Supabase
+ * - Solo devuelve null si nunca se obtuvo un rate (primer deploy con APIs caídas)
+ *
+ * Si blueRate es null, estamos en una situación excepcional y devolvemos 0
+ * para que el llamador decida qué hacer (mostrar error, no permitir pago, etc.)
+ */
 export function getSubscriptionArsPrice(blueRate: number | null): number {
-  const rate = blueRate ?? SUBSCRIPTION_FALLBACK_ARS_RATE;
-  return SUBSCRIPTION_USD_PRICE * rate;
+  if (!blueRate) {
+    console.error("[Payments] No hay tipo de cambio disponible. No se puede calcular el precio.");
+    return 0;
+  }
+  return SUBSCRIPTION_USD_PRICE * blueRate;
 }
 
 export type BusinessPaymentSettings = {

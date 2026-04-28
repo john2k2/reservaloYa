@@ -2,6 +2,7 @@ import { BarChart2, Building2, CalendarCheck, TrendingUp, Users, CreditCard, Clo
 import Link from "next/link";
 
 import { getPlatformDashboardData } from "@/server/queries/platform";
+import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,7 @@ export default async function PlatformDashboardPage() {
     {
       label: "MRR estimado",
       value: data.mrr > 0 ? `$${data.mrr.toLocaleString("es-AR")}` : "—",
-      sub: data.mrr > 0 ? `${data.subscriptionActive} × U$D 17 · dólar blue` : "Sin precio configurado",
+      sub: data.mrr > 0 ? `${data.subscriptionActive} × U$D ${SUBSCRIPTION_USD_PRICE} · dólar blue` : "Sin precio configurado",
       icon: DollarSign,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-500/10",

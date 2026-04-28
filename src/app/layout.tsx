@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
+import { Inter, Manrope, JetBrains_Mono, Newsreader } from "next/font/google";
 
 import "./globals.css";
 import { defaultMetadata, defaultViewport } from "@/lib/seo/metadata";
@@ -19,6 +19,13 @@ const manrope = Manrope({
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+});
+
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata = defaultMetadata;
@@ -50,7 +57,7 @@ export default function RootLayout({
         <WebSiteJsonLd />
       </head>
       <body
-        className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} antialiased font-sans bg-background text-foreground`}
+        className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} ${newsreader.variable} antialiased font-sans bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

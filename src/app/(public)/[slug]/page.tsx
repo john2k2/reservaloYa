@@ -378,7 +378,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
         {/* Gallery */}
         {galleryItems.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
+          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
             <div className="mb-6 sm:mb-10 text-center">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
                 Galería
@@ -439,7 +439,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         )}
 
         {pageData.reviews && pageData.reviews.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14 lg:py-20">
+          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
             <div className="mb-6 sm:mb-10 text-center">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
                 Reseñas

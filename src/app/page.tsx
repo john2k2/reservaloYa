@@ -10,6 +10,7 @@ import {
   FAQSection,
   CTASection,
   Footer,
+  SignatureMoment,
 } from "@/components/landing";
 import Link from "next/link";
 import { seoLandingPages } from "@/constants/seo-landing-pages";
@@ -92,6 +93,7 @@ export default async function Home() {
       <FAQPageJsonLd faqs={landingSeoFaqs} />
 
       <HeroSection />
+      <SignatureMoment />
       <BeforeAfterSection />
       <TargetAudienceSection />
       <VerticalSeoLinksSection />

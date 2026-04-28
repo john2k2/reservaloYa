@@ -196,40 +196,59 @@ export function LandingHeader() {
 
 export function HeroSection() {
   return (
-    <section className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-4 pb-12 pt-28 text-center sm:px-6 sm:pb-16 sm:pt-32 lg:px-8 lg:pt-36">
+    <section className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-4 pb-16 pt-32 text-center sm:px-6 sm:pb-20 sm:pt-36 lg:px-8 lg:pb-24 lg:pt-40">
+      {/* Decorative elements */}
+      <div className="pointer-events-none absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-20 right-10 w-96 h-96 bg-primary/3 rounded-full blur-3xl" />
+      
       <AnimatedSection delay={0}>
-        <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 sm:px-4 text-xs font-medium text-green-700 dark:text-green-400 backdrop-blur-sm transition-all duration-200 hover:bg-green-500/20 cursor-default">
-          <CheckCircle2 aria-hidden="true" className="size-3.5" />
+        <div className="mb-6 sm:mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-medium text-primary backdrop-blur-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          </span>
           <span>15 días gratis · Sin tarjeta de crédito</span>
         </div>
       </AnimatedSection>
 
       <AnimatedSection delay={100}>
-        <h1 className="max-w-[900px] text-3xl font-bold tracking-tighter text-foreground sm:text-4xl lg:text-5xl leading-[1.1]">
-          Dejá de perder clientes por WhatsApp.{" "}
-          <span className="text-muted-foreground">Automatizá tus turnos y reducí las ausencias.</span>
+        <h1 className="max-w-[950px] text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] font-display">
+          Dejá de perder clientes{" "}
+          <span className="relative">
+            por WhatsApp
+            <svg className="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8" fill="none">
+              <path d="M2 6C50 2 150 2 198 6" stroke="currentColor" strokeWidth="3" className="text-primary/40" strokeLinecap="round"/>
+            </svg>
+          </span>
+          <span className="block mt-2 text-muted-foreground font-display italic font-normal text-3xl sm:text-4xl lg:text-5xl">
+            Automatizá tus turnos y reducí las ausencias.
+          </span>
         </h1>
       </AnimatedSection>
 
       <AnimatedSection delay={200}>
-        <p className="mx-auto mt-4 sm:mt-6 max-w-[600px] text-base leading-relaxed text-muted-foreground sm:text-lg lg:text-xl">
-          Tus clientes reservan online, vos recibís notificaciones y reducís las ausencias.
+        <p className="mx-auto mt-6 sm:mt-8 max-w-[550px] text-lg leading-relaxed text-muted-foreground sm:text-xl">
+          Tu negocio merece un sistema profesional. Tus clientes reservan online, vos recibís notificaciones y reducís las ausencias.
         </p>
       </AnimatedSection>
 
       <AnimatedSection delay={300}>
-        <div className="mt-8 sm:mt-10 flex flex-col items-center justify-center gap-4 w-full sm:w-auto sm:flex-row">
+        <div className="mt-10 sm:mt-12 flex flex-col items-center justify-center gap-4 w-full sm:w-auto sm:flex-row">
           <Link
             href="/admin/signup"
             className={cn(
-              "inline-flex items-center justify-center w-full sm:w-auto",
-              "h-14 sm:h-12 rounded-full px-8 sm:px-8 text-base sm:text-lg",
+              "group inline-flex items-center justify-center gap-2 w-full sm:w-auto",
+              "h-14 rounded-full px-8 text-base",
               "bg-foreground text-background font-semibold",
-              "shadow-lg transition-all duration-200",
-              "hover:shadow-xl hover:scale-105 hover:-translate-y-0.5 hover:bg-foreground/90"
+              "shadow-xl shadow-foreground/10",
+              "transition-all duration-300",
+              "hover:shadow-2xl hover:shadow-foreground/20 hover:scale-[1.02] hover:-translate-y-0.5"
             )}
           >
             Comenzar mis 15 días gratis
+            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
           </Link>
           <a
             href={getSiteWhatsAppHref("Hola, quiero conocer ReservaYa.")}
@@ -237,13 +256,39 @@ export function HeroSection() {
             rel="noopener noreferrer"
             className={cn(
               "inline-flex items-center justify-center w-full sm:w-auto",
-              "h-14 sm:h-12 rounded-full px-6 sm:px-6 text-base sm:text-base",
-              "border-2 border-border font-medium",
-              "transition-all duration-200 hover:bg-secondary hover:scale-105"
+              "h-14 rounded-full px-6 text-base",
+              "border border-border/80 font-medium",
+              "transition-all duration-300 hover:bg-secondary/50 hover:border-foreground/20"
             )}
           >
             ¿Dudas? Escribinos al WhatsApp
           </a>
+        </div>
+      </AnimatedSection>
+
+      {/* Trust indicators */}
+      <AnimatedSection delay={400}>
+        <div className="mt-12 flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Sin permanencia</span>
+          </div>
+          <div className="hidden sm:block w-px h-4 bg-border" />
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Setup en 5 minutos</span>
+          </div>
+          <div className="hidden sm:block w-px h-4 bg-border" />
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            <span>Soporte por WhatsApp</span>
+          </div>
         </div>
       </AnimatedSection>
     </section>

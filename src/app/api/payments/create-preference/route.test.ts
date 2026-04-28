@@ -120,12 +120,12 @@ describe("create preference route", () => {
 
     expect(createSubscriptionPreferenceMock).toHaveBeenCalledWith({
       businessId: "biz-1",
-      priceAmount: 17 * 1200,
+      priceAmount: 22 * 1200,
     });
     expect(createSupabaseSubscriptionPaymentAttemptMock).toHaveBeenCalledWith({
       businessId: "biz-1",
       preferenceId: "pref-123",
-      amountArs: 17 * 1200,
+      amountArs: 22 * 1200,
       currency: "ARS",
       blueRate: 1200,
       status: "pending",
