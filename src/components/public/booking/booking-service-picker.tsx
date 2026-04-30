@@ -76,9 +76,9 @@ export function BookingServicePicker({
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
           Paso 1
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {heading}
-        </h1>
+        </h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
       </div>
 

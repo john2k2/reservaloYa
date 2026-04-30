@@ -77,7 +77,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     eyebrow: "Reserva online en segundos",
     headline: "Cortes y barba con turnos claros.",
     description:
-      "Sin mensajes de WhatsApp cruzados. Elige tu servicio, día y horario. Confirmación inmediata con acceso para reprogramar o cancelar.",
+      "Sin mensajes de WhatsApp cruzados. Elegí tu servicio, día y horario. Confirmación inmediata con acceso para reprogramar o cancelar.",
     primaryCta: "Reservar turno",
     secondaryCta: "Soporte por WhatsApp",
     accent: "#8F6A3A",
@@ -119,7 +119,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       {
         question: "¿Atienden solo con reserva?",
         answer:
-          "La pagina esta pensada para priorizar reservas, pero tambien puede convivir con turnos espontaneos.",
+          "La página está pensada para priorizar reservas, pero también puede convivir con turnos espontáneos.",
       },
     ],
     policies: [
@@ -235,7 +235,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     eyebrow: "Turnos prolijos para manicura y belleza de manos",
     headline: "Reservas claras para manos, semipermanente y beauty express.",
     description:
-      "Pensada para estudios de uñas que venden mucho por Instagram pero necesitan ordenar agenda, tiempos y reprogramaciones.",
+      "Pensada para estudios de uñas que venden mucho por Instagram y necesitan ordenar agenda, tiempos, servicios, recordatorios y reprogramaciones sin mensajes cruzados.",
     primaryCta: "Reservar manicure",
     secondaryCta: "Soporte por WhatsApp",
     accent: "#B86C8B",
@@ -434,7 +434,7 @@ export function getPublicBusinessProfile(
     faqs: [
       {
         question: "¿Cómo funciona la reserva?",
-        answer: "Eliges servicio, fecha, horario y confirmas tus datos.",
+        answer: "Elegís servicio, fecha, horario y confirmas tus datos.",
       },
     ],
     policies: ["La gestión del turno se hace desde el link recibido al confirmar."],

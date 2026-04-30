@@ -543,6 +543,8 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                   <iframe
                     title={`Mapa de ${pageData.business.name}`}
                     src={mapEmbedSrc}
+                    width="640"
+                    height="320"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     className="h-56 sm:h-72 lg:h-80 w-full"
@@ -680,7 +682,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     </PublicBusinessPageWrapper>
   );
 }
-
 
 
 

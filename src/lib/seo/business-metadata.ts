@@ -99,7 +99,7 @@ export function generateBookingMetadata({
   const title = serviceName
     ? `Reservar ${serviceName} | ${businessName}`
     : `Reservar turno | ${businessName}`;
-  const description = `Reserva tu turno en ${businessName}. Selecciona fecha, horario y servicio. Confirmación inmediata.`;
+  const description = `Reservá tu turno en ${businessName}. Elegí fecha, horario y servicio con confirmación inmediata desde ReservaYa.`;
 
   return {
     title,
@@ -118,10 +118,24 @@ export function generateBookingMetadata({
       title,
       description,
       siteName: businessName,
+      images: [
+        {
+          url: `${siteUrl}/icon-512x512.png`,
+          width: 512,
+          height: 512,
+          alt: `Reservas online para ${businessName}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`${siteUrl}/icon-512x512.png`],
     },
     robots: {
       index: false,
-      follow: false,
+      follow: true,
     },
   };
 }

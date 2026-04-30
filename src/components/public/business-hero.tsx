@@ -79,6 +79,7 @@ function SocialLinksDesktop({
           href={instagramHref}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Abrir Instagram"
           className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
         >
           <Instagram className="size-4" />
@@ -89,6 +90,7 @@ function SocialLinksDesktop({
           href={facebookHref}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Abrir Facebook"
           className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
         >
           <Facebook className="size-4" />
@@ -99,6 +101,7 @@ function SocialLinksDesktop({
           href={tiktokHref}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Abrir TikTok"
           className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
         >
           <TikTokIcon className="size-4" />
@@ -109,6 +112,7 @@ function SocialLinksDesktop({
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Escribir por WhatsApp"
           className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
         >
           <WhatsAppIcon className="size-4" />

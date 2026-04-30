@@ -4,7 +4,7 @@ const defaultWhatsAppNumber = "541124057521";
 export const siteContact = {
   email: defaultContactEmail,
   businessHours: "Lun-Vie 9:00 a 18:00",
-  whatsappLabel: "Atencion comercial por WhatsApp",
+  whatsappLabel: "Atención comercial por WhatsApp",
 } as const;
 
 function getNormalizedWhatsAppNumber() {

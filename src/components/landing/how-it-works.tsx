@@ -12,16 +12,16 @@ const steps = [
   {
     icon: Smartphone,
     title: "Tu cliente entra a tu página",
-    description: "Desde Instagram, WhatsApp o Google. Ven tus servicios, precios y disponibilidad al instante.",
+    description: "Desde Instagram, WhatsApp o Google. Ve tus servicios, precios y disponibilidad al instante.",
   },
   {
     icon: Calendar,
-    title: "Elige servicio, día y horario",
+    title: "Elegí servicio, día y horario",
     description: "El cliente selecciona lo que necesita sin preguntar. Solo horarios reales disponibles, sin pisadas.",
   },
   {
     icon: Bell,
-    title: "Recibe confirmación y recordatorios",
+    title: "Recibí confirmación y recordatorios",
     description: "Confirmación por email al instante + recordatorio 24hs antes. Menos ausencias, mejor ocupación.",
   },
 ];

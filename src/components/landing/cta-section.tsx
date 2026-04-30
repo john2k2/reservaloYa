@@ -17,7 +17,7 @@ export function CTASection() {
               Empezá a ordenar tus turnos hoy.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Mira un negocio en vivo, revisa el flujo completo y valida si encaja con tu negocio en pocos minutos.
+              Mirá un negocio en vivo, revisá el flujo completo y validá si encaja con tu negocio en pocos minutos.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link

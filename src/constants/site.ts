@@ -46,13 +46,13 @@ export const demoBusinessSlug = "demo-barberia";
 export const demoBusinessOptions = [
   {
     slug: "demo-barberia",
-    label: "Barberia clasica",
+    label: "Barbería clásica",
     category: "Barbería y peluquería",
-    description: "Ejemplo en vivo para cortes, barba y servicios rapidos con turnos cortos.",
+    description: "Ejemplo en vivo para cortes, barba y servicios rápidos con turnos cortos.",
   },
   {
     slug: "demo-estetica",
-    label: "Estetica Aura",
+    label: "Estética Aura",
     category: "Estética y skincare",
     description: "Ejemplo listo para faciales, lifting y sesiones con mayor tiempo de cabina.",
   },
@@ -64,7 +64,7 @@ export const demoBusinessOptions = [
   },
   {
     slug: "demo-consultorio",
-    label: "Consultorio medico",
+    label: "Consultorio médico",
     category: "Consultorio y salud",
     description: "Ejemplo orientado a primeras consultas, seguimientos y agenda clara para profesionales.",
   },
@@ -83,9 +83,9 @@ export const landingFeatures: Array<{
   icon: LucideIcon;
 }> = [
   {
-    title: "Reserva publica en minutos",
+    title: "Reserva pública en minutos",
     description:
-      "Cada negocio tiene una pagina simple para que sus clientes reserven sin escribir primero.",
+      "Cada negocio tiene una página simple para que sus clientes reserven sin escribir primero.",
     icon: CalendarClock,
   },
   {
@@ -95,7 +95,7 @@ export const landingFeatures: Array<{
     icon: BellRing,
   },
   {
-    title: "Operacion simple para negocios chicos",
+    title: "Operación simple para negocios chicos",
     description:
       "Servicios, disponibilidad, clientes y turnos pensados para barberias y estetica chica.",
     icon: Scissors,
@@ -112,17 +112,17 @@ export const landingSteps = [
   {
     title: "Mostrar un negocio en vivo",
     description:
-      "Entramos a la pagina del negocio, elegimos servicio y reservamos un turno real de ejemplo.",
+      "Entramos a la página del negocio, elegimos servicio y reservamos un turno real de ejemplo.",
   },
   {
     title: "Probar el panel",
     description:
-      "El dueno ve el turno en el dashboard, bloquea horarios y revisa sus clientes.",
+      "El dueño ve el turno en el dashboard, bloquea horarios y revisa sus clientes.",
   },
   {
     title: "Instalar y cobrar",
     description:
-      "Se personaliza rapido para el cliente, se cobra setup y queda una mensualidad liviana.",
+      "Se personaliza rápido para el cliente, se cobra setup y queda una mensualidad liviana.",
   },
 ];
 

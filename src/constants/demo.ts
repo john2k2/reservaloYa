@@ -70,7 +70,7 @@ export type DemoPreset = {
 
 export const demoBusiness = {
   id: "11111111-1111-1111-1111-111111111111",
-  name: "Barberia Libertador",
+  name: "Barbería Libertador",
   slug: "demo-barberia",
   templateSlug: "demo-barberia",
   phone: "+54 11 5555 0199",
@@ -106,7 +106,7 @@ export const demoServices = [
 
 export const estheticsDemoBusiness = {
   id: "aaaaaaaa-1111-1111-1111-111111111111",
-  name: "Aura Estetica",
+  name: "Aura Estética",
   slug: "demo-estetica",
   templateSlug: "demo-estetica",
   phone: "+54 11 5555 0288",
@@ -563,7 +563,7 @@ export const demoSlots = ["10:00", "10:45", "11:30", "16:00", "16:45", "17:30"];
 
 export const demoDashboardData = {
   profileName: "Demo Owner",
-  businessName: "Barberia Libertador",
+  businessName: "Barbería Libertador",
   businessSlug: "demo-barberia",
   userEmail: "demo@reservaya.app",
   metrics: [

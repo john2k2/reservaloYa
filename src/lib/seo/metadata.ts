@@ -19,6 +19,7 @@ export const siteConfig = {
     "turnos online",
     "sistema de turnos online",
     "sistema de reservas online",
+    "reservas",
     "agenda online",
     "software de reservas",
     "software para barberías",
@@ -31,8 +32,8 @@ export const siteConfig = {
     "estética",
     "sistema de turnos",
     "reserva de citas",
-    "software para barberias",
-    "software para esteticas",
+    "software para barberías",
+    "software para estéticas",
   ],
   authors: [
     {
@@ -46,7 +47,7 @@ export const siteConfig = {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | Sistema de turnos online para negocios de servicios`,
+    default: "Turnos online para barberías y estética",
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,

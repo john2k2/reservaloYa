@@ -11,7 +11,7 @@ export default function BusinessPageLoading() {
         </div>
       </header>
 
-      <main className="flex-1">
+      <div className="flex-1" role="status" aria-label="Cargando página del negocio">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <section className="mb-10 text-center">
@@ -30,7 +30,7 @@ export default function BusinessPageLoading() {
             </div>
           </section>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

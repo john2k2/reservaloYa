@@ -5,7 +5,7 @@ import { createPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Política de privacidad",
-  description: `Cómo ${productName} recopila, usa y protege tus datos personales.`,
+  description: `Conocé cómo ReservaYa recopila, usa, protege y elimina datos personales de negocios, administradores y clientes que reservan turnos online.`,
   path: "/privacidad",
 });
 
@@ -126,7 +126,8 @@ export default function PrivacyPage() {
               >
                 hola@reservaya.app
               </a>
-              .
+              . Respondemos solicitudes de acceso, rectificación o eliminación con prioridad
+              y, cuando corresponda, coordinamos con el negocio responsable de la reserva.
             </p>
           </section>
         </div>

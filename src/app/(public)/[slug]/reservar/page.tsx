@@ -11,8 +11,6 @@ import { BookingSupportCard } from "@/components/public/booking/booking-support-
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { getSiteWhatsAppHref } from "@/lib/contact";
-import { getPublicAppUrl } from "@/lib/runtime";
-import { BreadcrumbJsonLd, WebPageJsonLd } from "@/lib/seo/business-json-ld";
 import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
@@ -122,29 +120,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     (activeDays.length > 0 ? findNextBookingDate(fallbackDate, activeDays) : fallbackDate);
   const datePickerOptions = buildBookingDateOptions(selectedDate, activeDays);
 
-  // Preparar datos para JSON-LD
-  const siteUrl = getPublicAppUrl();
-  const businessUrl = `${siteUrl}/${slug}`;
-  const bookingUrl = `${siteUrl}/${slug}/reservar`;
-  const pageTitle = selectedService
-    ? `Reservar ${selectedService.name} | ${pageData.business.name}`
-    : `Reservar turno | ${pageData.business.name}`;
-
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>
-      {/* SEO: JSON-LD Structured Data */}
-      <WebPageJsonLd
-        name={pageTitle}
-        description={`Reservá tu turno en ${pageData.business.name}. Elegí fecha, horario y servicio. Confirmación inmediata.`}
-        url={bookingUrl}
-      />
-      <BreadcrumbJsonLd
-        items={[
-          { name: "Inicio", url: siteUrl },
-          { name: pageData.business.name, url: businessUrl },
-          { name: "Reservar", url: bookingUrl },
-        ]}
-      />
       <main
         id="main-content"
         className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"

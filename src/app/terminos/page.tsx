@@ -5,7 +5,7 @@ import { createPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Términos de uso",
-  description: `Condiciones de uso de la plataforma ${productName}.`,
+  description: `Condiciones de uso de ReservaYa: alcance del servicio, cuentas de negocio, reservas, pagos, cancelaciones y responsabilidades de la plataforma.`,
   path: "/terminos",
 });
 
