@@ -67,9 +67,10 @@ export function TestimonialsSection({
               {testimonial.avatar ? (
                 <Image
                   src={testimonial.avatar}
-                  alt={testimonial.author}
+                  alt={`Foto de cliente: ${testimonial.author}`}
                   width={56}
                   height={56}
+                  priority={index < 2}
                   className="size-12 rounded-full object-cover ring-2 ring-border sm:size-14"
                 />
               ) : (

@@ -51,6 +51,12 @@ export const demoBusinessOptions = [
     description: "Ejemplo en vivo para cortes, barba y servicios rápidos con turnos cortos.",
   },
   {
+    slug: "barberia-demo",
+    label: "Barbería demo",
+    category: "Barbería y peluquería",
+    description: "Alias histórico de la demo de barbería, mantenido para enlaces compartidos.",
+  },
+  {
     slug: "demo-estetica",
     label: "Estética Aura",
     category: "Estética y skincare",
