@@ -119,7 +119,7 @@ export const seoLandingPages = [
     intro:
       "ReservaYa permite que centros de estética y profesionales de belleza reciban reservas online para sesiones, tratamientos y servicios con horarios definidos.",
     audience:
-      "Diseñado para estudios de uñas, skincare, depilación, masajes, spas y centros de estética que necesitan una agenda simple y visible para sus clientes.",
+      "Diseñado para estudios de uñas, skincare, depilación, masajes, spas y centros de estética que necesitan una agenda simple y visible para sus clientes. También ayuda cuando hay varias duraciones de tratamiento, señas, consultas frecuentes por redes y necesidad de confirmar datos antes de cada sesión.",
     benefits: [
       "Página de reservas para compartir servicios estéticos con descripción, precio y duración.",
       "Agenda centralizada para evitar superposiciones y revisar próximos turnos.",

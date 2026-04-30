@@ -235,7 +235,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     eyebrow: "Turnos prolijos para manicura y belleza de manos",
     headline: "Reservas claras para manos, semipermanente y beauty express.",
     description:
-      "Pensada para estudios de uñas que venden mucho por Instagram y necesitan ordenar agenda, tiempos, servicios, recordatorios y reprogramaciones sin mensajes cruzados.",
+      "Pensada para estudios de uñas que venden por Instagram y necesitan ordenar agenda, servicios, recordatorios y reprogramaciones sin mensajes cruzados.",
     primaryCta: "Reservar manicure",
     secondaryCta: "Soporte por WhatsApp",
     accent: "#B86C8B",

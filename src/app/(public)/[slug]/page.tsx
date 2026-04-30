@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { Facebook, Instagram } from "lucide-react";
@@ -415,7 +416,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(className, "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background")}
-                    aria-label={`Abrir foto ${index + 1} de ${pageData.business.name} en Instagram`}
+                    aria-label={`${image.alt || `Foto ${index + 1}`} — abrir en Instagram`}
                   >
                     {inner}
                   </a>
@@ -424,7 +425,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     key={`${image.url}-${index}`}
                     type="button"
                     className={cn(className, "cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background")}
-                    aria-label={`Abrir foto ${index + 1} de ${pageData.business.name}`}
+                    aria-label={`${image.alt || `Foto ${index + 1}`} — abrir galería`}
                     data-lightbox-index={index}
                   >
                     {inner}
@@ -669,10 +670,14 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               <p className="text-xs text-muted-foreground text-center sm:text-left">
                 © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
               </p>
-              <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                Desarrollado con <ReservaYaLogo variant="isotype" size="sm" className="size-4" />
-                <span className="font-bold text-foreground">{productName}</span>
-              </p>
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:justify-end">
+                <Link href="/privacidad" className="transition-colors hover:text-foreground">Privacidad</Link>
+                <Link href="/terminos" className="transition-colors hover:text-foreground">Términos</Link>
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  Desarrollado con <ReservaYaLogo variant="isotype" size="sm" className="size-4" />
+                  <span className="font-bold text-foreground">{productName}</span>
+                </span>
+              </div>
             </div>
           </div>
         </footer>
@@ -682,7 +687,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     </PublicBusinessPageWrapper>
   );
 }
-
 
 
 

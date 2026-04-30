@@ -23,7 +23,7 @@ import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import "./landing-animations.css";
 
 export const metadata = createPageMetadata({
-  title: "Sistema de turnos online para barberías, peluquerías y estética",
+  title: "Turnos online para barberías y estética",
   description:
     "ReservaYa automatiza reservas, agenda online, clientes y recordatorios para negocios de servicios en Argentina y Latinoamérica.",
   path: "/",

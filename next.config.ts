@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better development
   reactStrictMode: true,
   poweredByHeader: false, // Remove X-Powered-By header for security
+  // Force metadata to be emitted in <head> for crawlers/auditors instead of streamed into <body>.
+  htmlLimitedBots: /.*/,
 
   async headers() {
     const contentSecurityPolicy = [
@@ -47,7 +49,7 @@ const nextConfig: NextConfig = {
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+      "script-src 'self' 'unsafe-inline' https:",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
@@ -76,6 +78,20 @@ const nextConfig: NextConfig = {
   // Redirecciones para rutas comunes
   async redirects() {
     return [
+      ...[
+        "/sitemap_index.xml",
+        "/sitemap-index.xml",
+        "/sitemaps.xml",
+        "/sitemap1.xml",
+        "/post-sitemap.xml",
+        "/page-sitemap.xml",
+        "/category-sitemap.xml",
+        "/news-sitemap.xml",
+      ].map((source) => ({
+        source,
+        destination: "/sitemap.xml",
+        permanent: true,
+      })),
       {
         source: "/admin",
         destination: "/admin/dashboard",

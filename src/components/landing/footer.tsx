@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Phone, Mail, Clock, ArrowUpRight } from "lucide-react";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { seoLandingPages } from "@/constants/seo-landing-pages";
-import { productName, productTagline, demoBusinessSlug } from "@/constants/site";
+import { demoBusinessOptions, productName, productTagline, demoBusinessSlug } from "@/constants/site";
 import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +49,7 @@ export function Footer() {
         </div>
 
         {/* Links grid */}
-        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4"
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-5"
         >
           {/* Brand */}
           <div className="lg:col-span-1"
@@ -82,6 +82,9 @@ export function Footer() {
                 { href: "/login", label: "Panel administrador" },
                 { href: "#precios", label: "Precios" },
                 { href: "#beneficios", label: "Beneficios" },
+                { href: "/sobre-reservaya", label: "Sobre ReservaYa" },
+                { href: "/about", label: "About ReservaYa" },
+                { href: "/contacto", label: "Contacto" },
               ].map((link) => (
                 <Link
                   key={link.href}
@@ -89,6 +92,25 @@ export function Footer() {
                   className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}
+                  <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Solutions */}
+          <div>
+            <p className="font-semibold text-foreground text-sm uppercase tracking-wider"
+            >Demos en vivo</p>
+            <div className="mt-6 flex flex-col gap-3"
+            >
+              {demoBusinessOptions.map((demo) => (
+                <Link
+                  key={demo.slug}
+                  href={`/${demo.slug}`}
+                  className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {demo.label}
                   <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0" />
                 </Link>
               ))}
@@ -115,7 +137,7 @@ export function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <p className="font-semibold text-foreground text-sm uppercase tracking-wider"
             >Contacto</p>
             <div className="mt-6 space-y-4"
@@ -143,10 +165,7 @@ export function Footer() {
                 >
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">Email</p>
-                  <p className="text-xs">{siteContact.email}</p>
-                </div>
+                <span className="font-medium text-foreground">{siteContact.email}</span>
               </a>
               <div className="flex items-center gap-3 text-sm text-muted-foreground"
               >
@@ -172,6 +191,18 @@ export function Footer() {
           </p>
           <div className="flex gap-6"
           >
+            <Link
+              href="/about"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              About
+            </Link>
+            <Link
+              href="/contacto"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Contacto
+            </Link>
             <Link 
               href="/terminos" 
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"

@@ -3,6 +3,13 @@ import { getPublicAppUrl } from "@/lib/runtime";
 
 const siteUrl = getPublicAppUrl();
 
+function truncateSeoDescription(description: string, maxLength = 155) {
+  if (description.length <= maxLength) return description;
+  const clipped = description.slice(0, maxLength - 1);
+  const lastSpace = clipped.lastIndexOf(" ");
+  return `${clipped.slice(0, lastSpace > 100 ? lastSpace : clipped.length).trimEnd()}…`;
+}
+
 interface BusinessMetadataInput {
   businessName: string;
   slug: string;
@@ -27,9 +34,10 @@ export function generateBusinessMetadata({
 }: BusinessMetadataInput): Metadata {
   const url = `${siteUrl}/${slug}`;
   const title = `${businessName} | Reserva tu turno online`;
-  const metaDescription =
+  const metaDescription = truncateSeoDescription(
     description ||
-    `Reserva tu turno en ${businessName}. Agenda online disponible 24/7. Confirmación inmediata.`;
+      `Reserva tu turno en ${businessName}. Agenda online disponible 24/7. Confirmación inmediata.`
+  );
   const ogImage = image || `${siteUrl}/og-image.png`;
 
   return {

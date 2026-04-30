@@ -5,7 +5,7 @@ import { demoBusinessOptions } from "@/constants/site";
 import { siteConfig } from "@/lib/seo/metadata";
 import { getPublicBusinessSitemapEntries } from "@/server/queries/public";
 
-const staticRoutes = ["", "/terminos", "/privacidad"];
+const staticRoutes = ["", "/about", "/sobre-reservaya", "/contacto", "/terminos", "/privacidad"];
 const seoRoutes = seoLandingPages.map((page) => `/${page.slug}`);
 
 type SitemapBusinessRoute = {
