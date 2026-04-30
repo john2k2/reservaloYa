@@ -102,6 +102,7 @@ skills-lock.json
 resend.html
 
 # misc local files
+.mcp.json
 proxy.ts
 *.log
 e2e/.auth/

@@ -1,15 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const emailSendMock = vi.fn();
-
-vi.mock("resend", () => ({
-  Resend: class MockResend {
-    emails = {
-      send: emailSendMock,
-    };
-  },
-}));
-
 const confirmation = {
   businessName: "Demo Barberia",
   businessAddress: "Av. del Libertador 214, Palermo",
@@ -26,7 +16,6 @@ describe("booking notifications", () => {
 
   beforeEach(() => {
     process.env = { ...envBackup };
-    emailSendMock.mockReset();
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
   });
@@ -59,7 +48,10 @@ describe("booking notifications", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya-kappa.vercel.app";
     process.env.BOOKING_LINK_SECRET = "booking-links-secret";
 
-    emailSendMock.mockResolvedValue({ id: "email_123" });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "email_123" }),
+    });
 
     const { sendBookingConfirmationEmail } = await import("./booking-notifications");
 
@@ -82,7 +74,16 @@ describe("booking notifications", () => {
     }, "created");
 
     expect(result.status).toBe("sent");
-    expect(emailSendMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.resend.com/emails",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer re_test",
+        }),
+      })
+    );
   });
 
   it("sends WhatsApp reminder through Twilio when configured", async () => {
@@ -131,7 +132,10 @@ describe("booking notifications", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.ar";
     process.env.BOOKING_LINK_SECRET = "booking-links-secret";
 
-    emailSendMock.mockResolvedValue({ data: { id: "email_456" }, error: null });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "email_456" }),
+    });
 
     const { sendBookingReminderEmail } = await import("./booking-notifications");
     const result = await sendBookingReminderEmail({
@@ -199,7 +203,10 @@ describe("booking notifications", () => {
     process.env.RESEND_FROM_EMAIL = "turnos@reservaya.ar";
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.ar";
 
-    emailSendMock.mockResolvedValue({ data: { id: "email_789" }, error: null });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "email_789" }),
+    });
 
     const { sendBusinessNotificationEmail } = await import("./booking-notifications");
     const result = await sendBusinessNotificationEmail({
@@ -227,7 +234,10 @@ describe("booking notifications", () => {
     process.env.RESEND_FROM_EMAIL = "turnos@reservaya.ar";
     process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.ar";
 
-    emailSendMock.mockResolvedValue({ data: { id: "email_followup" }, error: null });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "email_followup" }),
+    });
 
     const { sendPostBookingFollowUpEmail } = await import("./booking-notifications");
     const result = await sendPostBookingFollowUpEmail({

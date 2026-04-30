@@ -1,4 +1,3 @@
-import { Resend } from "resend";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import { getPublicAppUrl } from "@/lib/runtime";
@@ -13,17 +12,45 @@ import {
 
 const logger = createLogger("Booking Notifications");
 
-// Lazy initialization to avoid build-time errors
-let resendInstance: Resend | null = null;
-function getResend(): Resend {
-  if (!resendInstance) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
-    resendInstance = new Resend(apiKey);
+type ResendEmailPayload = {
+  from: string;
+  to: string[];
+  subject: string;
+  html: string;
+  tags?: Array<{ name: string; value: string }>;
+};
+
+async function sendResendEmail(payload: ResendEmailPayload) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not configured");
   }
-  return resendInstance;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const body = (await response.json().catch(() => null)) as {
+    id?: string;
+    message?: string;
+    name?: string;
+  } | null;
+
+  if (!response.ok) {
+    return {
+      data: null,
+      error: {
+        message: body?.message ?? body?.name ?? `Resend HTTP ${response.status}`,
+      },
+    };
+  }
+
+  return { data: { id: body?.id ?? "" }, error: null };
 }
 
 /**
@@ -107,7 +134,7 @@ export async function sendBookingReminderEmail(input: ReminderInput): Promise<Re
   const startsAt = toISOString(confirmation.bookingDate, confirmation.startTime);
 
   try {
-    const { data, error } = await getResend().emails.send({
+    const { data, error } = await sendResendEmail({
       from: getFromEmail(confirmation.businessName),
       to: [input.customerEmail],
       subject,
@@ -327,7 +354,7 @@ export async function sendBookingConfirmationEmail(
   const priceLabel = formatPrice(confirmation.priceAmount, confirmation.currency);
 
   try {
-    const { data, error } = await getResend().emails.send({
+    const { data, error } = await sendResendEmail({
       from: getFromEmail(confirmation.businessName),
       to: [confirmation.customerEmail],
       subject,
@@ -383,7 +410,7 @@ export async function sendBusinessNotificationEmail(
   const adminUrl = `${getBaseUrl()}/admin/bookings`;
 
   try {
-    const { data, error } = await getResend().emails.send({
+    const { data, error } = await sendResendEmail({
       from: getFromEmail("ReservaYa"),
       to: [confirmation.businessNotificationEmail],
       subject,
@@ -480,7 +507,7 @@ export async function sendPostBookingFollowUpEmail(input: FollowUpInput): Promis
   const subject = `¿Cómo fue tu experiencia en ${input.businessName}?`;
 
   try {
-    const { data, error } = await getResend().emails.send({
+    const { data, error } = await sendResendEmail({
       from: getFromEmail(input.businessName),
       to: [input.customerEmail],
       subject,
@@ -913,7 +940,7 @@ export async function sendWaitlistAvailabilityEmail(input: {
       Reservar turno
     </a>`;
 
-    const { data, error } = await getResend().emails.send({
+    const { data, error } = await sendResendEmail({
       from: getFromEmail(input.businessName),
       to: [input.customerEmail],
       subject,

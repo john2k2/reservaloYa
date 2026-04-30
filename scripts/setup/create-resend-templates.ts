@@ -3,9 +3,53 @@
  * Ejecutar: npx tsx scripts/create-resend-templates.ts
  */
 
-import { Resend } from 'resend';
+type ResendTemplateVariable = { key: string; type: string; fallbackValue?: string };
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+type ResendTemplatePayload = {
+  name: string;
+  alias: string;
+  subject: string;
+  html: string;
+  variables: ResendTemplateVariable[];
+};
+
+function getResendApiKey() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is required');
+  }
+  return apiKey;
+}
+
+async function resendRequest<T>(path: string, init: RequestInit): Promise<T> {
+  const response = await fetch(`https://api.resend.com${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${getResendApiKey()}`,
+      'Content-Type': 'application/json',
+      ...(init.headers ?? {}),
+    },
+  });
+
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(JSON.stringify(body ?? { status: response.status }));
+  }
+
+  return body as T;
+}
+
+async function createResendTemplate(payload: ResendTemplatePayload) {
+  return resendRequest<{ id: string }>('/templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+async function publishResendTemplate(id: string) {
+  return resendRequest(`/templates/${id}/publish`, { method: 'POST' });
+}
 
 // Plantilla HTML para confirmación de reserva al cliente
 const customerConfirmationTemplate = `<!DOCTYPE html>
@@ -243,7 +287,7 @@ async function createTemplates() {
 
   // 1. Plantilla para cliente
   console.log('📧 Creando plantilla: customer-booking-confirmation...');
-  const customerResult = await resend.templates.create({
+  const customerResult = await createResendTemplate({
     name: 'Confirmación de Reserva - Cliente',
     alias: 'customer-booking-confirmation',
     subject: '✅ Tu reserva en {{{BUSINESS_NAME}}} está confirmada',
@@ -263,20 +307,16 @@ async function createTemplates() {
     ],
   });
 
-  if (customerResult.error) {
-    console.error('❌ Error:', customerResult.error);
-    process.exit(1);
-  }
 
-  console.log('✅ Plantilla creada:', customerResult.data?.id);
+  console.log('✅ Plantilla creada:', customerResult.id);
 
   // Publicar plantilla
-  await resend.templates.publish(customerResult.data!.id);
+  await publishResendTemplate(customerResult.id);
   console.log('✅ Plantilla publicada\n');
 
   // 2. Plantilla para negocio
   console.log('📧 Creando plantilla: business-booking-notification...');
-  const businessResult = await resend.templates.create({
+  const businessResult = await createResendTemplate({
     name: 'Notificación de Nueva Reserva - Negocio',
     alias: 'business-booking-notification',
     subject: '🎉 Nueva reserva: {{{SERVICE_NAME}}} - {{{CUSTOMER_NAME}}}',
@@ -295,15 +335,11 @@ async function createTemplates() {
     ],
   });
 
-  if (businessResult.error) {
-    console.error('❌ Error:', businessResult.error);
-    process.exit(1);
-  }
 
-  console.log('✅ Plantilla creada:', businessResult.data?.id);
+  console.log('✅ Plantilla creada:', businessResult.id);
 
   // Publicar plantilla
-  await resend.templates.publish(businessResult.data!.id);
+  await publishResendTemplate(businessResult.id);
   console.log('✅ Plantilla publicada\n');
 
   console.log('🎉 ¡Todas las plantillas creadas exitosamente!');

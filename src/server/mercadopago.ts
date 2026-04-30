@@ -1,7 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-import MercadoPago, { Preference, Payment } from "mercadopago";
-
 import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
 import { buildAbsoluteBookingConfirmationUrl } from "@/server/public-booking-links";
@@ -10,16 +8,14 @@ import { buildAbsoluteBookingConfirmationUrl } from "@/server/public-booking-lin
 
 const logger = createLogger("MercadoPago");
 
-let mpClient: MercadoPago | null = null;
-
 function normalizeAccessToken(accessToken?: string | null) {
   const normalized = accessToken?.trim();
   return normalized ? normalized : null;
 }
 
-function getMPClient(accessToken?: string): MercadoPago {
+function getMPAccessToken(accessToken?: string) {
   if (accessToken) {
-    return new MercadoPago({ accessToken });
+    return accessToken;
   }
 
   const globalAccessToken = normalizeAccessToken(process.env.MP_ACCESS_TOKEN);
@@ -28,11 +24,7 @@ function getMPClient(accessToken?: string): MercadoPago {
     throw new Error("MP_ACCESS_TOKEN is not configured");
   }
 
-  if (!mpClient) {
-    mpClient = new MercadoPago({ accessToken: globalAccessToken });
-  }
-
-  return mpClient;
+  return globalAccessToken;
 }
 
 export function isMercadoPagoConfigured(): boolean {
@@ -76,7 +68,7 @@ export type RefreshMercadoPagoTokenResult =
 // ─── Internal helper ──────────────────────────────────────────────────────────
 
 async function createPreferenceWithClient(
-  client: MercadoPago,
+  accessToken: string,
   input: CreatePaymentPreferenceInput
 ): Promise<PaymentPreferenceResult> {
   try {
@@ -90,14 +82,16 @@ async function createPreferenceWithClient(
     if (!confirmationUrl) {
       return { ok: false, error: "No se pudo generar el link de confirmacion del booking." };
     }
-
-    const preference = new Preference(client);
-
     const [firstName, ...rest] = input.customerName.trim().split(" ");
     const lastName = rest.join(" ") || firstName;
 
-    const response = await preference.create({
-      body: {
+    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         items: [
           {
             id: input.bookingId,
@@ -132,18 +126,32 @@ async function createPreferenceWithClient(
           booking_id: input.bookingId,
           business_slug: input.businessSlug,
         },
-      },
+      }),
     });
 
-    if (!response.id) {
+    const data = (await response.json().catch(() => null)) as {
+      id?: string;
+      init_point?: string;
+      sandbox_init_point?: string;
+      message?: string;
+    } | null;
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: data?.message ?? `MercadoPago preference HTTP ${response.status}`,
+      };
+    }
+
+    if (!data?.id) {
       return { ok: false, error: "MercadoPago no devolvió preferencia válida" };
     }
 
-    const checkoutUrl = response.init_point ?? response.sandbox_init_point ?? "";
+    const checkoutUrl = data.init_point ?? data.sandbox_init_point ?? "";
 
     return {
       ok: true,
-      preferenceId: response.id,
+      preferenceId: data.id,
       checkoutUrl,
     };
   } catch (err) {
@@ -160,7 +168,7 @@ async function createPreferenceWithClient(
 export async function createPaymentPreference(
   input: CreatePaymentPreferenceInput
 ): Promise<PaymentPreferenceResult> {
-  return createPreferenceWithClient(getMPClient(), input);
+  return createPreferenceWithClient(getMPAccessToken(), input);
 }
 
 /**
@@ -171,7 +179,7 @@ export async function createPaymentPreferenceForBusiness(
   input: CreatePaymentPreferenceInput,
   accessToken: string
 ): Promise<PaymentPreferenceResult> {
-  return createPreferenceWithClient(getMPClient(accessToken), input);
+  return createPreferenceWithClient(getMPAccessToken(accessToken), input);
 }
 
 // ─── Subscription Preference ─────────────────────────────────────────────────
@@ -190,11 +198,13 @@ export async function createSubscriptionPreference(
 ): Promise<PaymentPreferenceResult> {
   try {
     const appUrl = getPublicAppUrl();
-    const client = getMPClient();
-    const preference = new Preference(client);
-
-    const response = await preference.create({
-      body: {
+    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getMPAccessToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         items: [
           {
             id: `sub-${input.businessId}`,
@@ -213,18 +223,32 @@ export async function createSubscriptionPreference(
         auto_return: "approved",
         external_reference: input.businessId,
         notification_url: `${appUrl}/api/payments/webhook`,
-      },
+      }),
     });
 
-    if (!response.id) {
+    const data = (await response.json().catch(() => null)) as {
+      id?: string;
+      init_point?: string;
+      sandbox_init_point?: string;
+      message?: string;
+    } | null;
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: data?.message ?? `MercadoPago preference HTTP ${response.status}`,
+      };
+    }
+
+    if (!data?.id) {
       return { ok: false, error: "MercadoPago no devolvio preferencia valida" };
     }
 
-    const checkoutUrl = response.init_point ?? response.sandbox_init_point ?? "";
+    const checkoutUrl = data.init_point ?? data.sandbox_init_point ?? "";
 
     return {
       ok: true,
-      preferenceId: response.id,
+      preferenceId: data.id,
       checkoutUrl,
     };
   } catch (err) {
@@ -403,36 +427,63 @@ export async function getMPPaymentInfo(
   accessToken?: string
 ): Promise<MPPaymentInfo | null> {
   try {
-    const payment = new Payment(getMPClient(accessToken));
-    const response = await payment.get({ id: paymentId });
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${getMPAccessToken(accessToken)}`,
+        },
+      }
+    );
 
-    if (!response) return null;
+    if (!response.ok) {
+      logger.error("getMPPaymentInfo http error", {
+        paymentId,
+        status: response.status,
+        body: await response.text().catch(() => ""),
+      });
+      return null;
+    }
+
+    const data = (await response.json().catch(() => null)) as {
+      id?: string | number;
+      status?: string;
+      status_detail?: string;
+      external_reference?: string;
+      transaction_amount?: number;
+      currency_id?: string;
+      collector_id?: string | number;
+      metadata?: unknown;
+      payer?: { email?: string };
+    } | null;
+
+    if (!data) return null;
 
     return {
-      id: String(response.id),
-      status: (response.status ?? "pending") as MPPaymentStatus,
-      statusDetail: response.status_detail ?? "",
-      externalReference: response.external_reference ?? "",
+      id: String(data.id),
+      status: (data.status ?? "pending") as MPPaymentStatus,
+      statusDetail: data.status_detail ?? "",
+      externalReference: data.external_reference ?? "",
       preferenceId:
         String(
-          (response as { preference_id?: string; preferenceId?: string }).preference_id ??
-            (response as { preference_id?: string; preferenceId?: string }).preferenceId ??
+          (data as { preference_id?: string; preferenceId?: string }).preference_id ??
+            (data as { preference_id?: string; preferenceId?: string }).preferenceId ??
             ""
         ) || undefined,
-      transactionAmount: response.transaction_amount ?? 0,
-      currencyId: response.currency_id ?? "ARS",
-      collectorId: response.collector_id != null ? String(response.collector_id) : undefined,
+      transactionAmount: data.transaction_amount ?? 0,
+      currencyId: data.currency_id ?? "ARS",
+      collectorId: data.collector_id != null ? String(data.collector_id) : undefined,
       metadata: {
         bookingId:
-          response.metadata && typeof response.metadata === "object"
-            ? String((response.metadata as { booking_id?: string }).booking_id ?? "") || undefined
+          data.metadata && typeof data.metadata === "object"
+            ? String((data.metadata as { booking_id?: string }).booking_id ?? "") || undefined
             : undefined,
         businessSlug:
-          response.metadata && typeof response.metadata === "object"
-            ? String((response.metadata as { business_slug?: string }).business_slug ?? "") || undefined
+          data.metadata && typeof data.metadata === "object"
+            ? String((data.metadata as { business_slug?: string }).business_slug ?? "") || undefined
             : undefined,
       },
-      payerEmail: response.payer?.email ?? undefined,
+      payerEmail: data.payer?.email ?? undefined,
     };
   } catch (err) {
     logger.error("getMPPaymentInfo error", err);
