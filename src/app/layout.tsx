@@ -39,6 +39,10 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
+        <link rel="dns-prefetch" href="https://jshlqmfggyzbnwjejkyb.supabase.co" />
+        <link rel="preconnect" href="https://jshlqmfggyzbnwjejkyb.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -26,6 +26,9 @@ import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
 import { fetchInstagramGallery } from "@/lib/instagram-oembed";
 import { productName } from "@/constants/site";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("Public Page");
 
 // cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
 const getPageData = cache(getPublicBusinessPageData);
@@ -55,7 +58,7 @@ export async function generateMetadata({
       category: (pageData.profile as { category?: string })?.category,
     });
   } catch (error) {
-    console.error("Error generating metadata:", error);
+    logger.error("Error generating metadata:", error);
     return { title: "ReservaYa | Turnos online para negocios chicos" };
   }
 }

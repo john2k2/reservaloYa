@@ -14,6 +14,9 @@ import { getSiteWhatsAppHref } from "@/lib/contact";
 import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("Booking Page");
 
 // cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
 const getPageData = cache(getPublicBusinessPageData);
@@ -45,7 +48,7 @@ export async function generateMetadata({
       serviceName,
     });
   } catch (error) {
-    console.error("Error generating metadata:", error);
+    logger.error("Error generating metadata:", error);
     return { title: "Reservar turno | ReservaYa" };
   }
 }

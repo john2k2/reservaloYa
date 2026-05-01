@@ -13,6 +13,13 @@ vi.mock("@/server/mercadopago-oauth-state", () => ({
   createMercadoPagoOAuthState: createMercadoPagoOAuthStateMock,
 }));
 
+vi.mock("@/lib/env", () => ({
+  env: {
+    MP_APP_ID: "app-id",
+    MP_APP_SECRET: "app-secret",
+  },
+}));
+
 describe("mercadopago oauth start route", () => {
   beforeEach(() => {
     vi.resetModules();

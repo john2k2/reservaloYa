@@ -1,5 +1,6 @@
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminOnboardingData, getAdminSettingsData } from "@/server/queries/admin";
+import { env } from "@/lib/env";
 import OnboardingPageClient from "./onboarding-client";
 
 interface OnboardingWrapperProps {
@@ -22,11 +23,11 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
   ]);
 
   // Construir URL OAuth de MercadoPago server-side (para no exponer MP_APP_ID al browser)
-  const mpAppId = process.env.MP_APP_ID?.trim();
-  const mpAppSecret = process.env.MP_APP_SECRET?.trim();
+  const mpAppId = env.MP_APP_ID?.trim();
+  const mpAppSecret = env.MP_APP_SECRET?.trim();
   const mpOAuthUrl = mpAppId && mpAppSecret ? "/api/auth/mercadopago/start" : null;
   const whatsappConfigured = !!(
-    process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN
+    env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ACCESS_TOKEN
   );
 
   // Si el callback OAuth redirige con ?tab=integraciones, abrir ese tab por defecto

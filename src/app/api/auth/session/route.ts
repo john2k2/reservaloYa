@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { getSupabaseAdminClient } from "@/server/supabase-store/_core";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function GET() {
       });
     }
 
-    const superadminEmail = (process.env.PLATFORM_SUPERADMIN_EMAIL ?? "").toLowerCase();
+    const superadminEmail = (env.PLATFORM_SUPERADMIN_EMAIL ?? "").toLowerCase();
     const email = String(user.email ?? "").toLowerCase();
     const isPlatformAdmin = superadminEmail ? email === superadminEmail : false;
 

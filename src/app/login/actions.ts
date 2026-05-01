@@ -5,9 +5,10 @@ import { redirect } from "next/navigation";
 
 import { signInSupabaseUser, createSupabaseOwnerAccount, resetSupabaseUserPassword, updateSupabaseUserPassword } from "@/server/supabase-auth";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
+import { env } from "@/lib/env";
 
 function isSuperAdminEmail(email: string) {
-  const superadminEmail = process.env.PLATFORM_SUPERADMIN_EMAIL;
+  const superadminEmail = env.PLATFORM_SUPERADMIN_EMAIL;
   if (!superadminEmail) return false;
   return email.toLowerCase().trim() === superadminEmail.toLowerCase().trim();
 }

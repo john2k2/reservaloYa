@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getPublicAppUrl } from "@/lib/runtime";
+import { env } from "@/lib/env";
 import { createLogger } from "@/server/logger";
 import { parseMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
 import { getAdminShellData } from "@/server/queries/admin";
@@ -41,8 +42,8 @@ export async function GET(request: Request) {
     return withClearedOAuthNonceCookie(NextResponse.redirect(errorRedirect));
   }
 
-  const mpAppId = process.env.MP_APP_ID?.trim();
-  const mpAppSecret = process.env.MP_APP_SECRET?.trim();
+  const mpAppId = env.MP_APP_ID?.trim();
+  const mpAppSecret = env.MP_APP_SECRET?.trim();
 
   if (!mpAppId || !mpAppSecret) {
     logger.error("MP_APP_ID o MP_APP_SECRET no configurados");

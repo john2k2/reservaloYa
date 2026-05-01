@@ -31,6 +31,13 @@ vi.mock("@/server/queries/admin", () => ({
   getAdminShellData: getAdminShellDataMock,
 }));
 
+vi.mock("@/lib/env", () => ({
+  env: {
+    MP_APP_ID: "app-id",
+    MP_APP_SECRET: "app-secret",
+  },
+}));
+
 describe("mercadopago oauth callback route", () => {
   const originalFetch = global.fetch;
   const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;

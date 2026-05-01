@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     // Optimize package imports for common libraries
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],
   },
   images: {
     formats: ["image/avif", "image/webp"],

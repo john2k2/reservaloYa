@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { getPublicAppUrl } from "@/lib/runtime";
+import { env } from "@/lib/env";
 import { getAdminShellData } from "@/server/queries/admin";
 import { createMercadoPagoOAuthState } from "@/server/mercadopago-oauth-state";
 
@@ -11,8 +12,8 @@ const MP_OAUTH_NONCE_COOKIE = "reservaya-mp-oauth-nonce";
 export async function GET() {
   const appUrl = getPublicAppUrl();
   const errorRedirect = `${appUrl}/admin/onboarding?tab=integraciones&mp=error`;
-  const mpAppId = process.env.MP_APP_ID?.trim();
-  const mpAppSecret = process.env.MP_APP_SECRET?.trim();
+  const mpAppId = env.MP_APP_ID?.trim();
+  const mpAppSecret = env.MP_APP_SECRET?.trim();
   const shellData = await getAdminShellData();
 
   if (!shellData?.businessSlug || !shellData.userEmail || !mpAppId || !mpAppSecret) {

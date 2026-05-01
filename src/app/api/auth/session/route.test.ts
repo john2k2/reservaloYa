@@ -13,6 +13,10 @@ vi.mock("@/server/supabase-store/_core", () => ({
   getSupabaseAdminClient: getSupabaseAdminClientMock,
 }));
 
+vi.mock("@/lib/env", () => ({
+  env: {},
+}));
+
 function makeSupabaseClient(businessName?: string | null) {
   return {
     from: vi.fn(() => ({
@@ -37,6 +41,12 @@ describe("auth session route", () => {
     getAuthenticatedSupabaseUserMock.mockReset();
     getSupabaseAdminClientMock.mockReset();
     process.env.PLATFORM_SUPERADMIN_EMAIL = "platform@reservaya.app";
+    // Re-import env with updated process.env
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        PLATFORM_SUPERADMIN_EMAIL: "platform@reservaya.app",
+      },
+    }));
   });
 
   afterAll(() => {
