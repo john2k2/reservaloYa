@@ -12,7 +12,7 @@ Producto-servicio para vender turnos online a negocios chicos que hoy operan por
 
 Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y operación.
 
-## Estado actual (2026-03-26)
+## Estado actual (2026-05-01)
 
 ### Flujo publico de reserva
 
@@ -85,9 +85,7 @@ Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y 
 
 - Profundizar analytics y observabilidad sobre Supabase
 - Seleccion de profesional/staff por parte del cliente
-- Seleccion de profesional/staff por parte del cliente
 - GA4 o PostHog para analytics avanzado
-- SEO: meta tags y OG por pagina de negocio
 
 ---
 

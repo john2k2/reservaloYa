@@ -95,7 +95,7 @@ async function getPersistedRate(): Promise<DollarRateCache | null> {
 /**
  * Guarda el rate en Supabase para persistir entre deploys.
  */
-async function persistRate(rate: number, source: string): Promise<void> {
+async function persistRate(rate: number): Promise<void> {
   try {
     const client = createAdminClient();
     await client
@@ -138,7 +138,7 @@ export async function getBlueDollarRate(): Promise<number | null> {
   const bluelyticsRate = await fetchFromBluelytics();
   if (bluelyticsRate) {
     memoryCache = { rate: bluelyticsRate, fetchedAt: now, source: "bluelytics" };
-    await persistRate(bluelyticsRate, "bluelytics");
+    await persistRate(bluelyticsRate);
     return bluelyticsRate;
   }
 
@@ -146,7 +146,7 @@ export async function getBlueDollarRate(): Promise<number | null> {
   const dolarApiRate = await fetchFromDolarApi();
   if (dolarApiRate) {
     memoryCache = { rate: dolarApiRate, fetchedAt: now, source: "dolarapi" };
-    await persistRate(dolarApiRate, "dolarapi");
+    await persistRate(dolarApiRate);
     return dolarApiRate;
   }
 

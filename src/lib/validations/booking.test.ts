@@ -11,7 +11,7 @@ function futureDateString(): string {
 }
 
 describe("publicBookingSchema", () => {
-  it("accepts PocketBase booking ids for reschedules", () => {
+  it("accepts persisted booking ids for reschedules", () => {
     const parsed = publicBookingSchema.safeParse({
       businessSlug: "demo-barberia",
       serviceId: "afdkwzm04yk2mc6",

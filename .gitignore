@@ -46,8 +46,6 @@ cloudflared.log
 .env.sentry-build-plugin
 /data/local-store.json
 /data/local-store.*.tmp.json
-/pocketbase/pb_data/
-/pocketbase/pb_data_corrupt_*/
 /public/uploads/
 *.exe
 *.png

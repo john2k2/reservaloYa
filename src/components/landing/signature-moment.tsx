@@ -53,15 +53,13 @@ export function SignatureMoment() {
   }, []);
 
   useEffect(() => {
-    const currentStep = steps[activeStep];
-    currentStep.items.forEach((item, index) => {
+    steps[activeStep].items.forEach((item, index) => {
       setTimeout(() => {
         setVisibleItems((prev) => [...prev, index]);
       }, item.delay);
     });
   }, [activeStep]);
 
-  const currentStep = steps[activeStep];
 
   return (
     <section className="relative mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-36 overflow-hidden">

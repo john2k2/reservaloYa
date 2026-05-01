@@ -4,7 +4,7 @@
 
 **Estado actual**: prod corre estable para piloto cerrado. Booking flow, seguridad, persistencia y CI validados.
 
-> Nota 2026-04-24: este plan conserva pasos historicos del pre-lanzamiento. El backend actual es Supabase-only; cualquier referencia a PocketBase/Railway queda obsoleta y no debe ejecutarse.
+> Nota 2026-05-01: el plan está alineado con backend Supabase-only. No reintroducir infraestructura PocketBase/Railway.
 
 **Audiencia**: este plan está escrito para ser ejecutado por un agente (Sonnet 4.6) o un humano paso a paso. Cada sección es autocontenida con comandos, archivos y criterios de validación.
 
@@ -182,226 +182,47 @@ Test desde el panel admin:
 
 ## Sección BK — Backups y migrations Supabase
 
-> Estado 2026-04-24: la implementacion PocketBase de esta seccion quedo reemplazada por Supabase. Para operacion actual, validar backups del proyecto Supabase y que esten aplicadas las migraciones `20260424000000_add_booking_locks_rate_limit_events.sql` y `20260424001000_add_subscription_payment_attempts.sql`.
+**Estado 2026-05-01**: sección actualizada a Supabase-only. Se eliminaron los pasos históricos de PocketBase y Railway.
 
-**Tiempo estimado**: 3-4h (incluye probar restore)
-**Bloquea lanzamiento**: SÍ (si perdemos datos con clientes reales, game over)
+**Tiempo estimado**: 1-2h técnico + prueba de restore según plan de Supabase.
+**Bloquea lanzamiento**: SÍ antes de clientes reales.
 
 ### Contexto
 
-PocketBase expone `pb.backups.create()` y `pb.backups.getFullList()`. Un backup es un ZIP completo del estado (data.db + attachments). Lo descargamos vía HTTP autenticado y lo subimos a Vercel Blob con retención de 30 días.
+ReservaYa ya no opera PocketBase. La continuidad de datos depende del proyecto Supabase de producción y de que las migraciones aplicadas coincidan con el contrato de la app.
 
-### BK.1 — Crear script de backup
+### BK.1 — Verificar migraciones requeridas
 
-Archivo: `scripts/ops/backup-pocketbase.mjs`
+Confirmar en Supabase que estén aplicadas, como mínimo:
 
-```javascript
-#!/usr/bin/env node
-/**
- * Crea un backup de PocketBase y lo sube a Vercel Blob.
- * Retiene los últimos 30 días; los anteriores se borran.
- *
- * Uso local: node scripts/ops/backup-pocketbase.mjs
- * Uso cron (Vercel): GET /api/jobs/pb-backup con Authorization: Bearer $CRON_SECRET
- */
-import { put, list, del } from "@vercel/blob";
-import PocketBase from "pocketbase";
+- `20260424000000_add_booking_locks_rate_limit_events.sql`
+- `20260424001000_add_subscription_payment_attempts.sql`
 
-const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL;
-const PB_ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL;
-const PB_ADMIN_PASS = process.env.POCKETBASE_ADMIN_PASSWORD;
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
-const RETENTION_DAYS = 30;
+Validar también las tablas/funciones que usa la app:
 
-export async function runBackup() {
-  if (!PB_URL || !PB_ADMIN_EMAIL || !PB_ADMIN_PASS || !BLOB_TOKEN) {
-    throw new Error("Faltan env vars: PB_URL/ADMIN/BLOB_TOKEN");
-  }
+- `booking_locks`
+- `rate_limit_events`
+- RPC `consume_rate_limit`
+- `subscription_payment_attempts`
 
-  const pb = new PocketBase(PB_URL);
-  await pb.collection("_superusers").authWithPassword(PB_ADMIN_EMAIL, PB_ADMIN_PASS);
+### BK.2 — Backups Supabase
 
-  // 1. Pedir a PB que cree el backup
-  const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-  const backupName = `auto-${timestamp}.zip`;
-  await pb.backups.create(backupName);
+1. Entrar al dashboard de Supabase del proyecto productivo.
+2. Confirmar plan y política de backups disponible para el proyecto.
+3. Descargar o restaurar un backup de prueba cuando el plan lo permita.
+4. Documentar fecha, responsable y resultado en `docs/ops/DISASTER_RECOVERY.md`.
 
-  // 2. Descargar el zip del backup
-  const fileToken = await pb.files.getToken();
-  const downloadUrl = `${PB_URL}/api/backups/${backupName}?token=${fileToken}`;
-  const res = await fetch(downloadUrl);
-  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-  const buffer = Buffer.from(await res.arrayBuffer());
+### BK.3 — Ensayo de recovery
 
-  // 3. Subir a Vercel Blob
-  const blobPath = `backups/pb/${backupName}`;
-  const uploaded = await put(blobPath, buffer, {
-    access: "public",
-    token: BLOB_TOKEN,
-    addRandomSuffix: false,
-  });
+Antes del primer cliente pago:
 
-  // 4. Borrar el backup de PocketBase (ya lo tenemos en Blob)
-  await pb.backups.delete(backupName);
+1. Crear un proyecto Supabase de staging/restore.
+2. Aplicar migraciones desde `supabase/migrations`.
+3. Cargar un dataset mínimo o restaurar backup según disponibilidad del plan.
+4. Apuntar variables de entorno de preview/staging al proyecto restaurado.
+5. Correr smoke público y flujo de reserva contra staging.
 
-  // 5. Purgar backups viejos en Blob
-  const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
-  const { blobs } = await list({ prefix: "backups/pb/", token: BLOB_TOKEN });
-  const toDelete = blobs.filter((b) => new Date(b.uploadedAt).getTime() < cutoff);
-  for (const old of toDelete) {
-    await del(old.url, { token: BLOB_TOKEN });
-  }
-
-  return {
-    backup: uploaded.url,
-    size: buffer.length,
-    purged: toDelete.length,
-  };
-}
-
-// CLI entrypoint
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runBackup()
-    .then((r) => {
-      console.log("Backup OK:", JSON.stringify(r, null, 2));
-      process.exit(0);
-    })
-    .catch((e) => {
-      console.error("Backup FAILED:", e);
-      process.exit(1);
-    });
-}
-```
-
-### BK.2 — Instalar dependencia
-
-```bash
-npm install @vercel/blob
-```
-
-Verificar que `@vercel/blob` queda en `dependencies` (no devDependencies) porque lo usa el cron en runtime.
-
-### BK.3 — Test manual local
-
-```bash
-# Con .env.production.local cargado (ojo: backup va a prod Blob)
-node --env-file=.env.production --env-file=.env.production.local scripts/ops/backup-pocketbase.mjs
-```
-
-Validar:
-- Output muestra URL del blob y tamaño >0.
-- En Vercel Dashboard → Storage → `reservaya-assets` → aparece `backups/pb/auto-YYYY-MM-DD-HH-MM-SS.zip`.
-- Bajar el zip manualmente y abrirlo: debe tener `data.db`, `auxiliary.db`, carpeta `storage/`.
-
-**Done when**: backup local corrido con éxito, zip bajado y verificado.
-
-### BK.4 — Crear endpoint cron
-
-Archivo: `src/app/api/jobs/pb-backup/route.ts`
-
-```typescript
-import { NextResponse } from "next/server";
-import { createLogger } from "@/server/logger";
-import { runBackup } from "../../../../../scripts/ops/backup-pocketbase.mjs";
-
-const logger = createLogger("PB Backup Cron");
-
-// Vercel Functions: permitir hasta 5 min para un backup grande
-export const maxDuration = 300;
-
-export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    logger.error("CRON_SECRET no configurado");
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const result = await runBackup();
-    logger.info("Backup completo", result);
-    return NextResponse.json({ ok: true, ...result });
-  } catch (e) {
-    logger.error("Backup falló", e);
-    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
-  }
-}
-```
-
-**Nota sobre el import**: si TypeScript se queja de importar `.mjs`, mover `runBackup` a `src/server/pb-backup.ts` y que tanto el script CLI como el endpoint lo importen.
-
-### BK.5 — Agregar cron a vercel.json
-
-Editar `vercel.json`:
-
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/jobs/booking-reminders",
-      "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/jobs/pb-backup",
-      "schedule": "0 6 * * *"
-    }
-  ]
-}
-```
-
-`0 6 * * *` = todos los días a las 06:00 UTC = 03:00 AR.
-
-### BK.6 — Deploy y verificar cron
-
-```bash
-vercel --prod
-```
-
-- En Vercel Dashboard → proyecto → Settings → Crons → debe aparecer `/api/jobs/pb-backup @ 0 6 * * *`.
-- Test manual inmediato:
-```bash
-CRON=$(vercel env pull /tmp/.env.tmp --environment=production --yes && grep CRON_SECRET /tmp/.env.tmp | cut -d'"' -f2)
-curl -s -H "Authorization: Bearer $CRON" https://reservaya.ar/api/jobs/pb-backup
-```
-Debe responder `{"ok":true,"backup":"https://...blob...zip","size":N,"purged":0}`.
-
-### BK.7 — Validar restore (CRÍTICO)
-
-Esto NO es opcional. Un backup que no se puede restaurar es un backup ficticio.
-
-1. Bajar el último zip de Blob a local:
-   ```bash
-   curl -o /tmp/pb-backup.zip "<blob-url-del-paso-anterior>"
-   ```
-2. Levantar una PocketBase local nueva:
-   ```bash
-   docker run -d --name pb-restore-test \
-     -p 8091:8090 \
-     -v pb-restore-data:/pb/pb_data \
-     ghcr.io/muchobien/pocketbase:latest \
-     serve --http=0.0.0.0:8090 --dir=/pb/pb_data
-   ```
-3. Crear superuser temporal: `docker exec pb-restore-test /usr/local/bin/pocketbase superuser upsert test@test.com testpass1234 --dir=/pb/pb_data`.
-4. Login en http://localhost:8091/_/ con esas credenciales.
-5. Settings → Import collections (o usar `pb.backups.upload` vía API) → cargar el zip.
-6. Confirmar que aparecen las 18 colecciones y los 4 businesses.
-7. Limpiar: `docker rm -f pb-restore-test && docker volume rm pb-restore-data`.
-
-**Done when**: restore probado en entorno limpio y datos verificados.
-
-### BK.8 — Documentar procedimiento de recovery
-
-Crear `docs/ops/DISASTER_RECOVERY.md` con:
-- Dónde están los backups (Vercel Blob, prefijo `backups/pb/`).
-- Cómo descargar el último.
-- Comandos paso a paso para restaurar en un PB nuevo.
-- Qué hacer con Vercel durante la ventana de downtime.
+**Done when**: hay evidencia de restore funcional y la app puede reservar contra el entorno restaurado.
 
 ---
 
@@ -510,7 +331,7 @@ echo "Todo OK"
 - [ ] Subir un logo custom al business en /admin/settings.
 - [ ] Verificar que aparece en la landing pública.
 - [ ] Revisar Sentry: 0 errores en la última hora.
-- [ ] Revisar Vercel Blob: último backup hoy.
+- [ ] Revisar Supabase: backup/restore o migraciones validadas según `docs/ops/DISASTER_RECOVERY.md`.
 - [ ] Revisar Vercel logs: ningún `[ERROR]` en la última hora.
 
 ### V.3 — Preparar comunicación de lanzamiento
@@ -539,7 +360,7 @@ Marcar a medida que se completa cada sección:
 
 - [ ] Sección S — Sentry
 - [ ] Sección B — Vercel Blob
-- [ ] Sección BK — Backup automático
+- [ ] Sección BK — Backups/migrations Supabase
 - [ ] Sección WA — WhatsApp productivo
 - [ ] Sección V — Validación final
 - [ ] 🚀 Lanzamiento público

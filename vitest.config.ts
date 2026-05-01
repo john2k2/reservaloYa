@@ -3,8 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import dotenv from "dotenv";
 
-// Carga .env.test para integration tests con PocketBase real.
-// Solo cuando el archivo existe — en CI sin credenciales los tests se saltean.
+// Carga .env.test cuando existe para tests que necesitan configuración local.
 dotenv.config({ path: ".env.test" });
 
 export default defineConfig({

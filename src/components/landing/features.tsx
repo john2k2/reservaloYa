@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import { SectionTitle } from "@/components/layout/section-title";
 import { AnimatedSection } from "./animated-section";
 import { cn } from "@/lib/utils";

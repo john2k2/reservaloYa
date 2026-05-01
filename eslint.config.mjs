@@ -13,12 +13,6 @@ const eslintConfig = defineConfig([
     "build/**",
     "coverage/**",
     "next-env.d.ts",
-    "pocketbase/pb_data/**",
-    "pocketbase/pb_data_corrupt_*/**",
-    "pocketbase/pb_migrations/**",
-    "pocketbase/pb_hooks/**",
-    "pocketbase/pb_public/**",
-    "pocketbase_*/**",
     ".codex-output/**",
   ]),
 ]);

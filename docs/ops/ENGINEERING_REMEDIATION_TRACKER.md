@@ -1,6 +1,6 @@
 # Engineering Remediation Tracker
 
-Ultima actualizacion: 2026-04-24
+Ultima actualizacion: 2026-05-01
 
 ## Objetivo
 
@@ -20,7 +20,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 | ENG-06 | Unificar integracion Mercado Pago | P1 | Hecho | Precio centralizado, preferences unificadas, webhook validado |
 | ENG-07 | Logging / observabilidad | P1 | Hecho | Todos los archivos migrados al logger comun |
 | ENG-08 | Documentacion alineada | P2 | Hecho | Consolidada de 22 a 7 archivos |
-| ENG-09 | Higiene del repo | P2 | Hecho | lint, typecheck, build en verde. 0 TODOs/dead code |
+| ENG-09 | Higiene del repo | P2 | Hecho | lint, typecheck, build en verde. Scripts/infra PocketBase obsoletos eliminados |
 
 ---
 

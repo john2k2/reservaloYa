@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, startTransition } from "react";
-import { CheckCircle2, Menu, User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Sheet, SheetContent, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
