@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { z } from "zod";
+
 import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
 import { buildAbsoluteBookingConfirmationUrl } from "@/server/public-booking-links";
@@ -317,15 +319,21 @@ export async function refreshMercadoPagoAccessToken(
   }
 }
 
-// ─── Webhook payload types ────────────────────────────────────────────────────
+// ─── Webhook payload schema ───────────────────────────────────────────────────
 
-export type MPWebhookPayload = {
-  action?: string;        // "payment.created" | "payment.updated"
-  type?: string;          // "payment"
-  data?: { id?: string }; // payment ID
-  id?: string | number;   // también puede venir aquí
-  user_id?: string | number;
-};
+export const mpWebhookPayloadSchema = z.object({
+  action: z.string().optional(),
+  type: z.string().optional(),
+  data: z
+    .object({
+      id: z.union([z.string(), z.number()]).optional(),
+    })
+    .optional(),
+  id: z.union([z.string(), z.number()]).optional(),
+  user_id: z.union([z.string(), z.number()]).optional(),
+});
+
+export type MPWebhookPayload = z.infer<typeof mpWebhookPayloadSchema>;
 
 export type MPPaymentStatus =
   | "pending"

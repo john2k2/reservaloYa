@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient, updateSupabaseRecord } from "./_core";
 import { buildBusinessMercadoPagoTokenPatch, buildBusinessMercadoPagoTokenClearPatch, normalizeMercadoPagoCollectorId } from "@/server/payments-domain";
+import { decryptMPToken } from "@/server/mp-token-crypto";
 import type { BusinessRecord } from "@/server/supabase-domain";
 
 export async function updateSupabaseBusinessMPTokens(input: {
@@ -24,7 +25,7 @@ export async function getSupabaseBusinessPaymentSettingsByCollectorId(
 
   const { data, error } = await client
     .from("businesses")
-    .select("id, slug, name, mpConnected, mpCollectorId, mpAccessToken")
+    .select("id, slug, name, mpConnected, mpCollectorId, mpAccessToken, mpRefreshToken, mpTokenExpiresAt")
     .eq("mpCollectorId", normalizedCollectorId)
     .single();
 
@@ -37,5 +38,9 @@ export async function getSupabaseBusinessPaymentSettingsByCollectorId(
     businessSlug: business.slug,
     businessName: business.name,
     mpConnected: business.mpConnected ?? false,
+    mpCollectorId: business.mpCollectorId,
+    mpAccessToken: decryptMPToken(business.mpAccessToken) ?? undefined,
+    mpRefreshToken: decryptMPToken(business.mpRefreshToken) ?? undefined,
+    mpTokenExpiresAt: business.mpTokenExpiresAt,
   };
 }

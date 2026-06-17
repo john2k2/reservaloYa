@@ -4,7 +4,7 @@ import {
   getMPPaymentInfo,
   isValidMPWebhookSignature,
   mapMPStatusToPaymentStatus,
-  type MPWebhookPayload,
+  mpWebhookPayloadSchema,
   shouldVerifyMPWebhookSignature,
 } from "@/server/mercadopago";
 import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
@@ -171,12 +171,20 @@ async function canApplySubscriptionPayment(input: {
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const body = (await request.json().catch(() => null)) as MPWebhookPayload | null;
+  const rawBody = await request.json().catch(() => null);
+  const parseResult = mpWebhookPayloadSchema.safeParse(rawBody);
+
+  if (!parseResult.success) {
+    logger.warn("Payload de webhook invalido", parseResult.error.flatten());
+    return NextResponse.json({ ok: false, error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  const body = parseResult.data;
 
   const isPaymentEvent =
-    body?.type === "payment" ||
-    body?.action === "payment.created" ||
-    body?.action === "payment.updated" ||
+    body.type === "payment" ||
+    body.action === "payment.created" ||
+    body.action === "payment.updated" ||
     url.searchParams.get("type") === "payment";
 
   if (!isPaymentEvent) {
@@ -184,8 +192,8 @@ export async function POST(request: Request) {
   }
 
   const paymentId =
-    (body?.data?.id ? String(body.data.id) : null) ??
-    (body?.id ? String(body.id) : null) ??
+    (body.data?.id ? String(body.data.id) : null) ??
+    (body.id ? String(body.id) : null) ??
     url.searchParams.get("data.id") ??
     url.searchParams.get("id");
 
@@ -213,7 +221,7 @@ export async function POST(request: Request) {
 
   try {
     const collectorIdFromRequest =
-      (body?.user_id != null ? String(body.user_id) : null) ?? url.searchParams.get("user_id");
+      (body.user_id != null ? String(body.user_id) : null) ?? url.searchParams.get("user_id");
 
     let businessPaymentSettings = collectorIdFromRequest
       ? await getSupabaseBusinessPaymentSettingsByCollectorId(collectorIdFromRequest)

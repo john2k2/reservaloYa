@@ -40,12 +40,16 @@ const {
   getBlueDollarRateMock: vi.fn(),
 }));
 
-vi.mock("@/server/mercadopago", () => ({
-  getMPPaymentInfo: getMPPaymentInfoMock,
-  isValidMPWebhookSignature: isValidMPWebhookSignatureMock,
-  mapMPStatusToPaymentStatus: mapMPStatusToPaymentStatusMock,
-  shouldVerifyMPWebhookSignature: shouldVerifyMPWebhookSignatureMock,
-}));
+vi.mock("@/server/mercadopago", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/server/mercadopago")>();
+  return {
+    ...original,
+    getMPPaymentInfo: getMPPaymentInfoMock,
+    isValidMPWebhookSignature: isValidMPWebhookSignatureMock,
+    mapMPStatusToPaymentStatus: mapMPStatusToPaymentStatusMock,
+    shouldVerifyMPWebhookSignature: shouldVerifyMPWebhookSignatureMock,
+  };
+});
 
 vi.mock("@/server/supabase-store", () => ({
   getSupabaseBusinessPaymentSettingsByCollectorId: getSupabaseBusinessPaymentSettingsByCollectorIdMock,
@@ -186,6 +190,23 @@ describe("mercadopago webhook route", () => {
 
     expect(response.status).toBe(401);
     expect(body).toEqual({ ok: false, error: "Invalid webhook signature" });
+  });
+
+  it("returns 400 when the payload fails Zod validation", async () => {
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: "invalid" }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ ok: false, error: "Invalid webhook payload" });
+    expect(getMPPaymentInfoMock).not.toHaveBeenCalled();
   });
 
   it("returns ok when Mercado Pago payment info cannot be retrieved", async () => {
