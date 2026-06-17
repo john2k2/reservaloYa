@@ -245,22 +245,38 @@ export async function getSupabaseAdminDashboardData(businessId: string) {
 }
 
 
+type PaginationOptions = {
+  page?: number;
+  limit?: number;
+};
+
+function resolvePaginationRange(pagination?: PaginationOptions, defaultLimit = 100) {
+  const page = Math.max(1, pagination?.page ?? 1);
+  const limit = Math.max(1, pagination?.limit ?? defaultLimit);
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  return { from, to };
+}
+
 export async function getSupabaseAdminBookingsData(
   businessId: string,
   filters?: {
     status?: string;
     date?: string;
     q?: string;
-  }
+  },
+  pagination?: PaginationOptions
 ) {
   const client = await createServerClient();
+  const { from, to } = resolvePaginationRange(pagination, 100);
 
   const { data: bookingsData } = await client
     .from("bookings")
     .select("*, customer:customers(*), service:services(*)")
     .eq("business_id", businessId)
     .order("bookingDate")
-    .order("startTime");
+    .order("startTime")
+    .range(from, to);
 
   const bookings = (bookingsData ?? []) as (BookingRecord & { customer?: CustomerRecord; service?: ServiceRecord })[];
 
@@ -281,16 +297,36 @@ export async function getSupabaseAdminBookingsData(
 }
 
 
-export async function getSupabaseAdminCustomersData(businessId: string, query?: string) {
+export async function getSupabaseAdminCustomersData(
+  businessId: string,
+  query?: string,
+  pagination?: PaginationOptions
+) {
   const client = await createServerClient();
+  const { from, to } = resolvePaginationRange(pagination, 100);
 
-  const [{ data: customersData }, { data: bookingsData }] = await Promise.all([
-    client.from("customers").select("*").eq("business_id", businessId).order("fullName"),
-    client.from("bookings").select("customer_id, bookingDate, startTime").eq("business_id", businessId),
-  ]);
+  const { data: customersData } = await client
+    .from("customers")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("fullName")
+    .range(from, to);
 
   const customers = (customersData ?? []) as CustomerRecord[];
-  const bookings = (bookingsData ?? []) as { customer_id: string; bookingDate: string; startTime: string }[];
+  const customerIds = customers.map((customer) => customer.id);
+
+  let bookings: { customer_id: string; bookingDate: string; startTime: string }[] = [];
+
+  if (customerIds.length > 0) {
+    const { data: bookingsData } = await client
+      .from("bookings")
+      .select("customer_id, bookingDate, startTime")
+      .in("customer_id", customerIds)
+      .order("bookingDate")
+      .order("startTime");
+
+    bookings = (bookingsData ?? []) as { customer_id: string; bookingDate: string; startTime: string }[];
+  }
 
   return buildAdminCustomersView(
     customers.map((customer) => ({

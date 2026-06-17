@@ -54,12 +54,35 @@ export type PlatformDashboardData = {
   recentBusinesses: PlatformBusinessRow[];
 };
 
-async function fetchPlatformData() {
+type PaginationOptions = {
+  page?: number;
+  limit?: number;
+};
+
+const DEFAULT_PLATFORM_PAGE = 1;
+const DEFAULT_PLATFORM_LIMIT = 50;
+
+function resolvePaginationRange(pagination?: PaginationOptions, defaultLimit = DEFAULT_PLATFORM_LIMIT) {
+  const page = Math.max(1, pagination?.page ?? DEFAULT_PLATFORM_PAGE);
+  const limit = Math.max(1, pagination?.limit ?? defaultLimit);
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  return { from, to };
+}
+
+async function fetchPlatformData(options?: { page?: number; limit?: number; all?: boolean }) {
   const client = createAdminClient();
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
+  let businessesQuery = client.from("businesses").select("*").order("created", { ascending: false });
+
+  if (!options?.all) {
+    const { from, to } = resolvePaginationRange(options, DEFAULT_PLATFORM_LIMIT);
+    businessesQuery = businessesQuery.range(from, to);
+  }
+
   const [businessesRes, appUsersRes, bookingsRes, authUsersRes, subsRes, servicesRes, availabilityRes, notificationsRes] = await Promise.all([
-    client.from("businesses").select("*").order("created", { ascending: false }),
+    businessesQuery,
     client.from("app_users").select("*"),
     client.from("bookings").select("id, created").gte("created", since30d),
     client.auth.admin.listUsers({ perPage: 1000 }),
@@ -158,7 +181,7 @@ function buildBusinessRow(
 export async function getPlatformDashboardData(): Promise<PlatformDashboardData | null> {
   noStore();
 
-  const { businesses, appUsers, bookings, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap } = await fetchPlatformData();
+  const { businesses, appUsers, bookings, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap } = await fetchPlatformData({ all: true });
 
   const now = new Date();
   const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -201,20 +224,21 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
   };
 }
 
-export async function getPlatformBusinessesList(): Promise<PlatformBusinessRow[] | null> {
+export async function getPlatformBusinessesList(pagination?: PaginationOptions): Promise<PlatformBusinessRow[] | null> {
   noStore();
 
-  const { businesses, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap } = await fetchPlatformData();
+  const { businesses, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap } = await fetchPlatformData(pagination);
   return businesses.map((b) => buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap));
 }
 
-export async function getPlatformUsersList(): Promise<PlatformUserRow[] | null> {
+export async function getPlatformUsersList(pagination?: PaginationOptions): Promise<PlatformUserRow[] | null> {
   noStore();
 
   const client = createAdminClient();
+  const { from, to } = resolvePaginationRange(pagination, DEFAULT_PLATFORM_LIMIT);
 
   const [appUsersRes, businessesRes, authUsersRes] = await Promise.all([
-    client.from("app_users").select("*").order("created", { ascending: false }),
+    client.from("app_users").select("*").order("created", { ascending: false }).range(from, to),
     client.from("businesses").select("id, name, slug"),
     client.auth.admin.listUsers({ perPage: 1000 }),
   ]);
