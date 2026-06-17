@@ -48,18 +48,18 @@ type Env = z.infer<typeof envSchema>;
 
 function parseEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
-  
-  if (!parsed.success) {
+
+  // Fail-fast by default in every environment. Tests can opt-out by setting
+  // SKIP_ENV_VALIDATION=true; NODE_ENV=test is also accepted so the test suite
+  // can run without a real .env file.
+  const skipValidation =
+    process.env.SKIP_ENV_VALIDATION === "true" || process.env.NODE_ENV === "test";
+
+  if (!parsed.success && !skipValidation) {
     const errors = parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
-    console.error("❌ Invalid environment variables:", errors);
-    
-    // Don't throw in production to avoid crashing the app
-    // Just log the error and return partial env
-    if (process.env.NODE_ENV === "production") {
-      return (parsed.data ?? {}) as Env;
-    }
+    throw new Error(`Invalid environment variables: ${errors.join("; ")}`);
   }
-  
+
   return (parsed.data ?? {}) as Env;
 }
 
