@@ -64,8 +64,17 @@ export function formatPrice(amount: number | null, currency: string): string | n
 
 // ─── Email HTML templates ────────────────────────────────────────────────────
 
+export function escapeHtml(value: string | number | null | undefined): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export function emailBase(title: string, content: string): string {
+  // title is always a static headline; content is already escaped HTML
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -126,21 +135,31 @@ export function buildConfirmationEmailHtml(p: {
   address: string | null;
   manageUrl: string;
 }): string {
+  const customerName = escapeHtml(p.customerName);
+  const businessName = escapeHtml(p.businessName);
+  const serviceName = escapeHtml(p.serviceName);
+  const date = escapeHtml(p.date);
+  const time = escapeHtml(p.time);
+  const duration = escapeHtml(p.duration);
+  const price = p.price ? escapeHtml(p.price) : null;
+  const address = p.address ? escapeHtml(p.address) : null;
+  const manageUrl = escapeHtml(p.manageUrl);
+
   const isRescheduled = p.mode === "rescheduled";
   const headline = isRescheduled
     ? `Tu reserva fue reprogramada`
     : `¡Tu reserva está confirmada!`;
   const intro = isRescheduled
-    ? `Hola <strong>${p.customerName}</strong>, tu turno en <strong>${p.businessName}</strong> fue reprogramado exitosamente.`
-    : `Hola <strong>${p.customerName}</strong>, tu turno en <strong>${p.businessName}</strong> ha sido confirmado.`;
+    ? `Hola <strong>${customerName}</strong>, tu turno en <strong>${businessName}</strong> fue reprogramado exitosamente.`
+    : `Hola <strong>${customerName}</strong>, tu turno en <strong>${businessName}</strong> ha sido confirmado.`;
 
   const details = [
-    detailRow("Servicio", p.serviceName),
-    detailRow("Fecha", p.date),
-    detailRow("Hora", p.time),
-    detailRow("Duración", p.duration),
-    ...(p.price ? [detailRow("Precio", p.price)] : []),
-    ...(p.address ? [detailRow("Dirección", p.address)] : []),
+    detailRow("Servicio", serviceName),
+    detailRow("Fecha", date),
+    detailRow("Hora", time),
+    detailRow("Duración", duration),
+    ...(price ? [detailRow("Precio", price)] : []),
+    ...(address ? [detailRow("Dirección", address)] : []),
   ].join("");
 
   const content = `
@@ -153,7 +172,7 @@ export function buildConfirmationEmailHtml(p: {
       </table>
     </div>
 
-    <a href="${p.manageUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+    <a href="${manageUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
       Ver o gestionar mi reserva
     </a>
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
@@ -172,18 +191,26 @@ export function buildReminderEmailHtml(p: {
   address: string | null;
   manageUrl: string;
 }): string {
+  const customerName = escapeHtml(p.customerName);
+  const businessName = escapeHtml(p.businessName);
+  const serviceName = escapeHtml(p.serviceName);
+  const date = escapeHtml(p.date);
+  const time = escapeHtml(p.time);
+  const address = p.address ? escapeHtml(p.address) : null;
+  const manageUrl = escapeHtml(p.manageUrl);
+
   const headline = "Recordatorio de tu turno";
   const details = [
-    detailRow("Servicio", p.serviceName),
-    detailRow("Fecha", p.date),
-    detailRow("Hora", p.time),
-    ...(p.address ? [detailRow("Dirección", p.address)] : []),
+    detailRow("Servicio", serviceName),
+    detailRow("Fecha", date),
+    detailRow("Hora", time),
+    ...(address ? [detailRow("Dirección", address)] : []),
   ].join("");
 
   const content = `
     <h1 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">⏰ ${headline}</h1>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">
-      Hola <strong>${p.customerName}</strong>, te recordamos que mañana tenés un turno en <strong>${p.businessName}</strong>.
+      Hola <strong>${customerName}</strong>, te recordamos que mañana tenés un turno en <strong>${businessName}</strong>.
     </p>
 
     <div style="background:#f9fafb;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
@@ -192,7 +219,7 @@ export function buildReminderEmailHtml(p: {
       </table>
     </div>
 
-    <a href="${p.manageUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+    <a href="${manageUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
       Ver o gestionar mi reserva
     </a>
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
@@ -214,20 +241,30 @@ export function buildBusinessNotificationHtml(p: {
   duration: string;
   adminUrl: string;
 }): string {
+  const businessName = escapeHtml(p.businessName);
+  const customerName = escapeHtml(p.customerName);
+  const customerEmail = p.customerEmail ? escapeHtml(p.customerEmail) : undefined;
+  const customerPhone = p.customerPhone ? escapeHtml(p.customerPhone) : undefined;
+  const serviceName = escapeHtml(p.serviceName);
+  const date = escapeHtml(p.date);
+  const time = escapeHtml(p.time);
+  const duration = escapeHtml(p.duration);
+  const adminUrl = escapeHtml(p.adminUrl);
+
   const isRescheduled = p.mode === "rescheduled";
   const headline = isRescheduled ? "Reserva reprogramada" : "Nueva reserva recibida";
   const intro = isRescheduled
-    ? `Un cliente reprogramó su turno en <strong>${p.businessName}</strong>.`
-    : `Recibiste una nueva reserva en <strong>${p.businessName}</strong>.`;
+    ? `Un cliente reprogramó su turno en <strong>${businessName}</strong>.`
+    : `Recibiste una nueva reserva en <strong>${businessName}</strong>.`;
 
   const details = [
-    detailRow("Cliente", p.customerName),
-    ...(p.customerEmail ? [detailRow("Email", p.customerEmail)] : []),
-    ...(p.customerPhone ? [detailRow("Teléfono", p.customerPhone)] : []),
-    detailRow("Servicio", p.serviceName),
-    detailRow("Fecha", p.date),
-    detailRow("Hora", p.time),
-    detailRow("Duración", p.duration),
+    detailRow("Cliente", customerName),
+    ...(customerEmail ? [detailRow("Email", customerEmail)] : []),
+    ...(customerPhone ? [detailRow("Teléfono", customerPhone)] : []),
+    detailRow("Servicio", serviceName),
+    detailRow("Fecha", date),
+    detailRow("Hora", time),
+    detailRow("Duración", duration),
   ].join("");
 
   const content = `
@@ -240,7 +277,7 @@ export function buildBusinessNotificationHtml(p: {
       </table>
     </div>
 
-    <a href="${p.adminUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+    <a href="${adminUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
       Ver en el panel admin
     </a>`;
 
@@ -256,22 +293,28 @@ export function buildFollowUpEmailHtml(p: {
   bookingUrl: string;
   reviewUrl?: string;
 }): string {
+  const customerName = escapeHtml(p.customerName);
+  const businessName = escapeHtml(p.businessName);
+  const serviceName = escapeHtml(p.serviceName);
+  const bookingUrl = escapeHtml(p.bookingUrl);
+  const reviewUrl = p.reviewUrl ? escapeHtml(p.reviewUrl) : undefined;
+
   const headline = "¿Cómo estuvo tu visita?";
-  const reviewButton = p.reviewUrl
-    ? `<a href="${p.reviewUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:12px;">
+  const reviewButton = reviewUrl
+    ? `<a href="${reviewUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:12px;">
       ⭐ Dejá tu reseña
     </a>`
     : "";
   const content = `
     <h1 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">⭐ ${headline}</h1>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">
-      Hola <strong>${p.customerName}</strong>, esperamos que hayas disfrutado tu servicio de
-      <strong>${p.serviceName}</strong> en <strong>${p.businessName}</strong>.
+      Hola <strong>${customerName}</strong>, esperamos que hayas disfrutado tu servicio de
+      <strong>${serviceName}</strong> en <strong>${businessName}</strong>.
     </p>
 
     ${reviewButton}
 
-    <a href="${p.bookingUrl}" style="display:block;text-align:center;background:#ffffff;color:#374151;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;border:1px solid #e5e7eb;">
+    <a href="${bookingUrl}" style="display:block;text-align:center;background:#ffffff;color:#374151;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;border:1px solid #e5e7eb;">
       Reservar nuevo turno
     </a>
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">

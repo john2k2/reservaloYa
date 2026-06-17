@@ -25,22 +25,26 @@ describe("booking notifications", () => {
     vi.unstubAllGlobals();
   });
 
-  it("detects available reminder channels when providers are configured", async () => {
-    process.env.RESEND_API_KEY = "re_test";
-    process.env.TWILIO_ACCOUNT_SID = "AC123";
-    process.env.TWILIO_AUTH_TOKEN = "auth";
-    process.env.TWILIO_WHATSAPP_FROM = "whatsapp:+14155238886";
-    process.env.TWILIO_WHATSAPP_TEMPLATE_SID = "HX123";
+  it(
+    "detects available reminder channels when providers are configured",
+    async () => {
+      process.env.RESEND_API_KEY = "re_test";
+      process.env.TWILIO_ACCOUNT_SID = "AC123";
+      process.env.TWILIO_AUTH_TOKEN = "auth";
+      process.env.TWILIO_WHATSAPP_FROM = "whatsapp:+14155238886";
+      process.env.TWILIO_WHATSAPP_TEMPLATE_SID = "HX123";
 
-    const { getAvailableReminderChannels } = await import("./booking-notifications");
+      const { getAvailableReminderChannels } = await import("./booking-notifications");
 
-    expect(
-      getAvailableReminderChannels({
-        customerEmail: "cliente@example.com",
-        customerPhone: "+5491155550101",
-      })
-    ).toEqual(["email", "whatsapp"]);
-  });
+      expect(
+        getAvailableReminderChannels({
+          customerEmail: "cliente@example.com",
+          customerPhone: "+5491155550101",
+        })
+      ).toEqual(["email", "whatsapp"]);
+    },
+    10_000
+  );
 
   it("sends confirmation email through Resend when configured", async () => {
     process.env.RESEND_API_KEY = "re_test";

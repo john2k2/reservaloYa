@@ -345,18 +345,20 @@ export async function createPublicBookingAction(formData: FormData) {
     );
   }
 
-  await sendConfirmationEmailIfPossible({
-    bookingId,
-    businessSlug: parsed.data.businessSlug,
-    customerName: parsed.data.fullName,
-    customerEmail: parsed.data.email || undefined,
-    customerPhone: parsed.data.phone,
-    serviceName: serviceEarly?.name || "Servicio",
-    bookingDate: parsed.data.bookingDate,
-    startTime: parsed.data.startTime,
-    notes: parsed.data.notes,
-    mode: isReschedule ? "rescheduled" : "created",
-  });
+  if (!isReschedule) {
+    await sendConfirmationEmailIfPossible({
+      bookingId,
+      businessSlug: parsed.data.businessSlug,
+      customerName: parsed.data.fullName,
+      customerEmail: parsed.data.email || undefined,
+      customerPhone: parsed.data.phone,
+      serviceName: serviceEarly?.name || "Servicio",
+      bookingDate: parsed.data.bookingDate,
+      startTime: parsed.data.startTime,
+      notes: parsed.data.notes,
+      mode: "created",
+    });
+  }
 
   redirect(
     buildConfirmationPageHref({

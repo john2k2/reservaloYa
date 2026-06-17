@@ -9,10 +9,10 @@ import { buildBookingDateOptions, findNextBookingDate, getDayOfWeek } from "@/li
 import { withBookingDateLock } from "@/server/booking-slot-lock";
 import { createLogger } from "@/server/logger";
 import { buildBookingConfirmationView, buildManageBookingView } from "@/server/bookings-domain";
+import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
 import { buildBookingCustomerDetails, buildBookingMutationFields, buildBookingTimeWindow, canMutatePublicBooking, fitsBookingWithinAvailability, hasBlockedSlotConflict, hasBookingConflict } from "@/server/booking-mutations-domain";
 import { buildBookingPaymentPatch, type BookingPaymentValidationContext, type BookingPaymentUpdateInput } from "@/server/payments-domain";
 import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
-import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
 import { getBookingConfirmationData } from "@/server/queries/public";
 import { trackAnalyticsEvent } from "@/server/analytics";
@@ -21,6 +21,8 @@ import { formatStatus, isActiveRecord, type BookingRecord, BookingStatus, Busine
 import { getSupabaseAdminClient, createSupabaseRecord, updateSupabaseRecord } from "./_core";
 import { getBusinessBySlug } from "./helpers";
 import type { JoinedBookingConfirmation, JoinedBookingManage, JoinedBookingWithBusiness, JoinedBookingWithBusinessStatus, UpdateSupabaseBookingPaymentInput } from "./types";
+
+const logger = createLogger("Booking Store");
 
 export async function getSupabaseBookingConfirmationData(input: {
   bookingId?: string;
@@ -223,9 +225,10 @@ export async function createSupabasePublicBooking(input: {
       const businessBookings = bookings.filter((booking) =>
         ["pending", "pending_payment", "confirmed"].includes(booking.status)
       );
-      const businessCustomers = customers.filter((customer) =>
-        input.phone ? customer.phone === input.phone : customer.email === input.email
-      );
+      const email = input.email?.trim();
+      const matchedByEmail = email
+        ? customers.find((customer) => customer.email === email)
+        : undefined;
 
       if (!fitsBookingWithinAvailability(dayRules, bookingWindow)) {
         throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
@@ -244,7 +247,7 @@ export async function createSupabasePublicBooking(input: {
         throw new Error("Ese horario ya no esta disponible.");
       }
 
-      let customer = businessCustomers[0];
+      let customer = matchedByEmail;
 
       if (!customer) {
         customer = await createSupabaseRecord<CustomerRecord>("customers", {
@@ -397,16 +400,49 @@ export async function rescheduleSupabasePublicBooking(input: {
         ...buildBookingCustomerDetails(input),
       });
 
-      await updateSupabaseRecord("bookings", booking.id, {
+      const resolvedStatus = business.autoConfirmBookings ? "confirmed" : "pending";
+
+      const updatedBooking = await updateSupabaseRecord<BookingRecord>("bookings", booking.id, {
         service_id: service.id,
         ...buildBookingMutationFields({
           bookingDate: input.bookingDate,
           startTime: input.startTime,
           durationMinutes: Number(service.durationMinutes),
-          status: "pending",
+          status: resolvedStatus,
           notes: input.notes,
         }),
       });
+
+      const confirmation = buildBookingConfirmationView({
+        bookingId: updatedBooking.id,
+        customerName: input.fullName,
+        customerEmail: input.email || null,
+        customerPhone: input.phone || null,
+        businessId: business.id,
+        businessName: business.name,
+        businessSlug: business.slug,
+        businessAddress: business.address ?? null,
+        businessTimezone: business.timezone ?? "America/Argentina/Buenos_Aires",
+        businessNotificationEmail: business.email ?? null,
+        serviceId: service.id,
+        serviceName: service.name,
+        durationMinutes: Number(service.durationMinutes),
+        priceAmount: service.price ?? null,
+        bookingDate: input.bookingDate,
+        startTime: input.startTime,
+        status: resolvedStatus,
+        manageToken: booking.manageToken,
+      });
+
+      await sendBookingConfirmationEmail(confirmation, "rescheduled").catch((error) => {
+        logger.error("Error enviando email de reprogramacion", error);
+      });
+
+      if (business.email) {
+        await sendBusinessNotificationEmail(confirmation, "rescheduled").catch((error) => {
+          logger.error("Error enviando notificacion de reprogramacion al negocio", error);
+        });
+      }
 
       return booking.id;
     }

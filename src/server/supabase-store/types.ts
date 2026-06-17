@@ -52,7 +52,12 @@ export interface JoinedBookingWithBusiness {
   customer_id?: string;
   service_id?: string;
   notes?: string;
-  business: Pick<BusinessRecord, "id" | "slug" | "name">;
+  confirmationCode?: string;
+  manageToken?: string;
+  business: Pick<
+    BusinessRecord,
+    "id" | "slug" | "name" | "autoConfirmBookings" | "address" | "timezone" | "email"
+  >;
 }
 
 export interface JoinedBookingWithBusinessStatus {
