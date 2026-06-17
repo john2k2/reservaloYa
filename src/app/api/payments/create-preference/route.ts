@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { redirect } from "next/navigation";
 
 import { getBlueDollarRate } from "@/lib/dollar-rate";
-import { getPublicAppUrl } from "@/lib/runtime";
+import { CSRF_TOKEN_HEADER, validateCsrfToken } from "@/lib/csrf";
 import { createLogger } from "@/server/logger";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { createSubscriptionPreference, isMercadoPagoConfigured } from "@/server/mercadopago";
@@ -13,18 +12,25 @@ export const dynamic = "force-dynamic";
 
 const logger = createLogger("MP Payment");
 
-export async function GET() {
-  const appUrl = getPublicAppUrl();
-
+export async function POST(request: Request) {
   const user = await getAuthenticatedSupabaseUser();
 
   if (!user?.businessId) {
-    redirect("/admin/login");
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  const csrfToken = request.headers.get(CSRF_TOKEN_HEADER);
+
+  if (!validateCsrfToken(csrfToken, user.id)) {
+    return NextResponse.json({ ok: false, error: "invalid_csrf" }, { status: 403 });
   }
 
   if (!isMercadoPagoConfigured()) {
     logger.error("MP_ACCESS_TOKEN no configurado");
-    return NextResponse.redirect(`${appUrl}/admin/subscription/pay?error=mp_not_configured`);
+    return NextResponse.json(
+      { ok: false, error: "mp_not_configured" },
+      { status: 503 }
+    );
   }
 
   const blueRate = await getBlueDollarRate();
@@ -37,7 +43,10 @@ export async function GET() {
 
   if (!result.ok) {
     logger.error("Error creando preferencia de suscripcion", result.error);
-    return NextResponse.redirect(`${appUrl}/admin/subscription/pay?error=preference_failed`);
+    return NextResponse.json(
+      { ok: false, error: "preference_failed" },
+      { status: 500 }
+    );
   }
 
   try {
@@ -51,8 +60,14 @@ export async function GET() {
     });
   } catch (err) {
     logger.error("Error registrando intento de pago de suscripcion", err);
-    return NextResponse.redirect(`${appUrl}/admin/subscription/pay?error=attempt_failed`);
+    return NextResponse.json(
+      { ok: false, error: "attempt_failed" },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.redirect(result.checkoutUrl);
+  return NextResponse.json({
+    ok: true,
+    checkoutUrl: result.checkoutUrl,
+  });
 }

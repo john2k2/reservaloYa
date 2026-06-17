@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getAdminShellData } from "@/server/queries/admin";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
+import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { generateCsrfToken } from "@/lib/csrf";
+import { SubscriptionPayButton } from "./subscription-pay-button";
 
 export default async function SubscriptionPayPage() {
   const shellData = await getAdminShellData();
@@ -15,17 +18,16 @@ export default async function SubscriptionPayPage() {
     redirect("/admin/dashboard");
   }
 
+  const user = await getAuthenticatedSupabaseUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   const blueRate = await getBlueDollarRate();
   const arsPrice = getSubscriptionArsPrice(blueRate);
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
-
-  async function handlePayAction() {
-    "use server";
-    
-    // This would be called by the form to generate the payment link
-    // For now redirect to payment
-    redirect("/api/payments/create-preference");
-  }
+  const csrfToken = generateCsrfToken(user.id);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
@@ -52,14 +54,10 @@ export default async function SubscriptionPayPage() {
             </div>
           </div>
 
-          <form action={handlePayAction}>
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-[#00B1EA] px-4 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#0096D6]"
-            >
-              Pagar con MercadoPago
-            </button>
-          </form>
+          <SubscriptionPayButton
+            csrfToken={csrfToken}
+            label="Pagar con MercadoPago"
+          />
         </div>
 
         <p className="text-xs text-muted-foreground">

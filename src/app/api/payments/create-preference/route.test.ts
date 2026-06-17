@@ -1,12 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { redirectMock } = vi.hoisted(() => ({
-  redirectMock: vi.fn((url: string) => {
-    throw new Error(`REDIRECT:${url}`);
-  }),
-}));
-
-const { getAuthenticatedSupabaseUserMock } = vi.hoisted(() => ({
+const {
+  getAuthenticatedSupabaseUserMock,
+} = vi.hoisted(() => ({
   getAuthenticatedSupabaseUserMock: vi.fn(),
 }));
 
@@ -23,8 +19,8 @@ const { createSupabaseSubscriptionPaymentAttemptMock } = vi.hoisted(() => ({
   createSupabaseSubscriptionPaymentAttemptMock: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({
-  redirect: redirectMock,
+const { validateCsrfTokenMock } = vi.hoisted(() => ({
+  validateCsrfTokenMock: vi.fn(),
 }));
 
 vi.mock("@/server/supabase-auth", () => ({
@@ -44,46 +40,82 @@ vi.mock("@/server/supabase-store", () => ({
   createSupabaseSubscriptionPaymentAttempt: createSupabaseSubscriptionPaymentAttemptMock,
 }));
 
-describe("create preference route", () => {
-  const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+vi.mock("@/lib/csrf", () => ({
+  CSRF_TOKEN_HEADER: "X-CSRF-Token",
+  validateCsrfToken: validateCsrfTokenMock,
+}));
 
+function createPostRequest(token?: string) {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["X-CSRF-Token"] = token;
+  }
+
+  return new Request("http://localhost/api/payments/create-preference", {
+    method: "POST",
+    headers,
+  });
+}
+
+describe("create preference route", () => {
   beforeEach(() => {
     vi.resetModules();
-    redirectMock.mockClear();
     getAuthenticatedSupabaseUserMock.mockReset();
     getBlueDollarRateMock.mockReset();
     createSubscriptionPreferenceMock.mockReset();
     isMercadoPagoConfiguredMock.mockReset();
     createSupabaseSubscriptionPaymentAttemptMock.mockReset();
+    validateCsrfTokenMock.mockReset();
 
-    process.env.NEXT_PUBLIC_APP_URL = "https://reservaya.test";
+    validateCsrfTokenMock.mockReturnValue(true);
     isMercadoPagoConfiguredMock.mockReturnValue(true);
     createSupabaseSubscriptionPaymentAttemptMock.mockResolvedValue({ id: "attempt-1" });
   });
 
-  afterEach(() => {
-    process.env.NEXT_PUBLIC_APP_URL = originalAppUrl;
-  });
-
-  it("redirects to admin login when there is no authenticated user", async () => {
+  it("returns 401 when there is no authenticated user", async () => {
     getAuthenticatedSupabaseUserMock.mockResolvedValue(null);
-    const { GET } = await import("./route");
+    const { POST } = await import("./route");
 
-    await expect(GET()).rejects.toThrow("REDIRECT:/admin/login");
+    const response = await POST(createPostRequest("valid-token"));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({ ok: false, error: "unauthorized" });
   });
 
-  it("redirects to admin login when user has no linked business", async () => {
+  it("returns 401 when user has no linked business", async () => {
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "u1",
       email: "user@demo.com",
       role: "owner",
     });
-    const { GET } = await import("./route");
+    const { POST } = await import("./route");
 
-    await expect(GET()).rejects.toThrow("REDIRECT:/admin/login");
+    const response = await POST(createPostRequest("valid-token"));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({ ok: false, error: "unauthorized" });
   });
 
-  it("redirects to subscription pay when MP is not configured", async () => {
+  it("returns 403 when csrf token is invalid", async () => {
+    validateCsrfTokenMock.mockReturnValue(false);
+    getAuthenticatedSupabaseUserMock.mockResolvedValue({
+      id: "u1",
+      email: "owner@demo.com",
+      role: "owner",
+      businessId: "biz-1",
+    });
+    const { POST } = await import("./route");
+
+    const response = await POST(createPostRequest("bad-token"));
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({ ok: false, error: "invalid_csrf" });
+  });
+
+  it("returns 503 when MP is not configured", async () => {
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "u1",
       email: "owner@demo.com",
@@ -91,17 +123,16 @@ describe("create preference route", () => {
       businessId: "biz-1",
     });
     isMercadoPagoConfiguredMock.mockReturnValue(false);
-    const { GET } = await import("./route");
+    const { POST } = await import("./route");
 
-    const response = await GET();
+    const response = await POST(createPostRequest("valid-token"));
+    const body = await response.json();
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "https://reservaya.test/admin/subscription/pay?error=mp_not_configured"
-    );
+    expect(response.status).toBe(503);
+    expect(body).toEqual({ ok: false, error: "mp_not_configured" });
   });
 
-  it("creates a subscription preference and redirects to checkout", async () => {
+  it("creates a subscription preference and returns checkout url", async () => {
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "u1",
       email: "owner@demo.com",
@@ -114,9 +145,10 @@ describe("create preference route", () => {
       preferenceId: "pref-123",
       checkoutUrl: "https://mp.test/checkout/123",
     });
-    const { GET } = await import("./route");
+    const { POST } = await import("./route");
 
-    const response = await GET();
+    const response = await POST(createPostRequest("valid-token"));
+    const body = await response.json();
 
     expect(createSubscriptionPreferenceMock).toHaveBeenCalledWith({
       businessId: "biz-1",
@@ -130,11 +162,14 @@ describe("create preference route", () => {
       blueRate: 1200,
       status: "pending",
     });
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://mp.test/checkout/123");
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      ok: true,
+      checkoutUrl: "https://mp.test/checkout/123",
+    });
   });
 
-  it("redirects to error page when the payment attempt cannot be stored", async () => {
+  it("returns 500 when the payment attempt cannot be stored", async () => {
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "u1",
       email: "owner@demo.com",
@@ -148,17 +183,16 @@ describe("create preference route", () => {
       checkoutUrl: "https://mp.test/checkout/123",
     });
     createSupabaseSubscriptionPaymentAttemptMock.mockRejectedValue(new Error("db down"));
-    const { GET } = await import("./route");
+    const { POST } = await import("./route");
 
-    const response = await GET();
+    const response = await POST(createPostRequest("valid-token"));
+    const body = await response.json();
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "https://reservaya.test/admin/subscription/pay?error=attempt_failed"
-    );
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ ok: false, error: "attempt_failed" });
   });
 
-  it("redirects to error page when preference creation fails", async () => {
+  it("returns 500 when preference creation fails", async () => {
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "u1",
       email: "owner@demo.com",
@@ -170,13 +204,12 @@ describe("create preference route", () => {
       ok: false,
       error: "MP error",
     });
-    const { GET } = await import("./route");
+    const { POST } = await import("./route");
 
-    const response = await GET();
+    const response = await POST(createPostRequest("valid-token"));
+    const body = await response.json();
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "https://reservaya.test/admin/subscription/pay?error=preference_failed"
-    );
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ ok: false, error: "preference_failed" });
   });
 });
