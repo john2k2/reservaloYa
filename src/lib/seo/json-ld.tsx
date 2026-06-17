@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { getSiteWhatsAppPhoneForSchema, siteContact } from "@/lib/contact";
+import { safeJsonLdStringify } from "@/lib/seo/safe-json-ld";
 import { siteConfig } from "@/lib/seo/metadata";
 import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 
@@ -24,7 +25,7 @@ export function OrganizationJsonLd(): ReactElement {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -56,7 +57,7 @@ export function SoftwareApplicationJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -82,7 +83,7 @@ export function FAQPageJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -99,7 +100,7 @@ export function WebSiteJsonLd(): ReactElement {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }

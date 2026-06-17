@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
 
+import { safeJsonLdStringify } from "@/lib/seo/safe-json-ld";
+
 const DAY_OF_WEEK_SCHEMA: Record<string, string> = {
   Domingo: "Sunday",
   Lunes: "Monday",
@@ -122,7 +124,7 @@ export function LocalBusinessJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -181,7 +183,7 @@ export function ServiceJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -232,7 +234,7 @@ export function WebPageJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -262,7 +264,7 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps): ReactElement
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -294,7 +296,7 @@ export function FAQJsonLd({ faqs }: FAQJsonLdProps): ReactElement {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
