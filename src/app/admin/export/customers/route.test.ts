@@ -50,4 +50,30 @@ describe("customers export route", () => {
     expect(body).toContain("juan@example.com");
     expect(getAdminCustomersDataWithFilterMock).toHaveBeenCalledWith("Juan");
   });
+
+  it("sanitizes formula-prefixed values to prevent CSV injection", async () => {
+    getAdminShellDataMock.mockResolvedValue({
+      businessSlug: "demo-barberia",
+    });
+    getAdminCustomersDataWithFilterMock.mockResolvedValue([
+      {
+        fullName: "=HYPERLINK(\"http://malicious\")",
+        phone: "+5491112345678",
+        email: "a@b.com",
+        notes: "@SUM(A1:A2)",
+        bookingsCount: 1,
+        lastBookingDate: "2026-03-18",
+      },
+    ]);
+    const { GET } = await import("./route");
+
+    const response = await GET(new Request("http://localhost/admin/export/customers"));
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain('"\'=HYPERLINK(""http://malicious"")"');
+    expect(body).toContain("'@SUM(A1:A2)");
+    expect(body).not.toContain(",=HYPERLINK");
+    expect(body).not.toContain(",@SUM");
+  });
 });

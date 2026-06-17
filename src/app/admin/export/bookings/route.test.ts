@@ -57,4 +57,33 @@ describe("bookings export route", () => {
       q: "Juan",
     });
   });
+
+  it("sanitizes formula-prefixed values to prevent CSV injection", async () => {
+    getAdminShellDataMock.mockResolvedValue({
+      businessSlug: "demo-barberia",
+    });
+    getAdminBookingsDataMock.mockResolvedValue([
+      {
+        bookingDate: "2026-03-20",
+        startTime: "10:00",
+        customerName: "=CMD|' /C calc'!A0",
+        phone: "+1122334455",
+        serviceName: "@SUM(A1:A2)",
+        statusLabel: "-Confirmado",
+        notes: "+123456",
+      },
+    ]);
+    const { GET } = await import("./route");
+
+    const response = await GET(new Request("http://localhost/admin/export/bookings"));
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain("'=CMD|' /C calc'!A0");
+    expect(body).toContain("'@SUM(A1:A2)");
+    expect(body).toContain("'-Confirmado");
+    expect(body).toContain("'+123456");
+    expect(body).not.toContain(",=CMD");
+    expect(body).not.toContain(",@SUM");
+  });
 });

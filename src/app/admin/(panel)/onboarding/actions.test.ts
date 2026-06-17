@@ -48,8 +48,21 @@ vi.mock("@/server/supabase-store/_core", () => ({
   getSupabaseRecord: getSupabaseRecordMock,
 }));
 
+vi.mock("@/server/supabase-store", () => ({
+  clearSupabaseBusinessMPTokens: vi.fn(),
+}));
+
+vi.mock("date-fns-tz", () => ({
+  formatInTimeZone: vi.fn((date: Date) => date.toISOString()),
+}));
+
+vi.mock("date-fns/locale", () => ({
+  es: {},
+}));
+
 describe("onboarding owner-only actions", () => {
   beforeEach(() => {
+    vi.resetModules();
     redirectMock.mockClear();
     revalidatePathMock.mockReset();
     requireAdminRouteAccessMock.mockReset();
@@ -60,13 +73,14 @@ describe("onboarding owner-only actions", () => {
     getSupabaseRecordMock.mockReset();
   });
 
-  it("blocks staff from creating businesses from onboarding", async () => {
+  it("blocks staff from creating businesses from onboarding quickly", async () => {
     requireAdminRouteAccessMock.mockRejectedValue(
       new Error(
         "REDIRECT:/admin/dashboard?error=Solo%20el%20owner%20puede%20cambiar%20la%20pagina%20y%20la%20configuracion%20del%20negocio."
       )
     );
 
+    const start = Date.now();
     const { createOnboardedBusinessAction } = await import("./actions");
     const formData = new FormData();
     formData.set("templateSlug", "demo-barberia");
@@ -78,6 +92,7 @@ describe("onboarding owner-only actions", () => {
 
     await expect(createOnboardedBusinessAction(formData)).rejects.toThrow("REDIRECT:");
     expect(createSupabaseRecordMock).not.toHaveBeenCalled();
+    expect(Date.now() - start).toBeLessThan(1000);
   });
 
   it("lets owners create businesses from onboarding", async () => {
