@@ -1,17 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getPublicBookingFlowDataMock } = vi.hoisted(() => ({
-  getPublicBookingFlowDataMock: vi.fn(),
-}));
+const { getPublicBookingFlowDataMock, consumeRateLimitMock, getRateLimitIdentifierMock } = vi.hoisted(
+  () => ({
+    getPublicBookingFlowDataMock: vi.fn(),
+    consumeRateLimitMock: vi.fn(),
+    getRateLimitIdentifierMock: vi.fn(),
+  })
+);
 
 vi.mock("@/server/queries/public", () => ({
   getPublicBookingFlowData: getPublicBookingFlowDataMock,
+}));
+
+vi.mock("@/server/rate-limit", () => ({
+  consumeRateLimit: consumeRateLimitMock,
+  getRateLimitIdentifier: getRateLimitIdentifierMock,
 }));
 
 describe("public booking slots route", () => {
   beforeEach(() => {
     vi.resetModules();
     getPublicBookingFlowDataMock.mockReset();
+    consumeRateLimitMock.mockReset();
+    getRateLimitIdentifierMock.mockReset();
+
+    getRateLimitIdentifierMock.mockReturnValue("ip-1");
+    consumeRateLimitMock.mockResolvedValue({
+      ok: true,
+      remaining: 99,
+      retryAfterSeconds: 0,
+      store: "memory" as const,
+    });
   });
 
   it("returns 400 when required params are missing", async () => {
@@ -73,5 +92,50 @@ describe("public booking slots route", () => {
 
     expect(response.status).toBe(503);
     expect(body).toEqual({ error: "No pudimos cargar los horarios en este momento." });
+  });
+
+  it("applies rate limiting by IP before querying availability", async () => {
+    getRateLimitIdentifierMock.mockReturnValue("1.2.3.4");
+    getPublicBookingFlowDataMock.mockResolvedValue({
+      bookingDate: "2026-03-30",
+      slots: ["10:00"],
+    });
+    const { GET } = await import("./route");
+
+    await GET(
+      new Request("http://localhost/api/public/booking-slots?slug=demo-barberia&serviceId=svc-1&date=2026-03-30", {
+        headers: { "x-forwarded-for": "1.2.3.4" },
+      })
+    );
+
+    expect(getRateLimitIdentifierMock).toHaveBeenCalledWith(expect.any(Headers), "anonymous");
+    expect(consumeRateLimitMock).toHaveBeenCalledWith({
+      bucket: "public-booking-slots",
+      identifier: "1.2.3.4",
+      max: 100,
+      windowMs: 60_000,
+    });
+    expect(getPublicBookingFlowDataMock).toHaveBeenCalled();
+  });
+
+  it("returns 429 with Retry-After when rate limit is exceeded", async () => {
+    getRateLimitIdentifierMock.mockReturnValue("ip-blocked");
+    consumeRateLimitMock.mockResolvedValue({
+      ok: false,
+      remaining: 0,
+      retryAfterSeconds: 45,
+      store: "memory" as const,
+    });
+    const { GET } = await import("./route");
+
+    const response = await GET(
+      new Request("http://localhost/api/public/booking-slots?slug=demo-barberia&serviceId=svc-1&date=2026-03-30")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("45");
+    expect(body).toEqual({ error: "Demasiadas solicitudes. Intenta nuevamente en unos segundos." });
+    expect(getPublicBookingFlowDataMock).not.toHaveBeenCalled();
   });
 });

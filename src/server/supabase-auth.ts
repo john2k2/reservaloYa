@@ -5,6 +5,7 @@ import {
   createSessionClient,
   persistSupabaseAuth,
   clearSupabaseAuth,
+  getSupabaseAuthTokenFromCookies,
 } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
 
@@ -91,6 +92,19 @@ export async function signInSupabaseUser(email: string, password: string) {
 }
 
 export async function signOutSupabaseUser() {
+  try {
+    const token = await getSupabaseAuthTokenFromCookies();
+    if (token) {
+      const admin = createAdminClient();
+      const { data: { user }, error } = await admin.auth.getUser(token);
+      if (user && !error) {
+        await admin.auth.admin.signOut(user.id);
+      }
+    }
+  } catch {
+    // Best-effort invalidation: still clear the local cookie below.
+  }
+
   await clearSupabaseAuth();
 }
 
@@ -245,4 +259,10 @@ export async function updateSupabaseUserPassword(accessToken: string, newPasswor
 
   const { error } = await admin.auth.admin.updateUserById(user.id, { password: newPassword });
   if (error) throw error;
+
+  try {
+    await admin.auth.admin.signOut(user.id);
+  } catch {
+    // Best-effort: invalidate existing sessions after a password change.
+  }
 }

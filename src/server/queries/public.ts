@@ -7,6 +7,10 @@ import {
   getSupabaseBookingConfirmationData,
   getSupabaseManageBookingData,
 } from "@/server/supabase-store";
+import {
+  isValidBookingConfirmationToken,
+  isValidBookingManageToken,
+} from "@/server/public-booking-links";
 
 const getCachedSupabasePublicBusinessPageData = unstable_cache(
   async (slug: string) => getSupabasePublicBusinessPageData(slug),
@@ -66,6 +70,8 @@ export async function getPublicBookingFlowData({
 export async function getBookingConfirmationData({
   slug,
   bookingId,
+  token,
+  skipTokenValidation,
 }: {
   slug: string;
   bookingId?: string;
@@ -78,12 +84,17 @@ export async function getBookingConfirmationData({
     return null;
   }
 
+  if (!skipTokenValidation && !isValidBookingConfirmationToken({ slug, bookingId, token })) {
+    return null;
+  }
+
   return getSupabaseBookingConfirmationData({ slug, bookingId });
 }
 
 export async function getPublicManageBookingData({
   slug,
   bookingId,
+  token,
 }: {
   slug: string;
   bookingId?: string;
@@ -92,6 +103,10 @@ export async function getPublicManageBookingData({
   noStore();
 
   if (!bookingId) {
+    return null;
+  }
+
+  if (!isValidBookingManageToken({ slug, bookingId, token })) {
     return null;
   }
 
