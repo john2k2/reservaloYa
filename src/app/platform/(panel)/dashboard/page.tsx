@@ -1,12 +1,17 @@
 import { BarChart2, Building2, CalendarCheck, TrendingUp, Users, CreditCard, Clock, AlertCircle, DollarSign, Ghost, Timer } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { getPlatformDashboardData } from "@/server/queries/platform";
 import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Platform Dashboard" };
+export const metadata: Metadata = {
+  title: "Dashboard · Plataforma · ReservaYa",
+  description: "Panel de administración de la plataforma ReservaYa.",
+  robots: { index: false, follow: false },
+};
 
 export default async function PlatformDashboardPage() {
   let data;

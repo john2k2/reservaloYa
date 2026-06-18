@@ -19,6 +19,7 @@
 
 # tools locales
 .engram/
+.atl/
 
 # next.js
 /.next/

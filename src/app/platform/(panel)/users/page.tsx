@@ -1,9 +1,14 @@
 import { Users } from "lucide-react";
+import type { Metadata } from "next";
 
 import { getPlatformUsersList } from "@/server/queries/platform";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Usuarios · Platform" };
+export const metadata: Metadata = {
+  title: "Usuarios · Plataforma · ReservaYa",
+  description: "Gestión de usuarios registrados en la plataforma ReservaYa.",
+  robots: { index: false, follow: false },
+};
 
 const roleLabels: Record<string, string> = {
   owner: "Dueño",

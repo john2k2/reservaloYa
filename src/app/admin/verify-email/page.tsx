@@ -1,4 +1,10 @@
 import { confirmEmailVerificationAction } from "@/app/login/actions";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Verificar email · ReservaYa",
+  robots: { index: false, follow: false },
+};
 
 type VerifyEmailPageProps = {
   searchParams: Promise<{ token?: string }>;

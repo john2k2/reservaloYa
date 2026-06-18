@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import { signupAction } from "@/app/login/actions";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { demoBusinessOptions } from "@/constants/site";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { LoadingButton } from "@/components/ui/loading-button";
+
+export const metadata: Metadata = {
+  title: "Crear cuenta · ReservaYa",
+  description: "Crea tu cuenta y tu negocio en ReservaYa. Entrá directo a configurar tu página y tu panel.",
+  robots: { index: false, follow: false },
+};
 
 type AdminSignupPageProps = {
   searchParams: Promise<{ error?: string }>;

@@ -1,5 +1,6 @@
 import { Building2, Bell, ExternalLink, Wifi, WifiOff } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { getPlatformBusinessesList, type PlatformSubscriptionInfo } from "@/server/queries/platform";
 import { BusinessSearchFilter } from "./business-search-filter";
@@ -9,7 +10,11 @@ import { TrialActions } from "./trial-actions";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Negocios · Platform" };
+export const metadata: Metadata = {
+  title: "Negocios · Plataforma · ReservaYa",
+  description: "Gestión de negocios registrados en la plataforma ReservaYa.",
+  robots: { index: false, follow: false },
+};
 
 function SubscriptionBadge({ sub }: { sub: PlatformSubscriptionInfo }) {
   const now = new Date();

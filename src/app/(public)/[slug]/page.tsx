@@ -17,7 +17,9 @@ import { TestimonialsSection } from "@/components/public/testimonials-section";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import {
   BreadcrumbJsonLd,
+  FAQJsonLd,
   LocalBusinessJsonLd,
+  ServiceJsonLd,
   WebPageJsonLd,
 } from "@/lib/seo/business-json-ld";
 import { getPublicAppUrl } from "@/lib/runtime";
@@ -54,8 +56,6 @@ export async function generateMetadata({
       description: pageData.profile?.description,
       address: pageData.business.address,
       phone: pageData.business.phone,
-      image: pageData.profile?.heroImageUrl || pageData.profile?.logoUrl,
-      category: (pageData.profile as { category?: string })?.category,
     });
   } catch (error) {
     logger.error("Error generating metadata:", error);
@@ -302,6 +302,41 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
       })
     );
 
+  // Extraer coordenadas de mapQuery si existen
+  let geo: { latitude: number; longitude: number } | undefined;
+  const mapQuery = pageData.profile.mapQuery;
+  if (mapQuery) {
+    const coordMatch = mapQuery.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+    if (coordMatch) {
+      const lat = Number(coordMatch[1]);
+      const lng = Number(coordMatch[2]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        geo = { latitude: lat, longitude: lng };
+      }
+    }
+  }
+
+  const reviewsForJsonLd =
+    pageData.reviews?.map((review) => ({
+      author: review.customerName,
+      reviewRating: review.rating,
+      reviewBody: review.comment,
+      datePublished: review.created,
+    })) ?? [];
+
+  const aggregateRating =
+    pageData.reviews && pageData.reviews.length > 0
+      ? {
+          ratingValue:
+            Math.round(
+              (pageData.reviews.reduce((sum, r) => sum + r.rating, 0) /
+                pageData.reviews.length) *
+                10
+            ) / 10,
+          reviewCount: pageData.reviews.length,
+        }
+      : undefined;
+
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>
       {/* SEO: JSON-LD Structured Data */}
@@ -313,7 +348,10 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         address={pageData.business.address}
         image={pageData.profile?.heroImageUrl || pageData.profile?.logoUrl}
         openingHours={openingHoursForJsonLd}
+        geo={geo}
         services={services.map((s) => s.name)}
+        rating={aggregateRating}
+        reviews={reviewsForJsonLd}
       />
       <WebPageJsonLd
         name={pageData.business.name}
@@ -321,6 +359,25 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         url={businessUrl}
         image={pageData.profile?.heroImageUrl ?? undefined}
       />
+      {services.map((service) => (
+        <ServiceJsonLd
+          key={service.id}
+          businessName={pageData.business.name}
+          businessUrl={businessUrl}
+          serviceName={service.name}
+          description={service.description}
+          price={service.priceLabel}
+          duration={`PT${service.durationMinutes}M`}
+        />
+      ))}
+      {pageData.profile.faqs && pageData.profile.faqs.length > 0 && (
+        <FAQJsonLd
+          faqs={pageData.profile.faqs.map((faq) => ({
+            question: faq.question,
+            answer: faq.answer,
+          }))}
+        />
+      )}
       <BreadcrumbJsonLd
         items={[
           { name: "Inicio", url: siteUrl },
