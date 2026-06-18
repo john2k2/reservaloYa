@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
-  const customers = await getAdminCustomersDataWithFilter(query);
+  const customers = await getAdminCustomersDataWithFilter(query, { limit: 10000 });
 
   if (!customers) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });

@@ -117,7 +117,7 @@ function normalizeBookingFilters(filters?: AdminBookingsFilters) {
   };
 }
 
-export async function getAdminBookingsData(filters?: AdminBookingsFilters) {
+export async function getAdminBookingsData(filters?: AdminBookingsFilters, pagination?: { page?: number; limit?: number }) {
   noStore();
   const normalizedFilters = normalizeBookingFilters(filters);
 
@@ -127,7 +127,7 @@ export async function getAdminBookingsData(filters?: AdminBookingsFilters) {
     return null;
   }
 
-  return getSupabaseAdminBookingsData(shellData.businessId, normalizedFilters);
+  return getSupabaseAdminBookingsData(shellData.businessId, normalizedFilters, pagination);
 }
 
 export async function getAdminCustomersData() {
@@ -141,7 +141,7 @@ export async function getAdminCustomersData() {
   return getSupabaseAdminCustomersData(shellData.businessId);
 }
 
-export async function getAdminCustomersDataWithFilter(query?: string) {
+export async function getAdminCustomersDataWithFilter(query?: string, pagination?: { page?: number; limit?: number }) {
   noStore();
   const normalizedQuery = query?.trim() ?? "";
 
@@ -151,7 +151,7 @@ export async function getAdminCustomersDataWithFilter(query?: string) {
     return null;
   }
 
-  return getSupabaseAdminCustomersData(shellData.businessId, normalizedQuery);
+  return getSupabaseAdminCustomersData(shellData.businessId, normalizedQuery, pagination);
 }
 
 export async function getAdminAvailabilityData(shellData?: AdminShellData | null) {

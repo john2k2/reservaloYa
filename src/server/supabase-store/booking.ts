@@ -10,7 +10,7 @@ import { withBookingDateLock } from "@/server/booking-slot-lock";
 import { createLogger } from "@/server/logger";
 import { buildBookingConfirmationView, buildManageBookingView } from "@/server/bookings-domain";
 import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
-import { buildBookingCustomerDetails, buildBookingMutationFields, buildBookingTimeWindow, canMutatePublicBooking, fitsBookingWithinAvailability, hasBlockedSlotConflict, hasBookingConflict } from "@/server/booking-mutations-domain";
+import { buildBookingCustomerDetails, buildBookingMutationFields, buildBookingTimeWindow, canMutatePublicBooking, fitsBookingWithinAvailability, hasBlockedSlotConflict, hasBookingConflict, resolveBookingStatus } from "@/server/booking-mutations-domain";
 import { buildBookingPaymentPatch, type BookingPaymentValidationContext, type BookingPaymentUpdateInput } from "@/server/payments-domain";
 import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
@@ -226,9 +226,15 @@ export async function createSupabasePublicBooking(input: {
         ["pending", "pending_payment", "confirmed"].includes(booking.status)
       );
       const email = input.email?.trim();
+      const phone = input.phone?.trim();
       const matchedByEmail = email
         ? customers.find((customer) => customer.email === email)
         : undefined;
+      const matchedByPhone = !matchedByEmail && phone
+        ? customers.find((customer) => customer.phone === phone)
+        : undefined;
+
+      let customer = matchedByEmail ?? matchedByPhone;
 
       if (!fitsBookingWithinAvailability(dayRules, bookingWindow)) {
         throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
@@ -247,8 +253,6 @@ export async function createSupabasePublicBooking(input: {
         throw new Error("Ese horario ya no esta disponible.");
       }
 
-      let customer = matchedByEmail;
-
       if (!customer) {
         customer = await createSupabaseRecord<CustomerRecord>("customers", {
           business_id: business.id,
@@ -262,9 +266,7 @@ export async function createSupabasePublicBooking(input: {
 
       // Si el negocio tiene auto-confirmación activada y el caller no forzó un estado,
       // la reserva entra directamente como "confirmed" en vez de "pending"
-      const resolvedStatus =
-        input.initialStatus ??
-        (business.autoConfirmBookings ? "confirmed" : undefined);
+      const resolvedStatus = resolveBookingStatus(business, service, input.initialStatus);
 
       const booking = await createSupabaseRecord<BookingRecord>("bookings", {
         business_id: business.id,
@@ -400,7 +402,7 @@ export async function rescheduleSupabasePublicBooking(input: {
         ...buildBookingCustomerDetails(input),
       });
 
-      const resolvedStatus = business.autoConfirmBookings ? "confirmed" : "pending";
+      const resolvedStatus = resolveBookingStatus(business, service);
 
       const updatedBooking = await updateSupabaseRecord<BookingRecord>("bookings", booking.id, {
         service_id: service.id,

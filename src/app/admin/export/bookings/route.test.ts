@@ -51,11 +51,14 @@ describe("bookings export route", () => {
     expect(response.headers.get("content-type")).toContain("text/csv");
     expect(response.headers.get("content-disposition")).toContain("demo-barberia-agenda-");
     expect(body).toContain("Juan Perez");
-    expect(getAdminBookingsDataMock).toHaveBeenCalledWith({
-      status: "confirmed",
-      date: "",
-      q: "Juan",
-    });
+    expect(getAdminBookingsDataMock).toHaveBeenCalledWith(
+      {
+        status: "confirmed",
+        date: "",
+        q: "Juan",
+      },
+      { limit: 10000 }
+    );
   });
 
   it("sanitizes formula-prefixed values to prevent CSV injection", async () => {

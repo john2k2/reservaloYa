@@ -99,17 +99,19 @@ describe("supabase-auth", () => {
       expect(adminSignOutMock).toHaveBeenCalledWith("user-1");
     });
 
-    it("throws when the access token is invalid", async () => {
+    it("throws when session invalidation fails after password update", async () => {
       const { authGetUserMock, adminUpdateUserByIdMock, adminSignOutMock } = createMockAdminClient();
-      authGetUserMock.mockResolvedValue({ data: { user: null }, error: new Error("invalid") });
+      authGetUserMock.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
+      adminUpdateUserByIdMock.mockResolvedValue({ error: null });
+      adminSignOutMock.mockRejectedValue(new Error("Supabase session error"));
 
       const { updateSupabaseUserPassword } = await import("./supabase-auth");
-      await expect(updateSupabaseUserPassword("bad-token", "NewPassword123")).rejects.toThrow(
-        "Token inválido"
+      await expect(updateSupabaseUserPassword("reset-token", "NewPassword123")).rejects.toThrow(
+        "no se pudieron invalidar las sesiones activas"
       );
 
-      expect(adminUpdateUserByIdMock).not.toHaveBeenCalled();
-      expect(adminSignOutMock).not.toHaveBeenCalled();
+      expect(adminUpdateUserByIdMock).toHaveBeenCalledWith("user-1", { password: "NewPassword123" });
+      expect(adminSignOutMock).toHaveBeenCalledWith("user-1");
     });
   });
 });

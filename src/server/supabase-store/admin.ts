@@ -100,10 +100,10 @@ export async function getSupabaseAdminDashboardData(businessId: string) {
   const business = await getBusinessByIdWithClient(client, businessId);
 
   const [{ data: bookingsData }, { data: customersData }, { data: analyticsData }, { data: commData }] = await Promise.all([
-    client.from("bookings").select("*, customer:customers(*), service:services(*)").eq("business_id", businessId).order("bookingDate").order("startTime"),
-    client.from("customers").select("*").eq("business_id", businessId),
-    client.from("analytics_events").select("*").eq("business_id", businessId),
-    client.from("communication_events").select("*").eq("business_id", businessId),
+    client.from("bookings").select("*, customer:customers(*), service:services(*)").eq("business_id", businessId).order("bookingDate", { ascending: false }).order("startTime").limit(50),
+    client.from("customers").select("*").eq("business_id", businessId).limit(50),
+    client.from("analytics_events").select("*").eq("business_id", businessId).limit(1000),
+    client.from("communication_events").select("*").eq("business_id", businessId).limit(1000),
   ]);
 
   const businessBookings = (bookingsData ?? []) as (BookingRecord & { customer?: CustomerRecord; service?: ServiceRecord })[];

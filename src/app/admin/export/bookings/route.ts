@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   }
 
   const filters = parsed.data;
-  const bookings = await getAdminBookingsData(filters);
+  const bookings = await getAdminBookingsData(filters, { limit: 10000 });
 
   if (!bookings) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });

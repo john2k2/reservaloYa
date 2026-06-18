@@ -116,7 +116,7 @@ describe("createSupabasePublicBooking - matching de customer", () => {
     setupRecordMocks();
   });
 
-  it("prefiere coincidencia por email y crea un nuevo cliente cuando el email no coincide (aunque el teléfono sí)", async () => {
+  it("actualiza el cliente existente cuando el email no coincide pero el telefono si", async () => {
     getSupabaseAdminClientMock.mockResolvedValue(
       buildMockClient({
         businesses: baseBusiness,
@@ -140,19 +140,18 @@ describe("createSupabasePublicBooking - matching de customer", () => {
       email: "nuevo@example.com",
     });
 
-    expect(createSupabaseRecordMock).toHaveBeenCalledWith(
+    expect(updateSupabaseRecordMock).toHaveBeenCalledWith(
       "customers",
+      existingCustomer.id,
       expect.objectContaining({
-        business_id: "business-1",
         fullName: "Nuevo Cliente",
         email: "nuevo@example.com",
         phone: existingCustomer.phone,
       })
     );
 
-    expect(updateSupabaseRecordMock).not.toHaveBeenCalledWith(
+    expect(createSupabaseRecordMock).not.toHaveBeenCalledWith(
       "customers",
-      existingCustomer.id,
       expect.anything()
     );
   });
@@ -289,6 +288,48 @@ describe("rescheduleSupabasePublicBooking", () => {
     expect(bookingUpdateCall).toBeDefined();
     expect(bookingUpdateCall![1]).toBe(existingBooking.id);
     expect(bookingUpdateCall![2]).toMatchObject({ status: "pending" });
+  });
+
+  it("usa pending_payment cuando el servicio es pago y el negocio tiene MP configurado", async () => {
+    const business = { ...baseBusiness, autoConfirmBookings: true, email: "negocio@example.com", mpConnected: true };
+    const paidService = { ...baseService, price: 1500 };
+
+    getSupabaseAdminClientMock.mockResolvedValue(
+      buildMockClient({
+        businesses: business,
+        services: paidService,
+        availability_rules: [baseRule],
+        blocked_slots: [],
+        bookings: [
+          {
+            ...existingBooking,
+            business,
+          },
+        ],
+        customers: [existingCustomer],
+      })
+    );
+
+    const { rescheduleSupabasePublicBooking } = await import("./booking");
+
+    await rescheduleSupabasePublicBooking({
+      businessSlug: "demo",
+      serviceId: "service-1",
+      bookingDate: "2026-07-14",
+      startTime: "11:00",
+      fullName: existingCustomer.fullName,
+      phone: existingCustomer.phone,
+      email: existingCustomer.email,
+      rescheduleBookingId: existingBooking.id,
+    });
+
+    const bookingUpdateCall = updateSupabaseRecordMock.mock.calls.find(
+      (call) => call[0] === "bookings"
+    );
+
+    expect(bookingUpdateCall).toBeDefined();
+    expect(bookingUpdateCall![1]).toBe(existingBooking.id);
+    expect(bookingUpdateCall![2]).toMatchObject({ status: "pending_payment" });
   });
 
   it("envía notificación de reprogramación al cliente y al negocio", async () => {

@@ -31,6 +31,11 @@ export function SubscriptionPayButton({ csrfToken, label }: SubscriptionPayButto
         checkoutUrl?: string;
       };
 
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+
       if (!response.ok || !data.ok || !data.checkoutUrl) {
         const error = data.error ?? "preference_failed";
         window.location.href = `/admin/subscription/pay?error=${encodeURIComponent(error)}`;

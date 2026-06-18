@@ -141,3 +141,22 @@ export function buildBookingMutationFields(input: {
     ...paymentPatch,
   };
 }
+
+export function resolveBookingStatus(
+  business: { autoConfirmBookings?: boolean; mpConnected?: boolean; mpAccessToken?: string },
+  service: { price?: number },
+  forcedStatus?: BookingStatus
+): BookingStatus {
+  if (forcedStatus) {
+    return forcedStatus;
+  }
+
+  const hasPaymentConfigured = business.mpConnected || !!business.mpAccessToken;
+  const isPaidService = !!service.price && service.price > 0;
+
+  if (isPaidService && hasPaymentConfigured) {
+    return "pending_payment";
+  }
+
+  return business.autoConfirmBookings ? "confirmed" : "pending";
+}

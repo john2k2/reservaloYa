@@ -83,13 +83,13 @@ async function fetchPlatformData(options?: { page?: number; limit?: number; all?
 
   const [businessesRes, appUsersRes, bookingsRes, authUsersRes, subsRes, servicesRes, availabilityRes, notificationsRes] = await Promise.all([
     businessesQuery,
-    client.from("app_users").select("*"),
-    client.from("bookings").select("id, created").gte("created", since30d),
+    client.from("app_users").select("*").limit(1000),
+    client.from("bookings").select("id, created").gte("created", since30d).limit(1000),
     client.auth.admin.listUsers({ perPage: 1000 }),
-    client.from("subscriptions").select("*"),
-    client.from("services").select("id, business_id"),
-    client.from("availability_rules").select("id, business_id, active"),
-    client.from("communication_events").select("id, business_id, created").gte("created", since30d),
+    client.from("subscriptions").select("*").limit(1000),
+    client.from("services").select("id, business_id").limit(1000),
+    client.from("availability_rules").select("id, business_id, active").limit(1000),
+    client.from("communication_events").select("id, business_id, created").gte("created", since30d).limit(1000),
   ]);
 
   const businesses = businessesRes.data ?? [];
@@ -227,7 +227,71 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
 export async function getPlatformBusinessesList(pagination?: PaginationOptions): Promise<PlatformBusinessRow[] | null> {
   noStore();
 
-  const { businesses, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap } = await fetchPlatformData(pagination);
+  const client = createAdminClient();
+  const { from, to } = resolvePaginationRange(pagination, DEFAULT_PLATFORM_LIMIT);
+
+  const { data: businesses, error: businessesError } = await client
+    .from("businesses")
+    .select("*")
+    .order("created", { ascending: false })
+    .range(from, to);
+
+  if (businessesError || !businesses) {
+    return null;
+  }
+
+  const businessIds = businesses.map((b) => b.id as string);
+
+  const [appUsersRes, subsRes, servicesRes, availabilityRes, notificationsRes] = await Promise.all([
+    client.from("app_users").select("*").in("business_id", businessIds).limit(1000),
+    client.from("subscriptions").select("*").in("businessId", businessIds).limit(1000),
+    client.from("services").select("id, business_id").in("business_id", businessIds).limit(1000),
+    client.from("availability_rules").select("id, business_id, active").in("business_id", businessIds).limit(1000),
+    client.from("communication_events").select("id, business_id, created").in("business_id", businessIds).gte("created", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()).limit(1000),
+  ]);
+
+  const appUsers = appUsersRes.data ?? [];
+  const subscriptions = subsRes.data ?? [];
+  const services = servicesRes.data ?? [];
+  const availabilityRules = availabilityRes.data ?? [];
+  const notifications = notificationsRes.data ?? [];
+
+  const { data: authUsersData } = await client.auth.admin.listUsers({ perPage: 1000 });
+  const authUsers = authUsersData?.users ?? [];
+  const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? ""]));
+
+  const ownerMap = new Map<string, { name: string; email: string }>();
+  for (const user of appUsers) {
+    if (user.role === "owner" && user.business_id) {
+      ownerMap.set(user.business_id, {
+        name: String(user.name ?? emailMap.get(user.id) ?? "—"),
+        email: emailMap.get(user.id) ?? "—",
+      });
+    }
+  }
+
+  const subMap = new Map<string, Record<string, unknown>>();
+  for (const sub of subscriptions) {
+    subMap.set(sub.businessId as string, sub as Record<string, unknown>);
+  }
+
+  const serviceCountMap = new Map<string, number>();
+  for (const s of services) {
+    serviceCountMap.set(s.business_id, (serviceCountMap.get(s.business_id) ?? 0) + 1);
+  }
+
+  const availabilityMap = new Map<string, number>();
+  for (const r of availabilityRules) {
+    if (r.active !== false) {
+      availabilityMap.set(r.business_id, (availabilityMap.get(r.business_id) ?? 0) + 1);
+    }
+  }
+
+  const notifMap = new Map<string, number>();
+  for (const n of notifications) {
+    notifMap.set(n.business_id, (notifMap.get(n.business_id) ?? 0) + 1);
+  }
+
   return businesses.map((b) => buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap));
 }
 
@@ -239,7 +303,7 @@ export async function getPlatformUsersList(pagination?: PaginationOptions): Prom
 
   const [appUsersRes, businessesRes, authUsersRes] = await Promise.all([
     client.from("app_users").select("*").order("created", { ascending: false }).range(from, to),
-    client.from("businesses").select("id, name, slug"),
+    client.from("businesses").select("id, name, slug").limit(1000),
     client.auth.admin.listUsers({ perPage: 1000 }),
   ]);
 

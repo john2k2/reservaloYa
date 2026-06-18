@@ -24,6 +24,7 @@ function createThenableBuilder(tableData: unknown) {
   const builder: Record<string, unknown> & {
     range?: (from: number, to: number) => Promise<unknown>;
     in?: (column: string, values: unknown[]) => typeof builder;
+    limit?: (count: number) => typeof builder;
     calls: Record<string, unknown[]>;
     then: (resolve: (value: unknown) => unknown) => Promise<unknown>;
   } = {
@@ -46,6 +47,10 @@ function createThenableBuilder(tableData: unknown) {
     }),
     gte: vi.fn((...args: unknown[]) => {
       record("gte", args);
+      return builder;
+    }),
+    limit: vi.fn((...args: unknown[]) => {
+      record("limit", args);
       return builder;
     }),
     range: vi.fn((from: number, to: number) => {

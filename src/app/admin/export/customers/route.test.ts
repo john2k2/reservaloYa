@@ -48,7 +48,7 @@ describe("customers export route", () => {
     expect(response.headers.get("content-type")).toContain("text/csv");
     expect(response.headers.get("content-disposition")).toContain("demo-barberia-clientes-");
     expect(body).toContain("juan@example.com");
-    expect(getAdminCustomersDataWithFilterMock).toHaveBeenCalledWith("Juan");
+    expect(getAdminCustomersDataWithFilterMock).toHaveBeenCalledWith("Juan", { limit: 10000 });
   });
 
   it("sanitizes formula-prefixed values to prevent CSV injection", async () => {

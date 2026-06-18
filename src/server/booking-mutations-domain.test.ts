@@ -8,6 +8,7 @@ import {
   fitsBookingWithinAvailability,
   hasBlockedSlotConflict,
   hasBookingConflict,
+  resolveBookingStatus,
 } from "@/server/booking-mutations-domain";
 
 describe("booking mutations domain", () => {
@@ -128,5 +129,29 @@ describe("booking mutations domain", () => {
     expect(canMutatePublicBooking("completed")).toBe(false);
     expect(canMutatePublicBooking("cancelled")).toBe(false);
     expect(canMutatePublicBooking("no_show")).toBe(false);
+  });
+
+  it("resolves booking status respecting payment and auto-confirm rules", () => {
+    const freeService = { price: 0 };
+    const paidService = { price: 1500 };
+    const businessWithMp = { autoConfirmBookings: false, mpConnected: true };
+    const businessWithToken = { autoConfirmBookings: false, mpAccessToken: "token" };
+    const businessAutoConfirm = { autoConfirmBookings: true };
+    const businessPlain = { autoConfirmBookings: false };
+
+    // Forced status always wins
+    expect(resolveBookingStatus(businessPlain, freeService, "confirmed")).toBe("confirmed");
+
+    // Paid service + MP configured = pending_payment
+    expect(resolveBookingStatus(businessWithMp, paidService)).toBe("pending_payment");
+    expect(resolveBookingStatus(businessWithToken, paidService)).toBe("pending_payment");
+
+    // Paid service but no MP = pending (or confirmed if auto-confirm)
+    expect(resolveBookingStatus(businessPlain, paidService)).toBe("pending");
+    expect(resolveBookingStatus(businessAutoConfirm, paidService)).toBe("confirmed");
+
+    // Free service ignores MP
+    expect(resolveBookingStatus(businessWithMp, freeService)).toBe("pending");
+    expect(resolveBookingStatus(businessAutoConfirm, freeService)).toBe("confirmed");
   });
 });

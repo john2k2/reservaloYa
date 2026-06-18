@@ -8,6 +8,9 @@ import {
   getSupabaseAuthTokenFromCookies,
 } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("supabase-auth");
 
 const SESSION_COOKIE = "sb_session";
 const TRIAL_DAYS = 15;
@@ -101,7 +104,8 @@ export async function signOutSupabaseUser() {
         await admin.auth.admin.signOut(user.id);
       }
     }
-  } catch {
+  } catch (error) {
+    logger.error("Error invalidando sesión remota en signOut", error);
     // Best-effort invalidation: still clear the local cookie below.
   }
 
@@ -262,7 +266,8 @@ export async function updateSupabaseUserPassword(accessToken: string, newPasswor
 
   try {
     await admin.auth.admin.signOut(user.id);
-  } catch {
-    // Best-effort: invalidate existing sessions after a password change.
+  } catch (error) {
+    logger.error("Error invalidando sesiones existentes tras cambio de contraseña", error);
+    throw new Error("Se actualizó la contraseña pero no se pudieron invalidar las sesiones activas. Intentá cerrar sesión manualmente.");
   }
 }

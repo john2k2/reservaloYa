@@ -28,7 +28,7 @@ describe("env validation", () => {
   });
 
   it("throws on startup when required variables are missing and validation is not skipped", async () => {
-    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("SKIP_ENV_VALIDATION", "false");
 
     for (const key of Object.keys(REQUIRED_ENV)) {
@@ -36,6 +36,26 @@ describe("env validation", () => {
     }
 
     await expect(import("./env")).rejects.toThrow(/Invalid environment variables/i);
+  });
+
+  it("soft-fails in production when required variables are missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("SKIP_ENV_VALIDATION", "false");
+
+    for (const key of Object.keys(REQUIRED_ENV)) {
+      delete process.env[key];
+    }
+
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { env } = await import("./env");
+
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBeUndefined();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid environment variables")
+    );
+
+    consoleSpy.mockRestore();
   });
 
   it("allows tests to skip validation via SKIP_ENV_VALIDATION", async () => {
