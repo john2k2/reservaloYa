@@ -4,6 +4,7 @@ import { Mail, MessageCircle } from "lucide-react";
 
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
+import { OrganizationJsonLd } from "@/lib/seo/json-ld";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Contacto comercial de ReservaYa",
@@ -15,6 +16,7 @@ export const metadata: Metadata = createPageMetadata({
 export default function ContactPage() {
   return (
     <main id="main-content" className="min-h-screen bg-background font-sans text-foreground">
+      <OrganizationJsonLd />
       <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
         <Link href="/" className="inline-flex h-11 items-center text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">
           ← Volver al inicio

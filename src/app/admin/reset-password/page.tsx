@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { ResetPasswordForm } from "./reset-password-form";
+
+export const metadata: Metadata = {
+  title: "Nueva contraseña · ReservaYa",
+  description: "Definí una nueva contraseña para volver a entrar al panel.",
+  robots: { index: false, follow: false },
+};
 
 export default async function ResetPasswordPage() {
   const user = await getAuthenticatedSupabaseUser();

@@ -38,6 +38,12 @@ interface LocalBusinessJsonLdProps {
     ratingValue: number;
     reviewCount: number;
   };
+  reviews?: Array<{
+    author: string;
+    reviewRating: number;
+    reviewBody?: string;
+    datePublished?: string;
+  }>;
 }
 
 /**
@@ -55,6 +61,7 @@ export function LocalBusinessJsonLd({
   geo,
   services = [],
   rating,
+  reviews,
 }: LocalBusinessJsonLdProps): ReactElement {
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -119,6 +126,24 @@ export function LocalBusinessJsonLd({
       bestRating: 5,
       worstRating: 1,
     };
+  }
+
+  if (reviews && reviews.length > 0) {
+    schema.review = reviews.map((review) => ({
+      "@type": "Review",
+      author: {
+        "@type": "Person",
+        name: review.author,
+      },
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: review.reviewRating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      reviewBody: review.reviewBody,
+      datePublished: review.datePublished,
+    }));
   }
 
   return (

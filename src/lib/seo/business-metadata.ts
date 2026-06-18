@@ -16,12 +16,12 @@ interface BusinessMetadataInput {
   description?: string | null;
   address?: string | null;
   phone?: string | null;
-  image?: string | null;
-  category?: string;
 }
 
 /**
- * Genera metadatos SEO para la página pública de un negocio
+ * Genera metadatos SEO para la página pública de un negocio.
+ * Nota: openGraph.images y twitter.images se omiten cuando el segmento
+ * de ruta tiene opengraph-image.tsx / twitter-image.tsx (Next.js los descubre automáticamente).
  */
 export function generateBusinessMetadata({
   businessName,
@@ -29,8 +29,6 @@ export function generateBusinessMetadata({
   description,
   address,
   phone,
-  image,
-  category = "LocalBusiness",
 }: BusinessMetadataInput): Metadata {
   const url = `${siteUrl}/${slug}`;
   const title = `${businessName} | Reserva tu turno online`;
@@ -38,7 +36,6 @@ export function generateBusinessMetadata({
     description ||
       `Reserva tu turno en ${businessName}. Agenda online disponible 24/7. Confirmación inmediata.`
   );
-  const ogImage = image || `${siteUrl}/og-image.png`;
 
   return {
     title,
@@ -57,20 +54,11 @@ export function generateBusinessMetadata({
       title,
       description: metaDescription,
       siteName: businessName,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: `${businessName} - ${category}`,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: metaDescription,
-      images: [ogImage],
     },
     robots: {
       index: true,

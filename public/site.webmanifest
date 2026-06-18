@@ -32,15 +32,15 @@
   "categories": ["business", "productivity"],
   "screenshots": [
     {
-      "src": "/preview-desktop-view.png",
-      "sizes": "1200x900",
-      "type": "image/png",
+      "src": "/reservaya-isotype.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "form_factor": "wide"
     },
     {
-      "src": "/preview-mobile-view.png",
-      "sizes": "900x1200",
-      "type": "image/png",
+      "src": "/reservaya-isotype.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "form_factor": "narrow"
     }
   ]
