@@ -220,7 +220,7 @@ export function HeroSection() {
               <path d="M2 6C50 2 150 2 198 6" stroke="currentColor" strokeWidth="3" className="text-primary/40" strokeLinecap="round"/>
             </svg>
           </span>
-          <span className="block mt-2 text-muted-foreground font-display italic font-normal text-3xl sm:text-4xl lg:text-5xl">
+          <span className="block mt-2 text-muted-foreground font-display italic font-normal text-2xl sm:text-3xl lg:text-4xl">
             Automatizá tus turnos y reducí las ausencias.
           </span>
         </h1>

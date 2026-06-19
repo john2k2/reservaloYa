@@ -62,7 +62,7 @@ export function SignatureMoment() {
 
 
   return (
-    <section className="relative mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-36 overflow-hidden">
+    <section className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28 overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent pointer-events-none" />
       
@@ -88,9 +88,9 @@ export function SignatureMoment() {
                 "relative rounded-3xl border-2 p-6 sm:p-8 transition-all duration-700",
                 step.borderColor,
                 step.bgColor,
-                activeStep === stepIndex 
-                  ? "opacity-100 scale-100 shadow-2xl" 
-                  : "opacity-40 scale-95"
+                activeStep === stepIndex
+                  ? "opacity-100 scale-100 shadow-2xl"
+                  : "opacity-60 scale-95"
               )}
             >
               {/* Header */}

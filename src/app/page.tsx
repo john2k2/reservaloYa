@@ -96,13 +96,13 @@ export default async function Home() {
       <SignatureMoment />
       <BeforeAfterSection />
       <TargetAudienceSection />
-      <VerticalSeoLinksSection />
       <FeaturesSection />
       <DemoSelector />
       <HowItWorksSection />
       <PricingSection arsPrice={arsPrice} />
       <FAQSection />
       <CTASection />
+      <VerticalSeoLinksSection />
 
       <Footer />
     </main>

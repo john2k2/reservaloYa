@@ -21,7 +21,7 @@ const comingSoon = [
 
 export function TargetAudienceSection() {
   return (
-    <section className="mx-auto w-full max-w-6xl border-t border-border/40 px-6 py-24 md:py-32">
+    <section className="mx-auto w-full max-w-6xl border-t border-border/40 px-6 py-16 md:py-24">
       <AnimatedSection>
         <div className="text-center">
           <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
