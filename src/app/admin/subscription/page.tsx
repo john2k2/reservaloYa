@@ -14,7 +14,7 @@ export default async function SubscriptionExpiredPage() {
   }
 
   if (!shellData.subscriptionExpired) {
-    redirect("/admin/dashboard");
+    redirect("/admin/billing");
   }
 
   const blueRate = await getBlueDollarRate();

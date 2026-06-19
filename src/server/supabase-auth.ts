@@ -23,6 +23,7 @@ export type AuthUser = {
   businessId?: string;
   businessSlug?: string;
   active?: boolean;
+  emailVerified?: boolean;
 };
 
 export async function getAuthenticatedSupabaseUser(): Promise<AuthUser | null> {
@@ -66,6 +67,7 @@ export async function getAuthenticatedSupabaseUser(): Promise<AuthUser | null> {
       businessId: appUser.business_id ?? undefined,
       businessSlug,
       active: appUser.active,
+      emailVerified: Boolean(user.email_confirmed_at ?? user.confirmed_at),
     };
   } catch {
     return null;

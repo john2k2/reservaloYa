@@ -50,7 +50,7 @@ export async function getSupabaseAdminShellData(authUser: AuthUser) {
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: String(authUser.email ?? ""),
-    userVerified: false,
+    userVerified: authUser.emailVerified ?? false,
     userRole: String(authUser.role ?? "staff"),
     businessId: business.id,
     subscriptionStatus,
