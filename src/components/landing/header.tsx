@@ -141,7 +141,7 @@ export function LandingHeader() {
             href="/admin/signup"
             className={cn(
               buttonVariants({ variant: "default", size: "sm" }),
-              "h-12 sm:h-10 rounded-lg px-5 sm:px-4 font-semibold shadow-sm transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 hidden sm:inline-flex"
+              "h-12 sm:h-10 rounded-lg px-5 sm:px-4 font-semibold shadow-sm transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 hidden sm:inline-flex bg-foreground text-background hover:bg-foreground/90"
             )}
           >
             Comenzar gratis
@@ -180,7 +180,7 @@ export function LandingHeader() {
                   href="/admin/signup"
                   className={cn(
                     buttonVariants({ variant: "default", size: "lg" }),
-                    "w-full h-14 justify-center text-base font-semibold"
+                    "w-full h-14 justify-center text-base font-semibold bg-foreground text-background hover:bg-foreground/90"
                   )}
                 >
                   Comenzar gratis
@@ -202,7 +202,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute bottom-20 right-10 w-96 h-96 bg-primary/3 rounded-full blur-3xl" />
       
       <AnimatedSection delay={0}>
-        <div className="mb-6 sm:mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-medium text-primary backdrop-blur-sm">
+        <div className="mb-6 sm:mb-8 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/15 px-4 py-2 text-xs font-semibold text-foreground backdrop-blur-sm">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>

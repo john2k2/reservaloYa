@@ -55,7 +55,7 @@ export function TargetAudienceSection() {
 
         {/* Coming soon */}
         <AnimatedSection delay={200} animation="slideInRight">
-          <div className="group flex items-start gap-4 rounded-2xl border border-muted bg-gradient-to-br from-secondary/30 to-transparent p-6 opacity-70 transition-all duration-300 hover:shadow-md">
+          <div className="group flex items-start gap-4 rounded-2xl border border-dashed border-muted-foreground/30 bg-muted/30 p-6 transition-all duration-300 hover:shadow-md">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary transition-all group-hover:scale-110">
               <Clock className="size-6 text-muted-foreground" />
             </div>

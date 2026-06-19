@@ -112,7 +112,7 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
                   href="/admin/signup"
                   className={cn(
                     buttonVariants({ variant: "default", size: "lg" }),
-                    "group h-14 w-full rounded-full font-semibold text-base transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+                    "group h-14 w-full rounded-full font-semibold text-base transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-foreground text-background hover:bg-foreground/90"
                   )}
                 >
                   Comenzar mis 15 días gratis
