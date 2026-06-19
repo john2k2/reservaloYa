@@ -80,8 +80,9 @@ export function Footer() {
               {[
                 { href: `/${demoBusinessSlug}`, label: "Ejemplo en vivo" },
                 { href: "/login", label: "Panel administrador" },
-                { href: "#precios", label: "Precios" },
-                { href: "#beneficios", label: "Beneficios" },
+                { href: "/precios", label: "Precios" },
+                { href: "/funcionalidades", label: "Beneficios" },
+                { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" },
                 { href: "/sobre-reservaya", label: "Sobre ReservaYa" },
                 { href: "/about", label: "About ReservaYa" },
                 { href: "/contacto", label: "Contacto" },

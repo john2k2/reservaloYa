@@ -12,10 +12,10 @@ import { AnimatedSection } from "./animated-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
-  { href: "#beneficios", label: "Beneficios" },
-  { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#precios", label: "Precios" },
-  { href: "#faq", label: "Preguntas" },
+  { href: "/funcionalidades", label: "Beneficios" },
+  { href: "/como-funciona", label: "Cómo funciona" },
+  { href: "/precios", label: "Precios" },
+  { href: "/preguntas-frecuentes", label: "Preguntas" },
 ];
 
 interface SessionInfo {
@@ -117,13 +117,13 @@ export function LandingHeader() {
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 lg:gap-8 text-sm font-medium text-muted-foreground lg:flex">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className="inline-flex h-10 items-center transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -161,13 +161,13 @@ export function LandingHeader() {
             <SheetContent side="right">
               <nav className="flex flex-col gap-1 p-2">
                 {navLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.href}
                     href={link.href}
                     className="flex h-12 items-center rounded-lg px-4 text-base font-medium text-foreground transition-colors hover:bg-secondary"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </nav>
               <SheetFooter className="gap-2">

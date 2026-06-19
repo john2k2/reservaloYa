@@ -1,4 +1,5 @@
 export { LandingHeader, HeroSection } from "./header";
+export { LandingPageShell } from "./page-shell";
 export { DemoSelector } from "./demo-selector";
 export { HowItWorksSection } from "./how-it-works";
 export { BeforeAfterSection } from "./before-after";
