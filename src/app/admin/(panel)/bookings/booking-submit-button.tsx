@@ -18,8 +18,8 @@ function SubmitInner() {
       disabled={pending}
       aria-live="polite"
       className={cn(
-        buttonVariants({ variant: "destructive", size: "lg" }),
-        "h-11 w-full lg:w-auto lg:min-w-32"
+        buttonVariants({ variant: "destructive", size: "sm" }),
+        "h-9 w-full lg:w-auto lg:min-w-24"
       )}
     >
       {pending ? (
@@ -77,8 +77,8 @@ export function BookingSubmitButton() {
       onClick={handleClick}
       aria-live="polite"
       className={cn(
-        buttonVariants({ variant: "default", size: "lg" }),
-        "h-11 w-full lg:w-auto lg:min-w-32"
+        buttonVariants({ variant: "default", size: "sm" }),
+        "h-9 w-full lg:w-auto lg:min-w-24"
       )}
     >
       <Save aria-hidden="true" className="size-4" />

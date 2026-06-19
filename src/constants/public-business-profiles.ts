@@ -1,4 +1,4 @@
-﻿export type DarkModeColors = {
+export type DarkModeColors = {
   accent: string;
   accentSoft: string;
   surfaceTint: string;
@@ -95,7 +95,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       {
         quote: "Antes respondía lo mismo todo el día. Ahora la mayoría entra, reserva y listo.",
         author: "Matías Gómez",
-        detail: "Barbero independiente",
+        detail: "Cliente frecuente",
         avatar:
           "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
       },

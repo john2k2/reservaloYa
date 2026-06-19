@@ -47,7 +47,9 @@ export function DemoSelector() {
     <>
       <AnimatedSection delay={400}>
         <div className="mx-auto mt-10 grid w-full max-w-3xl gap-3 sm:grid-cols-2">
-          {demoBusinessOptions.map((option, index) => (
+          {demoBusinessOptions
+            .filter((option) => option.slug !== "barberia-demo")
+            .map((option, index) => (
             <Link
               key={option.slug}
               href={`/${option.slug}`}

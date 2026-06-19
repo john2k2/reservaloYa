@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -184,6 +184,18 @@ export function BookingDateTimePicker({
   }, [slots]);
 
   const hasSlots = slots.length > 0;
+  const [expandedPeriods, setExpandedPeriods] = useState<Set<string>>(new Set());
+  const togglePeriod = (period: string) => {
+    setExpandedPeriods((prev) => {
+      const next = new Set(prev);
+      if (next.has(period)) {
+        next.delete(period);
+      } else {
+        next.add(period);
+      }
+      return next;
+    });
+  };
 
   return (
     <div
@@ -356,32 +368,56 @@ export function BookingDateTimePicker({
               }
             `}</style>
 
-            {groupedSlots.map((group) => (
-              <div key={group.period}>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
-                  {group.label}
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {group.items.map((slot) => (
-                    <label key={slot} className="dt-picker-slot cursor-pointer">
-                      <input
-                        type="radio"
-                        name="startTime"
-                        value={slot}
-                        className="peer sr-only"
-                        defaultChecked={rescheduleStartTime === slot}
-                        required
-                        aria-label={`Horario ${slot} para ${selectedDateLabel}`}
-                        onChange={() => onSelectSlot?.(slot)}
-                      />
-                      <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-card peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background active:scale-[0.97]">
-                        {slot}
-                      </span>
-                    </label>
-                  ))}
+            {groupedSlots.map((group) => {
+              const isExpanded = expandedPeriods.has(group.period);
+              const visibleSlots = isExpanded ? group.items : group.items.slice(0, 6);
+              const hiddenCount = group.items.length - visibleSlots.length;
+              return (
+                <div key={group.period}>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
+                    {group.label}
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {visibleSlots.map((slot) => (
+                      <label key={slot} className="dt-picker-slot cursor-pointer">
+                        <input
+                          type="radio"
+                          name="startTime"
+                          value={slot}
+                          className="peer sr-only"
+                          defaultChecked={rescheduleStartTime === slot}
+                          aria-label={`Horario ${slot} para ${selectedDateLabel}`}
+                          onChange={() => onSelectSlot?.(slot)}
+                        />
+                        <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-card peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background active:scale-[0.97]">
+                          {slot}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {hiddenCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => togglePeriod(group.period)}
+                      className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-border/60 bg-background/85 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                    >
+                      Mostrar {hiddenCount} horario{hiddenCount === 1 ? "" : "s"} más
+                      <ChevronDown className="size-3.5" />
+                    </button>
+                  )}
+                  {isExpanded && group.items.length > 6 && (
+                    <button
+                      type="button"
+                      onClick={() => togglePeriod(group.period)}
+                      className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-border/60 bg-background/85 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                    >
+                      Mostrar menos
+                      <ChevronDown className="size-3.5 rotate-180" />
+                    </button>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </fieldset>
         ) : (
           <div className="mt-4 flex flex-1 flex-col">

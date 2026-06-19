@@ -130,7 +130,17 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
           </dl>
         )}
 
-        {!subscription && (
+        {!subscription && status === "trial" && (
+          <p className="text-sm text-muted-foreground">
+            Estás en período de prueba. Si tenés dudas sobre tu plan, escribinos a{" "}
+            <a href="mailto:soporte@reservaya.app" className="underline">
+              soporte@reservaya.app
+            </a>
+            .
+          </p>
+        )}
+
+        {!subscription && status !== "trial" && (
           <p className="text-sm text-muted-foreground">
             No encontramos información de suscripción. Contactanos a{" "}
             <a href="mailto:soporte@reservaya.app" className="underline">

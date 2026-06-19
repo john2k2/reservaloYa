@@ -235,7 +235,7 @@ export function BookingFormWithWaitlist({
               {/* WhatsApp */}
               <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4">
                 <label htmlFor="phone" className="text-sm font-medium text-foreground">
-                  WhatsApp
+                  WhatsApp{" "}
                   <span className="ml-1 text-xs font-normal text-muted-foreground">opcional</span>
                 </label>
                 <div className="relative mt-3">
@@ -259,7 +259,7 @@ export function BookingFormWithWaitlist({
               {/* Notas */}
               <div className="rounded-[1.5rem] border border-border/60 bg-background/85 p-4 md:col-span-2">
                 <label htmlFor="notes" className="text-sm font-medium text-foreground">
-                  Notas adicionales
+                  Notas adicionales{" "}
                   <span className="ml-1 text-xs font-normal text-muted-foreground">opcional</span>
                 </label>
                 <div className="relative mt-3">

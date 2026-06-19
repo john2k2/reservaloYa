@@ -213,8 +213,8 @@ export function HeroSection() {
 
       <AnimatedSection delay={100}>
         <h1 className="max-w-[950px] text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] font-display">
-          Dejá de perder clientes{" "}
-          <span className="relative">
+          <span className="inline">Dejá de perder clientes&nbsp;</span>
+          <span className="relative inline">
             por WhatsApp
             <svg className="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8" fill="none">
               <path d="M2 6C50 2 150 2 198 6" stroke="currentColor" strokeWidth="3" className="text-primary/40" strokeLinecap="round"/>

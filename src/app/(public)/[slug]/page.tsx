@@ -635,7 +635,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                   <span className="font-bold text-foreground text-sm sm:text-base">{pageData.business.name}</span>
                 </div>
                 <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                  {pageData.profile.description.slice(0, 100)}...
+                  {pageData.profile.description}
                 </p>
               </div>
 

@@ -170,7 +170,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
               key={booking.id}
               action={updateBookingAction}
               className={cn(
-                "rounded-xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm",
+                "rounded-xl border border-border/60 bg-background p-3 shadow-sm",
                 savedBookingId === booking.id && "border-success/40 bg-success/5"
               )}
             >
@@ -179,14 +179,14 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
               <input type="hidden" name="redirectDate" value={activeFilters.date} />
               <input type="hidden" name="redirectQ" value={activeFilters.q} />
 
-              <div className="grid gap-4 lg:grid-cols-[280px_1fr_auto]">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 {/* Info del cliente */}
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-foreground text-sm sm:text-base">{booking.customerName}</h3>
+                <div className="min-w-[220px] space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-foreground text-sm">{booking.customerName}</h3>
                     <span
                       className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
                         savedBookingId === booking.id
                           ? "bg-success/15 text-success"
                           : "bg-secondary text-foreground"
@@ -196,7 +196,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-xs sm:text-sm text-muted-foreground">{booking.phone}</p>
+                    <p className="text-xs text-muted-foreground">{booking.phone}</p>
                     {booking.phone && (
                       <a
                         href={`https://wa.me/${booking.phone.replace(/\D/g, "")}`}
@@ -210,8 +210,8 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       </a>
                     )}
                   </div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-2.5 py-1 text-xs text-foreground">
-                    <CalendarClock className="size-3 sm:size-3.5" />
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-2 py-0.5 text-xs text-foreground">
+                    <CalendarClock className="size-3" />
                     {formatDateLabel(booking.bookingDate)} · {booking.startTime}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -220,63 +220,65 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                 </div>
 
                 {/* Formulario de edición */}
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="space-y-1">
-                    <label htmlFor={`booking-status-${booking.id}`} className="text-xs font-medium text-foreground">
-                      Estado
-                    </label>
-                    <select
-                      id={`booking-status-${booking.id}`}
-                      name="status"
-                      defaultValue={booking.status}
-                      aria-label={`Estado del turno de ${booking.customerName}`}
-                      className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-                    >
-                      {statusOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value} title={opt.hint}>{opt.label}</option>
-                      ))}
-                    </select>
+                <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
+                  <div className="grid flex-1 gap-2 sm:grid-cols-3">
+                    <div className="space-y-1">
+                      <label htmlFor={`booking-status-${booking.id}`} className="text-xs font-medium text-foreground">
+                        Estado
+                      </label>
+                      <select
+                        id={`booking-status-${booking.id}`}
+                        name="status"
+                        defaultValue={booking.status}
+                        aria-label={`Estado del turno de ${booking.customerName}`}
+                        className="h-9 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-foreground/30"
+                      >
+                        {statusOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value} title={opt.hint}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <CalendarClock className="size-3" /> Fecha
+                      </label>
+                      <input
+                        name="bookingDate"
+                        type="date"
+                        defaultValue={booking.bookingDate}
+                        className="h-9 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-foreground/30"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <Clock3 className="size-3" /> Hora
+                      </label>
+                      <input
+                        name="startTime"
+                        type="time"
+                        defaultValue={booking.startTime}
+                        className="h-9 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-foreground/30"
+                      />
+                    </div>
+                    <div className="sm:col-span-3 space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <MessageSquareText className="size-3" /> Notas
+                      </label>
+                      <textarea
+                        name="notes"
+                        rows={1}
+                        maxLength={400}
+                        defaultValue={booking.notes}
+                        placeholder="Notas internas..."
+                        className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-foreground/30 resize-none"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <CalendarClock className="size-3" /> Fecha
-                    </label>
-                    <input
-                      name="bookingDate"
-                      type="date"
-                      defaultValue={booking.bookingDate}
-                      className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <Clock3 className="size-3" /> Hora
-                    </label>
-                    <input
-                      name="startTime"
-                      type="time"
-                      defaultValue={booking.startTime}
-                      className="h-10 sm:h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-                    />
-                  </div>
-                  <div className="sm:col-span-3 space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <MessageSquareText className="size-3" /> Notas
-                    </label>
-                    <textarea
-                      name="notes"
-                      rows={2}
-                      maxLength={400}
-                      defaultValue={booking.notes}
-                      placeholder="Notas internas..."
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground/30 resize-none"
-                    />
-                  </div>
-                </div>
 
-                {/* Botón guardar */}
-                <div className="flex lg:items-start">
-                  <BookingSubmitButton />
+                  {/* Botón guardar */}
+                  <div className="flex sm:pb-0">
+                    <BookingSubmitButton />
+                  </div>
                 </div>
               </div>
             </form>
