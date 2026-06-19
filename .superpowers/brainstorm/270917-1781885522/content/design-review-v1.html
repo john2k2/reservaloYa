@@ -1,0 +1,142 @@
+<h2>Revisión de diseño — ReservaYa</h2>
+<p class="subtitle">Hallazgos de las páginas públicas, flujo de reserva y panel de administración. Cada screenshot tiene una lista numerada de observaciones debajo.</p>
+
+<div class="section">
+  <h3>1. Landing principal (reservaya.ar)</h3>
+  <img src="landing-screenshot.png" alt="Landing principal desktop" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;margin:1rem 0;">
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Copy roto en el H1:</strong> "Dejá de perder clientes<b>por</b> WhatsApp" — falta el espacio entre "clientes" y "por".</li>
+        <li><strong>Sección de demos confusa:</strong> aparece "Barbería demo" como "alias histórico mantenido para enlaces compartidos". Eso es información interna que expone al visitante.</li>
+        <li><strong>Precio poco claro:</strong> "$32.560 ARS/mes al blue" puede no entenderse fuera de Argentina. Considerá agregar una aclaración o mostrar el monto en USD equivalente.</li>
+        <li><strong>CTA secundario poco visible:</strong> "Ver ejemplo en vivo" es clave para conversión, pero queda abajo. Podría repetirse arriba del fold.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Página pública del negocio demo (/demo-barberia)</h3>
+  <img src="demo-barberia-screenshot.png" alt="Página demo Barberia Libertador desktop" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;margin:1rem 0;">
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Testimonio inconsistente:</strong> Matías Gómez aparece como "Barbero independiente", lo que suena a que el dueño se recomienda a sí mismo. Mejor que sea "Cliente frecuente" o cambiar el nombre.</li>
+        <li><strong>Footer con texto truncado:</strong> "Sin mensajes de WhatsApp cruzados..." aparece cortado con "...". Verificar si es intencional o un bug de clamp/ellipsis.</li>
+        <li><strong>Horarios desordenados:</strong> la sección de horarios muestra Lunes, Miércoles, Viernes. Está bien, pero podría mostrar los días cerrados como "Cerrado" para evitar dudas.</li>
+        <li><strong>Mapa con iframe vacío en snapshot:</strong> verificar que cargue correctamente (puede ser lazy load).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Flujo de reserva — Step 2 (desktop)</h3>
+  <img src="reservar-step2-screenshot.png" alt="Step 2 de reserva desktop" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;margin:1rem 0;">
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Labels de formulario pegados:</strong> "WhatsApp<b>opcional</b>" y "Notas adicionales<b>opcional</b>" no tienen espacio entre la palabra y el badge. Es un bug recurrente.</li>
+        <li><strong>33 horarios visibles:</strong> mostrar todos los slots de 15 min en una lista larga genera fricción. Considerá un selector más compacto o agrupado.</li>
+        <li><strong>Formulario de datos aparece antes de elegir hora:</strong> en desktop el resumen está a la derecha, pero los campos de datos quedan debajo del calendario/horarios. En mobile esto empuja el CTA muy abajo.</li>
+        <li><strong>Radio buttons con invalid="true":</strong> los horarios se marcan como inválidos en el árbol de accesibilidad aunque estén disponibles. Revisar la implementación del componente.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>4. Flujo de reserva — Mobile</h3>
+  <img src="reservar-step2-mobile.png" alt="Step 2 de reserva mobile" style="width:320px;border:1px solid #e5e7eb;border-radius:8px;margin:1rem 0;">
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Scroll excesivo:</strong> el usuario debe scrollear mucho para pasar del calendario a los horarios y luego al formulario. Considerá un stepper que condicione la visibilidad.</li>
+        <li><strong>Sidebar de resumen en mobile:</strong> el resumen aparece al final de todo, debajo del formulario. El usuario no ve el precio ni las políticas hasta el final.</li>
+        <li><strong>CTA confirmar inaccesible:</strong> el botón de confirmar solo aparece después de completar todos los campos y elegir horario. En mobile eso requiere mucho esfuerzo.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>5. Panel de administración — Turnos</h3>
+  <img src="admin-bookings.png" alt="Panel admin turnos" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;margin:1rem 0;">
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Cada turno es un formulario completo:</strong> ocupa mucho espacio visual y expone todos los campos editables. Una tabla o tarjetas compactas mejorarían la legibilidad.</li>
+        <li><strong>Selectores de fecha/hora nativos:</strong> los spinbuttons de día/mes/año y AM/PM son difíciles de usar y poco elegantes. Preferir input type=date/time o un picker consistente.</li>
+        <li><strong>Botón Guardar por turno:</strong> no queda claro si los cambios son auto-guardados o requieren click. Si cada turno tiene su propio guardado, indicarlo mejor.</li>
+        <li><strong>Falta vista de calendario/agenda:</strong> para un negocio de turnos, una vista semanal/diaria es más útil que una lista de formularios.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>6. Panel de administración — Horarios</h3>
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Selector AM/PM en Argentina:</strong> el formato 12h con AM/PM no es el habitual. Usar 24h reduce errores.</li>
+        <li><strong>Días cerrados muestran campos deshabilitados:</strong> ocupan mucho espacio. Podrían colapsarse cuando están cerrados.</li>
+        <li><strong>Falta "copiar horario a todos los días":</strong> para negocios con horarios similares, un botón de copiar ahorra tiempo.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>7. Panel de administración — Suscripción</h3>
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Observaciones</h4>
+      <ul>
+        <li><strong>Mensaje contradictorio:</strong> dice "Período de prueba" y a la vez "No encontramos información de suscripción". Eso genera incertidumbre.</li>
+        <li><strong>CTA de cancelar prominente:</strong> en un negocio que está suspendido, mostrar el flujo de cancelación primero puede confundir.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>8. Accesibilidad y performance (Lighthouse)</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Lo que va bien</h4>
+      <ul>
+        <li>Landing: 98 accesibilidad, 92 best practices, 100 SEO.</li>
+        <li>Página demo: 96 accesibilidad, 92 best practices, 100 SEO.</li>
+        <li>Los enlaces de "Saltar al contenido" están presentes.</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Lo que se puede mejorar</h4>
+      <ul>
+        <li>El campo de contraseña en /login se muestra como textbox (no type=password) en el snapshot. Revisar que sea seguro visualmente.</li>
+        <li>Algunos radio buttons de horarios tienen invalid="true" aunque estén disponibles.</li>
+        <li>Los iframes del mapa pueden retrasar la carga si no están lazy-loaded correctamente.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Recomendaciones priorizadas</h3>
+  <ol>
+    <li><strong>Corregir los bugs de copy/espaciado</strong> (H1 landing, labels "opcional", footer truncado).</li>
+    <li><strong>Simplificar el selector de horarios</strong> en el flujo de reserva, especialmente en mobile.</li>
+    <li><strong>Mejorar la lista de turnos del admin</strong> con una vista más compacta o un calendario.</li>
+    <li><strong>Usar formato 24h</strong> en todos los selectores de hora del admin.</li>
+    <li><strong>Revisar consistencia de testimonios</strong> en la página demo.</li>
+    <li><strong>Clarificar el estado de suscripción</strong> en el panel de billing.</li>
+  </ol>
+</div>

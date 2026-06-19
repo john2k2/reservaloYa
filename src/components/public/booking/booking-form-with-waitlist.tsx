@@ -132,7 +132,7 @@ export function BookingFormWithWaitlist({
       <form
         ref={formRef}
         action={createPublicBookingAction}
-        className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"
+        className="grid gap-6 pb-20 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:pb-0"
       >
         {/* Hidden fields */}
         <input type="hidden" name="businessSlug" value={slug} />
@@ -416,6 +416,32 @@ export function BookingFormWithWaitlist({
           <BookingPolicyCard />
           {whatsappHref && <BookingSupportCard whatsappHref={whatsappHref} />}
         </aside>
+        )}
+
+        {/* Resumen flotante en mobile */}
+        {!noSlotsDate && (
+          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/60 bg-background/95 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur sm:p-4 lg:hidden">
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="truncate text-xs text-muted-foreground">{service.name}</p>
+                <p className="text-sm font-semibold text-foreground">{service.priceLabel}</p>
+              </div>
+              {selectedSlot ? (
+                <button
+                  type="button"
+                  onClick={handleReviewClick}
+                  className="h-10 shrink-0 rounded-xl px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {paymentSummary.buttonLabel}
+                </button>
+              ) : (
+                <div className="flex h-10 shrink-0 items-center rounded-xl border border-border/60 bg-muted/40 px-4 text-sm font-semibold text-muted-foreground/50">
+                  Elegí un horario
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </form>
 
