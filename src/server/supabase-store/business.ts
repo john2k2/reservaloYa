@@ -28,7 +28,9 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
 
   const { data: businessData, error: businessError } = await client
     .from("businesses")
-    .select("*")
+    .select(
+      'id, created, updated, name, slug, "templateSlug", phone, email, address, timezone, active, "publicProfileOverrides", "cancellationPolicy", "mpConnected"'
+    )
     .eq("slug", normalizedSlug)
     .eq("active", true)
     .single();

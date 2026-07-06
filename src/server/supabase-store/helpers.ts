@@ -21,7 +21,13 @@ export async function getBusinessByIdWithClient(
   client: Awaited<ReturnType<typeof createServerClient>>,
   id: string
 ) {
-  const { data, error } = await client.from("businesses").select("*").eq("id", id).single();
+  const { data, error } = await client
+    .from("businesses")
+    .select(
+      'id, created, updated, name, slug, "templateSlug", phone, email, address, timezone, active, "publicProfileOverrides", "cancellationPolicy", "mpConnected", "mpCollectorId", "autoConfirmBookings"'
+    )
+    .eq("id", id)
+    .single();
   if (error || !data) throw new Error("Business not found");
   return data as BusinessRecord;
 }
