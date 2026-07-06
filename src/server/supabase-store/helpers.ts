@@ -2,6 +2,7 @@ import { getSupabaseAdminClient } from "./_core";
 import { slugify } from "@/lib/utils";
 import { createServerClient } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
+import { isActiveSubscriptionExpired } from "@/server/payments-domain";
 import type { BusinessRecord, BookingRecord, ServiceRecord, CustomerRecord, WaitlistEntryRecord } from "@/server/supabase-domain";
 import type { JoinedBookingWithBusiness, SupabaseSubscriptionPaymentAttempt } from "./types";
 
@@ -88,7 +89,10 @@ export async function resolveSubscriptionStatus(
   const status = sub.status as "trial" | "active" | "cancelled" | "suspended";
 
   if (status === "active") {
-    return { subscriptionStatus: "active", subscriptionExpired: false };
+    return {
+      subscriptionStatus: "active",
+      subscriptionExpired: isActiveSubscriptionExpired(sub.nextBillingDate),
+    };
   }
 
   if (status === "trial") {

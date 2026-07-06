@@ -4,6 +4,10 @@
     {
       "path": "/api/jobs/booking-reminders",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/jobs/subscription-billing",
+      "schedule": "0 14 * * *"
     }
   ]
 }
