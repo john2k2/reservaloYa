@@ -534,6 +534,31 @@ export async function updateSupabaseBookingPayment(
   return input.bookingId;
 }
 
+/**
+ * Same payment patch as `updateSupabaseBookingPayment`, but only applies it if the
+ * booking's current status still matches `expectedCurrentStatus`. Used to make webhook
+ * side effects (confirmation emails) idempotent against duplicate/concurrent deliveries:
+ * only the delivery that actually flips the row gets to run them.
+ */
+export async function updateSupabaseBookingPaymentIfStatus(
+  input: UpdateSupabaseBookingPaymentInput & { expectedCurrentStatus: BookingStatus }
+): Promise<boolean> {
+  const { expectedCurrentStatus, ...paymentInput } = input;
+  const data = buildBookingPaymentPatch(paymentInput);
+  const client = await getSupabaseAdminClient();
+
+  const { data: rows, error } = await client
+    .from("bookings")
+    .update({ ...data, updated: new Date().toISOString() } as Record<string, unknown>)
+    .eq("id", paymentInput.bookingId)
+    .eq("status", expectedCurrentStatus)
+    .select("id");
+
+  if (error) throw error;
+
+  return Boolean(rows && rows.length > 0);
+}
+
 
 export async function getSupabaseBookingBusinessSlug(bookingId: string): Promise<string | null> {
   const client = await getSupabaseAdminClient();

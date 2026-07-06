@@ -13,6 +13,7 @@ import {
   getSupabaseBookingPaymentValidationContext,
   getSupabaseBookingBusinessSlug,
   updateSupabaseBookingPayment,
+  updateSupabaseBookingPaymentIfStatus,
   updateSupabaseBusinessMPTokens,
   getSupabaseSubscriptionByBusinessId,
   activateSupabaseSubscription,
@@ -99,6 +100,40 @@ function canApplyBookingPayment(input: {
   }
 
   return { ok: true } as const;
+}
+
+// A booking is written first, then MP's preference is created, then we persist
+// paymentProvider/paymentPreferenceId on it (see src/server/actions/public-booking.ts).
+// If Mercado Pago's webhook lands in that last write's window, the booking looks
+// "not prepared for MP" even though it's about to be. MP tolerates a slow response far
+// beyond this budget, so retry briefly instead of dropping the payment with a 200.
+const BOOKING_NOT_PREPARED_RETRY_DELAYS_MS = [700, 700, 700];
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function resolveBookingPaymentValidation(input: {
+  bookingId: string;
+  collectorId?: string | null;
+  paymentInfo: Awaited<ReturnType<typeof getMPPaymentInfo>>;
+  paymentStatus: ReturnType<typeof mapMPStatusToPaymentStatus>;
+  businessPaymentSettings: Awaited<ReturnType<typeof getSupabaseBusinessPaymentSettingsByCollectorId>>;
+}) {
+  const { bookingId, ...rest } = input;
+
+  let booking = await getSupabaseBookingPaymentValidationContext(bookingId);
+  let validation = canApplyBookingPayment({ booking, ...rest });
+
+  for (const delayMs of BOOKING_NOT_PREPARED_RETRY_DELAYS_MS) {
+    if (validation.reason !== "booking_not_prepared_for_mp") break;
+
+    await wait(delayMs);
+    booking = await getSupabaseBookingPaymentValidationContext(bookingId);
+    validation = canApplyBookingPayment({ booking, ...rest });
+  }
+
+  return { booking, validation };
 }
 
 async function canApplySubscriptionPayment(input: {
@@ -262,15 +297,14 @@ export async function POST(request: Request) {
 
     const paymentStatus = mapMPStatusToPaymentStatus(status);
 
-    const bookingValidation = await getSupabaseBookingPaymentValidationContext(externalReference);
-
-    const paymentValidation = canApplyBookingPayment({
-      booking: bookingValidation,
-      collectorId: resolvedCollectorId,
-      paymentInfo,
-      paymentStatus,
-      businessPaymentSettings,
-    });
+    const { booking: bookingValidation, validation: paymentValidation } =
+      await resolveBookingPaymentValidation({
+        bookingId: externalReference,
+        collectorId: resolvedCollectorId,
+        paymentInfo,
+        paymentStatus,
+        businessPaymentSettings,
+      });
 
     if (!paymentValidation.ok) {
       if (paymentValidation.reason === "booking_not_found") {
@@ -311,17 +345,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
     }
 
-    const shouldRunApprovedSideEffects =
-      paymentStatus === "approved" && bookingValidation?.status === "pending_payment";
+    let shouldRunApprovedSideEffects = false;
 
-    await updateSupabaseBookingPayment({
-      bookingId: externalReference,
-      paymentStatus,
-      paymentAmount: transactionAmount,
-      paymentCurrency: currencyId,
-      paymentProvider: "mercadopago",
-      paymentExternalId: paymentId,
-    });
+    if (paymentStatus === "approved") {
+      // Conditional on the booking still being "pending_payment": if two deliveries of
+      // the same webhook race each other, only the one that actually flips the row wins
+      // and gets to send the confirmation email — the other affects 0 rows.
+      shouldRunApprovedSideEffects = await updateSupabaseBookingPaymentIfStatus({
+        bookingId: externalReference,
+        paymentStatus,
+        paymentAmount: transactionAmount,
+        paymentCurrency: currencyId,
+        paymentProvider: "mercadopago",
+        paymentExternalId: paymentId,
+        expectedCurrentStatus: "pending_payment",
+      });
+    } else {
+      await updateSupabaseBookingPayment({
+        bookingId: externalReference,
+        paymentStatus,
+        paymentAmount: transactionAmount,
+        paymentCurrency: currencyId,
+        paymentProvider: "mercadopago",
+        paymentExternalId: paymentId,
+      });
+    }
 
     if (shouldRunApprovedSideEffects) {
       try {
