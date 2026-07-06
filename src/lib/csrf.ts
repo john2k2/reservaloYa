@@ -13,7 +13,7 @@ function getCsrfSecret(): string {
     return secret;
   }
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && process.env.ALLOW_DEV_SECRETS === "1") {
     return DEV_CSRF_SECRET;
   }
 
