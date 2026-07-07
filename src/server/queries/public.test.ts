@@ -24,6 +24,7 @@ describe("getBookingConfirmationData", () => {
   beforeEach(() => {
     vi.resetModules();
     getSupabaseBookingConfirmationDataMock.mockReset();
+    process.env.ALLOW_DEV_SECRETS = "1";
   });
 
   it("returns null when no bookingId is provided", async () => {
@@ -110,6 +111,7 @@ describe("getPublicManageBookingData", () => {
   beforeEach(() => {
     vi.resetModules();
     getSupabaseManageBookingDataMock.mockReset();
+    process.env.ALLOW_DEV_SECRETS = "1";
   });
 
   it("returns null when no bookingId is provided", async () => {

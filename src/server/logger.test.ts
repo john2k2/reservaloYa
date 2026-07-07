@@ -1,10 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { mockCaptureException, mockCaptureMessage } = vi.hoisted(() => ({
+  mockCaptureException: vi.fn(),
+  mockCaptureMessage: vi.fn(),
+}));
+
+vi.mock("@sentry/nextjs", () => ({
+  captureException: mockCaptureException,
+  captureMessage: mockCaptureMessage,
+}));
+
 import { createLogger } from "@/server/logger";
 
 describe("server logger", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    mockCaptureException.mockClear();
+    mockCaptureMessage.mockClear();
     delete process.env.LOG_INFO_IN_TESTS;
   });
 
@@ -62,6 +74,61 @@ describe("server logger", () => {
           authorization: "[REDACTED]",
           note: "Llamar al [REDACTED_PHONE]",
         },
+      }
+    );
+  });
+
+  it("reports Error metadata to Sentry via captureException", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("boom");
+
+    createLogger("Test Scope").error("failed", error);
+
+    expect(mockCaptureException).toHaveBeenCalledTimes(1);
+    expect(mockCaptureException).toHaveBeenCalledWith(error, {
+      tags: { scope: "Test Scope" },
+      extra: { message: "failed" },
+    });
+    expect(mockCaptureMessage).not.toHaveBeenCalled();
+  });
+
+  it("reports non-Error metadata to Sentry via captureMessage", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    createLogger("Test Scope").error("failed", { foo: "bar" });
+
+    expect(mockCaptureMessage).toHaveBeenCalledTimes(1);
+    expect(mockCaptureMessage).toHaveBeenCalledWith("[Test Scope] failed", {
+      level: "error",
+      tags: { scope: "Test Scope" },
+      extra: { meta: { foo: "bar" } },
+    });
+    expect(mockCaptureException).not.toHaveBeenCalled();
+  });
+
+  it("does not report warn logs to Sentry", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    createLogger("Test Scope").warn("heads up", { foo: "bar" });
+
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mockCaptureMessage).not.toHaveBeenCalled();
+  });
+
+  it("sanitizes sensitive metadata before it reaches Sentry", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    createLogger("Test Scope").error("token=abc123 leaked", {
+      email: "cliente@example.com",
+      accessToken: "mp-token-real",
+    });
+
+    expect(mockCaptureMessage).toHaveBeenCalledWith(
+      "[Test Scope] token=[REDACTED_SECRET] leaked",
+      {
+        level: "error",
+        tags: { scope: "Test Scope" },
+        extra: { meta: { email: "[REDACTED_EMAIL]", accessToken: "[REDACTED]" } },
       }
     );
   });

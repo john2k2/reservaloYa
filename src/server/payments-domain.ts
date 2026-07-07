@@ -25,6 +25,23 @@ export function getSubscriptionArsPrice(blueRate: number | null): number {
   return SUBSCRIPTION_USD_PRICE * blueRate;
 }
 
+/** Días de gracia tras `nextBillingDate` antes de tratar una suscripción `active` como vencida. */
+export const SUBSCRIPTION_BILLING_GRACE_DAYS = 3;
+
+/**
+ * Una suscripción `active` está vencida si pasó `nextBillingDate` + el período de gracia.
+ * Sin `nextBillingDate` (no debería ocurrir para un sub activo) se asume no vencida
+ * para no bloquear negocios existentes por falta de dato.
+ */
+export function isActiveSubscriptionExpired(
+  nextBillingDate: string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  if (!nextBillingDate) return false;
+  const graceMs = SUBSCRIPTION_BILLING_GRACE_DAYS * 24 * 60 * 60 * 1000;
+  return new Date(nextBillingDate).getTime() + graceMs < now.getTime();
+}
+
 export type BusinessPaymentSettings = {
   businessId: string;
   businessSlug: string;

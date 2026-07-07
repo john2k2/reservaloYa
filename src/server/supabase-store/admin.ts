@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
+import { isActiveSubscriptionExpired } from "@/server/payments-domain";
 import { buildBookingDateOptions, findNextBookingDate } from "@/lib/bookings/format";
 import { createLogger } from "@/server/logger";
 import { buildAdminAvailabilityView, buildAdminBookingsView, buildAdminCustomersView, buildAdminServicesView, buildAdminSettingsView } from "@/server/admin-views-domain";
@@ -78,7 +79,10 @@ async function resolveSubscriptionStatus(
   const status = sub.status as "trial" | "active" | "cancelled" | "suspended";
 
   if (status === "active") {
-    return { subscriptionStatus: "active", subscriptionExpired: false };
+    return {
+      subscriptionStatus: "active",
+      subscriptionExpired: isActiveSubscriptionExpired(sub.nextBillingDate),
+    };
   }
 
   if (status === "trial") {

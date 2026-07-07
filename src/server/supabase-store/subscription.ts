@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "./_core";
 import { resolveSubscriptionStatus, normalizeSubscriptionPaymentAttempt } from "./helpers";
+import { isActiveSubscriptionExpired } from "@/server/payments-domain";
 import type { SupabaseSubscriptionPaymentAttempt } from "./types";
 
 export async function getSupabaseSubscriptionData(businessId: string) {
@@ -168,4 +169,39 @@ export async function cancelSupabaseSubscription(businessId: string) {
     .from("subscriptions")
     .update({ status: "cancelled" })
     .eq("id", sub.id);
+}
+
+/**
+ * Pasa a `suspended` toda suscripción `active` cuyo `nextBillingDate` venció hace más
+ * del período de gracia. Sin esto, `resolveSubscriptionStatus` señaliza `subscriptionExpired`
+ * para bloquear el acceso, pero el status real en DB queda `active` para siempre.
+ */
+export async function runSupabaseSubscriptionBillingSweep(input?: {
+  now?: string;
+  dryRun?: boolean;
+}) {
+  const client = await getSupabaseAdminClient();
+  const now = input?.now ? new Date(input.now) : new Date();
+  const dryRun = Boolean(input?.dryRun);
+
+  const { data: activeSubs } = await client
+    .from("subscriptions")
+    .select("id, businessId, nextBillingDate")
+    .eq("status", "active");
+
+  const overdue = (activeSubs ?? []).filter((sub) =>
+    isActiveSubscriptionExpired(sub.nextBillingDate as string | null, now)
+  );
+
+  if (!dryRun) {
+    for (const sub of overdue) {
+      await client.from("subscriptions").update({ status: "suspended" }).eq("id", sub.id);
+    }
+  }
+
+  return {
+    checked: activeSubs?.length ?? 0,
+    suspended: overdue.length,
+    businessIds: overdue.map((sub) => sub.businessId as string),
+  };
 }

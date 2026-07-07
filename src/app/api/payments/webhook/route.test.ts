@@ -9,6 +9,7 @@ const {
   getSupabaseBookingPaymentValidationContextMock,
   getSupabaseBookingBusinessSlugMock,
   updateSupabaseBookingPaymentMock,
+  updateSupabaseBookingPaymentIfStatusMock,
   updateSupabaseBusinessMPTokensMock,
   getSupabaseSubscriptionByBusinessIdMock,
   activateSupabaseSubscriptionMock,
@@ -28,6 +29,7 @@ const {
   getSupabaseBookingPaymentValidationContextMock: vi.fn(),
   getSupabaseBookingBusinessSlugMock: vi.fn(),
   updateSupabaseBookingPaymentMock: vi.fn(),
+  updateSupabaseBookingPaymentIfStatusMock: vi.fn(),
   updateSupabaseBusinessMPTokensMock: vi.fn(),
   getSupabaseSubscriptionByBusinessIdMock: vi.fn(),
   activateSupabaseSubscriptionMock: vi.fn(),
@@ -56,6 +58,7 @@ vi.mock("@/server/supabase-store", () => ({
   getSupabaseBookingPaymentValidationContext: getSupabaseBookingPaymentValidationContextMock,
   getSupabaseBookingBusinessSlug: getSupabaseBookingBusinessSlugMock,
   updateSupabaseBookingPayment: updateSupabaseBookingPaymentMock,
+  updateSupabaseBookingPaymentIfStatus: updateSupabaseBookingPaymentIfStatusMock,
   updateSupabaseBusinessMPTokens: updateSupabaseBusinessMPTokensMock,
   getSupabaseSubscriptionByBusinessId: getSupabaseSubscriptionByBusinessIdMock,
   activateSupabaseSubscription: activateSupabaseSubscriptionMock,
@@ -91,6 +94,7 @@ describe("mercadopago webhook route", () => {
     getSupabaseBookingPaymentValidationContextMock.mockReset();
     getSupabaseBookingBusinessSlugMock.mockReset();
     updateSupabaseBookingPaymentMock.mockReset();
+    updateSupabaseBookingPaymentIfStatusMock.mockReset();
     updateSupabaseBusinessMPTokensMock.mockReset();
     getSupabaseSubscriptionByBusinessIdMock.mockReset();
     activateSupabaseSubscriptionMock.mockReset();
@@ -124,6 +128,7 @@ describe("mercadopago webhook route", () => {
     });
     getUsableBusinessMercadoPagoAccessTokenMock.mockResolvedValue(null);
     getBlueDollarRateMock.mockResolvedValue(1000);
+    updateSupabaseBookingPaymentIfStatusMock.mockResolvedValue(true);
   });
 
   it("returns webhook health info on GET", async () => {
@@ -276,13 +281,14 @@ describe("mercadopago webhook route", () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual({ ok: true });
-    expect(updateSupabaseBookingPaymentMock).toHaveBeenCalledWith({
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledWith({
       bookingId: "booking-1",
       paymentStatus: "approved",
       paymentAmount: 18000,
       paymentCurrency: "ARS",
       paymentProvider: "mercadopago",
       paymentExternalId: "pay-1",
+      expectedCurrentStatus: "pending_payment",
     });
     expect(getBookingConfirmationDataMock).toHaveBeenCalledWith({
       slug: "demo-barberia",
@@ -291,6 +297,105 @@ describe("mercadopago webhook route", () => {
     });
     expect(sendBookingConfirmationEmailMock).toHaveBeenCalledWith({ bookingId: "booking-1" }, "created");
   });
+
+  it("retries when the booking is not yet linked to the MP preference, then succeeds", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+    });
+    getSupabaseBookingBusinessSlugMock.mockResolvedValue("demo-barberia");
+    getBookingConfirmationDataMock.mockResolvedValue({ bookingId: "booking-1" });
+    // First read races the public-booking action's write: paymentPreferenceId isn't
+    // persisted yet. Second read (after the retry delay) finds it already prepared.
+    getSupabaseBookingPaymentValidationContextMock
+      .mockResolvedValueOnce({
+        bookingId: "booking-1",
+        businessId: "biz-1",
+        businessSlug: "demo-barberia",
+        status: "pending_payment",
+        paymentAmount: 18000,
+        paymentCurrency: "ARS",
+        paymentProvider: undefined,
+        paymentPreferenceId: undefined,
+        paymentExternalId: undefined,
+        mpCollectorId: "collector-1",
+      })
+      .mockResolvedValueOnce({
+        bookingId: "booking-1",
+        businessId: "biz-1",
+        businessSlug: "demo-barberia",
+        status: "pending_payment",
+        paymentAmount: 18000,
+        paymentCurrency: "ARS",
+        paymentProvider: "mercadopago",
+        paymentPreferenceId: "pref-1",
+        paymentExternalId: undefined,
+        mpCollectorId: "collector-1",
+      });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true });
+    expect(getSupabaseBookingPaymentValidationContextMock).toHaveBeenCalledTimes(2);
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingId: "booking-1", expectedCurrentStatus: "pending_payment" })
+    );
+    expect(sendBookingConfirmationEmailMock).toHaveBeenCalledWith({ bookingId: "booking-1" }, "created");
+  });
+
+  it("gives up after retrying and skips when the booking never gets linked to the MP preference", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+    });
+    getSupabaseBookingPaymentValidationContextMock.mockResolvedValue({
+      bookingId: "booking-1",
+      businessId: "biz-1",
+      businessSlug: "demo-barberia",
+      status: "pending_payment",
+      paymentAmount: 18000,
+      paymentCurrency: "ARS",
+      paymentProvider: undefined,
+      paymentPreferenceId: undefined,
+      paymentExternalId: undefined,
+      mpCollectorId: "collector-1",
+    });
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true, skipped: true });
+    expect(getSupabaseBookingPaymentValidationContextMock).toHaveBeenCalledTimes(4);
+    expect(updateSupabaseBookingPaymentIfStatusMock).not.toHaveBeenCalled();
+    expect(sendBookingConfirmationEmailMock).not.toHaveBeenCalled();
+  }, 10000);
 
   it("does not resend confirmations when an approved payment was already processed", async () => {
     getSupabaseBookingPaymentValidationContextMock.mockResolvedValue({
@@ -315,6 +420,9 @@ describe("mercadopago webhook route", () => {
       currencyId: "ARS",
       collectorId: "collector-1",
     });
+    // Simulates the real conditional update finding the row no longer "pending_payment"
+    // (already flipped by a prior delivery) and affecting 0 rows.
+    updateSupabaseBookingPaymentIfStatusMock.mockResolvedValue(false);
 
     const { POST } = await import("./route");
 
@@ -327,17 +435,54 @@ describe("mercadopago webhook route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateSupabaseBookingPaymentMock).toHaveBeenCalledWith({
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledWith({
       bookingId: "booking-1",
       paymentStatus: "approved",
       paymentAmount: 18000,
       paymentCurrency: "ARS",
       paymentProvider: "mercadopago",
       paymentExternalId: "pay-1",
+      expectedCurrentStatus: "pending_payment",
     });
     expect(getSupabaseBookingBusinessSlugMock).not.toHaveBeenCalled();
     expect(sendBookingConfirmationEmailMock).not.toHaveBeenCalled();
     expect(sendBusinessNotificationEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("only runs approved side effects once when two webhook deliveries race", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "approved",
+      statusDetail: "accredited",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+    });
+    getSupabaseBookingBusinessSlugMock.mockResolvedValue("demo-barberia");
+    getBookingConfirmationDataMock.mockResolvedValue({ bookingId: "booking-1" });
+    // First delivery wins the conditional update (row still pending_payment); the
+    // second (duplicate/concurrent) delivery finds it already flipped.
+    updateSupabaseBookingPaymentIfStatusMock
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    const { POST } = await import("./route");
+
+    const makeRequest = () =>
+      POST(
+        new Request("http://localhost/api/payments/webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+        })
+      );
+
+    const [firstResponse, secondResponse] = await Promise.all([makeRequest(), makeRequest()]);
+
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(200);
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledTimes(2);
+    expect(sendBookingConfirmationEmailMock).toHaveBeenCalledTimes(1);
   });
 
   it("ignores approved payments when the amount does not match the booking", async () => {

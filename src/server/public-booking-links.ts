@@ -19,7 +19,7 @@ function getBookingLinkSecret() {
     return process.env.BOOKING_LINK_SECRET;
   }
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && process.env.ALLOW_DEV_SECRETS === "1") {
     return DEV_BOOKING_LINK_SECRET;
   }
 

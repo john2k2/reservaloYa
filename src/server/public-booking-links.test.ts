@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   buildAbsoluteBookingConfirmationUrl,
@@ -17,6 +17,7 @@ import {
 const originalEnv = {
   BOOKING_LINK_SECRET: process.env.BOOKING_LINK_SECRET,
   NODE_ENV: process.env.NODE_ENV,
+  ALLOW_DEV_SECRETS: process.env.ALLOW_DEV_SECRETS,
 };
 
 const writableEnv = process.env as Record<string, string | undefined>;
@@ -34,13 +35,22 @@ function setEnvValue(key: keyof typeof originalEnv, value: string) {
   writableEnv[key] = value;
 }
 
+// Most tests in this file exercise token generation/validation logic under
+// NODE_ENV=development relying on the dev-secret fallback, not the fallback's
+// own gating — so allow it by default here and have the one test that cares
+// about the gate itself turn it off explicitly.
+beforeEach(() => {
+  setEnvValue("ALLOW_DEV_SECRETS", "1");
+});
+
 afterEach(() => {
   restoreEnvValue("BOOKING_LINK_SECRET", originalEnv.BOOKING_LINK_SECRET);
   restoreEnvValue("NODE_ENV", originalEnv.NODE_ENV);
+  restoreEnvValue("ALLOW_DEV_SECRETS", originalEnv.ALLOW_DEV_SECRETS);
 });
 
 describe("public booking link secret handling", () => {
-  it("uses development fallback secret outside production", () => {
+  it("uses development fallback secret outside production when explicitly allowed", () => {
     delete process.env.BOOKING_LINK_SECRET;
     setEnvValue("NODE_ENV", "development");
 
@@ -49,6 +59,17 @@ describe("public booking link secret handling", () => {
     const token = createBookingManageToken("demo-barberia", "booking-1");
     expect(isValidBookingManageToken({ slug: "demo-barberia", bookingId: "booking-1", token })).toBe(
       true
+    );
+  });
+
+  it("requires explicit secret outside production when dev fallback is not allowed", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    setEnvValue("NODE_ENV", "development");
+    restoreEnvValue("ALLOW_DEV_SECRETS", undefined); // overrides the beforeEach default for this test
+
+    expect(canGenerateBookingManageLinks()).toBe(false);
+    expect(() => createBookingManageToken("demo-barberia", "booking-1")).toThrow(
+      "Missing environment variable: BOOKING_LINK_SECRET (required in production runtime)"
     );
   });
 

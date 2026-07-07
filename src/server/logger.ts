@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 type LogLevel = "info" | "warn" | "error";
 
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -52,6 +54,26 @@ function shouldSkipLog(level: LogLevel) {
   return level === "info" && process.env.NODE_ENV === "test" && process.env.LOG_INFO_IN_TESTS !== "true";
 }
 
+function reportErrorToSentry(scope: string, message: string, meta: unknown) {
+  try {
+    if (meta instanceof Error) {
+      Sentry.captureException(meta, {
+        tags: { scope },
+        extra: { message: sanitizeString(message) },
+      });
+      return;
+    }
+
+    Sentry.captureMessage(sanitizeString(`[${scope}] ${message}`), {
+      level: "error",
+      tags: { scope },
+      extra: meta === undefined ? undefined : { meta: normalizeMeta(meta) },
+    });
+  } catch (sentryError) {
+    console.error(`[${scope}] Failed to report error to Sentry`, sentryError);
+  }
+}
+
 function writeLog(level: LogLevel, scope: string, message: string, meta?: unknown) {
   if (shouldSkipLog(level)) {
     return;
@@ -79,6 +101,8 @@ function writeLog(level: LogLevel, scope: string, message: string, meta?: unknow
     console.warn(prefix, payload);
     return;
   }
+
+  reportErrorToSentry(scope, message, meta);
 
   if (payload === undefined) {
     console.error(prefix);
