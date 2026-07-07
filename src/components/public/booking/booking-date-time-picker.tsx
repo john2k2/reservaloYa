@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { getAccentForeground } from "@/lib/color-contrast";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -252,12 +253,14 @@ export function BookingDateTimePicker({
             const option = dateOptionMap.get(dateStr);
             const ariaLabel = getDateAriaLabel(dateStr, { isAvailable, isSelected, isToday });
 
+            const selectedForeground = isSelected ? getAccentForeground(accentColor) : undefined;
+
             const cellContent = (
               <span
                 className={cn(
                   "relative inline-flex size-10 items-center justify-center rounded-xl text-sm font-medium transition-all duration-200",
                   isSelected
-                    ? "font-bold text-white shadow-lg"
+                    ? "font-bold shadow-lg"
                     : isAvailable
                       ? "text-foreground hover:bg-muted/70"
                       : "cursor-default text-muted-foreground/30",
@@ -268,6 +271,7 @@ export function BookingDateTimePicker({
                     ? {
                         backgroundColor: accentColor,
                         boxShadow: `0 4px 12px -2px ${accentColor}40`,
+                        color: selectedForeground,
                       }
                     : undefined
                 }
@@ -277,8 +281,9 @@ export function BookingDateTimePicker({
                   <span
                     className={cn(
                       "absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full",
-                      isSelected ? "bg-white/70" : "bg-foreground/40",
+                      !isSelected && "bg-foreground/40",
                     )}
+                    style={isSelected ? { backgroundColor: `${selectedForeground}b3` } : undefined}
                   />
                 )}
               </span>

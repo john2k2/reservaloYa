@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { getAccentForeground } from "@/lib/color-contrast";
 
 const bookingSteps = [
   { id: 1, label: "Servicio", helper: "Qué querés reservar" },
@@ -78,7 +79,7 @@ export function BookingStepsHeader({
                     )}
                     style={
                       isCurrent && accentColor
-                        ? { backgroundColor: accentColor, color: "#ffffff" }
+                        ? { backgroundColor: accentColor, color: getAccentForeground(accentColor) }
                         : undefined
                     }
                   >

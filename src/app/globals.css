@@ -74,6 +74,8 @@
   --destructive: #ef4444;
   --success: #16a34a;
   --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
   --border: #cbd5e1;
   --input: #cbd5e1;
   --ring: #14b8a6;
@@ -118,6 +120,8 @@
   --destructive: #f87171;
   --success: #4ade80;
   --success-foreground: #052e16;
+  --warning: #fbbf24;
+  --warning-foreground: #451a03;
   --border: #334155;
   --input: #334155;
   --ring: #14b8a6;
@@ -439,6 +443,55 @@
 
   .focus-visible\:ring-success\/20:focus-visible {
     --tw-ring-color: color-mix(in srgb, var(--success) 20%, transparent);
+  }
+
+  /*
+   * UTILIDADES DE COLOR WARNING
+   * Tailwind v4 no puede resolver var() en @theme inline en runtime.
+   * Se definen como utilidades directas para que funcionen con opacidad.
+   */
+  .text-warning {
+    color: var(--warning);
+  }
+
+  .bg-warning {
+    background-color: var(--warning);
+  }
+
+  .border-warning {
+    border-color: var(--warning);
+  }
+
+  .bg-warning\/5 {
+    background-color: color-mix(in srgb, var(--warning) 5%, transparent);
+  }
+
+  .bg-warning\/10 {
+    background-color: color-mix(in srgb, var(--warning) 10%, transparent);
+  }
+
+  .bg-warning\/15 {
+    background-color: color-mix(in srgb, var(--warning) 15%, transparent);
+  }
+
+  .border-warning\/20 {
+    border-color: color-mix(in srgb, var(--warning) 20%, transparent);
+  }
+
+  .border-warning\/30 {
+    border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+  }
+
+  .border-warning\/40 {
+    border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  }
+
+  .ring-warning\/20 {
+    --tw-ring-color: color-mix(in srgb, var(--warning) 20%, transparent);
+  }
+
+  .focus-visible\:ring-warning\/20:focus-visible {
+    --tw-ring-color: color-mix(in srgb, var(--warning) 20%, transparent);
   }
 
   /*
