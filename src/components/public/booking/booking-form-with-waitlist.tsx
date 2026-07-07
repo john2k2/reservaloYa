@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -20,6 +20,7 @@ import { BookingSupportCard } from "@/components/public/booking/booking-support-
 import { BookingWaitlistForm } from "@/components/public/booking/booking-waitlist-form";
 import { PublicSubmitButton } from "@/components/public/public-submit-button";
 import { createPublicBookingAction } from "@/server/actions/public-booking";
+import { getAccentForeground } from "@/lib/color-contrast";
 
 interface ServiceInfo {
   id: string;
@@ -80,6 +81,20 @@ export function BookingFormWithWaitlist({
   const [confirming, setConfirming] = useState(false);
   const [confirmSummary, setConfirmSummary] = useState<{ date: string; name: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const confirmSectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const node = confirmSectionRef.current;
+    if (!node) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    node.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+    node.focus();
+  }, [confirming]);
 
   function handleSelectSlot(slot: string) {
     setSelectedSlot(slot);
@@ -342,7 +357,7 @@ export function BookingFormWithWaitlist({
 
             <div className="mt-6">
               {confirming && confirmSummary ? (
-                <div className="space-y-4">
+                <div ref={confirmSectionRef} tabIndex={-1} className="space-y-4 outline-none">
                   <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-4 space-y-3">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       ¿Todo correcto?
@@ -374,7 +389,11 @@ export function BookingFormWithWaitlist({
 
                   <PublicSubmitButton
                     className="h-12 rounded-2xl text-sm font-semibold sm:text-base"
-                    style={{ backgroundColor: accentColor, borderColor: accentColor }}
+                    style={{
+                      backgroundColor: accentColor,
+                      borderColor: accentColor,
+                      color: getAccentForeground(accentColor),
+                    }}
                     pendingLabel={paymentMode === "mercadopago" ? "Redirigiendo a MercadoPago..." : "Confirmando reserva..."}
                   >
                     {paymentMode === "mercadopago" ? "Confirmar y pagar" : "Sí, confirmar turno"}
@@ -393,8 +412,8 @@ export function BookingFormWithWaitlist({
                 <button
                   type="button"
                   onClick={handleReviewClick}
-                  className="h-12 w-full rounded-2xl text-sm font-semibold sm:text-base inline-flex items-center justify-center text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: accentColor }}
+                  className="h-12 w-full rounded-2xl text-sm font-semibold sm:text-base inline-flex items-center justify-center transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: accentColor, color: getAccentForeground(accentColor) }}
                 >
                   {paymentSummary.buttonLabel}
                 </button>
@@ -437,8 +456,8 @@ export function BookingFormWithWaitlist({
                 <button
                   type="button"
                   onClick={handleReviewClick}
-                  className="h-10 shrink-0 rounded-xl px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: accentColor }}
+                  className="h-10 shrink-0 rounded-xl px-5 text-sm font-semibold transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: accentColor, color: getAccentForeground(accentColor) }}
                 >
                   {paymentSummary.buttonLabel}
                 </button>

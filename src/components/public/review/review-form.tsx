@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { CheckCircle2, Loader2, Star } from "lucide-react";
 import { submitReviewAction, type ReviewActionResult } from "@/server/actions/review";
+import { getAccentForeground } from "@/lib/color-contrast";
 
 interface ReviewFormProps {
   businessSlug: string;
@@ -102,8 +103,8 @@ export function ReviewForm({
         <button
           type="submit"
           disabled={isPending || selected === 0}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: accentColor }}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ backgroundColor: accentColor, color: getAccentForeground(accentColor) }}
         >
           {isPending ? (
             <Loader2 className="size-4 animate-spin" />
