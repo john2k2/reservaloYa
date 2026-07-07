@@ -213,4 +213,19 @@ describe("getRateLimitIdentifier", () => {
     const headers = new Headers();
     expect(getRateLimitIdentifier(headers, "anonymous")).toBe("anonymous");
   });
+
+  it("prioriza x-vercel-forwarded-for sobre x-forwarded-for cuando ambos están presentes", async () => {
+    const { getRateLimitIdentifier } = await import("./rate-limit");
+    const headers = new Headers({
+      "x-vercel-forwarded-for": "20.20.20.20",
+      "x-forwarded-for": "1.2.3.4, 5.6.7.8",
+    });
+    expect(getRateLimitIdentifier(headers)).toBe("20.20.20.20");
+  });
+
+  it("cae a x-forwarded-for si x-vercel-forwarded-for no está presente (ej. desarrollo local)", async () => {
+    const { getRateLimitIdentifier } = await import("./rate-limit");
+    const headers = new Headers({ "x-forwarded-for": "1.2.3.4, 5.6.7.8" });
+    expect(getRateLimitIdentifier(headers)).toBe("1.2.3.4");
+  });
 });

@@ -237,15 +237,21 @@ export async function assertRateLimit(input: RateLimitBucketConfig & { message: 
   return result;
 }
 
-export function getRateLimitIdentifier(headers: Headers, fallback = "anonymous") {
-  const xForwardedFor = headers.get("x-forwarded-for") ?? "";
-  const xRealIp = headers.get("x-real-ip") ?? "";
-  const firstForwardedIp = xForwardedFor
+function firstHeaderIp(headers: Headers, name: string): string | undefined {
+  return (headers.get(name) ?? "")
     .split(",")
     .map((segment) => segment.trim())
     .find(Boolean);
+}
 
-  return firstForwardedIp || xRealIp.trim() || fallback;
+export function getRateLimitIdentifier(headers: Headers, fallback = "anonymous") {
+  // x-vercel-forwarded-for is Vercel's own computed value and stays reliable even
+  // behind an upstream proxy that rewrites x-forwarded-for; prefer it when present.
+  const vercelForwardedFor = firstHeaderIp(headers, "x-vercel-forwarded-for");
+  const forwardedFor = firstHeaderIp(headers, "x-forwarded-for");
+  const xRealIp = headers.get("x-real-ip") ?? "";
+
+  return vercelForwardedFor || forwardedFor || xRealIp.trim() || fallback;
 }
 
 export function resetRateLimitStoreForTests() {
