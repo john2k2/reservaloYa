@@ -4,12 +4,32 @@
 -- business impossible to insert/update regardless of application-layer races.
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
+-- Postgres rejects text::timestamp inside a GENERATED ... STORED expression: the cast
+-- is classified STABLE (its parsing depends on the DateStyle setting), not IMMUTABLE,
+-- so "generation expression is not immutable" fails at migration time. This helper
+-- parses the fixed "YYYY-MM-DD"/"HH:MM" formats manually with only genuinely immutable
+-- primitives (split_part, int cast, make_timestamp), so it can be declared IMMUTABLE.
+CREATE OR REPLACE FUNCTION booking_datetime(date_text text, time_text text)
+RETURNS timestamp
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT make_timestamp(
+    split_part(date_text, '-', 1)::int,
+    split_part(date_text, '-', 2)::int,
+    split_part(date_text, '-', 3)::int,
+    split_part(time_text, ':', 1)::int,
+    split_part(time_text, ':', 2)::int,
+    0
+  );
+$$;
+
 ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS "bookingRange" tsrange
   GENERATED ALWAYS AS (
     tsrange(
-      ("bookingDate" || ' ' || "startTime")::timestamp,
-      ("bookingDate" || ' ' || "endTime")::timestamp,
+      booking_datetime("bookingDate", "startTime"),
+      booking_datetime("bookingDate", "endTime"),
       '[)'
     )
   ) STORED;
