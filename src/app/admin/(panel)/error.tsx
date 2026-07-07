@@ -1,6 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function AdminPanelError({
@@ -38,12 +39,12 @@ export default function AdminPanelError({
           >
             Reintentar
           </button>
-          <a
+          <Link
             href="/admin/dashboard"
             className="inline-flex h-12 items-center justify-center rounded-full border border-border px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
           >
             Volver al dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>
