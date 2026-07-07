@@ -38,7 +38,7 @@ Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variab
 
 | Variable | Valor | Notas |
 |----------|-------|-------|
-| `NEXT_PUBLIC_APP_URL` | `https://reservaya-kappa.vercel.app` | URL pública de la app |
+| `NEXT_PUBLIC_APP_URL` | `https://reservaya.ar` | URL pública de la app |
 | `BOOKING_LINK_SECRET` | (generar 32+ chars aleatorios) | Tokens de gestión y reseña |
 | `CRON_SECRET` | (generar 32+ chars aleatorios) | Vercel lo envía automáticamente al cron |
 
@@ -127,7 +127,7 @@ Vercel envía automáticamente `Authorization: Bearer {CRON_SECRET}` al endpoint
 
 **Verificar manualmente después del redeploy:**
 ```bash
-curl "https://reservaya-kappa.vercel.app/api/jobs/booking-reminders?dryRun=true" \
+curl "https://reservaya.ar/api/jobs/booking-reminders?dryRun=true" \
   -H "Authorization: Bearer TU_CRON_SECRET"
 ```
 
