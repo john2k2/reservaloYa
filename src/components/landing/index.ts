@@ -8,7 +8,6 @@ export { TargetAudienceSection } from "./target-audience";
 export { FeaturesSection } from "./features";
 export { TestimonialsSection } from "./testimonials";
 export { PricingSection } from "./pricing";
-export { PricingSectionV2 } from "./pricing-v2";
 export { FAQSection } from "./faq";
 export { CTASection } from "./cta-section";
 export { Footer } from "./footer";

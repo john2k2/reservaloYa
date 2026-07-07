@@ -1,6 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
-import { isActiveSubscriptionExpired } from "@/server/payments-domain";
 import { buildBookingDateOptions, findNextBookingDate } from "@/lib/bookings/format";
 import { createLogger } from "@/server/logger";
 import { buildAdminAvailabilityView, buildAdminBookingsView, buildAdminCustomersView, buildAdminServicesView, buildAdminSettingsView } from "@/server/admin-views-domain";
@@ -11,7 +10,7 @@ import { getAvailableReminderChannels, hasReminderProviderConfigured } from "@/s
 import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import { getSupabaseAdminClient } from "./_core";
-import { getBusinessByIdWithClient } from "./helpers";
+import { getBusinessByIdWithClient, resolveSubscriptionStatus } from "./helpers";
 
 export async function getSupabaseAdminShellData(authUser: AuthUser) {
   const client = await createServerClient();
@@ -57,45 +56,6 @@ export async function getSupabaseAdminShellData(authUser: AuthUser) {
     subscriptionStatus,
     subscriptionExpired,
   });
-}
-
-async function resolveSubscriptionStatus(
-  client: Awaited<ReturnType<typeof createServerClient>>,
-  businessId: string
-): Promise<{
-  subscriptionStatus: "trial" | "active" | "cancelled" | "suspended";
-  subscriptionExpired: boolean;
-}> {
-  const { data: sub, error } = await client
-    .from("subscriptions")
-    .select("*")
-    .eq("businessId", businessId)
-    .single();
-
-  if (error || !sub) {
-    return { subscriptionStatus: "trial", subscriptionExpired: false };
-  }
-
-  const status = sub.status as "trial" | "active" | "cancelled" | "suspended";
-
-  if (status === "active") {
-    return {
-      subscriptionStatus: "active",
-      subscriptionExpired: isActiveSubscriptionExpired(sub.nextBillingDate),
-    };
-  }
-
-  if (status === "trial") {
-    const expired = sub.trialEndsAt ? new Date(sub.trialEndsAt) < new Date() : false;
-    return { subscriptionStatus: "trial", subscriptionExpired: expired };
-  }
-
-  if (status === "cancelled") {
-    const stillActive = sub.nextBillingDate ? new Date(sub.nextBillingDate) > new Date() : false;
-    return { subscriptionStatus: "cancelled", subscriptionExpired: !stillActive };
-  }
-
-  return { subscriptionStatus: status, subscriptionExpired: true };
 }
 
 
