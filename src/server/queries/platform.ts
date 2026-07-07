@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { randomBytes } from "node:crypto";
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
@@ -415,7 +416,16 @@ export async function unlockBusinessSubscription(businessId: string): Promise<vo
     .eq("businessId", businessId);
 }
 
-export async function generateImpersonationLink(businessId: string): Promise<string> {
+const IMPERSONATION_TOKEN_TTL_MS = 2 * 60 * 1000;
+
+/**
+ * Generates a one-time impersonation magic link and returns an opaque token
+ * for it instead of the link itself. The real Supabase magic link (a full
+ * auth bypass into the business owner's account) must never reach client JS
+ * — it only ever travels server-side, from this function into the DB, and
+ * from the redirect route's Location header straight to the browser.
+ */
+export async function generateImpersonationToken(businessId: string): Promise<string> {
   const client = createAdminClient();
 
   const { data: appUser } = await client
@@ -443,7 +453,54 @@ export async function generateImpersonationLink(businessId: string): Promise<str
     throw new Error(`No se pudo generar el link: ${error?.message ?? "sin respuesta"}`);
   }
 
-  return data.properties.action_link;
+  const token = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + IMPERSONATION_TOKEN_TTL_MS).toISOString();
+
+  const { error: insertError } = await client.from("impersonation_tokens").insert({
+    token,
+    magic_link: data.properties.action_link,
+    expires_at: expiresAt,
+  });
+
+  if (insertError) {
+    throw new Error(`No se pudo registrar el token de impersonation: ${insertError.message}`);
+  }
+
+  return token;
+}
+
+/**
+ * Resolves a one-time impersonation token to its magic link, marking it used
+ * atomically so a second concurrent request for the same token can't also
+ * consume it. Returns null for a missing, expired, or already-used token.
+ */
+export async function resolveImpersonationToken(token: string): Promise<string | null> {
+  const client = createAdminClient();
+
+  const { data: row } = await client
+    .from("impersonation_tokens")
+    .select("magic_link, expires_at, used_at")
+    .eq("token", token)
+    .single();
+
+  if (!row || row.used_at || new Date(row.expires_at) < new Date()) {
+    return null;
+  }
+
+  const { data: updated, error } = await client
+    .from("impersonation_tokens")
+    .update({ used_at: new Date().toISOString() })
+    .eq("token", token)
+    .is("used_at", null)
+    .select("magic_link")
+    .single();
+
+  if (error || !updated) {
+    // Lost the race against a concurrent request for the same token.
+    return null;
+  }
+
+  return updated.magic_link as string;
 }
 
 export type NotificationHistoryRow = {

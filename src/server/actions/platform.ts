@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { writeAuditLog, type AuditAction } from "@/server/audit-log";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
-import { togglePlatformBusinessActive, enableTrial, extendTrial, cancelSubscription, unlockBusinessSubscription, generateImpersonationLink } from "@/server/queries/platform";
+import { togglePlatformBusinessActive, enableTrial, extendTrial, cancelSubscription, unlockBusinessSubscription, generateImpersonationToken } from "@/server/queries/platform";
 
 type PlatformAdminUser = NonNullable<Awaited<ReturnType<typeof getAuthenticatedPlatformAdmin>>>;
 
@@ -85,7 +85,7 @@ export async function impersonateBusinessOwnerAction(businessId: string): Promis
   const user = await getAuthenticatedPlatformAdmin();
   if (!user) throw new Error("No autorizado");
 
-  const link = await generateImpersonationLink(businessId);
+  const token = await generateImpersonationToken(businessId);
   await writePlatformAuditLog(user, businessId, "platform.impersonation_link_created");
-  return link;
+  return token;
 }
