@@ -47,10 +47,31 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const theme = localStorage.getItem('theme') || 'light';
-                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                const resolvedTheme = theme === 'system' ? systemTheme : theme;
-                if (resolvedTheme === 'dark') {
+                // Reserved top-level routes that are NOT a public business page
+                // (the [slug] catch-all lives at the root, so anything not in this
+                // list is treated as a business slug).
+                const reservedFirstSegments = [
+                  'about', 'admin', 'api', 'auth', 'como-funciona', 'contacto',
+                  'favicon.ico', 'funcionalidades', 'login', 'platform', 'precios',
+                  'preguntas-frecuentes', 'privacidad', 'sobre-reservaya', 'terminos'
+                ];
+                const firstSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
+                const isPublicBusinessPage = firstSegment !== '' && reservedFirstSegments.indexOf(firstSegment) === -1;
+
+                const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                let resolvedDark;
+
+                if (isPublicBusinessPage) {
+                  // Mirrors PublicBusinessThemeProvider's initial resolution: explicit
+                  // 'public-theme' wins, otherwise fall back to system preference.
+                  const publicTheme = localStorage.getItem('public-theme');
+                  resolvedDark = publicTheme === 'dark' ? true : publicTheme === 'light' ? false : systemDark;
+                } else {
+                  const theme = localStorage.getItem('theme') || 'light';
+                  resolvedDark = theme === 'system' ? systemDark : theme === 'dark';
+                }
+
+                if (resolvedDark) {
                   document.documentElement.classList.add('dark');
                 }
               })();

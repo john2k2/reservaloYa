@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 // WhatsApp Icon Component
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -47,28 +48,38 @@ export function StickyHeader({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (!isVisible) return null;
+  // Always rendered regardless of scroll position, so the toggle is reachable
+  // on mobile even though the rest of this header only mounts after scrolling.
+  const persistentThemeToggle = (
+    <div className="fixed right-3 top-3 z-50 sm:right-4 sm:top-4">
+      <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
+    </div>
+  );
+
+  if (!isVisible) return persistentThemeToggle;
 
   return (
-    <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
+    <>
+      {persistentThemeToggle}
+      <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2.5 sm:gap-3">
           <div
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-sm font-bold text-foreground shadow-sm",
-              logoUrl ? "bg-cover bg-center text-transparent" : ""
+              "relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background text-sm font-bold text-foreground shadow-sm",
+              logoUrl ? "text-transparent" : ""
             )}
-            style={logoUrl ? { backgroundImage: `url(${logoUrl})` } : undefined}
           >
-            {logoLabel}
+            {logoUrl ? (
+              <OptimizedImage src={logoUrl} alt={businessName} width={40} height={40} className="object-cover" />
+            ) : (
+              logoLabel
+            )}
           </div>
           <span className="hidden truncate font-semibold text-foreground sm:block">{businessName}</span>
         </div>
-        
+
         <div className="flex shrink-0 items-center gap-2">
-          <div className="hidden sm:block">
-            <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
-          </div>
           {whatsappHref && (
             <a
               href={whatsappHref}
@@ -100,6 +111,7 @@ export function StickyHeader({
           </PublicTrackedLink>
         </div>
       </div>
-    </header>
+      </header>
+    </>
   );
 }
