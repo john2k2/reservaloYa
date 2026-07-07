@@ -117,7 +117,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     .map((slot, index) => ({ slot, index }))
     .filter(({ slot }) => !slot.hoursLabel.toLocaleLowerCase("es-AR").includes("cerrado"))
     .map(({ index }) => index);
-  const fallbackDate = new Date().toISOString().slice(0, 10);
+  const fallbackDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: pageData.business.timezone || "America/Argentina/Buenos_Aires",
+  }).format(new Date());
   const selectedDate =
     filters.date ??
     (activeDays.length > 0 ? findNextBookingDate(fallbackDate, activeDays) : fallbackDate);
