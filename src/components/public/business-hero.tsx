@@ -16,8 +16,10 @@ import {
 
 import { WhatsAppIcon, TikTokIcon } from "@/components/icons";
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
+import { OptimizedImage, HeroImage } from "@/components/ui/optimized-image";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
+import { getAccentForeground } from "@/lib/color-contrast";
 
 type SocialHref = string | null;
 
@@ -166,13 +168,7 @@ export function BusinessHero({
     background: `radial-gradient(circle at top, ${profile.accentSoft} 0%, ${profile.surfaceTint} 48%, transparent 100%)`,
   } satisfies CSSProperties;
 
-  const logoStyle = profile.logoUrl
-    ? ({ backgroundImage: `url(${profile.logoUrl})` } satisfies CSSProperties)
-    : undefined;
-
-  const heroImageStyle = profile.heroImageUrl
-    ? ({ backgroundImage: `url(${profile.heroImageUrl})` } satisfies CSSProperties)
-    : undefined;
+  const ctaForeground = getAccentForeground(profile.accent);
 
   return (
     <section className="px-4 pb-8 pt-2 sm:px-6 sm:pb-12 sm:pt-5 lg:pb-16 lg:pt-8" style={heroStyle}>
@@ -181,14 +177,20 @@ export function BusinessHero({
           <div className="flex items-center gap-2.5">
             <div
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-xs font-bold text-foreground shadow-sm sm:size-12 sm:rounded-2xl sm:text-sm",
-                profile.logoUrl ? "bg-cover bg-center text-transparent" : ""
+                "relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background text-xs font-bold text-foreground shadow-sm sm:size-12 sm:rounded-2xl sm:text-sm",
+                profile.logoUrl ? "text-transparent" : ""
               )}
-              role={profile.logoUrl ? "img" : undefined}
-              aria-label={profile.logoUrl ? `Logo de ${businessName}` : undefined}
-              style={logoStyle}
             >
-              {profile.logoUrl ? "" : logoLabel}
+              {profile.logoUrl ? (
+                <OptimizedImage
+                  src={profile.logoUrl}
+                  alt={`Logo de ${businessName}`}
+                  width={48}
+                  height={48}
+                />
+              ) : (
+                logoLabel
+              )}
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:text-xs">
@@ -240,7 +242,7 @@ export function BusinessHero({
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-12 w-full rounded-full px-6 text-sm font-semibold shadow-lg transition-transform hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
                 )}
-                style={{ backgroundColor: profile.accent, borderColor: profile.accent }}
+                style={{ backgroundColor: profile.accent, borderColor: profile.accent, color: ctaForeground }}
               >
                 <Calendar className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
                 {profile.primaryCta}
@@ -262,12 +264,13 @@ export function BusinessHero({
               )}
             </div>
 
-            <div
-              className="relative mt-5 aspect-[16/10] overflow-hidden rounded-2xl border border-border/60 bg-cover bg-center shadow-sm sm:hidden"
-              role="img"
-              aria-label={profile.heroImageAlt ?? `Portada de ${businessName}`}
-              style={heroImageStyle}
-            />
+            {profile.heroImageUrl && (
+              <HeroImage
+                src={profile.heroImageUrl}
+                alt={profile.heroImageAlt ?? `Portada de ${businessName}`}
+                className="relative mt-5 aspect-[16/10] rounded-2xl border border-border/60 shadow-sm sm:hidden"
+              />
+            )}
 
             <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">
               <div className="rounded-xl border border-border/60 bg-background/90 p-3 shadow-sm">
@@ -331,12 +334,13 @@ export function BusinessHero({
           </div>
 
           <div className="hidden rounded-2xl border border-border/60 bg-card/90 p-5 shadow-xl shadow-black/5 backdrop-blur lg:block lg:rounded-[2rem] lg:p-6">
-            <div
-              className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border/60 bg-cover bg-center"
-              role="img"
-              aria-label={profile.heroImageAlt ?? `Portada de ${businessName}`}
-              style={heroImageStyle}
-            />
+            {profile.heroImageUrl && (
+              <HeroImage
+                src={profile.heroImageUrl}
+                alt={profile.heroImageAlt ?? `Portada de ${businessName}`}
+                className="relative aspect-[16/10] rounded-2xl border border-border/60"
+              />
+            )}
 
             <div className="mt-4 grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
               {highlightedTestimonial ? (

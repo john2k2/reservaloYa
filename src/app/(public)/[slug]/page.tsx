@@ -14,6 +14,7 @@ import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
+import { OptimizedImage, ThumbnailImage } from "@/components/ui/optimized-image";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import {
   BreadcrumbJsonLd,
@@ -244,12 +245,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
       .map((part: string) => part[0]?.toUpperCase() ?? "")
       .join("");
 
-  const logoStyle = pageData.profile.logoUrl
-    ? ({
-        backgroundImage: `url(${pageData.profile.logoUrl})`,
-      } as const)
-    : undefined;
-
   const bookingHref = buildBookingHref({
     slug,
     source: tracking.utm_source,
@@ -452,12 +447,13 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
               {galleryItems.map((image, index) => {
                 const inner = (
                   <>
-                    <div
-                      className="aspect-[4/3] bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                      role="img"
-                      aria-label={image.alt || `Foto ${index + 1}`}
-                      style={{ backgroundImage: `url(${image.url})` }}
-                    />
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <ThumbnailImage
+                        src={image.url}
+                        alt={image.alt || `Foto ${index + 1}`}
+                        className="transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
                     {image.alt && (
                       <div className="p-3 sm:p-4">
                         <p className="text-xs sm:text-sm text-muted-foreground">{image.alt}</p>
@@ -625,12 +621,20 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                 <div className="flex items-center gap-2.5">
                   <div
                     className={cn(
-                      "flex size-9 sm:size-10 items-center justify-center rounded-lg sm:rounded-xl border border-border/60 bg-background text-xs sm:text-sm font-bold text-foreground shadow-sm",
-                      pageData.profile.logoUrl ? "bg-cover bg-center text-transparent" : ""
+                      "relative flex size-9 sm:size-10 items-center justify-center overflow-hidden rounded-lg sm:rounded-xl border border-border/60 bg-background text-xs sm:text-sm font-bold text-foreground shadow-sm",
+                      pageData.profile.logoUrl ? "text-transparent" : ""
                     )}
-                    style={logoStyle}
                   >
-                    {logoLabel}
+                    {pageData.profile.logoUrl ? (
+                      <OptimizedImage
+                        src={pageData.profile.logoUrl}
+                        alt={`Logo de ${pageData.business.name}`}
+                        width={40}
+                        height={40}
+                      />
+                    ) : (
+                      logoLabel
+                    )}
                   </div>
                   <span className="font-bold text-foreground text-sm sm:text-base">{pageData.business.name}</span>
                 </div>
