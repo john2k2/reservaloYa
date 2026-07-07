@@ -154,6 +154,44 @@ describe("runSupabaseBookingReminderSweep", () => {
   });
 });
 
+describe("runSupabaseBookingReminderSweep concurrency", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    sendBookingReminderEmailMock.mockReset();
+    sendBookingReminderWhatsAppMock.mockReset();
+    sendPostBookingFollowUpEmailMock.mockReset();
+    sendPostBookingFollowUpWhatsAppMock.mockReset();
+  });
+
+  it("sends reminders for every eligible booking even when the candidate count exceeds the concurrency limit", async () => {
+    // 12 candidates against a concurrency limit of 5 - exercises the worker-pool
+    // loop actually draining the whole queue, not just the first batch.
+    const bookingCount = 12;
+    const bookings = Array.from({ length: bookingCount }, (_, index) => ({
+      id: `b${index}`,
+      bookingDate: "2026-03-20",
+      startTime: "10:00",
+      customer: { id: `cust${index}`, email: `customer${index}@example.com`, fullName: `Cliente ${index}` },
+      service: { name: "Corte", durationMinutes: 30 },
+    }));
+
+    const { client, inserted } = buildMockClient({
+      businesses: [{ id: "biz1", slug: "demo", name: "Demo", timezone: "America/Argentina/Buenos_Aires" }],
+      bookings,
+      communication_events: [],
+    });
+    getSupabaseAdminClientMock.mockResolvedValue(client);
+    sendBookingReminderEmailMock.mockResolvedValue({ status: "sent" });
+
+    const { runSupabaseBookingReminderSweep } = await import("./reminders");
+    const result = await runSupabaseBookingReminderSweep({ now: "2026-03-20T09:00:00.000Z" });
+
+    expect(result.sent).toBe(bookingCount);
+    expect(result.candidates).toBe(bookingCount);
+    expect(inserted.communication_events).toHaveLength(bookingCount);
+  });
+});
+
 describe("toCommunicationEventStatus", () => {
   it("maps provider result statuses to the communication_events enum", () => {
     expect(toCommunicationEventStatus("sent")).toBe("sent");
