@@ -18,11 +18,14 @@ export default defineConfig({
       provider: "v8",
       reportsDirectory: "tmp/coverage",
       reporter: ["text", "json", "html"],
+      // Measured real coverage as of 2026-07-06: statements 63.81%, branches
+      // 47.05%, functions 61.24%, lines 65.37%. Thresholds below keep a
+      // 5-7 point margin so normal PR-to-PR fluctuation doesn't break CI.
       thresholds: {
-        statements: 35,
-        branches: 20,
-        functions: 35,
-        lines: 35,
+        statements: 58,
+        branches: 40,
+        functions: 55,
+        lines: 60,
       },
       exclude: [
         "node_modules/",
