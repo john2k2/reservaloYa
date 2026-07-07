@@ -47,10 +47,12 @@ export function getAccentForeground(accentHex: string): string {
   }
 
   const luminance = relativeLuminance(rgb);
-  // Contrast ratio against white is (1.05) / (luminance + 0.05); against black
-  // it's (luminance + 0.05) / 0.05. Setting those equal and solving for luminance
-  // gives the exact crossover: ~0.179. Above it, black text has more contrast;
-  // below it, white does. (0.5 is a common shorthand but is measurably wrong for
-  // backgrounds in the ~0.18-0.5 range, where black is actually the better pick.)
-  return luminance > 0.179 ? DARK_FOREGROUND : LIGHT_FOREGROUND;
+  // Prefer white as long as it clears the WCAG 3:1 minimum for large/bold UI
+  // text (these are semibold button labels): contrast(white, L) = 1.05/(L+0.05)
+  // >= 3 solves to L <= 0.30. Only below that bar - genuinely light accents like
+  // yellow or lime - do we fall back to dark text. A stricter equal-contrast
+  // crossover (~0.179) is "more optimal" in raw ratio terms, but it also flips
+  // several real default template accents (e.g. #B86C8B) from the white text
+  // they already render with today to black, for no reported problem there.
+  return luminance > 0.3 ? DARK_FOREGROUND : LIGHT_FOREGROUND;
 }

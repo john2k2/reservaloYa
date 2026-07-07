@@ -20,10 +20,10 @@ describe("getAccentForeground", () => {
     expect(getAccentForeground("not-a-color")).toBe("#f8fafc");
   });
 
-  it("picks dark foreground for a mid-tone background below the naive 0.5 shortcut", () => {
-    // #999999 has relative luminance ~0.319 - above the real WCAG crossover
-    // (~0.179) where black text has more contrast, but below a naive 0.5
-    // threshold that would incorrectly pick light text here.
+  it("picks dark foreground once white text would drop below the 3:1 contrast floor", () => {
+    // #999999 has relative luminance ~0.319, just past the 0.30 cutoff where
+    // white text's contrast ratio falls under 3:1 - the WCAG minimum for
+    // large/bold UI text this function targets.
     expect(getAccentForeground("#999999")).toBe("#0f172a");
   });
 });
