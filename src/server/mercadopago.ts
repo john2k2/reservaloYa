@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
 import { buildAbsoluteBookingConfirmationUrl } from "@/server/public-booking-links";
+import { timeoutSignal } from "@/lib/fetch-with-timeout";
 
 // ─── Client (lazy singleton) ──────────────────────────────────────────────────
 
@@ -129,6 +130,7 @@ async function createPreferenceWithClient(
           business_slug: input.businessSlug,
         },
       }),
+      signal: timeoutSignal(8_000),
     });
 
     const data = (await response.json().catch(() => null)) as {
@@ -226,6 +228,7 @@ export async function createSubscriptionPreference(
         external_reference: input.businessId,
         notification_url: `${appUrl}/api/payments/webhook`,
       }),
+      signal: timeoutSignal(8_000),
     });
 
     const data = (await response.json().catch(() => null)) as {
@@ -287,6 +290,7 @@ export async function refreshMercadoPagoAccessToken(
         grant_type: "refresh_token",
         refresh_token: normalizedRefreshToken,
       }),
+      signal: timeoutSignal(8_000),
     });
 
     if (!response.ok) {
@@ -441,6 +445,7 @@ export async function getMPPaymentInfo(
         headers: {
           Authorization: `Bearer ${getMPAccessToken(accessToken)}`,
         },
+        signal: timeoutSignal(8_000),
       }
     );
 
