@@ -27,6 +27,35 @@ const createPaymentPreferenceForBusinessMock = vi.fn(async () => ({
   ok: false as const,
   error: "business payment provider unavailable",
 }));
+const sendBookingConfirmationEmailMock = vi.fn<
+  () => Promise<{ status: "sent"; messageId: string } | { status: "skipped"; reason: string } | { status: "error"; error: string }>
+>(async () => ({ status: "skipped", reason: "no_customer_email" }));
+const getBookingConfirmationDataMock = vi.fn<() => Promise<Record<string, unknown> | null>>(async () => null);
+// _core is transitively imported by the static `@/server/rate-limit` import above,
+// so its mock factory runs before ordinary top-level consts would be initialized —
+// vi.hoisted() makes these survive that early evaluation.
+const { communicationEventsInsertMock, bookingsSingleMock, getSupabaseAdminClientMock } = vi.hoisted(() => {
+  const communicationEventsInsertMock = vi.fn(async () => ({ data: null, error: null }));
+  const bookingsSingleMock = vi.fn(async () => ({ data: { customer_id: "customer-1" }, error: null }));
+  const getSupabaseAdminClientMock = vi.fn(async () => ({
+    from(table: string) {
+      if (table === "bookings") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: bookingsSingleMock,
+            }),
+          }),
+        };
+      }
+      if (table === "communication_events") {
+        return { insert: communicationEventsInsertMock };
+      }
+      throw new Error(`Unexpected table in test: ${table}`);
+    },
+  }));
+  return { communicationEventsInsertMock, bookingsSingleMock, getSupabaseAdminClientMock };
+});
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
@@ -50,11 +79,15 @@ vi.mock("@/server/analytics", () => ({
 }));
 
 vi.mock("@/server/booking-notifications", () => ({
-  sendBookingConfirmationEmail: vi.fn(),
+  sendBookingConfirmationEmail: sendBookingConfirmationEmailMock,
+}));
+
+vi.mock("@/server/supabase-store/_core", () => ({
+  getSupabaseAdminClient: getSupabaseAdminClientMock,
 }));
 
 vi.mock("@/server/queries/public", () => ({
-  getBookingConfirmationData: vi.fn(async () => null),
+  getBookingConfirmationData: getBookingConfirmationDataMock,
   getPublicBusinessPageData: vi.fn(async () => ({
     profile: { businessName: "Demo Barberia" },
     business: { name: "Demo Barberia", slug: "demo-barberia", mpConnected: false },
@@ -126,22 +159,30 @@ const sharedBeforeEach = () => {
   getSupabaseBusinessPaymentSettingsBySlugMock.mockReset();
   updateSupabaseBusinessMPTokensMock.mockClear();
   createPaymentPreferenceForBusinessMock.mockReset();
+  sendBookingConfirmationEmailMock.mockReset();
+  getBookingConfirmationDataMock.mockReset();
+  communicationEventsInsertMock.mockClear();
+  bookingsSingleMock.mockClear();
 
   getSupabaseBusinessPaymentSettingsBySlugMock.mockResolvedValue(null);
   createPaymentPreferenceForBusinessMock.mockResolvedValue({
     ok: false,
     error: "business payment provider unavailable",
   });
+  sendBookingConfirmationEmailMock.mockResolvedValue({ status: "skipped", reason: "no_customer_email" });
+  getBookingConfirmationDataMock.mockResolvedValue(null);
 };
 
 describe("public booking action rate limit", () => {
   beforeEach(sharedBeforeEach);
 
-  it("shows a friendly throttle message after repeated submits", async () => {
+  it("shows a friendly throttle message after repeated submits with the same email", async () => {
     const { createPublicBookingAction } = await import("./public-booking");
     const redirectedUrls: string[] = [];
 
-    for (let index = 0; index < 9; index += 1) {
+    // Identical email + date/time on every submit trips the per-email bucket
+    // (max 5) before the looser per-IP+business bucket (max 8).
+    for (let index = 0; index < 6; index += 1) {
       try {
         await createPublicBookingAction(buildBookingFormData());
       } catch (error) {
@@ -149,12 +190,50 @@ describe("public booking action rate limit", () => {
       }
     }
 
-    expect(redirectedUrls[7]).toBe(
+    expect(redirectedUrls[4]).toBe(
       "/demo-barberia/confirmacion?booking=booking-test-id&token=confirmation-token"
     );
+    const rateLimitedUrl = new URL(redirectedUrls[5] ?? "", "http://localhost");
+    expect(rateLimitedUrl.pathname).toBe("/demo-barberia/reservar");
+    expect(rateLimitedUrl.searchParams.get("error")).toContain("Demasiados intentos de reserva");
+  });
+
+  it("still throttles by IP+business even when the email is rotated on every submit", async () => {
+    const { createPublicBookingAction } = await import("./public-booking");
+    const redirectedUrls: string[] = [];
+
+    for (let index = 0; index < 9; index += 1) {
+      const formData = buildBookingFormData();
+      formData.set("email", `attacker-${index}@example.com`);
+      try {
+        await createPublicBookingAction(formData);
+      } catch (error) {
+        redirectedUrls.push(String((error as Error).message).replace("REDIRECT:", ""));
+      }
+    }
+
     const rateLimitedUrl = new URL(redirectedUrls[8] ?? "", "http://localhost");
     expect(rateLimitedUrl.pathname).toBe("/demo-barberia/reservar");
     expect(rateLimitedUrl.searchParams.get("error")).toContain("Demasiados intentos de reserva");
+  });
+
+  it("throttles the same email across different dates/times (closes email-bombing)", async () => {
+    const { createPublicBookingAction } = await import("./public-booking");
+    const redirectedUrls: string[] = [];
+
+    for (let index = 0; index < 6; index += 1) {
+      const formData = buildBookingFormData();
+      formData.set("startTime", `1${index}:00`);
+      try {
+        await createPublicBookingAction(formData);
+      } catch (error) {
+        redirectedUrls.push(String((error as Error).message).replace("REDIRECT:", ""));
+      }
+    }
+
+    const rateLimitedUrl = new URL(redirectedUrls[5] ?? "", "http://localhost");
+    expect(rateLimitedUrl.pathname).toBe("/demo-barberia/reservar");
+    expect(rateLimitedUrl.searchParams.get("error")).toContain("Demasiados intentos de reserva con este email");
   });
 
   it("falls back to cash when the business has no Mercado Pago connected", async () => {
@@ -211,6 +290,53 @@ describe("public booking action rate limit", () => {
     });
     expect(redirectedUrl).toContain(
       "error=No+pudimos+iniciar+el+pago+online.+Intenta+nuevamente+en+unos+minutos+o+contacta+al+negocio."
+    );
+  });
+});
+
+describe("confirmation email outcome recording", () => {
+  beforeEach(sharedBeforeEach);
+
+  it("records a sent communication_events row after a successful confirmation email", async () => {
+    getBookingConfirmationDataMock.mockResolvedValue({
+      businessId: "business-1",
+      businessNotificationEmail: null,
+    });
+    sendBookingConfirmationEmailMock.mockResolvedValue({ status: "sent", messageId: "msg-1" });
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildBookingFormData())).rejects.toThrow(/REDIRECT:/);
+
+    expect(communicationEventsInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        business_id: "business-1",
+        booking_id: "booking-test-id",
+        customer_id: "customer-1",
+        channel: "email",
+        kind: "confirmation",
+        status: "sent",
+        recipient: "cliente@example.com",
+      })
+    );
+  });
+
+  it("records a failed communication_events row when the confirmation email errors", async () => {
+    getBookingConfirmationDataMock.mockResolvedValue({
+      businessId: "business-1",
+      businessNotificationEmail: null,
+    });
+    sendBookingConfirmationEmailMock.mockResolvedValue({ status: "error", error: "resend_down" });
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildBookingFormData())).rejects.toThrow(/REDIRECT:/);
+
+    expect(communicationEventsInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "failed",
+        note: "resend_down",
+      })
     );
   });
 });

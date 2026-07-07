@@ -81,6 +81,13 @@ export function BookingFormWithWaitlist({
   const [confirmSummary, setConfirmSummary] = useState<{ date: string; name: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  function handleSelectSlot(slot: string) {
+    setSelectedSlot(slot);
+    if (!slot) {
+      setConfirming(false);
+    }
+  }
+
   function handleReviewClick() {
     const form = formRef.current;
     if (!form) return;
@@ -171,7 +178,7 @@ export function BookingFormWithWaitlist({
             todayDate={todayDate}
             rescheduleStartTime={rescheduleStartTime}
             onNoSlots={setNoSlotsDate}
-            onSelectSlot={setSelectedSlot}
+            onSelectSlot={handleSelectSlot}
           />
 
           {!noSlotsDate && (

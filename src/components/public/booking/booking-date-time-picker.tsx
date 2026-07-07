@@ -384,6 +384,7 @@ export function BookingDateTimePicker({
                           type="radio"
                           name="startTime"
                           value={slot}
+                          required
                           className="peer sr-only"
                           defaultChecked={rescheduleStartTime === slot}
                           aria-label={`Horario ${slot} para ${selectedDateLabel}`}

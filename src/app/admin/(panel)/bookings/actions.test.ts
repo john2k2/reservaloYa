@@ -156,4 +156,85 @@ describe("admin bookings actions", () => {
       })
     );
   });
+
+  it("serializes concurrent reschedules so only one wins the same slot", async () => {
+    const service = { id: "svc_1", business_id: "biz_123", name: "Corte", durationMinutes: 30 };
+    const bookings: Record<string, { id: string; business_id: string; bookingDate: string; startTime: string; endTime: string; status: string; notes: string; service: typeof service }> = {
+      booking_A: {
+        id: "booking_A",
+        business_id: "biz_123",
+        bookingDate: "2026-03-24",
+        startTime: "09:00",
+        endTime: "09:30",
+        status: "confirmed",
+        notes: "",
+        service,
+      },
+      booking_B: {
+        id: "booking_B",
+        business_id: "biz_123",
+        bookingDate: "2026-03-24",
+        startTime: "10:00",
+        endTime: "10:30",
+        status: "confirmed",
+        notes: "",
+        service,
+      },
+    };
+    const allDayRules = Array.from({ length: 7 }, (_, i) => ({
+      id: `rule_${i}`,
+      business_id: "biz_123",
+      dayOfWeek: i,
+      startTime: "00:00",
+      endTime: "23:59",
+      active: true,
+    }));
+
+    getSupabaseRecordMock.mockImplementation(async (_table: string, id: string) => bookings[id]);
+    listSupabaseRecordsMock.mockImplementation(async (table: string) => {
+      if (table === "availability_rules") return allDayRules;
+      if (table === "blocked_slots") return [];
+      if (table === "bookings") return Object.values(bookings);
+      return [];
+    });
+    updateSupabaseRecordMock.mockImplementation(
+      async (_table: string, id: string, patch: Partial<(typeof bookings)["booking_A"]>) => {
+        const next = { ...bookings[id]!, ...patch };
+        if (patch.startTime) {
+          const [h, m] = patch.startTime.split(":").map(Number);
+          const endMinutes = h! * 60 + m! + next.service.durationMinutes;
+          next.endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+        }
+        bookings[id] = next;
+        return bookings[id];
+      }
+    );
+
+    const { updateBookingAction } = await import("./actions");
+
+    const buildFormData = (bookingId: string) => {
+      const formData = new FormData();
+      formData.set("bookingId", bookingId);
+      formData.set("bookingDate", "2026-03-25");
+      formData.set("startTime", "11:00");
+      formData.set("status", "confirmed");
+      formData.set("notes", "");
+      return formData;
+    };
+
+    const results = await Promise.allSettled([
+      updateBookingAction(buildFormData("booking_A")),
+      updateBookingAction(buildFormData("booking_B")),
+    ]);
+
+    const errors = results
+      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+      .map((r) => String(r.reason));
+
+    const redirects = errors.filter((message) => message.startsWith("Error: REDIRECT:"));
+    const conflicts = errors.filter((message) => message.includes("Ese horario ya no esta disponible."));
+
+    expect(redirects).toHaveLength(1);
+    expect(conflicts).toHaveLength(1);
+  });
 });

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 };
 
 import { formatDateLabel } from "@/lib/bookings/format";
-import { isValidBookingManageToken } from "@/server/public-booking-links";
+import { isValidBookingReviewToken } from "@/server/public-booking-links";
 import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
@@ -21,12 +21,12 @@ export default async function ReviewPage({ params, searchParams }: ReviewPagePro
   const { slug } = await params;
   const { booking: bookingId, token } = await searchParams;
 
-  if (!isValidBookingManageToken({ slug, bookingId, token })) {
+  if (!isValidBookingReviewToken({ slug, bookingId, token })) {
     notFound();
   }
 
   const [confirmation, pageData] = await Promise.all([
-    getBookingConfirmationData({ slug, bookingId, token }),
+    getBookingConfirmationData({ slug, bookingId, token, skipTokenValidation: true }),
     getPublicBusinessPageData(slug),
   ]);
 

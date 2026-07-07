@@ -3,6 +3,78 @@ import { getAvailableReminderChannels, hasReminderProviderConfigured, isTwilioCo
 import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 import type { BusinessRecord, BookingRecord, ServiceRecord, CustomerRecord, CommunicationRecord } from "@/server/supabase-domain";
 
+const UNIQUE_VIOLATION_CODE = "23505";
+
+/**
+ * Offset (minutes) to add to a UTC timestamp to get local wall-clock time in `timeZone`.
+ */
+function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const parts = dtf.formatToParts(date);
+  const map: Record<string, string> = {};
+  for (const part of parts) map[part.type] = part.value;
+  const asUTC = Date.UTC(
+    Number(map.year),
+    Number(map.month) - 1,
+    Number(map.day),
+    Number(map.hour),
+    Number(map.minute),
+    Number(map.second)
+  );
+  return (asUTC - date.getTime()) / 60000;
+}
+
+/**
+ * Converts a business-local wall-clock date+time (no offset info) to the real UTC
+ * instant it represents in `timeZone`. Naive `new Date(\`${date}T${time}\`)` parsing
+ * resolves against the host process timezone instead, which drifts scheduling math
+ * by the full UTC offset on any host that isn't already in the business's zone.
+ */
+export function zonedDateTimeToUtcMs(dateStr: string, timeStr: string, timeZone: string): number {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hour, minute] = timeStr.split(":").map(Number);
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
+  const offsetMinutes = getTimezoneOffsetMinutes(new Date(utcGuess), timeZone);
+  return utcGuess - offsetMinutes * 60000;
+}
+
+type CommunicationEventStatus = "sent" | "failed" | "skipped";
+
+export function toCommunicationEventStatus(status: "sent" | "skipped" | "error"): CommunicationEventStatus {
+  if (status === "error") return "failed";
+  return status;
+}
+
+export async function insertCommunicationEvent(
+  client: Awaited<ReturnType<typeof getSupabaseAdminClient>>,
+  event: {
+    business_id: string;
+    booking_id: string;
+    customer_id: string;
+    channel: "email" | "whatsapp";
+    kind: "reminder" | "followup";
+    status: CommunicationEventStatus;
+    recipient?: string;
+    subject?: string;
+    note?: string;
+  }
+) {
+  const { error } = await client.from("communication_events").insert(event);
+  if (error && error.code !== UNIQUE_VIOLATION_CODE) {
+    throw error;
+  }
+  return !error;
+}
+
 export async function runSupabaseBookingReminderSweep(input?: {
   businessId?: string;
   now?: string;
@@ -35,13 +107,16 @@ export async function runSupabaseBookingReminderSweep(input?: {
 
     const { data: pastConfirmed } = await client
       .from("bookings")
-      .select("id, bookingDate, endTime")
+      .select("id, bookingDate, endTime, business:businesses(timezone)")
       .in("status", ["pending", "confirmed"]);
 
     for (const booking of pastConfirmed ?? []) {
       const endTime = booking.endTime as string | undefined;
       if (!endTime) continue;
-      const endMs = new Date(`${booking.bookingDate}T${endTime}:00`).getTime();
+      const timezone =
+        (booking as { business?: { timezone?: string } | null }).business?.timezone ??
+        "America/Argentina/Buenos_Aires";
+      const endMs = zonedDateTimeToUtcMs(booking.bookingDate, endTime, timezone);
       if (now.getTime() > endMs + 60 * 60 * 1000) {
         await client.from("bookings").update({ status: "completed" }).eq("id", booking.id);
         autoCompleted += 1;
@@ -90,8 +165,10 @@ export async function runSupabaseBookingReminderSweep(input?: {
     })[];
     const communications = (commData ?? []) as CommunicationRecord[];
 
+    const businessTimezone = business.timezone ?? "America/Argentina/Buenos_Aires";
+
     for (const booking of businessBookings) {
-      const bookingTime = new Date(`${booking.bookingDate}T${booking.startTime}:00`).getTime();
+      const bookingTime = zonedDateTimeToUtcMs(booking.bookingDate, booking.startTime, businessTimezone);
 
       if (
         bookingTime < now.getTime() ||
@@ -131,7 +208,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
       const confirmation = {
         businessName: business.name,
         businessAddress: business.address ?? "",
-        businessTimezone: business.timezone ?? "America/Argentina/Buenos_Aires",
+        businessTimezone,
         bookingDate: booking.bookingDate,
         startTime: booking.startTime,
         serviceName: service?.name ?? "Servicio",
@@ -158,26 +235,27 @@ export async function runSupabaseBookingReminderSweep(input?: {
 
         if (result.status === "skipped") {
           summary.readyWithoutProvider += 1;
-          continue;
-        }
-
-        if (result.status === "sent") {
+        } else if (result.status === "sent") {
           summary.sent += 1;
         } else {
           summary.failed += 1;
         }
 
-        await client.from("communication_events").insert({
+        const wasNew = await insertCommunicationEvent(client, {
           business_id: business.id,
           booking_id: booking.id,
           customer_id: customer.id,
-          channel,
+          // getAvailableReminderChannels never actually returns "sms" today; the
+          // ReminderChannel type includes it for other call sites.
+          channel: channel as "email" | "whatsapp",
           kind: "reminder",
-          status: result.status,
+          status: toCommunicationEventStatus(result.status),
           recipient: channel === "email" ? customer.email : customer.phone,
           subject: (result as { subject?: string }).subject ?? "",
-          note: (result as { reason?: string }).reason ?? "",
+          note: (result as { reason?: string }).reason ?? (result as { error?: string }).error ?? "",
         });
+
+        if (!wasNew) continue;
       }
     }
 
@@ -205,7 +283,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
         const endTime = booking.endTime as string | undefined;
         if (!endTime) continue;
 
-        const endMs = new Date(`${booking.bookingDate}T${endTime}:00`).getTime();
+        const endMs = zonedDateTimeToUtcMs(booking.bookingDate, endTime, businessTimezone);
         const elapsed = now.getTime() - endMs;
 
         if (elapsed < FOLLOWUP_MIN_MS || elapsed > FOLLOWUP_MAX_MS) continue;
@@ -236,13 +314,13 @@ export async function runSupabaseBookingReminderSweep(input?: {
           if (result.status === "sent") summary.followupSent += 1;
           else if (result.status === "error") summary.followupFailed += 1;
 
-          await client.from("communication_events").insert({
+          await insertCommunicationEvent(client, {
             business_id: business.id,
             booking_id: booking.id,
             customer_id: customer.id,
             channel: "email",
             kind: "followup",
-            status: result.status === "sent" ? "sent" : "failed",
+            status: toCommunicationEventStatus(result.status),
             recipient: customer.email,
             subject: `Follow-up: ${service?.name ?? "Servicio"}`,
             note: result.status === "error" ? (result as { error?: string }).error ?? "" : "",
@@ -262,13 +340,13 @@ export async function runSupabaseBookingReminderSweep(input?: {
           if (wpResult.status === "sent") summary.followupSent += 1;
           else if (wpResult.status === "error") summary.followupFailed += 1;
 
-          await client.from("communication_events").insert({
+          await insertCommunicationEvent(client, {
             business_id: business.id,
             booking_id: booking.id,
             customer_id: customer.id,
             channel: "whatsapp",
             kind: "followup",
-            status: wpResult.status === "sent" ? "sent" : "failed",
+            status: toCommunicationEventStatus(wpResult.status),
             recipient: customer.phone,
             subject: `Follow-up WA: ${service?.name ?? "Servicio"}`,
             note: wpResult.status === "error" ? (wpResult as { error?: string }).error ?? "" : "",

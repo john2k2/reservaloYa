@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { createHash } from "node:crypto";
 
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
@@ -27,13 +28,66 @@ import {
 } from "@/server/rate-limit";
 import { createLogger } from "@/server/logger";
 import { createPaymentPreferenceForBusiness } from "@/server/mercadopago";
+import { getSupabaseAdminClient } from "@/server/supabase-store/_core";
+
+type ConfirmationEmailOutcomeStatus = "sent" | "failed" | "skipped";
+
+function toCommunicationEventStatus(result: {
+  status: "sent" | "skipped" | "error";
+}): ConfirmationEmailOutcomeStatus {
+  if (result.status === "error") return "failed";
+  return result.status;
+}
+
+async function recordConfirmationEmailEvent(input: {
+  bookingId: string;
+  businessId: string;
+  recipient?: string;
+  status: ConfirmationEmailOutcomeStatus;
+  subject: string;
+  note?: string;
+}) {
+  try {
+    const client = await getSupabaseAdminClient();
+    const { data: booking } = await client
+      .from("bookings")
+      .select("customer_id")
+      .eq("id", input.bookingId)
+      .single();
+
+    const customerId = (booking as { customer_id?: string } | null)?.customer_id;
+    if (!customerId) return;
+
+    await client.from("communication_events").insert({
+      business_id: input.businessId,
+      booking_id: input.bookingId,
+      customer_id: customerId,
+      channel: "email",
+      kind: "confirmation",
+      status: input.status,
+      recipient: input.recipient ?? "",
+      subject: input.subject,
+      note: input.note ?? "",
+    });
+  } catch (err) {
+    logger.error("No se pudo registrar el evento de email de confirmacion", err);
+  }
+}
 
 const logger = createLogger("Public Booking");
 
 const PUBLIC_BOOKING_LIMIT_MAX = 8;
 const PUBLIC_BOOKING_LIMIT_WINDOW_MS = 60_000;
+// Keyed only by email (hashed) so rotating businessSlug/date/time can't reset it —
+// closes email-bombing a victim across many date/time combinations.
+const PUBLIC_BOOKING_EMAIL_LIMIT_MAX = 5;
+const PUBLIC_BOOKING_EMAIL_LIMIT_WINDOW_MS = 10 * 60_000;
 const PAYMENT_INIT_ERROR_MESSAGE =
   "No pudimos iniciar el pago online. Intenta nuevamente en unos minutos o contacta al negocio.";
+
+function hashRateLimitEmail(email: string) {
+  return createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+}
 
 async function enforcePublicBookingRateLimit(input: {
   businessSlug: string;
@@ -44,12 +98,24 @@ async function enforcePublicBookingRateLimit(input: {
   const requestHeaders = await headers();
   const clientId = getRateLimitIdentifier(requestHeaders, "public-booking");
 
+  // Bucket 1: IP + business only — not attacker-controlled, so rotating the
+  // email/date/time can't create a fresh bucket and defeat this one.
   await assertRateLimit({
-    bucket: "public-booking",
-    identifier: `${input.businessSlug}:${clientId}:${input.email}:${input.bookingDate}:${input.startTime}`,
+    bucket: "public-booking-client",
+    identifier: `${input.businessSlug}:${clientId}`,
     max: PUBLIC_BOOKING_LIMIT_MAX,
     windowMs: PUBLIC_BOOKING_LIMIT_WINDOW_MS,
     message: "Demasiados intentos de reserva. Intenta nuevamente en unos segundos.",
+  });
+
+  // Bucket 2: hashed email only, no date/time — closes the email-bombing
+  // vector where the same victim email is tried across many slots.
+  await assertRateLimit({
+    bucket: "public-booking-email",
+    identifier: hashRateLimitEmail(input.email),
+    max: PUBLIC_BOOKING_EMAIL_LIMIT_MAX,
+    windowMs: PUBLIC_BOOKING_EMAIL_LIMIT_WINDOW_MS,
+    message: "Demasiados intentos de reserva con este email. Intenta nuevamente en unos minutos.",
   });
 }
 
@@ -141,12 +207,28 @@ async function sendConfirmationEmailIfPossible(input: {
   }
 
   if (input.customerEmail) {
-    await sendBookingConfirmationEmail(confirmation, input.mode);
+    const result = await sendBookingConfirmationEmail(confirmation, input.mode);
+    await recordConfirmationEmailEvent({
+      bookingId: input.bookingId,
+      businessId: confirmation.businessId,
+      recipient: input.customerEmail,
+      status: toCommunicationEventStatus(result),
+      subject: "Confirmacion de reserva",
+      note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
+    });
   }
 
   if (confirmation.businessNotificationEmail) {
     const { sendBusinessNotificationEmail } = await import("@/server/booking-notifications");
-    await sendBusinessNotificationEmail(confirmation, input.mode);
+    const result = await sendBusinessNotificationEmail(confirmation, input.mode);
+    await recordConfirmationEmailEvent({
+      bookingId: input.bookingId,
+      businessId: confirmation.businessId,
+      recipient: confirmation.businessNotificationEmail,
+      status: toCommunicationEventStatus(result),
+      subject: "Notificacion de nueva reserva al negocio",
+      note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
+    });
   }
 }
 

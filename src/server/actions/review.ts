@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { isValidBookingManageToken } from "@/server/public-booking-links";
+import { isValidBookingReviewToken } from "@/server/public-booking-links";
 import { createSupabaseReview } from "@/server/supabase-store";
 
 const reviewSchema = z.object({
@@ -35,7 +35,7 @@ export async function submitReviewAction(
   }
 
   if (
-    !isValidBookingManageToken({
+    !isValidBookingReviewToken({
       slug: parsed.data.businessSlug,
       bookingId: parsed.data.bookingId,
       token: parsed.data.manageToken,

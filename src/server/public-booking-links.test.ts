@@ -6,12 +6,14 @@ import {
   buildAbsoluteManageBookingUrl,
   buildAbsoluteReviewUrl,
   createBookingConfirmationToken,
+  createBookingReviewToken,
   buildManageBookingHref,
   buildReviewHref,
   canGenerateBookingManageLinks,
   createBookingManageToken,
   isValidBookingConfirmationToken,
   isValidBookingManageToken,
+  isValidBookingReviewToken,
 } from "./public-booking-links";
 
 const originalEnv = {
@@ -173,6 +175,15 @@ describe("buildBookingConfirmationHref / buildAbsoluteBookingConfirmationUrl", (
     const token = createBookingConfirmationToken("demo-barberia", "b-1");
     expect(isValidBookingManageToken({ slug: "demo-barberia", bookingId: "b-1", token })).toBe(false);
   });
+
+  it("no acepta un token de gestión para abrir la confirmación (sin fallback de scope)", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    setEnvValue("NODE_ENV", "development");
+    const token = createBookingManageToken("demo-barberia", "b-1");
+    expect(
+      isValidBookingConfirmationToken({ slug: "demo-barberia", bookingId: "b-1", token })
+    ).toBe(false);
+  });
 });
 
 describe("buildManageBookingHref / buildAbsoluteManageBookingUrl", () => {
@@ -238,5 +249,35 @@ describe("buildReviewHref / buildAbsoluteReviewUrl", () => {
     delete process.env.BOOKING_LINK_SECRET;
     setEnvValue("NODE_ENV", "production");
     expect(buildAbsoluteReviewUrl("demo-barberia", "b-1")).toBeNull();
+  });
+
+  it("el link de reseña lleva un token de scope review, no manage", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    setEnvValue("NODE_ENV", "development");
+    const token = createBookingReviewToken("demo-barberia", "b-1");
+    expect(isValidBookingReviewToken({ slug: "demo-barberia", bookingId: "b-1", token })).toBe(true);
+  });
+
+  it("un token de reseña no sirve para gestionar el turno (cancelar/reprogramar)", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    setEnvValue("NODE_ENV", "development");
+    const token = createBookingReviewToken("demo-barberia", "b-1");
+    expect(isValidBookingManageToken({ slug: "demo-barberia", bookingId: "b-1", token })).toBe(false);
+  });
+
+  it("un token de gestión no sirve para dejar una reseña", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    setEnvValue("NODE_ENV", "development");
+    const token = createBookingManageToken("demo-barberia", "b-1");
+    expect(isValidBookingReviewToken({ slug: "demo-barberia", bookingId: "b-1", token })).toBe(false);
+  });
+
+  it("un token de reseña no sirve para abrir la página de confirmación", () => {
+    delete process.env.BOOKING_LINK_SECRET;
+    setEnvValue("NODE_ENV", "development");
+    const token = createBookingReviewToken("demo-barberia", "b-1");
+    expect(
+      isValidBookingConfirmationToken({ slug: "demo-barberia", bookingId: "b-1", token })
+    ).toBe(false);
   });
 });

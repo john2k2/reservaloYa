@@ -102,6 +102,11 @@ export function BookingScheduleSection({
     [initialDateOptions, selectedDate, todayDate]
   );
 
+  function handleSelectDate(date: string) {
+    setSelectedDate(date);
+    onSelectSlot?.("");
+  }
+
   return (
     <section className="rounded-[1.75rem] border border-border/70 bg-card/95 p-3 shadow-sm sm:p-4">
       <input type="hidden" name="bookingDate" value={selectedDate} />
@@ -123,7 +128,7 @@ export function BookingScheduleSection({
         selectedDateLabel={formatDateLabel(selectedDate)}
         slots={slots}
         rescheduleStartTime={rescheduleStartTime}
-        onSelectDate={setSelectedDate}
+        onSelectDate={handleSelectDate}
         onSelectSlot={onSelectSlot}
         isLoading={isLoading}
       />

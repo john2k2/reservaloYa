@@ -6,7 +6,7 @@ type BookingManageTokenPayload = {
   slug: string;
   bookingId: string;
   exp: number;
-  scope?: "manage" | "confirmation";
+  scope?: "manage" | "confirmation" | "review";
 };
 
 const DEV_BOOKING_LINK_SECRET = "reservaya-demo-booking-link-secret";
@@ -75,7 +75,7 @@ function decodePayload(token: string) {
 function createBookingAccessToken(
   slug: string,
   bookingId: string,
-  scope: "manage" | "confirmation"
+  scope: "manage" | "confirmation" | "review"
 ) {
   const secret = getRequiredBookingLinkSecret();
 
@@ -93,7 +93,7 @@ function hasValidBookingAccessToken(input: {
   slug: string;
   bookingId?: string;
   token?: string;
-  allowedScopes: Array<"manage" | "confirmation">;
+  allowedScopes: Array<"manage" | "confirmation" | "review">;
 }) {
   const secret = getBookingLinkSecret();
 
@@ -135,6 +135,10 @@ export function createBookingManageToken(slug: string, bookingId: string) {
 
 export function createBookingConfirmationToken(slug: string, bookingId: string) {
   return createBookingAccessToken(slug, bookingId, "confirmation");
+}
+
+export function createBookingReviewToken(slug: string, bookingId: string) {
+  return createBookingAccessToken(slug, bookingId, "review");
 }
 
 export function buildManageBookingHref(slug: string, bookingId: string) {
@@ -180,7 +184,7 @@ export function buildReviewHref(slug: string, bookingId: string) {
     return null;
   }
 
-  const token = createBookingManageToken(slug, bookingId);
+  const token = createBookingReviewToken(slug, bookingId);
   return `/${slug}/resena?booking=${bookingId}&token=${token}`;
 }
 
@@ -212,6 +216,17 @@ export function isValidBookingConfirmationToken(input: {
 }) {
   return hasValidBookingAccessToken({
     ...input,
-    allowedScopes: ["confirmation", "manage"],
+    allowedScopes: ["confirmation"],
+  });
+}
+
+export function isValidBookingReviewToken(input: {
+  slug: string;
+  bookingId?: string;
+  token?: string;
+}) {
+  return hasValidBookingAccessToken({
+    ...input,
+    allowedScopes: ["review"],
   });
 }
