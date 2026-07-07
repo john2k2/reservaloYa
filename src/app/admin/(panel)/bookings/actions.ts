@@ -172,6 +172,7 @@ async function updateSupabaseAdminBooking(input: {
       await updateSupabaseRecord("bookings", input.bookingId, {
         bookingDate: input.bookingDate,
         startTime: input.startTime,
+        endTime: bookingWindow.endTime,
         status: input.status,
         notes: input.notes,
       });
