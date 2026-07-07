@@ -60,11 +60,11 @@ export default async function SubscriptionSuccessPage({ searchParams }: PageProp
   const isActive = subscription?.status === "active";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
+    <div className="landing-theme flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
       <div className="w-full max-w-md space-y-6 text-center">
         <div className="space-y-2">
           <div className="text-6xl">{isActive ? "✅" : "⏳"}</div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
             {isActive ? "¡Pago confirmado!" : "Estamos verificando tu pago"}
           </h1>
           <p className="text-muted-foreground">
@@ -84,7 +84,7 @@ export default async function SubscriptionSuccessPage({ searchParams }: PageProp
             <p className="text-sm font-medium">Detalles del pago</p>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Monto pagado</span>
-              <span className="font-medium">$ {formattedPrice} ARS</span>
+              <span className="font-mono font-medium">$ {formattedPrice} ARS</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Estado</span>

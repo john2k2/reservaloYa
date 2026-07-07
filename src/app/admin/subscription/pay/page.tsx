@@ -37,11 +37,11 @@ export default async function SubscriptionPayPage() {
   const csrfToken = generateCsrfToken(user.id);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
+    <div className="landing-theme flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
       <div className="w-full max-w-md space-y-6 text-center">
         <div className="space-y-2">
           <div className="text-6xl">💳</div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
             Abonar tu suscripción
           </h1>
           <p className="text-muted-foreground">
@@ -57,7 +57,7 @@ export default async function SubscriptionPayPage() {
             <p className="text-sm font-medium">Resumen</p>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plan Mensual</span>
-              <span className="font-medium">$ {formattedPrice} ARS</span>
+              <span className="font-mono font-medium">$ {formattedPrice} ARS</span>
             </div>
           </div>
 

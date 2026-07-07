@@ -6,7 +6,7 @@ import { AnimatedCounter } from "./animated-counter";
 
 export function TimeCalculatorSection() {
   return (
-    <section className="mx-auto w-full max-w-6xl border-t border-border/40 px-6 py-24 md:py-32">
+    <section className="mx-auto w-full max-w-6xl border-t border-rule px-6 py-16 sm:py-20 lg:py-24">
       <AnimatedSection animation="fadeInScale">
         <div className="rounded-3xl bg-gradient-to-br from-foreground via-foreground to-gray-800 p-8 text-background sm:p-12 md:p-16 relative overflow-hidden">
           {/* Animated background */}
@@ -24,25 +24,40 @@ export function TimeCalculatorSection() {
               Si respondés <span className="font-semibold text-background">10 mensajes</span> de turnos por día...
             </p>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl bg-background/10 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-background/15 hover:scale-105">
-                <div className="text-4xl font-bold">
-                  <AnimatedCounter target={30} />
+            <div className="mt-10 flex flex-wrap items-start justify-center gap-6 sm:gap-8">
+              <AnimatedSection animation="stampHit" delay={0}>
+                <div
+                  className="flex size-32 flex-col items-center justify-center rounded-full border-[3px] border-background/70 text-center outline outline-1 outline-offset-2 outline-background/25 sm:size-36"
+                  style={{ transform: "rotate(-4deg)" }}
+                >
+                  <div className="font-mono text-3xl font-bold sm:text-4xl">
+                    <AnimatedCounter target={30} />
+                  </div>
+                  <div className="mt-1 px-2 text-xs text-background/60">minutos por día</div>
                 </div>
-                <div className="mt-1 text-sm text-background/60">minutos por día</div>
-              </div>
-              <div className="rounded-2xl bg-background/10 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-background/15 hover:scale-105">
-                <div className="text-4xl font-bold">
-                  <AnimatedCounter target={15} />
+              </AnimatedSection>
+              <AnimatedSection animation="stampHit" delay={150}>
+                <div
+                  className="flex size-32 flex-col items-center justify-center rounded-full border-[3px] border-background/70 text-center outline outline-1 outline-offset-2 outline-background/25 sm:size-36"
+                  style={{ transform: "rotate(3deg)" }}
+                >
+                  <div className="font-mono text-3xl font-bold sm:text-4xl">
+                    <AnimatedCounter target={15} />
+                  </div>
+                  <div className="mt-1 px-2 text-xs text-background/60">horas por mes</div>
                 </div>
-                <div className="mt-1 text-sm text-background/60">horas por mes</div>
-              </div>
-              <div className="rounded-2xl bg-background/10 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-background/15 hover:scale-105">
-                <div className="text-4xl font-bold">
-                  <AnimatedCounter target={180} />
+              </AnimatedSection>
+              <AnimatedSection animation="stampHit" delay={300}>
+                <div
+                  className="flex size-32 flex-col items-center justify-center rounded-full border-[3px] border-background/70 text-center outline outline-1 outline-offset-2 outline-background/25 sm:size-36"
+                  style={{ transform: "rotate(-2deg)" }}
+                >
+                  <div className="font-mono text-3xl font-bold sm:text-4xl">
+                    <AnimatedCounter target={180} />
+                  </div>
+                  <div className="mt-1 px-2 text-xs text-background/60">horas por año</div>
                 </div>
-                <div className="mt-1 text-sm text-background/60">horas por año</div>
-              </div>
+              </AnimatedSection>
             </div>
 
             <p className="mt-8 text-background/70">

@@ -32,26 +32,26 @@ export function OnboardingStepActions({
             onClick={onBack}
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
-              "h-11 w-full sm:w-auto"
+              "h-11 w-full whitespace-nowrap sm:w-auto"
             )}
           >
-            <ChevronLeft className="mr-1 size-4" />
+            <ChevronLeft className="mr-1 size-4 shrink-0" />
             Atrás
           </button>
         ) : null}
       </div>
 
-      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+      <div className="flex w-full flex-col flex-wrap gap-3 sm:w-auto sm:flex-row">
         {onNext ? (
           <button
             onClick={onNext}
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
-              "h-11 w-full sm:w-auto"
+              "h-11 w-full whitespace-nowrap sm:w-auto"
             )}
           >
             {nextLabel}
-            <ChevronRight className="ml-1 size-4" />
+            <ChevronRight className="ml-1 size-4 shrink-0" />
           </button>
         ) : null}
         <button
@@ -59,7 +59,7 @@ export function OnboardingStepActions({
           disabled={primaryDisabled || isSubmitting}
           className={cn(
             buttonVariants({ variant: "default", size: "lg" }),
-            "h-11 w-full sm:w-auto",
+            "h-11 w-full whitespace-nowrap sm:w-auto",
             (primaryDisabled || isSubmitting) && "cursor-not-allowed opacity-50"
           )}
         >

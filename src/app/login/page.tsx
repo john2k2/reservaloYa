@@ -15,7 +15,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
   return (
     <main
       id="main-content"
-      className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+      className="landing-theme flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
     >
       <div className="flex w-full flex-col justify-center px-8 py-10 sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
         <div className="mx-auto w-full max-w-sm">
@@ -33,7 +33,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
           </div>
 
           <div className="mt-12">
-            <h1 className="text-3xl font-bold tracking-tight">Ingresar a tu negocio</h1>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Ingresar a tu negocio</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Iniciá sesión con tu correo electrónico para gestionar tu negocio.
             </p>
@@ -131,7 +131,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
         <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
         <div className="relative max-w-lg p-12">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Gestión sin complicaciones</h2>
+          <h2 className="mb-4 font-display text-3xl font-semibold tracking-tight">Gestión sin complicaciones</h2>
           <p className="text-lg text-muted-foreground">
             Una herramienta pensada para que administres turnos, servicios y clientes con claridad
             desde el primer día.

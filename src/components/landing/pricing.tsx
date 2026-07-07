@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CheckCircle2, ArrowRight, Zap } from "lucide-react";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
+import { SelloStamp } from "./sello-stamp";
 
 const pricingItems = [
   { text: "Landing pública profesional del negocio", highlight: false },
@@ -49,32 +50,26 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-[2rem] blur-xl opacity-60" />
             
             <div className="relative rounded-[2rem] border border-border/60 bg-card/80 backdrop-blur-sm p-8 sm:p-10 md:p-12 shadow-2xl">
-              {/* Badge */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <div className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-sm font-bold text-background shadow-xl">
-                  <Zap className="w-4 h-4" />
-                  Plan único
-                </div>
+              {/* Sello */}
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+                <SelloStamp label="Plan único" sublabel="Sin permanencia" rotate={-8} className="bg-card shadow-xl" />
               </div>
 
               {/* Price */}
               <div className="text-center mt-4">
                 <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Mensualidad</p>
                 <div className="mt-4 flex items-baseline justify-center">
-                  <span className="text-6xl sm:text-7xl font-bold tracking-tighter font-display">${arsPriceLabel}</span>
+                  <span className="font-mono text-6xl sm:text-7xl font-bold tracking-tighter">${arsPriceLabel}</span>
                   <span className="ml-2 text-xl text-muted-foreground">ARS/mes</span>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Precio en pesos al dólar blue del día
-                </p>
               </div>
 
               {/* Trial badge */}
               <div className="mt-6 flex justify-center">
                 <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-medium text-primary">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ticket opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-ticket"></span>
                   </span>
                   15 días gratis para probar
                 </div>

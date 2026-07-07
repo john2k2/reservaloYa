@@ -9,7 +9,7 @@ export function LandingPageShell({ children }: LandingPageShellProps) {
   return (
     <main
       id="main-content"
-      className="relative min-h-screen overflow-hidden bg-background selection:bg-foreground selection:text-background"
+      className="landing-theme relative min-h-screen overflow-hidden bg-background selection:bg-foreground selection:text-background"
     >
       {/* Background gradients */}
       <div className="pointer-events-none absolute inset-0 subtle-grid opacity-30 [mask-image:linear-gradient(to_bottom,white,transparent)]" />

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Inter, Manrope, JetBrains_Mono, Newsreader } from "next/font/google";
+import { Inter, Manrope, JetBrains_Mono, Fraunces } from "next/font/google";
 
 import "./globals.css";
 import { defaultMetadata, defaultViewport } from "@/lib/seo/metadata";
@@ -21,8 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
@@ -82,7 +82,7 @@ export default function RootLayout({
         <WebSiteJsonLd />
       </head>
       <body
-        className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} ${newsreader.variable} antialiased font-sans bg-background text-foreground`}
+        className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} ${fraunces.variable} antialiased font-sans bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

@@ -19,29 +19,29 @@ export default function AdminPanelError({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6 py-16 text-foreground">
+    <div className="landing-theme flex min-h-screen items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="w-full max-w-xl rounded-3xl border border-border/60 bg-card p-8 text-center shadow-xl">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">
           Panel de administración
         </p>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground">
           Algo no salió bien
         </h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
           Ya registramos el incidente. Podés reintentar ahora o volver al dashboard.
         </p>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <div className="mt-8 flex flex-col flex-wrap gap-3 sm:flex-row sm:justify-center">
           <button
             type="button"
             onClick={() => reset()}
-            className="inline-flex h-12 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+            className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
           >
             Reintentar
           </button>
           <Link
             href="/admin/dashboard"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-border px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full border border-border px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
           >
             Volver al dashboard
           </Link>

@@ -13,7 +13,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
-  --font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-rule: var(--rule);
+  --color-sello: var(--sello);
+  --color-ticket: var(--ticket);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -86,6 +92,13 @@
   --chart-5: #2dd4bf;
   --radius: 0.75rem;
 
+  /* Landing (marketing pages) palette — turnos/agenda vernacular, scoped via .landing-theme */
+  --ink: #131b2e;
+  --paper: #fafaf7;
+  --rule: #d8d2c2;
+  --sello: #4b3a8f;
+  --ticket: #e2a33b;
+
   --sidebar: #f8fafc;
   --sidebar-foreground: #0f172a;
   --sidebar-primary: #14b8a6;
@@ -126,6 +139,12 @@
   --input: #334155;
   --ring: #14b8a6;
 
+  --ink: #f5f3ed;
+  --paper: #14171f;
+  --rule: #2b2e38;
+  --sello: #a394e8;
+  --ticket: #f0c57a;
+
   --sidebar: #0f172a;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #14b8a6;
@@ -138,7 +157,34 @@
 
 @layer base {
 
-  /* 
+  /*
+   * LANDING THEME
+   * Paleta propia de las páginas de marketing (agenda/ticket/sello), aplicada por
+   * LandingPageShell vía la clase .landing-theme. No toca --background/--primary/etc
+   * globales, así que el dashboard autenticado y las páginas públicas de negocio
+   * siguen con la paleta teal/slate original.
+   */
+  .landing-theme {
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--paper);
+    --card-foreground: var(--ink);
+    --popover: var(--paper);
+    --popover-foreground: var(--ink);
+    --primary: var(--sello);
+    --primary-foreground: var(--paper);
+    --secondary: color-mix(in srgb, var(--ink) 6%, var(--paper));
+    --secondary-foreground: var(--ink);
+    --muted: color-mix(in srgb, var(--ink) 6%, var(--paper));
+    --muted-foreground: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    --accent: color-mix(in srgb, var(--ink) 6%, var(--paper));
+    --accent-foreground: var(--ink);
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--sello);
+  }
+
+  /*
    * CORRECCIÓN: Border solo en elementos que lo necesitan
    * En lugar de aplicar a todos los elementos (*), aplicamos solo a:
    * - Elementos con borde por defecto

@@ -300,24 +300,24 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
               inmediatamente al guardar.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
             <Link
               href={`/${business.slug}`}
               target="_blank"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-11 w-full gap-2 sm:w-auto"
+                "h-11 w-full gap-2 whitespace-nowrap sm:w-auto"
               )}
             >
               Ver página
-              <ExternalLink aria-hidden="true" className="size-4" />
+              <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
             </Link>
             <button
               onClick={handleSaveAll}
               disabled={isSubmitting}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                "h-11 w-full gap-2 sm:w-auto",
+                "h-11 w-full gap-2 whitespace-nowrap sm:w-auto",
                 isSubmitting && "cursor-not-allowed opacity-50"
               )}
             >

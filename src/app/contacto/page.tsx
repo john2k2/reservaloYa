@@ -15,7 +15,7 @@ export const metadata: Metadata = createPageMetadata({
 
 export default function ContactPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-background font-sans text-foreground">
+    <main id="main-content" className="landing-theme min-h-screen bg-background font-sans text-foreground">
       <OrganizationJsonLd />
       <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
         <Link href="/" className="inline-flex h-11 items-center text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">
@@ -23,7 +23,7 @@ export default function ContactPage() {
         </Link>
 
         <p className="mt-8 text-sm font-semibold uppercase tracking-widest text-muted-foreground">Contacto</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Hablemos sobre la agenda online de tu negocio</h1>
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Hablemos sobre la agenda online de tu negocio</h1>
         <p className="mt-5 text-base leading-7 text-muted-foreground">
           Escribinos para consultar precios, implementación, pagos online, recordatorios o una demo personalizada de ReservaYa.
         </p>

@@ -30,14 +30,14 @@ export function OnboardingStatusBanner({
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
           <Link
             href={href}
             target="_blank"
-            className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2")}
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 gap-2 whitespace-nowrap")}
           >
             {actionLabel}
-            <ExternalLink aria-hidden="true" className="size-4" />
+            <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
           </Link>
           {secondaryAction}
         </div>
