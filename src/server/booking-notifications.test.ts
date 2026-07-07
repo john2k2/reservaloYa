@@ -86,8 +86,40 @@ describe("booking notifications", () => {
         headers: expect.objectContaining({
           Authorization: "Bearer re_test",
         }),
+        signal: expect.anything(),
       })
     );
+  });
+
+  it("treats a timed-out Resend request the same as any other network error", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.RESEND_FROM_EMAIL = "ReservaYa <hola@reservaya.app>";
+    process.env.NEXT_PUBLIC_APP_URL = "https://reservaya-kappa.vercel.app";
+    process.env.BOOKING_LINK_SECRET = "booking-links-secret";
+
+    fetchMock.mockRejectedValue(new DOMException("The operation was aborted.", "AbortError"));
+
+    const { sendBookingConfirmationEmail } = await import("./booking-notifications");
+
+    const result = await sendBookingConfirmationEmail({
+      ...confirmation,
+      bookingId: "booking_123",
+      confirmationCode: "ABC123",
+      customerName: "Cliente QA",
+      customerEmail: "cliente@example.com",
+      customerPhone: "+5491112345678",
+      businessId: "business_123",
+      businessSlug: "demo-barberia",
+      businessNotificationEmail: "negocio@example.com",
+      serviceId: "service_123",
+      priceAmount: 5500,
+      currency: "ARS",
+      startsAt: "2026-03-11T09:00:00.000Z",
+      timezone: "America/Argentina/Buenos_Aires",
+      status: "confirmed",
+    }, "created");
+
+    expect(result.status).toBe("error");
   });
 
   it("sends WhatsApp reminder through Twilio when configured", async () => {

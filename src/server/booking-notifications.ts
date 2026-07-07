@@ -1,5 +1,6 @@
 import { canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 import { createLogger } from "@/server/logger";
+import { timeoutSignal } from "@/lib/fetch-with-timeout";
 import {
   isMetaWhatsAppConfigured,
   sendConfirmationWhatsApp,
@@ -45,6 +46,7 @@ async function sendResendEmail(payload: ResendEmailPayload) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
+    signal: timeoutSignal(10_000),
   });
 
   const body = (await response.json().catch(() => null)) as {
@@ -284,6 +286,7 @@ export async function sendBookingReminderWhatsApp(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: formBody,
+      signal: timeoutSignal(10_000),
     });
 
     const data = await response.json() as { sid?: string; error_message?: string; message?: string };
@@ -622,6 +625,7 @@ export async function sendPostBookingFollowUpWhatsApp(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: formBody,
+      signal: timeoutSignal(10_000),
     });
 
     const data = await response.json() as { sid?: string; error_message?: string; message?: string };

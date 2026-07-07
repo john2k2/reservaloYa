@@ -4,6 +4,35 @@ import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingMan
 import type { BusinessRecord, BookingRecord, ServiceRecord, CustomerRecord, CommunicationRecord } from "@/server/supabase-domain";
 
 const UNIQUE_VIOLATION_CODE = "23505";
+const SEND_CONCURRENCY_LIMIT = 5;
+
+/**
+ * Runs `fn` over `items` with at most `limit` in flight at once. Each channel
+ * send is a network call (Resend/Twilio/Meta); sequential awaits meant one
+ * slow business could exhaust the cron's time budget well before working
+ * through its own booking list, let alone the rest.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await fn(items[currentIndex]);
+    }
+  }
+
+  const workerCount = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return results;
+}
 
 /**
  * Offset (minutes) to add to a UTC timestamp to get local wall-clock time in `timeZone`.
@@ -167,6 +196,14 @@ export async function runSupabaseBookingReminderSweep(input?: {
 
     const businessTimezone = business.timezone ?? "America/Argentina/Buenos_Aires";
 
+    type ReminderCandidate = {
+      booking: (typeof businessBookings)[number];
+      customer: CustomerRecord;
+      channels: ReturnType<typeof getAvailableReminderChannels>;
+    };
+
+    const reminderCandidates: ReminderCandidate[] = [];
+
     for (const booking of businessBookings) {
       const bookingTime = zonedDateTimeToUtcMs(booking.bookingDate, booking.startTime, businessTimezone);
 
@@ -184,7 +221,6 @@ export async function runSupabaseBookingReminderSweep(input?: {
       }
 
       const customer = booking.customer;
-      const service = booking.service;
 
       if (!customer) {
         summary.missingEmail += 1;
@@ -205,6 +241,11 @@ export async function runSupabaseBookingReminderSweep(input?: {
 
       if (dryRun) continue;
 
+      reminderCandidates.push({ booking, customer, channels });
+    }
+
+    await mapWithConcurrency(reminderCandidates, SEND_CONCURRENCY_LIMIT, async ({ booking, customer, channels }) => {
+      const service = booking.service;
       const confirmation = {
         businessName: business.name,
         businessAddress: business.address ?? "",
@@ -241,7 +282,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
           summary.failed += 1;
         }
 
-        const wasNew = await insertCommunicationEvent(client, {
+        await insertCommunicationEvent(client, {
           business_id: business.id,
           booking_id: booking.id,
           customer_id: customer.id,
@@ -254,10 +295,8 @@ export async function runSupabaseBookingReminderSweep(input?: {
           subject: (result as { subject?: string }).subject ?? "",
           note: (result as { reason?: string }).reason ?? (result as { error?: string }).error ?? "",
         });
-
-        if (!wasNew) continue;
       }
-    }
+    });
 
     if (!dryRun) {
       const sentFollowupIds = new Set(
@@ -277,6 +316,15 @@ export async function runSupabaseBookingReminderSweep(input?: {
         service?: ServiceRecord;
       })[];
 
+      type FollowupCandidate = {
+        booking: (typeof completedBookings)[number];
+        customer: CustomerRecord;
+        manageToken?: string;
+        reviewUrl?: string;
+      };
+
+      const followupCandidates: FollowupCandidate[] = [];
+
       for (const booking of completedBookings) {
         if (sentFollowupIds.has(booking.id)) continue;
 
@@ -289,7 +337,6 @@ export async function runSupabaseBookingReminderSweep(input?: {
         if (elapsed < FOLLOWUP_MIN_MS || elapsed > FOLLOWUP_MAX_MS) continue;
 
         const customer = booking.customer;
-        const service = booking.service;
 
         if (!customer?.email && !customer?.phone) continue;
 
@@ -299,60 +346,70 @@ export async function runSupabaseBookingReminderSweep(input?: {
 
         const reviewUrl = manageToken ? buildAbsoluteReviewUrl(business.slug, booking.id) ?? undefined : undefined;
 
-        if (customer?.email) {
-          const result = await sendPostBookingFollowUpEmail({
-            customerEmail: customer.email,
-            customerName: customer.fullName,
-            businessName: business.name,
-            businessSlug: business.slug,
-            serviceName: service?.name ?? "Servicio",
-            bookingDate: booking.bookingDate,
-            bookingId: booking.id,
-            manageToken,
-          });
-
-          if (result.status === "sent") summary.followupSent += 1;
-          else if (result.status === "error") summary.followupFailed += 1;
-
-          await insertCommunicationEvent(client, {
-            business_id: business.id,
-            booking_id: booking.id,
-            customer_id: customer.id,
-            channel: "email",
-            kind: "followup",
-            status: toCommunicationEventStatus(result.status),
-            recipient: customer.email,
-            subject: `Follow-up: ${service?.name ?? "Servicio"}`,
-            note: result.status === "error" ? (result as { error?: string }).error ?? "" : "",
-          });
-        }
-
-        if (customer?.phone && isTwilioConfigured()) {
-          const wpResult = await sendPostBookingFollowUpWhatsApp({
-            customerPhone: customer.phone,
-            customerName: customer.fullName,
-            businessName: business.name,
-            businessSlug: business.slug,
-            serviceName: service?.name ?? "Servicio",
-            reviewUrl,
-          });
-
-          if (wpResult.status === "sent") summary.followupSent += 1;
-          else if (wpResult.status === "error") summary.followupFailed += 1;
-
-          await insertCommunicationEvent(client, {
-            business_id: business.id,
-            booking_id: booking.id,
-            customer_id: customer.id,
-            channel: "whatsapp",
-            kind: "followup",
-            status: toCommunicationEventStatus(wpResult.status),
-            recipient: customer.phone,
-            subject: `Follow-up WA: ${service?.name ?? "Servicio"}`,
-            note: wpResult.status === "error" ? (wpResult as { error?: string }).error ?? "" : "",
-          });
-        }
+        followupCandidates.push({ booking, customer, manageToken, reviewUrl });
       }
+
+      await mapWithConcurrency(
+        followupCandidates,
+        SEND_CONCURRENCY_LIMIT,
+        async ({ booking, customer, manageToken, reviewUrl }) => {
+          const service = booking.service;
+
+          if (customer.email) {
+            const result = await sendPostBookingFollowUpEmail({
+              customerEmail: customer.email,
+              customerName: customer.fullName,
+              businessName: business.name,
+              businessSlug: business.slug,
+              serviceName: service?.name ?? "Servicio",
+              bookingDate: booking.bookingDate,
+              bookingId: booking.id,
+              manageToken,
+            });
+
+            if (result.status === "sent") summary.followupSent += 1;
+            else if (result.status === "error") summary.followupFailed += 1;
+
+            await insertCommunicationEvent(client, {
+              business_id: business.id,
+              booking_id: booking.id,
+              customer_id: customer.id,
+              channel: "email",
+              kind: "followup",
+              status: toCommunicationEventStatus(result.status),
+              recipient: customer.email,
+              subject: `Follow-up: ${service?.name ?? "Servicio"}`,
+              note: result.status === "error" ? (result as { error?: string }).error ?? "" : "",
+            });
+          }
+
+          if (customer.phone && isTwilioConfigured()) {
+            const wpResult = await sendPostBookingFollowUpWhatsApp({
+              customerPhone: customer.phone,
+              customerName: customer.fullName,
+              businessName: business.name,
+              businessSlug: business.slug,
+              serviceName: service?.name ?? "Servicio",
+              reviewUrl,
+            });
+
+            if (wpResult.status === "sent") summary.followupSent += 1;
+            else if (wpResult.status === "error") summary.followupFailed += 1;
+
+            await insertCommunicationEvent(client, {
+              business_id: business.id,
+              booking_id: booking.id,
+              customer_id: customer.id,
+              channel: "whatsapp",
+              kind: "followup",
+              status: toCommunicationEventStatus(wpResult.status),
+              recipient: customer.phone,
+              subject: `Follow-up WA: ${service?.name ?? "Servicio"}`,
+              note: wpResult.status === "error" ? (wpResult as { error?: string }).error ?? "" : "",
+            });
+          }
+        }
+      );
     }
   }
 

@@ -8,7 +8,7 @@ const {
   extendTrialMock,
   cancelSubscriptionMock,
   unlockBusinessSubscriptionMock,
-  generateImpersonationLinkMock,
+  generateImpersonationTokenMock,
   writeAuditLogMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
@@ -18,7 +18,7 @@ const {
   extendTrialMock: vi.fn(),
   cancelSubscriptionMock: vi.fn(),
   unlockBusinessSubscriptionMock: vi.fn(),
-  generateImpersonationLinkMock: vi.fn(),
+  generateImpersonationTokenMock: vi.fn(),
   writeAuditLogMock: vi.fn(),
 }));
 
@@ -36,7 +36,7 @@ vi.mock("@/server/queries/platform", () => ({
   extendTrial: extendTrialMock,
   cancelSubscription: cancelSubscriptionMock,
   unlockBusinessSubscription: unlockBusinessSubscriptionMock,
-  generateImpersonationLink: generateImpersonationLinkMock,
+  generateImpersonationToken: generateImpersonationTokenMock,
 }));
 
 vi.mock("@/server/audit-log", () => ({
@@ -52,7 +52,7 @@ describe("platform actions", () => {
     extendTrialMock.mockReset();
     cancelSubscriptionMock.mockReset();
     unlockBusinessSubscriptionMock.mockReset();
-    generateImpersonationLinkMock.mockReset();
+    generateImpersonationTokenMock.mockReset();
     writeAuditLogMock.mockReset();
 
     getAuthenticatedPlatformAdminMock.mockResolvedValue({
@@ -126,12 +126,12 @@ describe("platform actions", () => {
     );
   });
 
-  it("audita la generacion de link de impersonation sin guardar el link", async () => {
-    generateImpersonationLinkMock.mockResolvedValue("https://example.com/magic-link");
+  it("audita la generacion de token de impersonation sin exponer el link real", async () => {
+    generateImpersonationTokenMock.mockResolvedValue("opaque-token-abc");
 
     const { impersonateBusinessOwnerAction } = await import("./platform");
 
-    await expect(impersonateBusinessOwnerAction("biz_123")).resolves.toBe("https://example.com/magic-link");
+    await expect(impersonateBusinessOwnerAction("biz_123")).resolves.toBe("opaque-token-abc");
     expect(writeAuditLogMock).toHaveBeenCalledWith(
       { userId: "platform_admin_1", userEmail: "platform@reservaya.app", businessId: "biz_123" },
       "platform.impersonation_link_created",

@@ -18,8 +18,8 @@ export function ImpersonateButton({
 
     startTransition(async () => {
       try {
-        const link = await impersonateBusinessOwnerAction(businessId);
-        window.open(link, "_blank");
+        const token = await impersonateBusinessOwnerAction(businessId);
+        window.open(`/api/platform/impersonate/${token}`, "_blank");
       } catch (err) {
         alert(err instanceof Error ? err.message : "Error al generar el link");
       }

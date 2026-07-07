@@ -1,4 +1,5 @@
 import { createLogger } from "@/server/logger";
+import { timeoutSignal } from "@/lib/fetch-with-timeout";
 
 const logger = createLogger("WhatsApp Meta");
 
@@ -60,6 +61,7 @@ async function sendTemplate(input: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: timeoutSignal(10_000),
       }
     );
 
