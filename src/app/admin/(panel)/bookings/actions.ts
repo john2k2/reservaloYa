@@ -26,6 +26,7 @@ import {
 } from "@/server/supabase-domain";
 import { listSupabaseRecords } from "@/server/supabase-store/_core";
 import { bookingDateSchema, bookingTimeSchema, futureBookingDateSchema } from "@/lib/validations/booking";
+import { withBookingDateLock } from "@/server/booking-slot-lock";
 
 const bookingSchema = z.object({
   bookingId: z.string().trim().min(1),
@@ -96,82 +97,88 @@ function revalidateBookingViews(businessSlug: string) {
 
 async function updateSupabaseAdminBooking(input: {
   businessId: string;
+  businessSlug: string;
   bookingId: string;
   bookingDate: string;
   startTime: string;
   status: string;
   notes: string;
 }) {
-  const booking = await getSupabaseRecord<BookingRecord & { service: Pick<ServiceRecord, "id" | "business_id" | "name" | "durationMinutes"> | null }>(
-    "bookings",
-    input.bookingId
+  return withBookingDateLock(
+    { businessKey: input.businessSlug, bookingDate: input.bookingDate },
+    async () => {
+      const booking = await getSupabaseRecord<BookingRecord & { service: Pick<ServiceRecord, "id" | "business_id" | "name" | "durationMinutes"> | null }>(
+        "bookings",
+        input.bookingId
+      );
+
+      if (booking.business_id !== input.businessId) {
+        throw new Error("No encontramos el turno a actualizar.");
+      }
+
+      const service = booking.service;
+
+      if (!service || service.business_id !== input.businessId) {
+        throw new Error("No encontramos el servicio del turno.");
+      }
+
+      const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
+      const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
+
+      const [rules, blockedSlots, bookings] = await Promise.all([
+        listSupabaseRecords<AvailabilityRuleRecord>("availability_rules", {
+          filter: `business_id=eq.${input.businessId}`,
+        }),
+        listSupabaseRecords<BlockedSlotRecord>("blocked_slots", {
+          filter: `business_id=eq.${input.businessId}`,
+        }),
+        listSupabaseRecords<BookingRecord>("bookings", {
+          filter: `business_id=eq.${input.businessId}`,
+        }),
+      ]);
+
+      const dayRules = rules.filter(
+        (rule) => rule.dayOfWeek === selectedDayOfWeek && isActiveRecord(rule)
+      );
+      const dayBlockedSlots = blockedSlots.filter(
+        (slot) => slot.blockedDate === input.bookingDate
+      );
+      const dayBookings = bookings.filter(
+        (b) => b.bookingDate === input.bookingDate
+      );
+
+      const fitsWithinAvailability = fitsBookingWithinAvailability(dayRules, bookingWindow);
+
+      if (!fitsWithinAvailability) {
+        throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
+      }
+
+      const blockedConflict = hasBlockedSlotConflict(dayBlockedSlots, bookingWindow);
+
+      if (blockedConflict) {
+        throw new Error("Ese horario esta bloqueado.");
+      }
+
+      const bookingConflict = hasBookingConflict(dayBookings, {
+        ...bookingWindow,
+        excludeBookingId: booking.id,
+        allowedStatuses: ["pending", "pending_payment", "confirmed"],
+      });
+
+      if (bookingConflict) {
+        throw new Error("Ese horario ya no esta disponible.");
+      }
+
+      await updateSupabaseRecord("bookings", input.bookingId, {
+        bookingDate: input.bookingDate,
+        startTime: input.startTime,
+        status: input.status,
+        notes: input.notes,
+      });
+
+      return input.bookingId;
+    }
   );
-
-  if (booking.business_id !== input.businessId) {
-    throw new Error("No encontramos el turno a actualizar.");
-  }
-
-  const service = booking.service;
-
-  if (!service || service.business_id !== input.businessId) {
-    throw new Error("No encontramos el servicio del turno.");
-  }
-
-  const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-  const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
-
-  const [rules, blockedSlots, bookings] = await Promise.all([
-    listSupabaseRecords<AvailabilityRuleRecord>("availability_rules", {
-      filter: `business_id=eq.${input.businessId}`,
-    }),
-    listSupabaseRecords<BlockedSlotRecord>("blocked_slots", {
-      filter: `business_id=eq.${input.businessId}`,
-    }),
-    listSupabaseRecords<BookingRecord>("bookings", {
-      filter: `business_id=eq.${input.businessId}`,
-    }),
-  ]);
-
-  const dayRules = rules.filter(
-    (rule) => rule.dayOfWeek === selectedDayOfWeek && isActiveRecord(rule)
-  );
-  const dayBlockedSlots = blockedSlots.filter(
-    (slot) => slot.blockedDate === input.bookingDate
-  );
-  const dayBookings = bookings.filter(
-    (b) => b.bookingDate === input.bookingDate
-  );
-
-  const fitsWithinAvailability = fitsBookingWithinAvailability(dayRules, bookingWindow);
-
-  if (!fitsWithinAvailability) {
-    throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
-  }
-
-  const blockedConflict = hasBlockedSlotConflict(dayBlockedSlots, bookingWindow);
-
-  if (blockedConflict) {
-    throw new Error("Ese horario esta bloqueado.");
-  }
-
-  const bookingConflict = hasBookingConflict(dayBookings, {
-    ...bookingWindow,
-    excludeBookingId: booking.id,
-    allowedStatuses: ["pending", "pending_payment", "confirmed"],
-  });
-
-  if (bookingConflict) {
-    throw new Error("Ese horario ya no esta disponible.");
-  }
-
-  await updateSupabaseRecord("bookings", input.bookingId, {
-    bookingDate: input.bookingDate,
-    startTime: input.startTime,
-    status: input.status,
-    notes: input.notes,
-  });
-
-  return input.bookingId;
 }
 
 const manualBookingSchema = z.object({
@@ -259,6 +266,7 @@ export async function updateBookingAction(formData: FormData) {
 
     await updateSupabaseAdminBooking({
       businessId: context.businessId,
+      businessSlug: context.businessSlug,
       bookingId: parsed.data.bookingId,
       bookingDate: parsed.data.bookingDate,
       startTime: parsed.data.startTime,
