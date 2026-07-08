@@ -22,7 +22,7 @@ export default async function SubscriptionExpiredPage() {
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   return (
-    <div className="landing-theme flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
+    <div className="landing-theme relative flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
       <div className="w-full max-w-md space-y-6 text-center">
         <div className="space-y-2">
           <div className="text-6xl">📅</div>
