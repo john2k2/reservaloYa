@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],
   },
   images: {
+    // Vercel's image optimizer returns 402 once the Hobby-plan transformation
+    // quota is exhausted, breaking every remote image on the site. Remote
+    // sources are already right-sized (Unsplash w/h/fit params, Meta CDN
+    // thumbnails), so serving originals is the safe default. Remove this if
+    // the project moves to a plan with enough image-optimization quota.
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
