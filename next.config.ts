@@ -8,6 +8,11 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Pin the workspace root: a stray package-lock.json in a parent directory
+  // makes Turbopack infer the wrong root and fail to resolve dependencies.
+  turbopack: {
+    root: __dirname,
+  },
   experimental: {
     // Optimize package imports for common libraries
     optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],
