@@ -13,14 +13,14 @@ export const metadata: Metadata = createPageMetadata({
 
 export default function AboutPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-background font-sans text-foreground">
+    <main id="main-content" className="landing-theme min-h-screen bg-background font-sans text-foreground">
       <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
         <Link href="/" className="inline-flex h-11 items-center text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">
           ← Volver al inicio
         </Link>
 
         <p className="mt-8 text-sm font-semibold uppercase tracking-widest text-muted-foreground">Sobre nosotros</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">ReservaYa ayuda a negocios chicos a ordenar sus turnos online</h1>
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight sm:text-4xl">ReservaYa ayuda a negocios chicos a ordenar sus turnos online</h1>
         <div className="mt-8 space-y-6 text-sm leading-7 text-foreground/80">
           <p>
             {productName} es una plataforma de reservas online pensada para barberías, peluquerías, centros de estética, estudios de uñas, consultorios y otros negocios que trabajan con agenda.
@@ -57,11 +57,11 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Link href="/demo-barberia" className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background">
+        <div className="mt-10 flex flex-col flex-wrap gap-3 sm:flex-row">
+          <Link href="/demo-barberia" className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-full bg-foreground px-6 text-sm font-semibold text-background">
             Ver ejemplo en vivo
           </Link>
-          <Link href="/contacto" className="inline-flex h-11 items-center justify-center rounded-full border border-border px-6 text-sm font-semibold">
+          <Link href="/contacto" className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-full border border-border px-6 text-sm font-semibold">
             Contactar a ReservaYa
           </Link>
         </div>

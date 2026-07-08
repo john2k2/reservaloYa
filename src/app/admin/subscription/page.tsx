@@ -22,11 +22,11 @@ export default async function SubscriptionExpiredPage() {
   const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
+    <div className="landing-theme flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
       <div className="w-full max-w-md space-y-6 text-center">
         <div className="space-y-2">
           <div className="text-6xl">📅</div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
             Tu período de prueba terminó
           </h1>
           <p className="text-muted-foreground">
@@ -40,7 +40,7 @@ export default async function SubscriptionExpiredPage() {
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <div className="space-y-1">
             <p className="text-sm font-medium">Plan Mensual</p>
-            <p className="text-3xl font-bold">${formattedPrice} <span className="text-sm font-normal text-muted-foreground">ARS/mes</span></p>
+            <p className="font-mono text-3xl font-bold">${formattedPrice} <span className="font-sans text-sm font-normal text-muted-foreground">ARS/mes</span></p>
           </div>
 
           <div className="space-y-2 text-sm text-left">

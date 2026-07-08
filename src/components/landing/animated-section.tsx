@@ -7,7 +7,7 @@ interface AnimatedSectionProps {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  animation?: "fadeInUp" | "slideInLeft" | "slideInRight" | "fadeInScale";
+  animation?: "fadeInUp" | "slideInLeft" | "slideInRight" | "fadeInScale" | "stampHit";
 }
 
 export function AnimatedSection({
@@ -59,6 +59,7 @@ export function AnimatedSection({
     slideInLeft: "animate-slide-in-left",
     slideInRight: "animate-slide-in-right",
     fadeInScale: "animate-fade-in-scale",
+    stampHit: "animate-stamp-hit",
   }[animation];
 
   return (

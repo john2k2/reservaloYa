@@ -13,10 +13,18 @@ export function AnimatedCounter({ target, suffix = "" }: AnimatedCounterProps) {
   const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
           setHasAnimated(true);
+
+          if (prefersReducedMotion) {
+            setCount(target);
+            return;
+          }
+
           let start = 0;
           const duration = 2000;
           const increment = target / (duration / 16);

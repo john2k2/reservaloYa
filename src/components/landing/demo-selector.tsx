@@ -1,40 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CalendarDays,
-  CheckCircle2,
-  ChevronRight,
-  LayoutDashboard,
-  Palette,
-} from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 
 import { demoBusinessOptions } from "@/constants/site";
 import { AnimatedSection } from "./animated-section";
-
-const demoHighlights = [
-  {
-    icon: CalendarDays,
-    title: "Reserva pública real",
-    description:
-      "El cliente elige servicio, día y horario desde el celular sin dar vueltas ni pedir ayuda.",
-    badge: "Flujo completo",
-  },
-  {
-    icon: LayoutDashboard,
-    title: "Panel admin útil",
-    description:
-      "Agenda, clientes, servicios y disponibilidad ya listos para mostrar el producto en uso real.",
-    badge: "Operación diaria",
-  },
-  {
-    icon: Palette,
-    title: "Negocio configurable",
-    description:
-      "Branding, textos y presencia pública para que cada negocio sienta que tiene su propio sistema.",
-    badge: "Personalización",
-  },
-];
 
 const demoProofPoints = [
   "Responsive en mobile y desktop",
@@ -44,19 +14,40 @@ const demoProofPoints = [
 
 export function DemoSelector() {
   return (
-    <>
-      <AnimatedSection delay={400}>
-        <div className="mx-auto mt-10 grid w-full max-w-3xl gap-3 sm:grid-cols-2">
+    <section className="mx-auto w-full max-w-5xl border-t border-rule px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <AnimatedSection>
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            Lo que vas a ver
+          </p>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-display">
+            Ejemplos en vivo, no capturas de pantalla.
+          </h2>
+          <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
+            Cuatro negocios reales corriendo con ReservaYa hoy. Entrá a cualquiera y probá el flujo
+            completo: reserva pública, panel admin y personalización.
+          </p>
+        </div>
+      </AnimatedSection>
+
+      <AnimatedSection delay={200}>
+        <div className="mt-10 grid w-full gap-3 sm:grid-cols-2">
           {demoBusinessOptions
             .filter((option) => option.slug !== "barberia-demo")
             .map((option, index) => (
             <Link
               key={option.slug}
               href={`/${option.slug}`}
-              className="group rounded-2xl border border-border/70 bg-card/80 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:border-foreground/20 hover:bg-secondary/20 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-              style={{ animationDelay: `${400 + index * 100}ms` }}
+              className="group relative rounded-2xl border border-border/70 bg-card/80 p-5 pl-6 text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:border-foreground/20 hover:bg-secondary/20 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              style={{
+                animationDelay: `${200 + index * 100}ms`,
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
+              }}
             >
-              <div className="flex items-start justify-between gap-4">
+              <span className="font-mono text-[11px] font-semibold tracking-wider text-sello">
+                DEMO #{String(index + 1).padStart(2, "0")}
+              </span>
+              <div className="mt-2 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{option.label}</p>
                   <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
@@ -73,56 +64,16 @@ export function DemoSelector() {
         </div>
       </AnimatedSection>
 
-      <AnimatedSection delay={600} animation="fadeInScale">
-        <div className="mx-auto mt-16 w-full max-w-5xl">
-          <div className="rounded-[2rem] border border-border/60 bg-card/85 p-6 shadow-xl backdrop-blur sm:p-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                  Lo que vas a ver
-                </p>
-                <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                  Ejemplos en vivo pensados para mostrar el producto en uso real.
-                </h3>
-              </div>
-              <p className="max-w-md text-sm leading-6 text-muted-foreground">
-                Preferimos mostrar el flujo real y lo que ya resuelve hoy, en lugar de depender de
-                capturas que no suman contexto.
-              </p>
+      <AnimatedSection delay={400}>
+        <div className="mt-10 flex flex-col gap-3 border-t border-rule pt-6 sm:flex-row sm:gap-8">
+          {demoProofPoints.map((item) => (
+            <div key={item} className="flex items-center gap-2 text-sm text-foreground">
+              <CheckCircle2 className="size-4 shrink-0 text-sello" />
+              <span>{item}</span>
             </div>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {demoHighlights.map(({ icon: Icon, title, description, badge }) => (
-                <div
-                  key={title}
-                  className="rounded-2xl border border-border/60 bg-background/85 p-5 shadow-sm transition-transform duration-300 hover:-translate-y-1"
-                >
-                  <div className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-2xl bg-secondary text-foreground">
-                    <Icon className="size-5" />
-                  </div>
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    {badge}
-                  </p>
-                  <h4 className="mt-2 text-lg font-semibold text-foreground">{title}</h4>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {demoProofPoints.map((item) => (
-                <div
-                  key={item}
-                  className="flex min-h-11 items-center gap-3 rounded-2xl border border-border/50 bg-background/70 px-4 py-3 text-sm text-foreground"
-                >
-                  <CheckCircle2 className="size-4 shrink-0 text-foreground" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </AnimatedSection>
-    </>
+    </section>
   );
 }

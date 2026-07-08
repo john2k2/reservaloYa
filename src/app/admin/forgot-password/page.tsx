@@ -28,7 +28,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
   return (
     <main
       id="main-content"
-      className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+      className="landing-theme flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
     >
       <div className="flex w-full flex-col justify-start pt-10 px-8 py-10 sm:justify-center sm:px-12 lg:w-1/2 lg:px-24 xl:px-32">
         <div className="mx-auto w-full max-w-md">
@@ -37,7 +37,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
           </Link>
 
           <div className="mt-12 space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">Recuperar contraseña</h1>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Recuperar contraseña</h1>
             <p className="text-sm text-muted-foreground">
               Ingresa tu correo y te enviaremos un enlace para definir una nueva contraseña.
             </p>
@@ -102,7 +102,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
         <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
         <div className="relative max-w-lg p-12">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Recuperá el acceso rápido</h2>
+          <h2 className="mb-4 font-display text-3xl font-semibold tracking-tight">Recuperá el acceso rápido</h2>
           <p className="text-lg text-muted-foreground">
             Te enviamos un enlace seguro al correo registrado para que puedas definir una nueva contraseña sin perder tiempo.
           </p>

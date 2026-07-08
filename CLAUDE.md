@@ -71,6 +71,13 @@ Booking statuses: `pending` | `pending_payment` | `confirmed` | `completed` | `c
 
 MercadoPago OAuth per business. Each business connects their own MP account. Tokens stored on the business record (`mpAccessToken`, `mpRefreshToken`, etc.). Booking gets `pending_payment` status when price > 0 and MP is configured.
 
+## Diseño
+
+Las páginas propias de ReservaYa (marketing, institucionales, admin/platform — no las páginas
+públicas de cada negocio en `(public)/[slug]`, que tienen su propio theming por dueño) siguen
+`docs/DESIGN.md`: paleta, tipografía, el motivo visual de firma, y reglas de responsive. Leelo antes
+de tocar `src/components/landing/` o de agregar una página nueva fuera de `(public)/[slug]`.
+
 ## Path Alias
 
 `@/*` maps to `./src/*`

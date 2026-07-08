@@ -78,7 +78,7 @@ export function AdminShell({
   }, [pathname]);
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
+    <div className="landing-theme flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
       {/* Sidebar Desktop */}
       <aside className="hidden w-56 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
         <div className="px-4 py-6">

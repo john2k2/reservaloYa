@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, Plug, Save, Store } from "lucide-react";
+import { CheckCircle2, ExternalLink, Globe, ImagePlus, Palette, Plug, Save, Store } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -277,9 +277,9 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
 
   const tabs = [
     { id: "business" as const, label: "Negocio", icon: Store, description: "Datos básicos" },
-    { id: "style" as const, label: "Estilo", icon: Store, description: "Colores y textos" },
-    { id: "images" as const, label: "Fotos", icon: Store, description: "Logo y galería" },
-    { id: "public" as const, label: "Público", icon: Store, description: "Redes y contacto" },
+    { id: "style" as const, label: "Estilo", icon: Palette, description: "Colores y textos" },
+    { id: "images" as const, label: "Fotos", icon: ImagePlus, description: "Logo y galería" },
+    { id: "public" as const, label: "Público", icon: Globe, description: "Redes y contacto" },
     { id: "integrations" as const, label: "Integraciones", icon: Plug, description: "Pagos y más" },
   ];
 
@@ -300,24 +300,24 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
               inmediatamente al guardar.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col flex-wrap gap-3 sm:flex-row">
             <Link
               href={`/${business.slug}`}
               target="_blank"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-11 w-full gap-2 sm:w-auto"
+                "h-11 w-full gap-2 whitespace-nowrap sm:w-auto"
               )}
             >
               Ver página
-              <ExternalLink aria-hidden="true" className="size-4" />
+              <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
             </Link>
             <button
               onClick={handleSaveAll}
               disabled={isSubmitting}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                "h-11 w-full gap-2 sm:w-auto",
+                "h-11 w-full gap-2 whitespace-nowrap sm:w-auto",
                 isSubmitting && "cursor-not-allowed opacity-50"
               )}
             >

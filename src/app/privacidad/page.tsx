@@ -13,7 +13,7 @@ export default function PrivacyPage() {
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+      className="landing-theme min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
     >
       <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
         <Link
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           ← Volver al inicio
         </Link>
 
-        <h1 className="mt-8 text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="mt-8 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           Política de privacidad
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
