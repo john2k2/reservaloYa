@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
 import { createLogger } from "@/server/logger";
+import { demoPresets } from "@/constants/demo";
 
 const logger = createLogger("supabase-auth");
 
@@ -176,7 +177,56 @@ export async function createSupabaseOwnerAccount(params: {
     trialEndsAt,
   });
 
+  await seedBusinessFromTemplate(admin, business.id, params.templateSlug);
+
   return authUser.user;
+}
+
+// Best-effort: a new business starts with the template's catalog (services +
+// weekly hours) pre-filled and editable, so it can actually take bookings and
+// sell on day one instead of landing on an empty dashboard. Never blocks
+// signup -- an unrecognized templateSlug (e.g. a legacy alias with no preset)
+// just means an empty catalog, same as before this seeding existed.
+async function seedBusinessFromTemplate(
+  admin: ReturnType<typeof createAdminClient>,
+  businessId: string,
+  templateSlug: string
+) {
+  const preset = demoPresets[templateSlug];
+  if (!preset) return;
+
+  try {
+    if (preset.services.length > 0) {
+      const { error } = await admin.from("services").insert(
+        preset.services.map((service, index) => ({
+          business_id: businessId,
+          name: service.name,
+          description: service.description,
+          durationMinutes: service.durationMinutes,
+          price: service.price,
+          active: true,
+          featured: index === 0,
+          featuredLabel: index === 0 ? "Más elegido" : null,
+        }))
+      );
+      if (error) throw error;
+    }
+
+    if (preset.availabilityRules.length > 0) {
+      const { error } = await admin.from("availability_rules").insert(
+        preset.availabilityRules.map((rule) => ({
+          business_id: businessId,
+          dayOfWeek: rule.dayOfWeek,
+          startTime: rule.startTime,
+          endTime: rule.endTime,
+          active: rule.active,
+        }))
+      );
+      if (error) throw error;
+    }
+  } catch (error) {
+    logger.error("Error sembrando catálogo de plantilla en signup", error);
+  }
 }
 
 export async function createSupabaseStaffAccount(params: {

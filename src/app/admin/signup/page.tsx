@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { signupAction } from "@/app/login/actions";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { demoBusinessOptions } from "@/constants/site";
+import { demoPresets } from "@/constants/demo";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { LoadingButton } from "@/components/ui/loading-button";
 
@@ -25,6 +26,11 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
   if (user) {
     redirect("/admin/dashboard");
   }
+
+  // Only offer templates that actually seed a catalog (services + hours) on
+  // signup. Legacy slugs like "barberia-demo" have no preset behind them --
+  // showing them here just duplicates "Barbería clásica" with an empty result.
+  const signupTemplateOptions = demoBusinessOptions.filter((option) => option.slug in demoPresets);
 
   return (
     <main
@@ -121,10 +127,10 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
                   id="templateSlug"
                   name="templateSlug"
                   className="minimalist-input"
-                  defaultValue={demoBusinessOptions[0]?.slug}
+                  defaultValue={signupTemplateOptions[0]?.slug}
                   required
                 >
-                  {demoBusinessOptions.map((option) => (
+                  {signupTemplateOptions.map((option) => (
                     <option key={option.slug} value={option.slug}>
                       {option.label} - {option.category}
                     </option>
