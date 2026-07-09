@@ -4,7 +4,7 @@ import { decryptMPToken, encryptMPToken } from "@/server/mp-token-crypto";
 // ─── Subscription pricing ────────────────────────────────────────────────────
 
 /** Precio mensual de suscripcion en USD */
-export const SUBSCRIPTION_USD_PRICE = 0.015; // TEMP: prueba real de pago en produccion, revertir a 22 apenas confirmemos
+export const SUBSCRIPTION_USD_PRICE = 22;
 
 /**
  * Calcula el precio de suscripcion en ARS dado un rate de dolar blue.
