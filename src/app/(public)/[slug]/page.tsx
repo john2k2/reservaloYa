@@ -14,6 +14,7 @@ import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
+import { isDemoBusiness } from "@/constants/demo";
 import { OptimizedImage, ThumbnailImage } from "@/components/ui/optimized-image";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import {
@@ -219,9 +220,24 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
   const startingPriceLabel = getStartingPriceLabel(services);
   const firstActiveDay = getFirstActiveDayLabel(pageData.weeklyHours);
-  const highlightedTestimonial = pageData.profile.testimonials[0] ?? null;
+  // Template testimonials are invented showcase content -- only the demo
+  // businesses themselves show them. Real businesses show real reviews
+  // (rendered further below) instead.
+  const isDemo = isDemoBusiness(slug);
+  const highlightedTestimonial = isDemo ? pageData.profile.testimonials[0] ?? null : null;
   const shortAddressLabel = getShortAddressLabel(pageData.business.address);
   const nextAvailableSlot = getNextAvailableSlotLabel(firstActiveDay);
+
+  // Templates hardcode a location trust point (e.g. "Ubicación en Palermo")
+  // for the demo business it was written for. Every real business inherits
+  // the same literal text regardless of where they actually are -- swap it
+  // for the business's real short address instead.
+  const heroProfile = {
+    ...pageData.profile,
+    trustPoints: pageData.profile.trustPoints.map((point) =>
+      /^ubicaci[oó]n en /i.test(point) ? `Ubicación en ${shortAddressLabel}` : point
+    ),
+  };
 
   const whatsappHref = buildWhatsAppHref(pageData.business.phone, pageData.business.name);
   const instagramHref = buildInstagramHref(pageData.profile.instagram);
@@ -398,7 +414,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         <BusinessHero
           slug={slug}
           businessName={pageData.business.name}
-          profile={pageData.profile}
+          profile={heroProfile}
           bookingHref={bookingHref}
           whatsappHref={whatsappHref}
           instagramHref={instagramHref}
@@ -525,11 +541,13 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           </section>
         )}
 
-        <TestimonialsSection
-          accentColor={pageData.profile.accent}
-          testimonials={pageData.profile.testimonials}
-          mobileVisibleCount={pageData.profile.sectionLayout.mobileTestimonials}
-        />
+        {isDemo && (
+          <TestimonialsSection
+            accentColor={pageData.profile.accent}
+            testimonials={pageData.profile.testimonials}
+            mobileVisibleCount={pageData.profile.sectionLayout.mobileTestimonials}
+          />
+        )}
 
         <FaqContactSection
           accentColor={pageData.profile.accent}

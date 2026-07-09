@@ -559,6 +559,13 @@ export const demoPresets: Record<string, DemoPreset> = {
   },
 };
 
+// Template testimonials/trust points are invented showcase content, not real
+// customer feedback. Only render them for the demo businesses themselves --
+// real businesses show actual reviews instead (see reviews table).
+export function isDemoBusiness(slug: string): boolean {
+  return slug in demoPresets;
+}
+
 export const demoSlots = ["10:00", "10:45", "11:30", "16:00", "16:45", "17:30"];
 
 export const demoDashboardData = {
