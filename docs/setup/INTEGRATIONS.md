@@ -56,9 +56,59 @@ node scripts/dev/test-notifications.mjs --channel email --email tu@email.com  # 
 
 ---
 
-## Twilio WhatsApp (opcional)
+## WhatsApp (Meta Cloud API)
 
-Complementa los recordatorios por email. Si no se configura, el sistema funciona igual.
+Canal preferido para confirmacion, recordatorio, y follow-up con pedido de resena.
+Complementa el email; si no se configura, el sistema funciona igual (solo email).
+Un solo numero de WhatsApp Business de la plataforma envia en nombre de todos los
+negocios — los negocios no conectan su propio numero.
+
+Cliente completo en `src/lib/whatsapp-meta.ts` (Graph API v19.0). La seleccion de
+canal en `src/server/booking-notifications.ts` prefiere Meta sobre Twilio siempre
+que ambos esten configurados.
+
+### Variables
+
+| Variable | Notas |
+|----------|-------|
+| `WHATSAPP_PHONE_NUMBER_ID` | Phone Number ID del numero de WhatsApp Business |
+| `WHATSAPP_ACCESS_TOKEN` | Token **permanente** de system user (los tokens de prueba expiran a las 24hs) |
+
+### Setup en Meta Business Manager
+
+1. Crear (o reutilizar) una app de Meta y agregarle el producto **WhatsApp**.
+2. En WhatsApp > API Setup, conectar/verificar el numero de WhatsApp Business de
+   la plataforma y copiar el **Phone Number ID**.
+3. Generar un token **permanente**: Business Settings > System Users > crear un
+   system user > asignarle la app > generar token con el permiso
+   `whatsapp_business_messaging`, sin expiracion.
+4. Crear y mandar a aprobar 3 templates, categoria **Utility**, idioma `es` (los
+   nombres y el texto exacto viven documentados en `src/lib/whatsapp-meta.ts:89-100`,
+   deben coincidir exactamente con esto o el envio falla):
+   - `reservaya_confirmacion` — 6 variables (negocio, cliente, servicio, fecha, hora, link)
+   - `reservaya_recordatorio` — 6 variables (mismo orden)
+   - `reservaya_resena` — 4 variables (negocio, cliente, servicio, link)
+5. Setear `WHATSAPP_PHONE_NUMBER_ID` y `WHATSAPP_ACCESS_TOKEN` en Vercel (Production).
+
+### Costos
+
+Conversaciones iniciadas por el cliente (respondiendo un mensaje nuestro dentro de
+la ventana de 24hs) son gratis. Mensajes salientes por template Utility fuera de esa
+ventana tienen costo por conversacion segun tarifario de Meta para Argentina —
+verificar el precio vigente en el Business Manager antes de estimar volumen.
+
+### Probar
+
+```bash
+node scripts/dev/test-notifications.mjs --channel whatsapp --phone +5491155550101
+```
+
+---
+
+## Twilio WhatsApp (fallback)
+
+Se usa solo si Meta Cloud API no esta configurado (`WHATSAPP_PHONE_NUMBER_ID` /
+`WHATSAPP_ACCESS_TOKEN` ausentes). Mantenido por compatibilidad.
 
 ### Variables
 
@@ -68,12 +118,6 @@ Complementa los recordatorios por email. Si no se configura, el sistema funciona
 | `TWILIO_AUTH_TOKEN` | |
 | `TWILIO_WHATSAPP_FROM` | Formato `whatsapp:+14155238886` |
 | `TWILIO_WHATSAPP_TEMPLATE_SID` | Template con 6 variables: nombre, negocio, servicio, fecha, hora, link |
-
-### Probar
-
-```bash
-node scripts/dev/test-notifications.mjs --channel whatsapp --phone +5491155550101
-```
 
 ---
 

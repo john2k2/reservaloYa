@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
-import { sendBookingConfirmationEmail } from "@/server/booking-notifications";
+import { sendBookingConfirmationEmail, sendBookingConfirmationWhatsApp } from "@/server/booking-notifications";
 import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
   buildBookingConfirmationHref,
@@ -46,6 +46,7 @@ async function recordConfirmationEmailEvent(input: {
   status: ConfirmationEmailOutcomeStatus;
   subject: string;
   note?: string;
+  channel?: "email" | "whatsapp";
 }) {
   try {
     const client = await getSupabaseAdminClient();
@@ -62,7 +63,7 @@ async function recordConfirmationEmailEvent(input: {
       business_id: input.businessId,
       booking_id: input.bookingId,
       customer_id: customerId,
-      channel: "email",
+      channel: input.channel ?? "email",
       kind: "confirmation",
       status: input.status,
       recipient: input.recipient ?? "",
@@ -70,7 +71,7 @@ async function recordConfirmationEmailEvent(input: {
       note: input.note ?? "",
     });
   } catch (err) {
-    logger.error("No se pudo registrar el evento de email de confirmacion", err);
+    logger.error("No se pudo registrar el evento de confirmacion", err);
   }
 }
 
@@ -215,6 +216,19 @@ async function sendConfirmationEmailIfPossible(input: {
       status: toCommunicationEventStatus(result),
       subject: "Confirmacion de reserva",
       note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
+    });
+  }
+
+  if (input.customerPhone) {
+    const result = await sendBookingConfirmationWhatsApp(confirmation);
+    await recordConfirmationEmailEvent({
+      bookingId: input.bookingId,
+      businessId: confirmation.businessId,
+      recipient: input.customerPhone,
+      status: toCommunicationEventStatus(result),
+      subject: "Confirmacion de reserva",
+      note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
+      channel: "whatsapp",
     });
   }
 

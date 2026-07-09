@@ -9,7 +9,7 @@ import { buildBookingDateOptions, findNextBookingDate, getDayOfWeek } from "@/li
 import { withBookingDateLock } from "@/server/booking-slot-lock";
 import { createLogger } from "@/server/logger";
 import { buildBookingConfirmationView, buildManageBookingView } from "@/server/bookings-domain";
-import { sendBookingConfirmationEmail, sendBusinessNotificationEmail } from "@/server/booking-notifications";
+import { sendBookingConfirmationEmail, sendBookingConfirmationWhatsApp, sendBusinessNotificationEmail } from "@/server/booking-notifications";
 import { buildBookingCustomerDetails, buildBookingMutationFields, buildBookingTimeWindow, canMutatePublicBooking, fitsBookingWithinAvailability, hasBlockedSlotConflict, hasBookingConflict, resolveBookingStatus } from "@/server/booking-mutations-domain";
 import { buildBookingPaymentPatch, type BookingPaymentValidationContext, type BookingPaymentUpdateInput } from "@/server/payments-domain";
 import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
@@ -438,6 +438,10 @@ export async function rescheduleSupabasePublicBooking(input: {
 
       await sendBookingConfirmationEmail(confirmation, "rescheduled").catch((error) => {
         logger.error("Error enviando email de reprogramacion", error);
+      });
+
+      await sendBookingConfirmationWhatsApp(confirmation).catch((error) => {
+        logger.error("Error enviando WhatsApp de reprogramacion", error);
       });
 
       if (business.email) {

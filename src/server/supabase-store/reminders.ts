@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from "./_core";
 import { getAvailableReminderChannels, hasReminderProviderConfigured, isTwilioConfigured, sendBookingReminderEmail, sendBookingReminderWhatsApp, sendPostBookingFollowUpEmail, sendPostBookingFollowUpWhatsApp } from "@/server/booking-notifications";
+import { isMetaWhatsAppConfigured } from "@/lib/whatsapp-meta";
 import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
 import type { BusinessRecord, BookingRecord, ServiceRecord, CustomerRecord, CommunicationRecord } from "@/server/supabase-domain";
 
@@ -383,7 +384,7 @@ export async function runSupabaseBookingReminderSweep(input?: {
             });
           }
 
-          if (customer.phone && isTwilioConfigured()) {
+          if (customer.phone && (isMetaWhatsAppConfigured() || isTwilioConfigured())) {
             const wpResult = await sendPostBookingFollowUpWhatsApp({
               customerPhone: customer.phone,
               customerName: customer.fullName,

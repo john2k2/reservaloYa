@@ -30,6 +30,9 @@ const createPaymentPreferenceForBusinessMock = vi.fn(async () => ({
 const sendBookingConfirmationEmailMock = vi.fn<
   () => Promise<{ status: "sent"; messageId: string } | { status: "skipped"; reason: string } | { status: "error"; error: string }>
 >(async () => ({ status: "skipped", reason: "no_customer_email" }));
+const sendBookingConfirmationWhatsAppMock = vi.fn<
+  () => Promise<{ status: "sent"; messageId: string } | { status: "skipped"; reason: string } | { status: "error"; error: string }>
+>(async () => ({ status: "skipped", reason: "no_customer_phone" }));
 const getBookingConfirmationDataMock = vi.fn<() => Promise<Record<string, unknown> | null>>(async () => null);
 // _core is transitively imported by the static `@/server/rate-limit` import above,
 // so its mock factory runs before ordinary top-level consts would be initialized —
@@ -80,6 +83,7 @@ vi.mock("@/server/analytics", () => ({
 
 vi.mock("@/server/booking-notifications", () => ({
   sendBookingConfirmationEmail: sendBookingConfirmationEmailMock,
+  sendBookingConfirmationWhatsApp: sendBookingConfirmationWhatsAppMock,
 }));
 
 vi.mock("@/server/supabase-store/_core", () => ({
@@ -160,6 +164,7 @@ const sharedBeforeEach = () => {
   updateSupabaseBusinessMPTokensMock.mockClear();
   createPaymentPreferenceForBusinessMock.mockReset();
   sendBookingConfirmationEmailMock.mockReset();
+  sendBookingConfirmationWhatsAppMock.mockReset();
   getBookingConfirmationDataMock.mockReset();
   communicationEventsInsertMock.mockClear();
   bookingsSingleMock.mockClear();
@@ -170,6 +175,7 @@ const sharedBeforeEach = () => {
     error: "business payment provider unavailable",
   });
   sendBookingConfirmationEmailMock.mockResolvedValue({ status: "skipped", reason: "no_customer_email" });
+  sendBookingConfirmationWhatsAppMock.mockResolvedValue({ status: "skipped", reason: "no_customer_phone" });
   getBookingConfirmationDataMock.mockResolvedValue(null);
 };
 

@@ -4,6 +4,7 @@ const getSupabaseAdminClientMock = vi.fn();
 const createSupabaseRecordMock = vi.fn();
 const updateSupabaseRecordMock = vi.fn();
 const sendBookingConfirmationEmailMock = vi.fn();
+const sendBookingConfirmationWhatsAppMock = vi.fn();
 const sendBusinessNotificationEmailMock = vi.fn();
 
 vi.mock("./_core", () => ({
@@ -14,6 +15,7 @@ vi.mock("./_core", () => ({
 
 vi.mock("@/server/booking-notifications", () => ({
   sendBookingConfirmationEmail: sendBookingConfirmationEmailMock,
+  sendBookingConfirmationWhatsApp: sendBookingConfirmationWhatsAppMock,
   sendBusinessNotificationEmail: sendBusinessNotificationEmailMock,
 }));
 
@@ -102,6 +104,7 @@ function setupRecordMocks() {
   }));
 
   sendBookingConfirmationEmailMock.mockResolvedValue({ status: "sent", messageId: "msg-1" });
+  sendBookingConfirmationWhatsAppMock.mockResolvedValue({ status: "skipped", reason: "no_customer_phone" });
   sendBusinessNotificationEmailMock.mockResolvedValue({ status: "sent", messageId: "msg-2" });
 }
 
@@ -112,6 +115,7 @@ describe("createSupabasePublicBooking - matching de customer", () => {
     createSupabaseRecordMock.mockReset();
     updateSupabaseRecordMock.mockReset();
     sendBookingConfirmationEmailMock.mockReset();
+    sendBookingConfirmationWhatsAppMock.mockReset();
     sendBusinessNotificationEmailMock.mockReset();
     setupRecordMocks();
   });
@@ -204,6 +208,7 @@ describe("rescheduleSupabasePublicBooking", () => {
     createSupabaseRecordMock.mockReset();
     updateSupabaseRecordMock.mockReset();
     sendBookingConfirmationEmailMock.mockReset();
+    sendBookingConfirmationWhatsAppMock.mockReset();
     sendBusinessNotificationEmailMock.mockReset();
     setupRecordMocks();
   });

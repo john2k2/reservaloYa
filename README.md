@@ -22,7 +22,7 @@ El modelo de negocio es cobrarle una suscripcion mensual a cada negocio que usa 
 | Estilos | Tailwind CSS v4, shadcn/ui v4 |
 | Backend / Auth / DB | Supabase |
 | Email | Resend — desde turnos@reservaya.ar |
-| WhatsApp | Twilio (recordatorios, opcional) |
+| WhatsApp | Meta Cloud API (confirmaciones, recordatorios, resenas), Twilio como fallback |
 | Pagos | MercadoPago OAuth per-negocio + suscripcion plataforma |
 | Testing | Vitest, Testing Library, Playwright |
 | Deploy | Vercel (app) + Supabase |
@@ -83,10 +83,12 @@ Todas las variables estan en Vercel Dashboard → reservaya → Settings → Env
 | `MP_APP_SECRET` | Secret de la app de MercadoPago |
 | `MP_ACCESS_TOKEN` | Access token de la cuenta plataforma para cobrar suscripciones |
 | `MP_WEBHOOK_SECRET` | Secret para validar firma del webhook de MP |
-| `TWILIO_ACCOUNT_SID` | SID de cuenta Twilio |
+| `WHATSAPP_PHONE_NUMBER_ID` | Phone Number ID de WhatsApp Business (Meta Cloud API) — canal preferido |
+| `WHATSAPP_ACCESS_TOKEN` | Token permanente de system user con permiso `whatsapp_business_messaging` |
+| `TWILIO_ACCOUNT_SID` | SID de cuenta Twilio — fallback si Meta no esta configurado |
 | `TWILIO_AUTH_TOKEN` | Token de Twilio |
 | `TWILIO_WHATSAPP_FROM` | Numero WhatsApp de Twilio |
-| `TWILIO_WHATSAPP_TEMPLATE_SID` | SID del template de WhatsApp |
+| `TWILIO_WHATSAPP_TEMPLATE_SID` | SID del template de WhatsApp (Twilio) |
 | `PLATFORM_SUPERADMIN_EMAIL` | Email del superadmin de la plataforma |
 
 ---
@@ -109,7 +111,9 @@ Todas las variables estan en Vercel Dashboard → reservaya → Settings → Env
 - **Email de confirmacion** al cliente y al negocio (inmediato)
 - **Email recordatorio** 24hs antes del turno (via cron)
 - **Email follow-up** ~1h despues del turno con link a resena (via cron)
-- **WhatsApp recordatorio** via Twilio (opcional, complementa email)
+- **WhatsApp** (confirmacion, recordatorio, follow-up con pedido de resena) via
+  Meta Cloud API — opcional, complementa email. Twilio queda como fallback si
+  Meta no esta configurado. Ver [docs/setup/INTEGRATIONS.md](docs/setup/INTEGRATIONS.md).
 
 El cron corre todos los dias a las 10am ARG (1pm UTC) via Vercel Cron (`vercel.json`).
 Endpoint: `GET /api/jobs/booking-reminders` con header `Authorization: Bearer {CRON_SECRET}`.
