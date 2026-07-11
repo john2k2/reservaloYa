@@ -23,7 +23,7 @@ export function BookingPolicyCard({ className }: BookingPolicyCardProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Antes de confirmar
           </p>
-          <h3 className="mt-2 text-lg font-semibold text-foreground">Politicas de la reserva</h3>
+          <h3 className="mt-2 text-lg font-semibold text-foreground">Políticas de la reserva</h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Todo lo importante, resumido y claro para que no haya sorpresas.
           </p>

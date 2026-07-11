@@ -446,13 +446,29 @@ export function BookingFormWithWaitlist({
 
         {/* Resumen flotante en mobile */}
         {!noSlotsDate && (
-          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/60 bg-background/95 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur sm:p-4 lg:hidden">
+          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/60 bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur sm:p-4 lg:hidden">
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="truncate text-xs text-muted-foreground">{service.name}</p>
-                <p className="text-sm font-semibold text-foreground">{service.priceLabel}</p>
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {selectedSlot
+                    ? `${selectedSlot} · ${service.priceLabel}`
+                    : service.priceLabel}
+                </p>
               </div>
-              {selectedSlot ? (
+              {confirming && confirmSummary ? (
+                <PublicSubmitButton
+                  className="h-10 w-auto shrink-0 rounded-xl px-5 text-sm font-semibold"
+                  style={{
+                    backgroundColor: accentColor,
+                    borderColor: accentColor,
+                    color: getAccentForeground(accentColor),
+                  }}
+                  pendingLabel="Confirmando…"
+                >
+                  Confirmar
+                </PublicSubmitButton>
+              ) : selectedSlot ? (
                 <button
                   type="button"
                   onClick={handleReviewClick}

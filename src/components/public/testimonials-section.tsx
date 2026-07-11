@@ -22,17 +22,17 @@ export function TestimonialsSection({
 }: TestimonialsSectionProps) {
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
-      <div className="mb-6 text-center sm:mb-10">
+      <div className="mb-6 sm:mb-10">
         <p className="text-xs font-semibold uppercase tracking-widest sm:text-sm" style={{ color: accentColor }}>
           Testimonios
         </p>
         <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:mt-3 sm:text-3xl md:text-4xl">
           Lo que más valoran después de reservar
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:mt-4 sm:text-base sm:leading-7">
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:mt-4 sm:text-base sm:leading-7">
           La confianza no sale de promesas vacías. Sale de una experiencia clara, rápida y fácil de repetir.
         </p>
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6 sm:gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm sm:px-4 sm:text-sm">
             <Star className="size-3.5 fill-current sm:size-4" style={{ color: accentColor }} />
             Simple desde el primer vistazo

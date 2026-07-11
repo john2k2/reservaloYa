@@ -62,7 +62,11 @@ export function ServicesSection({
   }
 
   return (
-    <section className="border-y border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: surfaceTint }}>
+    <section
+      id="servicios"
+      className="scroll-mt-20 border-y border-border/40 py-12 sm:scroll-mt-24 sm:py-16 lg:py-20"
+      style={{ backgroundColor: surfaceTint }}
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mb-6 flex items-start justify-between gap-4 sm:mb-10">
           <div>

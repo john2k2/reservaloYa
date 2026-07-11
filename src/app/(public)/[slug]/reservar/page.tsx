@@ -13,6 +13,7 @@ import { PublicBusinessPageWrapper } from "@/components/public-business-page-wra
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
+import { getActiveDaysFromWeeklyHours } from "@/lib/bookings/schedule";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
 import { createLogger } from "@/server/logger";
 
@@ -113,10 +114,10 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const whatsappHref = pageData.business.phone
     ? `https://wa.me/${pageData.business.phone.replace(/\D/g, "")}`
     : getSiteWhatsAppHref(`Hola, quiero reservar un turno en ${pageData.business.name}.`);
-  const activeDays = pageData.weeklyHours
-    .map((slot, index) => ({ slot, index }))
-    .filter(({ slot }) => !slot.hoursLabel.toLocaleLowerCase("es-AR").includes("cerrado"))
-    .map(({ index }) => index);
+  // dayOfWeek must be JS getDay() (0=Sun…6=Sat). Never use array index —
+  // buildWeeklySchedule used to return only open days, which made index 0 = Monday
+  // and wrongly marked Sundays as bookable.
+  const activeDays = getActiveDaysFromWeeklyHours(pageData.weeklyHours);
   const fallbackDate = new Intl.DateTimeFormat("en-CA", {
     timeZone: pageData.business.timezone || "America/Argentina/Buenos_Aires",
   }).format(new Date());
@@ -148,7 +149,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 {rescheduleBooking ? "Reprogramación" : "Reserva online"}
               </span>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Reservá tu turno para {selectedService.name}.
+                Reservá tu turno para {selectedService.name}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
                 Elegí fecha y horario, completá tus datos y listo.
@@ -223,8 +224,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <BookingServicePicker
                 businessSlug={slug}
                 accentColor={accentColor}
-                heading="Elegí el servicio que querés reservar"
-                description="Cuando elijas un servicio, vas a ver los horarios disponibles para ese día."
+                heading="Servicios disponibles"
+                description="Tocá uno para ver los horarios de ese día."
                 prefetchDate={selectedDate}
                 services={pageData.services}
                 baseQueryParams={{

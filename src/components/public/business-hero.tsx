@@ -126,10 +126,18 @@ function SocialLinksDesktop({
 
 function SocialLinksMobile({
   instagramHref,
+  facebookHref,
+  tiktokHref,
+  whatsappHref,
 }: {
   instagramHref: SocialHref;
+  facebookHref: SocialHref;
+  tiktokHref: SocialHref;
+  whatsappHref: string | undefined;
 }) {
-  if (!instagramHref) return null;
+  const hasAny = Boolean(instagramHref || facebookHref || tiktokHref || whatsappHref);
+  if (!hasAny) return null;
+
   return (
     <div className="flex flex-wrap items-center gap-2 lg:hidden">
       {instagramHref && (
@@ -137,9 +145,43 @@ function SocialLinksMobile({
           href={instagramHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background px-3.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+          aria-label="Abrir Instagram"
+          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
-          Instagram
+          <Instagram className="size-4" />
+        </a>
+      )}
+      {facebookHref && (
+        <a
+          href={facebookHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir Facebook"
+          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <Facebook className="size-4" />
+        </a>
+      )}
+      {tiktokHref && (
+        <a
+          href={tiktokHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir TikTok"
+          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <TikTokIcon className="size-4" />
+        </a>
+      )}
+      {whatsappHref && (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Escribir por WhatsApp"
+          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <WhatsAppIcon className="size-4" />
         </a>
       )}
     </div>
@@ -206,7 +248,12 @@ export function BusinessHero({
             tiktokHref={tiktokHref}
             whatsappHref={whatsappHref}
           />
-          <SocialLinksMobile instagramHref={instagramHref} />
+          <SocialLinksMobile
+            instagramHref={instagramHref}
+            facebookHref={facebookHref}
+            tiktokHref={tiktokHref}
+            whatsappHref={whatsappHref}
+          />
         </div>
 
         <div className="grid gap-5 py-3 sm:py-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-8 lg:py-8">
@@ -254,7 +301,7 @@ export function BusinessHero({
                   rel="noopener noreferrer"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "lg" }),
-                    "inline-flex h-11 items-center justify-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-12 sm:px-8 sm:text-base"
+                    "inline-flex h-12 items-center justify-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:px-8 sm:text-base"
                   )}
                 >
                   <WhatsAppIcon className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
@@ -288,7 +335,7 @@ export function BusinessHero({
                 </div>
                 <p className="mt-2 text-lg font-bold text-foreground">{startingPriceLabel}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {firstActiveDay ? `${firstActiveDay.dayLabel} · ${firstActiveDay.hoursLabel}` : "Agenda activa"}
+                  Precios visibles al reservar
                 </p>
               </div>
             </div>
@@ -327,7 +374,7 @@ export function BusinessHero({
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Desde</p>
                 <p className="mt-2 text-base font-bold text-foreground sm:text-lg">{startingPriceLabel}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                  {firstActiveDay ? `${firstActiveDay.dayLabel} · ${firstActiveDay.hoursLabel}` : "Horarios visibles antes de reservar"}
+                  Precios visibles al reservar
                 </p>
               </div>
             </div>

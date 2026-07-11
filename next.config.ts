@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 
@@ -6,13 +7,18 @@ const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
+// Absolute project root — a stray package-lock.json in /home/john makes Turbopack
+// climb out of this repo and fail to resolve tailwindcss / app deps.
+const projectRoot = path.resolve(__dirname);
+
 const nextConfig: NextConfig = {
   /* config options here */
   // Pin the workspace root: a stray package-lock.json in a parent directory
   // makes Turbopack infer the wrong root and fail to resolve dependencies.
   turbopack: {
-    root: __dirname,
+    root: projectRoot,
   },
+  outputFileTracingRoot: projectRoot,
   experimental: {
     // Optimize package imports for common libraries
     optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],

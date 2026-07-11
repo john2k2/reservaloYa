@@ -398,7 +398,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
       <main
         id="main-content"
-        className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+        className="min-h-screen scroll-pt-20 bg-background font-sans text-foreground selection:bg-foreground selection:text-background sm:scroll-pt-24"
       >
         <StickyHeader
           businessSlug={slug}
@@ -450,8 +450,8 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
         {/* Gallery */}
         {galleryItems.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
-            <div className="mb-6 sm:mb-10 text-center">
+          <section id="galeria" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:scroll-mt-24 sm:px-6 sm:py-16 lg:py-20">
+            <div className="mb-6 sm:mb-10">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
                 Galería
               </p>
@@ -512,8 +512,8 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         )}
 
         {pageData.reviews && pageData.reviews.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
-            <div className="mb-6 sm:mb-10 text-center">
+          <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
+            <div className="mb-6 sm:mb-10">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
                 Reseñas
               </p>
@@ -566,7 +566,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         />
 
         {/* Horarios + Ubicación */}
-        <section className="border-t border-border/40 py-10 sm:py-14 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
+        <section className="border-t border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="grid gap-10 lg:grid-cols-2 lg:gap-14 lg:items-start">
 
@@ -750,7 +750,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
             <div className="mt-8 sm:mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
               <p className="text-xs text-muted-foreground text-center sm:text-left">
-                © {new Date().getFullYear()} {pageData.business.name}. Todos los derechos reservados.
+                © {new Date().getFullYear()} {pageData.business.name.trim()}. Todos los derechos reservados.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:justify-end">
                 <Link href="/privacidad" className="transition-colors hover:text-foreground">Privacidad</Link>

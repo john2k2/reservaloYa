@@ -40,7 +40,8 @@ export function StickyHeader({
 
   useEffect(() => {
     const handleScroll = () => {
-      const mobileThreshold = window.innerWidth < 640 ? 720 : 400;
+      // Appear after hero CTAs leave the viewport to avoid covering mid-hero cards
+      const mobileThreshold = window.innerWidth < 640 ? 900 : 480;
       setIsVisible(window.scrollY > mobileThreshold);
     };
 
@@ -62,6 +63,7 @@ export function StickyHeader({
     <>
       {persistentThemeToggle}
       <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
+      {/* Spacer twin kept via scroll-pt on main; height ~56-64px */}
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2.5 sm:gap-3">
           <div
