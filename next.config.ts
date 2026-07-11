@@ -27,10 +27,11 @@ const nextConfig: NextConfig = {
     // Vercel's image optimizer returns 402 once the Hobby-plan transformation
     // quota is exhausted, breaking every remote image on the site. Remote
     // sources are already right-sized (Unsplash w/h/fit params, Meta CDN
-    // thumbnails), so serving originals is the safe default. Remove this if
-    // the project moves to a plan with enough image-optimization quota.
-    unoptimized: true,
+    // thumbnails), so serving originals is the safe default. Set
+    // NEXT_IMAGE_OPTIMIZED=true to re-enable when the plan has quota.
+    unoptimized: process.env.NEXT_IMAGE_OPTIMIZED !== "true",
     formats: ["image/avif", "image/webp"],
+    qualities: [75, 85, 90],
     remotePatterns: [
       {
         protocol: "https",

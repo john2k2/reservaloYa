@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Calendar } from "lucide-react";
-import { OptimizedImage } from "@/components/ui/optimized-image";
 
 // WhatsApp Icon Component
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -52,7 +52,7 @@ export function StickyHeader({
   // Always rendered regardless of scroll position, so the toggle is reachable
   // on mobile even though the rest of this header only mounts after scrolling.
   const persistentThemeToggle = (
-    <div className="fixed right-3 top-3 z-50 sm:right-4 sm:top-4">
+    <div className="fixed right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50 sm:right-4">
       <PublicBusinessThemeToggle enableDarkMode={enableDarkMode} />
     </div>
   );
@@ -62,7 +62,7 @@ export function StickyHeader({
   return (
     <>
       {persistentThemeToggle}
-      <header className="animate-in slide-in-from-top-2 fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-sm duration-200 sm:px-4 sm:py-3">
+      <header className="fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-background px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] shadow-sm sm:px-4 sm:py-3">
       {/* Spacer twin kept via scroll-pt on main; height ~56-64px */}
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2.5 sm:gap-3">
@@ -73,7 +73,14 @@ export function StickyHeader({
             )}
           >
             {logoUrl ? (
-              <OptimizedImage src={logoUrl} alt={businessName} width={40} height={40} className="object-cover" />
+              <Image
+                src={logoUrl}
+                alt={businessName}
+                width={40}
+                height={40}
+                className="object-cover"
+                sizes="40px"
+              />
             ) : (
               logoLabel
             )}

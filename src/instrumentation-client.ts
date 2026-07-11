@@ -1,23 +1,46 @@
 import * as Sentry from "@sentry/nextjs";
 
 import { reportClientIssue, serializeClientError } from "@/lib/monitoring/client";
-import {
-  getReplaySampleRates,
-  getSharedSentryOptions,
-} from "@/lib/monitoring/sentry";
+import { getSharedSentryOptions } from "@/lib/monitoring/sentry";
 
 const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
+function shouldEnableSessionReplay() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const pathname = window.location.pathname;
+  return pathname.startsWith("/admin") || pathname.startsWith("/platform");
+}
+
+const integrations = shouldEnableSessionReplay()
+  ? [
+      Sentry.replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true,
+      }),
+    ]
+  : [];
+
 Sentry.init({
   ...getSharedSentryOptions(sentryDsn),
-  ...getReplaySampleRates(),
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+  replaysSessionSampleRate: shouldEnableSessionReplay()
+    ? parseSampleRate(process.env.NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE, 0.1)
+    : 0,
+  replaysOnErrorSampleRate: parseSampleRate(
+    process.env.NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE,
+    1,
+  ),
+  integrations,
 });
+
+function parseSampleRate(value: string | undefined, fallback: number) {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(1, Math.max(0, parsed));
+}
 
 function registerWindowErrorMonitoring() {
   if (typeof window === "undefined") {

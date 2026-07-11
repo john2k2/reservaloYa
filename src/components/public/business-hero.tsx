@@ -1,6 +1,4 @@
-﻿"use client";
-
-import type { CSSProperties } from "react";
+﻿import type { CSSProperties } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -20,6 +18,7 @@ import { OptimizedImage, HeroImage } from "@/components/ui/optimized-image";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { getAccentForeground } from "@/lib/color-contrast";
+import { unsplashSrcForWidth } from "@/lib/images/unsplash";
 
 type SocialHref = string | null;
 
@@ -313,7 +312,7 @@ export function BusinessHero({
 
             {profile.heroImageUrl && (
               <HeroImage
-                src={profile.heroImageUrl}
+                src={unsplashSrcForWidth(profile.heroImageUrl, 640)}
                 alt={profile.heroImageAlt ?? `Portada de ${businessName}`}
                 className="relative mt-5 aspect-[16/10] rounded-2xl border border-border/60 shadow-sm sm:hidden"
               />
