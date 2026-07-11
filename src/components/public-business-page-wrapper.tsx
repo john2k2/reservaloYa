@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactNode } from "react";
+
 import { PublicBusinessThemeProvider } from "./public-business-theme-provider";
-import { PublicBusinessThemeToggle } from "./public-business-theme-toggle";
 import type { PublicBusinessProfile } from "@/constants/public-business-profiles";
 
 interface PublicBusinessPageWrapperProps {
@@ -14,6 +12,10 @@ export function PublicBusinessPageWrapper({
   children,
   profile,
 }: PublicBusinessPageWrapperProps) {
+  if (!profile.enableDarkMode) {
+    return <>{children}</>;
+  }
+
   return (
     <PublicBusinessThemeProvider
       enableDarkMode={profile.enableDarkMode}
@@ -24,6 +26,4 @@ export function PublicBusinessPageWrapper({
   );
 }
 
-// Exportar el toggle para usarlo en el header
-export { PublicBusinessThemeToggle };
 export type { PublicBusinessProfile };

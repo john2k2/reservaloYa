@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Inter, Manrope, JetBrains_Mono, Fraunces } from "next/font/google";
+import { Inter, JetBrains_Mono, Fraunces } from "next/font/google";
 
 import "./globals.css";
 import { defaultMetadata, defaultViewport } from "@/lib/seo/metadata";
@@ -11,14 +11,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
-
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 const fraunces = Fraunces({
@@ -26,6 +22,7 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
+  preload: false,
 });
 
 export const metadata = defaultMetadata;
@@ -82,7 +79,7 @@ export default function RootLayout({
         <WebSiteJsonLd />
       </head>
       <body
-        className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} ${fraunces.variable} antialiased font-sans bg-background text-foreground`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${fraunces.variable} antialiased font-sans bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

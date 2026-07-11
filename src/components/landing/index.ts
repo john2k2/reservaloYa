@@ -1,4 +1,5 @@
-export { LandingHeader, HeroSection } from "./header";
+export { LandingHeader } from "./header";
+export { HeroSection } from "./hero-section";
 export { LandingPageShell } from "./page-shell";
 export { DemoSelector } from "./demo-selector";
 export { HowItWorksSection } from "./how-it-works";

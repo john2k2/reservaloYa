@@ -129,12 +129,16 @@ async function persistRate(rate: number): Promise<void> {
 export async function getBlueDollarRate(): Promise<number | null> {
   const now = Date.now();
 
-  // 1. Cache en memoria válido (< 1 hora)
   if (memoryCache && now - memoryCache.fetchedAt < CACHE_TTL_MS) {
     return memoryCache.rate;
   }
 
-  // 2. Intentar Bluelytics
+  const persisted = await getPersistedRate();
+  if (persisted && now - persisted.fetchedAt < CACHE_TTL_MS) {
+    memoryCache = persisted;
+    return persisted.rate;
+  }
+
   const bluelyticsRate = await fetchFromBluelytics();
   if (bluelyticsRate) {
     memoryCache = { rate: bluelyticsRate, fetchedAt: now, source: "bluelytics" };
@@ -150,8 +154,6 @@ export async function getBlueDollarRate(): Promise<number | null> {
     return dolarApiRate;
   }
 
-  // 4. Leer último valor de Supabase
-  const persisted = await getPersistedRate();
   if (persisted) {
     console.warn(
       `[DollarRate] Ambas APIs fallaron. Usando valor persistido en Supabase de ${
