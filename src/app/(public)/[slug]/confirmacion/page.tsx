@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Calendar, Check, XCircle } from "lucide-react";
-
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
 import { notFound } from "next/navigation";
 
 import {
@@ -14,16 +10,31 @@ import {
   parseDateParts,
   parseTimeParts,
 } from "@/lib/bookings/format";
+import { getAccentForeground } from "@/lib/color-contrast";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
+import { buildManageBookingHref } from "@/server/public-booking-links";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 
 type ConfirmationPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ booking?: string; payment?: string; token?: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: ConfirmationPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const pageData = await getPublicBusinessPageData(slug);
+
+  return {
+    title: pageData ? `Confirmación | ${pageData.business.name}` : "Confirmación",
+    robots: { index: false, follow: false },
+  };
+}
 
 function toCalendarStamp(date: string, time: string) {
   const { year, month, day } = parseDateParts(date);
@@ -99,8 +110,7 @@ export default async function ConfirmationPage({
     durationMinutes: confirmation.durationMinutes,
     timezone: confirmation.businessTimezone,
   });
-  // Estado de pago desde query param (MP back_url) o desde el booking guardado
-  const paymentParam = query.payment; // "success" | "failure" | "pending" | undefined
+  const paymentParam = query.payment;
   const paymentStatus = (confirmation as { paymentStatus?: string }).paymentStatus;
   const paymentProvider = (confirmation as { paymentProvider?: string }).paymentProvider;
   const storedPaymentAmount = (confirmation as { paymentAmount?: number }).paymentAmount;
@@ -131,162 +141,210 @@ export default async function ConfirmationPage({
     priceLabel && (isPendingPayment || isPaymentFailed || isPaymentSuccess || isCashPayment);
 
   const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+  const accentColor = profile.accent;
+  const manageBookingHref = query.booking
+    ? buildManageBookingHref(slug, query.booking)
+    : null;
+
+  const heading = isPaymentFailed
+    ? "Pago no completado"
+    : isPendingPayment
+      ? "Reserva registrada"
+      : "Reserva confirmada";
+
+  const subheading = isPaymentFailed
+    ? "No se pudo procesar el pago. Tu reserva está guardada pero pendiente de pago."
+    : isPendingPayment
+      ? "Tu reserva está registrada. Quedará confirmada cuando se acredite el pago."
+      : isCashPayment
+        ? "Tu turno ya quedó reservado. El pago se realiza presencialmente en el negocio."
+        : "Ya podés guardar los detalles y gestionar el turno cuando quieras.";
 
   return (
     <PublicBusinessPageWrapper profile={profile}>
-    <main
-      id="main-content"
-      className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
-    >
-      <div className="flex w-full max-w-lg flex-col items-center text-center">
+      <main
+        id="main-content"
+        className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+        style={{
+          background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
+        }}
+      >
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <BookingStepsHeader
+            backHref={`/${slug}`}
+            currentStep={3}
+            accentColor={accentColor}
+          />
 
-        {/* Icono de estado */}
-        <div className={cn(
-          "mb-6 sm:mb-8 flex size-16 sm:size-20 items-center justify-center rounded-full",
-          isPaymentFailed ? "bg-destructive/10" : "bg-secondary"
-        )}>
-          {isPaymentFailed ? (
-            <XCircle aria-hidden="true" className="size-6 sm:size-8 text-destructive" strokeWidth={2.5} />
-          ) : (
-            <Check aria-hidden="true" className="size-6 sm:size-8 text-foreground" strokeWidth={2.5} />
-          )}
-        </div>
+          <div className="mx-auto max-w-2xl space-y-6">
+            <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+                <div
+                  className={cn(
+                    "flex size-14 shrink-0 items-center justify-center rounded-2xl sm:size-16",
+                    isPaymentFailed ? "bg-destructive/10" : "bg-secondary"
+                  )}
+                  style={
+                    !isPaymentFailed
+                      ? { backgroundColor: `${accentColor}18` }
+                      : undefined
+                  }
+                >
+                  {isPaymentFailed ? (
+                    <XCircle
+                      aria-hidden="true"
+                      className="size-7 text-destructive sm:size-8"
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <Check
+                      aria-hidden="true"
+                      className="size-7 sm:size-8"
+                      strokeWidth={2.5}
+                      style={{ color: accentColor }}
+                    />
+                  )}
+                </div>
 
-        {/* Título */}
-        <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-          {isPaymentFailed
-            ? "Pago no completado"
-            : isPendingPayment
-            ? "Reserva registrada"
-            : isCashPayment
-            ? "Reserva confirmada"
-            : "Reserva confirmada"}
-        </h1>
-        <p className="max-w-sm text-base sm:text-lg text-muted-foreground">
-          {isPaymentFailed
-            ? "No se pudo procesar el pago. Tu reserva está guardada pero pendiente de pago."
-            : isPendingPayment
-            ? "Tu reserva está registrada. Quedará confirmada cuando se acredite el pago."
-            : isCashPayment
-            ? "Tu turno ya quedó reservado. El pago se realiza presencialmente en el negocio."
-            : "Ya podés guardar los detalles y gestionar el turno cuando quieras."}
-        </p>
+                <div className="min-w-0 text-left">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    {isPaymentFailed ? "Pago pendiente" : "Confirmación"}
+                  </p>
+                  <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+                    {heading}
+                  </h1>
+                  <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                    {subheading}
+                  </p>
+                </div>
+              </div>
+            </section>
 
-        {/* Banner de estado de pago */}
-        {showPaymentBanner && (
-          <div className={cn(
-            "mt-6 w-full rounded-xl border px-5 py-4 text-left text-sm",
-            isPaymentFailed
-              ? "border-destructive/30 bg-destructive/5 text-destructive"
-              : isPaymentSuccess
-              ? "border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400"
-              : "border-yellow-500/30 bg-yellow-500/5 text-yellow-700 dark:text-yellow-400"
-          )}>
-            <p className="font-semibold">
-              {isPaymentFailed
-                ? "Pago rechazado"
-                : isPaymentSuccess
-                ? `Pago aprobado${priceLabel ? ` - ${priceLabel}` : ""}`
-                : isCashPayment
-                ? `Pago en efectivo en el local${priceLabel ? ` - ${priceLabel}` : ""}`
-                : `Pago pendiente${priceLabel ? ` - ${priceLabel}` : ""}`}
-            </p>
-            {isPendingPayment && !isPaymentFailed && (
-              <p className="mt-1 text-xs opacity-80">
-                MercadoPago puede demorar unos minutos en confirmar el pago.
-              </p>
+            {showPaymentBanner && (
+              <div
+                className={cn(
+                  "rounded-[2rem] border px-5 py-4 text-left text-sm sm:px-6 sm:py-5",
+                  isPaymentFailed
+                    ? "border-destructive/30 bg-destructive/5 text-destructive"
+                    : isPaymentSuccess
+                      ? "border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400"
+                      : "border-yellow-500/30 bg-yellow-500/5 text-yellow-700 dark:text-yellow-400"
+                )}
+              >
+                <p className="font-semibold">
+                  {isPaymentFailed
+                    ? "Pago rechazado"
+                    : isPaymentSuccess
+                      ? `Pago aprobado${priceLabel ? ` - ${priceLabel}` : ""}`
+                      : isCashPayment
+                        ? `Pago en efectivo en el local${priceLabel ? ` - ${priceLabel}` : ""}`
+                        : `Pago pendiente${priceLabel ? ` - ${priceLabel}` : ""}`}
+                </p>
+                {isPendingPayment && !isPaymentFailed && (
+                  <p className="mt-1 text-xs opacity-80">
+                    MercadoPago puede demorar unos minutos en confirmar el pago.
+                  </p>
+                )}
+                {isCashPayment && (
+                  <p className="mt-1 text-xs opacity-80">
+                    Tu turno quedó reservado. El cobro se realiza presencialmente en el negocio.
+                  </p>
+                )}
+              </div>
             )}
-            {isCashPayment && (
-              <p className="mt-1 text-xs opacity-80">
-                Tu turno quedó reservado. El cobro se realiza presencialmente en el negocio.
+
+            <section className="rounded-[2rem] border border-border/70 bg-card/90 p-5 shadow-sm backdrop-blur sm:p-8">
+              <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground sm:mb-6">
+                Detalles de tu turno
+              </h2>
+
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Fecha y hora
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {formattedDate} a las {formattedTime}
+                  </span>
+                </div>
+                <div className="h-px w-full bg-border/60" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Servicio
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {confirmation.serviceName}
+                  </span>
+                  {confirmation.priceAmount != null && (
+                    <span className="text-xs text-muted-foreground sm:text-sm">
+                      {formatPrice(confirmation.priceAmount)}
+                    </span>
+                  )}
+                </div>
+                <div className="h-px w-full bg-border/60" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Lugar
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {confirmation.businessName}
+                  </span>
+                  <span className="text-xs text-muted-foreground sm:text-sm">
+                    {confirmation.businessAddress}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <div className="flex flex-col gap-3">
+              {manageBookingHref && (
+                <Link
+                  href={manageBookingHref}
+                  className={cn(
+                    buttonVariants({ variant: "default", size: "lg" }),
+                    "h-11 w-full gap-2 rounded-[1rem] px-6 sm:h-12 sm:px-8"
+                  )}
+                  style={{
+                    backgroundColor: accentColor,
+                    color: getAccentForeground(accentColor),
+                  }}
+                >
+                  Ver mi turno
+                </Link>
+              )}
+
+              <a
+                href={calendarHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-11 w-full gap-2 rounded-[1rem] px-6 sm:h-12 sm:px-8"
+                )}
+              >
+                <Calendar aria-hidden="true" className="size-4" />
+                Añadir al calendario
+              </a>
+
+              <Link
+                href={`/${slug}/reservar`}
+                className={cn(
+                  buttonVariants({ variant: "link", size: "default" }),
+                  "mx-auto h-auto min-h-10 px-0 text-sm font-semibold"
+                )}
+              >
+                Reservar otro turno
+              </Link>
+            </div>
+
+            {!isPaymentFailed && (
+              <p className="text-center text-xs text-muted-foreground">
+                Después de tu visita vas a recibir un email para dejarnos tu opinión.
               </p>
             )}
           </div>
-        )}
-
-        {/* Detalles del turno */}
-        <div className="mt-8 sm:mt-10 w-full rounded-xl sm:rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-left shadow-sm">
-          <h2 className="mb-4 sm:mb-6 text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Detalles de tu turno
-          </h2>
-
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex flex-col">
-              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Fecha y hora</span>
-              <span className="text-base sm:text-lg font-semibold text-card-foreground">
-                {formattedDate} a las {formattedTime}
-              </span>
-            </div>
-            <div className="h-px w-full bg-border/60" />
-            <div className="flex flex-col">
-              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</span>
-              <span className="text-base sm:text-lg font-semibold text-card-foreground">
-                {confirmation.serviceName}
-              </span>
-              {confirmation.priceAmount != null && (
-                <span className="text-xs sm:text-sm text-muted-foreground">
-                  {formatPrice(confirmation.priceAmount)}
-                </span>
-              )}
-            </div>
-            <div className="h-px w-full bg-border/60" />
-            <div className="flex flex-col">
-              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Lugar</span>
-              <span className="text-base sm:text-lg font-semibold text-card-foreground">
-                {confirmation.businessName}
-              </span>
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                {confirmation.businessAddress}
-              </span>
-            </div>
-          </div>
         </div>
-
-        <div className="mt-8 sm:mt-10 flex w-full flex-col justify-center gap-3">
-          {query.booking && query.token && (
-            <Link
-              href={`/${slug}/mi-turno?booking=${query.booking}&token=${query.token}`}
-              className={cn(
-                buttonVariants({ variant: "default", size: "lg" }),
-                "h-11 sm:h-12 w-full gap-2 rounded-xl px-6 sm:px-8"
-              )}
-            >
-              Ver mi turno
-            </Link>
-          )}
-
-          <a
-            href={calendarHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "h-11 sm:h-12 w-full gap-2 rounded-xl px-6 sm:px-8"
-            )}
-          >
-            <Calendar aria-hidden="true" className="size-4" />
-            Añadir al calendario
-          </a>
-
-          <Link
-            href={`/${slug}`}
-            className={cn(
-              buttonVariants({ variant: "link", size: "default" }),
-              "mx-auto h-auto px-0 text-sm font-semibold min-h-10"
-            )}
-          >
-            Reservar otro turno
-          </Link>
-        </div>
-
-        {!isPaymentFailed && (
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Después de tu visita vas a recibir un email para dejarnos tu opinión.
-          </p>
-        )}
-
-      </div>
-    </main>
+      </main>
     </PublicBusinessPageWrapper>
   );
 }

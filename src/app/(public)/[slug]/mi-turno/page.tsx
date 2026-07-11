@@ -2,22 +2,32 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock, CalendarX2, RefreshCcw } from "lucide-react";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
-
-import { buttonVariants } from "@/components/ui/button-variants";
 import { formatDateLabel, formatTimeLabel } from "@/lib/bookings/format";
+import { getAccentForeground } from "@/lib/color-contrast";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
-import { CancelBookingConfirmButton } from "@/app/(public)/[slug]/mi-turno/cancel-booking-confirm-button";
-import { getPublicManageBookingData, getPublicBusinessPageData } from "@/server/queries/public";
+import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
+import { CancelBookingConfirmButton } from "./cancel-booking-confirm-button";
 
 type ManageBookingPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ booking?: string; token?: string; error?: string; status?: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: ManageBookingPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const pageData = await getPublicBusinessPageData(slug);
+
+  return {
+    title: pageData ? `Mi turno | ${pageData.business.name}` : "Mi turno",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function ManageBookingPage({
   params,
@@ -31,146 +41,230 @@ export default async function ManageBookingPage({
   ]);
 
   const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+  const accentColor = profile.accent;
   const error = query.error ?? "";
   const status = query.status ?? "";
 
   if (!booking) {
     return (
       <PublicBusinessPageWrapper profile={profile}>
-      <main
-        id="main-content"
-        className="flex min-h-screen items-center justify-center bg-background p-6 font-sans text-foreground"
-      >
-        <div className="w-full max-w-lg rounded-2xl border border-border/70 bg-card p-5 sm:p-8 text-center shadow-sm">
-          <h1 className="text-xl sm:text-2xl font-semibold text-card-foreground">
-            No pudimos abrir tu turno
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            El link puede haber expirado o ser inválido.
-          </p>
-          <Link
-            href={`/${slug}`}
-            className={cn(
-              buttonVariants({ variant: "default", size: "lg" }),
-              "mt-6 h-11 sm:h-12 w-full rounded-xl sm:rounded-md"
-            )}
-          >
-            Volver al sitio
-          </Link>
-        </div>
-      </main>
+        <main
+          id="main-content"
+          className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+          style={{
+            background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
+          }}
+        >
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            <BookingStepsHeader
+              backHref={`/${slug}`}
+              accentColor={accentColor}
+              overline="Tu turno"
+              title="No pudimos abrir tu turno"
+              showSteps={false}
+            />
+
+            <div className="mx-auto max-w-2xl">
+              <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 text-center shadow-sm backdrop-blur sm:p-8">
+                <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-destructive/10 sm:size-16">
+                  <CalendarX2
+                    aria-hidden="true"
+                    className="size-7 text-destructive sm:size-8"
+                    strokeWidth={2.5}
+                  />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                  No pudimos abrir tu turno
+                </h1>
+                <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                  El link puede haber expirado o ser inválido.
+                </p>
+                <Link
+                  href={`/${slug}`}
+                  className={cn(
+                    buttonVariants({ variant: "default", size: "lg" }),
+                    "mt-8 inline-flex h-11 w-full gap-2 rounded-[1rem] px-6 sm:h-12 sm:px-8"
+                  )}
+                  style={{
+                    backgroundColor: accentColor,
+                    color: getAccentForeground(accentColor),
+                  }}
+                >
+                  Volver al negocio
+                </Link>
+              </section>
+            </div>
+          </div>
+        </main>
       </PublicBusinessPageWrapper>
     );
   }
 
   const isClosedStatus = ["cancelled", "completed", "no_show"].includes(booking.status);
   const manageHref = `/${slug}/reservar?service=${booking.serviceId}&date=${booking.bookingDate}&reschedule=${booking.id}&token=${query.token ?? ""}`;
+  const formattedDate = formatDateLabel(booking.bookingDate);
+  const formattedTime = formatTimeLabel(booking.startTime);
 
   return (
     <PublicBusinessPageWrapper profile={profile}>
-    <main
-      id="main-content"
-      className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 font-sans text-foreground selection:bg-foreground selection:text-background"
-    >
-      <div className="mx-auto w-full max-w-xl py-4 sm:py-8">
-        <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-8 shadow-sm">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-card-foreground">Tu turno</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Desde acá podés ver, reprogramar o cancelar la reserva.
-          </p>
+      <main
+        id="main-content"
+        className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+        style={{
+          background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
+        }}
+      >
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <BookingStepsHeader
+            backHref={`/${slug}`}
+            accentColor={accentColor}
+            overline="Tu turno"
+            title="Gestioná tu reserva"
+            showSteps={false}
+          />
 
-          {status === "cancelled" && (
-            <div className="mt-6 rounded-lg border border-border/70 bg-secondary/60 p-4 text-sm">
-              Turno cancelado correctamente.
-            </div>
-          )}
+          <div className="mx-auto max-w-2xl space-y-6">
+            <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+                <div
+                  className="flex size-14 shrink-0 items-center justify-center rounded-2xl sm:size-16"
+                  style={{ backgroundColor: `${accentColor}18` }}
+                >
+                  <CalendarClock
+                    aria-hidden="true"
+                    className="size-7 sm:size-8"
+                    strokeWidth={2.5}
+                    style={{ color: accentColor }}
+                  />
+                </div>
 
-          {error && (
-            <div className="mt-6 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Estado</p>
-              <p className="text-base sm:text-lg font-semibold text-card-foreground">{booking.statusLabel}</p>
-            </div>
-            <div className="h-px bg-border/60" />
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</p>
-              <p className="text-base sm:text-lg font-semibold text-card-foreground">{booking.serviceName}</p>
-            </div>
-            <div className="h-px bg-border/60" />
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Fecha y hora</p>
-              <p className="text-base sm:text-lg font-semibold text-card-foreground">
-                {formatDateLabel(booking.bookingDate)} a las {formatTimeLabel(booking.startTime)}
-              </p>
-            </div>
-            <div className="h-px bg-border/60" />
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Cliente</p>
-              <p className="text-base sm:text-lg font-semibold text-card-foreground">{booking.fullName}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">{booking.phone}</p>
-              {booking.email && <p className="text-xs sm:text-sm text-muted-foreground">{booking.email}</p>}
-            </div>
-          </div>
-
-          <div className="mt-8 sm:mt-10 grid gap-3 sm:gap-4 sm:grid-cols-2">
-            <Link
-              href={manageHref}
-              aria-disabled={isClosedStatus}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "h-11 sm:h-12 gap-2 rounded-xl sm:rounded-md",
-                isClosedStatus && "pointer-events-none opacity-50"
-              )}
-            >
-              <RefreshCcw aria-hidden="true" className="size-4" />
-              Reprogramar
-            </Link>
-
-            {isClosedStatus ? (
-              <div
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "pointer-events-none h-11 sm:h-12 gap-2 rounded-xl sm:rounded-md opacity-50"
-                )}
-              >
-                <CalendarX2 aria-hidden="true" className="size-4" />
-                Cancelar turno
+                <div className="min-w-0 text-left">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    {isClosedStatus ? "Turno cerrado" : "Turno activo"}
+                  </p>
+                  <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+                    {booking.serviceName}
+                  </h1>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Desde acá podés ver, reprogramar o cancelar la reserva.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <CancelBookingConfirmButton
-                slug={slug}
-                bookingId={booking.id}
-                manageToken={query.token ?? ""}
-              />
+            </section>
+
+            {status === "cancelled" && (
+              <div className="rounded-[2rem] border border-border/70 bg-secondary/60 px-5 py-4 text-sm sm:px-6">
+                Turno cancelado correctamente.
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-[2rem] border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive sm:px-6">
+                {error}
+              </div>
+            )}
+
+            <section className="rounded-[2rem] border border-border/70 bg-card/90 p-5 shadow-sm backdrop-blur sm:p-8">
+              <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground sm:mb-6">
+                Detalles del turno
+              </h2>
+
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Estado
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {booking.statusLabel}
+                  </span>
+                </div>
+                <div className="h-px w-full bg-border/60" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Servicio
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {booking.serviceName}
+                  </span>
+                </div>
+                <div className="h-px w-full bg-border/60" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Fecha y hora
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {formattedDate} a las {formattedTime}
+                  </span>
+                </div>
+                <div className="h-px w-full bg-border/60" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                    Cliente
+                  </span>
+                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                    {booking.fullName}
+                  </span>
+                  <span className="text-xs text-muted-foreground sm:text-sm">
+                    {booking.phone}
+                  </span>
+                  {booking.email && (
+                    <span className="text-xs text-muted-foreground sm:text-sm">
+                      {booking.email}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <Link
+                href={manageHref}
+                aria-disabled={isClosedStatus}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "h-11 gap-2 rounded-[1rem] sm:h-12",
+                  isClosedStatus && "pointer-events-none opacity-50"
+                )}
+                style={
+                  !isClosedStatus
+                    ? {
+                        backgroundColor: accentColor,
+                        color: getAccentForeground(accentColor),
+                      }
+                    : undefined
+                }
+              >
+                <RefreshCcw aria-hidden="true" className="size-4" />
+                Reprogramar
+              </Link>
+
+              {isClosedStatus ? (
+                <div
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    "pointer-events-none h-11 gap-2 rounded-[1rem] opacity-50 sm:h-12"
+                  )}
+                >
+                  <CalendarX2 aria-hidden="true" className="size-4" />
+                  Cancelar turno
+                </div>
+              ) : (
+                <CancelBookingConfirmButton
+                  slug={slug}
+                  bookingId={booking.id}
+                  manageToken={query.token ?? ""}
+                />
+              )}
+            </div>
+
+            {isClosedStatus && (
+              <p className="text-center text-sm text-muted-foreground">
+                Este turno ya no admite cambios desde este link.
+              </p>
             )}
           </div>
-
-          {isClosedStatus && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Este turno ya no admite cambios desde este link.
-            </p>
-          )}
         </div>
-
-        <div className="mt-6 flex justify-center">
-          <Link
-            href={`/${slug}`}
-            className={cn(
-              buttonVariants({ variant: "link", size: "default" }),
-              "inline-flex gap-2 px-0 text-sm font-semibold min-h-10"
-            )}
-          >
-            <CalendarClock aria-hidden="true" className="size-4" />
-            Volver a la página pública
-          </Link>
-        </div>
-      </div>
-    </main>
+      </main>
     </PublicBusinessPageWrapper>
   );
 }

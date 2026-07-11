@@ -23,7 +23,7 @@ export function CancelBookingConfirmButton({ slug, bookingId, manageToken }: Pro
         onClick={() => setConfirming(true)}
         className={cn(
           buttonVariants({ variant: "outline", size: "lg" }),
-          "h-11 sm:h-12 w-full rounded-xl sm:rounded-md border-destructive/40 text-destructive hover:bg-destructive/5 hover:border-destructive/60"
+          "h-11 sm:h-12 w-full rounded-[1rem] border-destructive/40 text-destructive hover:bg-destructive/5 hover:border-destructive/60"
         )}
       >
         <span className="inline-flex items-center gap-2">
@@ -35,7 +35,7 @@ export function CancelBookingConfirmButton({ slug, bookingId, manageToken }: Pro
   }
 
   return (
-    <div className="w-full rounded-xl border border-destructive/30 bg-destructive/5 p-3 sm:p-4 space-y-3">
+    <div className="w-full rounded-[1rem] border border-destructive/30 bg-destructive/5 p-3 sm:p-4 space-y-3">
       <p className="text-sm font-semibold text-destructive text-center">
         ¿Seguro que querés cancelar el turno?
       </p>

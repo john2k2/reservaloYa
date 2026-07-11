@@ -14,12 +14,21 @@ type BookingStepsHeaderProps = {
   backHref: string;
   currentStep?: 1 | 2 | 3;
   accentColor?: string;
+  /** Override default "Reserva guiada" overline */
+  overline?: string;
+  /** Override default stepper title */
+  title?: string;
+  /** Hide the 1-2-3 stepper (e.g. manage-booking page) */
+  showSteps?: boolean;
 };
 
 export function BookingStepsHeader({
   backHref,
   currentStep = 1,
   accentColor,
+  overline = "Reserva guiada",
+  title = "Completá tu turno en 3 pasos simples",
+  showSteps = true,
 }: BookingStepsHeaderProps) {
   return (
     <div className="mb-6 space-y-4 sm:mb-8">
@@ -35,16 +44,18 @@ export function BookingStepsHeader({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              Reserva guiada
+              {overline}
             </p>
             <h2 className="mt-2 text-lg font-semibold text-foreground sm:text-xl">
-              Completá tu turno en 3 pasos simples
+              {title}
             </h2>
           </div>
-          <p className="text-xs text-muted-foreground">Paso {currentStep} de 3</p>
+          {showSteps && (
+            <p className="text-xs text-muted-foreground">Paso {currentStep} de 3</p>
+          )}
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {showSteps && <div className="mt-4 grid gap-2 sm:grid-cols-3">
           {bookingSteps.map((step) => {
             const isCurrent = step.id === currentStep;
             const isCompleted = step.id < currentStep;
@@ -93,7 +104,7 @@ export function BookingStepsHeader({
               </div>
             );
           })}
-        </div>
+        </div>}
       </div>
     </div>
   );
