@@ -211,7 +211,7 @@ export function BookingDateTimePicker({
           <button
             type="button"
             onClick={goToPrevMonth}
-            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
             aria-label="Mes anterior"
           >
             <ChevronLeft className="size-4" />
@@ -220,7 +220,7 @@ export function BookingDateTimePicker({
           <button
             type="button"
             onClick={goToNextMonth}
-            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
             aria-label="Mes siguiente"
           >
             <ChevronRight className="size-4" />
@@ -334,7 +334,7 @@ export function BookingDateTimePicker({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {selectedDateLabel}
         </p>
-        <p className="mt-1 text-[11px] text-muted-foreground/60">
+        <p className="mt-1 text-[11px] text-muted-foreground/60 tabular-nums">
           {isLoading
             ? "Cargando horarios disponibles..."
             : hasSlots
@@ -395,7 +395,7 @@ export function BookingDateTimePicker({
                           aria-label={`Horario ${slot} para ${selectedDateLabel}`}
                           onChange={() => onSelectSlot?.(slot)}
                         />
-                        <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-card peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background active:scale-[0.97]">
+                        <span className="dt-picker-slot-label flex min-h-10 items-center justify-center rounded-lg border border-border/60 bg-background/85 text-[13px] font-semibold tabular-nums text-foreground transition-[transform,opacity,border-color,background-color] duration-150 hover:border-foreground/20 hover:bg-card peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background active:scale-[0.96]">
                           {slot}
                         </span>
                       </label>

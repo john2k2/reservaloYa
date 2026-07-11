@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { CalendarX2 } from "lucide-react";
 import { cancelPublicBookingAction } from "@/server/actions/public-booking";
 import { PublicSubmitButton } from "@/components/public/public-submit-button";
@@ -14,54 +15,64 @@ interface Props {
 }
 
 export function CancelBookingConfirmButton({ slug, bookingId, manageToken }: Props) {
-  const [confirming, setConfirming] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  if (!confirming) {
-    return (
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
+  return (
+    <AlertDialog.Root open={open} onOpenChange={setOpen}>
+      <AlertDialog.Trigger
         className={cn(
           buttonVariants({ variant: "outline", size: "lg" }),
-          "h-11 sm:h-12 w-full rounded-[1rem] border-destructive/40 text-destructive hover:bg-destructive/5 hover:border-destructive/60"
+          "h-11 sm:h-12 w-full rounded-[1rem] border-destructive/40 text-destructive hover:bg-destructive/5 hover:border-destructive/60 active:scale-[0.96] transition-transform"
         )}
       >
         <span className="inline-flex items-center gap-2">
           <CalendarX2 aria-hidden="true" className="size-4" />
           Cancelar turno
         </span>
-      </button>
-    );
-  }
+      </AlertDialog.Trigger>
 
-  return (
-    <div className="w-full rounded-[1rem] border border-destructive/30 bg-destructive/5 p-3 sm:p-4 space-y-3">
-      <p className="text-sm font-semibold text-destructive text-center">
-        ¿Seguro que querés cancelar el turno?
-      </p>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setConfirming(false)}
-          className={cn(
-            buttonVariants({ variant: "outline", size: "default" }),
-            "flex-1 h-10 rounded-lg"
-          )}
-        >
-          No, volver
-        </button>
-        <form action={cancelPublicBookingAction} className="flex-1">
-          <input type="hidden" name="businessSlug" value={slug} />
-          <input type="hidden" name="bookingId" value={bookingId} />
-          <input type="hidden" name="manageToken" value={manageToken} />
-          <PublicSubmitButton
-            className="h-10 w-full rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            pendingLabel="Cancelando..."
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-black/60 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 transition-opacity duration-200" />
+        <AlertDialog.Viewport className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <AlertDialog.Popup
+            className={cn(
+              "w-full max-w-md rounded-[1.25rem] border border-border/70 bg-card p-5 shadow-lg sm:p-6",
+              "data-[ending-style]:scale-95 data-[starting-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 transition-[transform,opacity] duration-200"
+            )}
           >
-            Sí, cancelar
-          </PublicSubmitButton>
-        </form>
-      </div>
-    </div>
+            <AlertDialog.Title className="text-lg font-semibold text-foreground">
+              ¿Cancelar este turno?
+            </AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
+              Esta acción libera el horario. Si necesitás otro día, podés reprogramar en lugar de
+              cancelar.
+            </AlertDialog.Description>
+
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <AlertDialog.Close
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "default" }),
+                  "h-11 w-full rounded-[1rem] sm:w-auto sm:min-w-[8rem]"
+                )}
+              >
+                No, volver
+              </AlertDialog.Close>
+
+              <form action={cancelPublicBookingAction} className="w-full sm:w-auto">
+                <input type="hidden" name="businessSlug" value={slug} />
+                <input type="hidden" name="bookingId" value={bookingId} />
+                <input type="hidden" name="manageToken" value={manageToken} />
+                <PublicSubmitButton
+                  className="h-11 w-full rounded-[1rem] bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:min-w-[8rem] active:scale-[0.96] transition-transform"
+                  pendingLabel="Cancelando..."
+                >
+                  Sí, cancelar
+                </PublicSubmitButton>
+              </form>
+            </div>
+          </AlertDialog.Popup>
+        </AlertDialog.Viewport>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }

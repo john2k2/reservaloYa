@@ -7,6 +7,7 @@ import { getAccentForeground } from "@/lib/color-contrast";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
+import { resolvePublicBookingFlashMessage } from "@/lib/public-booking-flash-messages";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
@@ -42,7 +43,7 @@ export default async function ManageBookingPage({
 
   const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
   const accentColor = profile.accent;
-  const error = query.error ?? "";
+  const error = resolvePublicBookingFlashMessage(query.error);
   const status = query.status ?? "";
 
   if (!booking) {
@@ -50,7 +51,7 @@ export default async function ManageBookingPage({
       <PublicBusinessPageWrapper profile={profile}>
         <main
           id="main-content"
-          className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+          className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
           style={{
             background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
           }}
@@ -109,7 +110,7 @@ export default async function ManageBookingPage({
     <PublicBusinessPageWrapper profile={profile}>
       <main
         id="main-content"
-        className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+        className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
         style={{
           background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
         }}
@@ -142,7 +143,7 @@ export default async function ManageBookingPage({
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                     {isClosedStatus ? "Turno cerrado" : "Turno activo"}
                   </p>
-                  <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+                  <h1 className="mt-2 text-2xl font-bold text-balance sm:text-3xl md:text-4xl">
                     {booking.serviceName}
                   </h1>
                   <p className="mt-3 text-sm text-muted-foreground">
@@ -192,7 +193,7 @@ export default async function ManageBookingPage({
                   <span className="text-xs font-medium text-muted-foreground sm:text-sm">
                     Fecha y hora
                   </span>
-                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                  <span className="text-base font-semibold text-card-foreground tabular-nums sm:text-lg">
                     {formattedDate} a las {formattedTime}
                   </span>
                 </div>
@@ -217,26 +218,39 @@ export default async function ManageBookingPage({
             </section>
 
             <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-              <Link
-                href={manageHref}
-                aria-disabled={isClosedStatus}
-                className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "h-11 gap-2 rounded-[1rem] sm:h-12",
-                  isClosedStatus && "pointer-events-none opacity-50"
-                )}
-                style={
-                  !isClosedStatus
-                    ? {
-                        backgroundColor: accentColor,
-                        color: getAccentForeground(accentColor),
-                      }
-                    : undefined
-                }
-              >
-                <RefreshCcw aria-hidden="true" className="size-4" />
-                Reprogramar
-              </Link>
+              {isClosedStatus ? (
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled
+                  className={cn(
+                    buttonVariants({ variant: "default", size: "lg" }),
+                    "h-11 gap-2 rounded-[1rem] opacity-50 sm:h-12"
+                  )}
+                  style={{
+                    backgroundColor: accentColor,
+                    color: getAccentForeground(accentColor),
+                  }}
+                >
+                  <RefreshCcw aria-hidden="true" className="size-4" />
+                  Reprogramar
+                </button>
+              ) : (
+                <Link
+                  href={manageHref}
+                  className={cn(
+                    buttonVariants({ variant: "default", size: "lg" }),
+                    "h-11 gap-2 rounded-[1rem] active:scale-[0.96] transition-transform sm:h-12"
+                  )}
+                  style={{
+                    backgroundColor: accentColor,
+                    color: getAccentForeground(accentColor),
+                  }}
+                >
+                  <RefreshCcw aria-hidden="true" className="size-4" />
+                  Reprogramar
+                </Link>
+              )}
 
               {isClosedStatus ? (
                 <div

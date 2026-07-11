@@ -111,13 +111,13 @@ export default async function ConfirmationPage({
     timezone: confirmation.businessTimezone,
   });
   const paymentParam = query.payment;
-  const paymentStatus = (confirmation as { paymentStatus?: string }).paymentStatus;
-  const paymentProvider = (confirmation as { paymentProvider?: string }).paymentProvider;
-  const storedPaymentAmount = (confirmation as { paymentAmount?: number }).paymentAmount;
+  const paymentStatus = confirmation.paymentStatus;
+  const paymentProvider = confirmation.paymentProvider;
+  const storedPaymentAmount = confirmation.paymentAmount;
   const hasExplicitPaymentContext = Boolean(paymentParam || paymentStatus || paymentProvider);
   const priceLabel = formatPrice(
     hasExplicitPaymentContext ? storedPaymentAmount ?? confirmation.priceAmount : confirmation.priceAmount,
-    (confirmation as { paymentCurrency?: string }).paymentCurrency ?? confirmation.currency
+    confirmation.paymentCurrency ?? confirmation.currency
   );
 
   const isPendingPayment =
@@ -127,9 +127,11 @@ export default async function ConfirmationPage({
 
   const isPaymentFailed = paymentParam === "failure" || paymentStatus === "rejected";
   const isPaymentSuccess =
-    paymentParam === "success" ||
-    paymentStatus === "approved" ||
-    (paymentProvider === "mercadopago" && confirmation.status === "confirmed");
+    !isPendingPayment &&
+    !isPaymentFailed &&
+    (paymentParam === "success" ||
+      paymentStatus === "approved" ||
+      (paymentProvider === "mercadopago" && confirmation.status === "confirmed"));
   const isCashPayment =
     Boolean(priceLabel) &&
     !paymentParam &&
@@ -164,7 +166,7 @@ export default async function ConfirmationPage({
     <PublicBusinessPageWrapper profile={profile}>
       <main
         id="main-content"
-        className="min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
+        className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
         style={{
           background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
         }}
@@ -208,12 +210,12 @@ export default async function ConfirmationPage({
 
                 <div className="min-w-0 text-left">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                    {isPaymentFailed ? "Pago pendiente" : "Confirmación"}
+                    {isPaymentFailed ? "Pago fallido" : "Confirmación"}
                   </p>
-                  <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+                  <h1 className="mt-2 text-2xl font-bold text-balance sm:text-3xl md:text-4xl">
                     {heading}
                   </h1>
-                  <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                  <p className="mt-3 text-base text-pretty text-muted-foreground sm:text-lg">
                     {subheading}
                   </p>
                 </div>
@@ -263,7 +265,7 @@ export default async function ConfirmationPage({
                   <span className="text-xs font-medium text-muted-foreground sm:text-sm">
                     Fecha y hora
                   </span>
-                  <span className="text-base font-semibold text-card-foreground sm:text-lg">
+                  <span className="text-base font-semibold text-card-foreground tabular-nums sm:text-lg">
                     {formattedDate} a las {formattedTime}
                   </span>
                 </div>
@@ -302,7 +304,7 @@ export default async function ConfirmationPage({
                   href={manageBookingHref}
                   className={cn(
                     buttonVariants({ variant: "default", size: "lg" }),
-                    "h-11 w-full gap-2 rounded-[1rem] px-6 sm:h-12 sm:px-8"
+                    "h-11 w-full gap-2 rounded-[1rem] px-6 active:scale-[0.96] transition-transform sm:h-12 sm:px-8"
                   )}
                   style={{
                     backgroundColor: accentColor,

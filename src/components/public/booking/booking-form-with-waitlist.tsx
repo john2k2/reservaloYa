@@ -36,6 +36,7 @@ interface BookingFormWithWaitlistProps {
   paymentMode: "mercadopago" | "cash" | "none";
   initialSelectedDate: string;
   initialDateOptions: string[];
+  initialSlots?: string[];
   todayDate: string;
   changeHref: string;
   error?: string;
@@ -60,6 +61,7 @@ export function BookingFormWithWaitlist({
   paymentMode,
   initialSelectedDate,
   initialDateOptions,
+  initialSlots,
   todayDate,
   changeHref,
   error,
@@ -190,6 +192,7 @@ export function BookingFormWithWaitlist({
             accentColor={accentColor}
             initialSelectedDate={initialSelectedDate}
             initialDateOptions={initialDateOptions}
+            initialSlots={initialSlots}
             todayDate={todayDate}
             rescheduleStartTime={rescheduleStartTime}
             onNoSlots={setNoSlotsDate}
@@ -357,7 +360,7 @@ export function BookingFormWithWaitlist({
 
             <div className="mt-6">
               {confirming && confirmSummary ? (
-                <div ref={confirmSectionRef} tabIndex={-1} className="space-y-4 outline-none">
+                <div ref={confirmSectionRef} tabIndex={-1} className="space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-2xl">
                   <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-4 space-y-3">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       ¿Todo correcto?

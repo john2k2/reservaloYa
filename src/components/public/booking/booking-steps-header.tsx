@@ -46,9 +46,9 @@ export function BookingStepsHeader({
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
               {overline}
             </p>
-            <h2 className="mt-2 text-lg font-semibold text-foreground sm:text-xl">
+            <p className="mt-2 text-lg font-semibold text-foreground sm:text-xl">
               {title}
-            </h2>
+            </p>
           </div>
           {showSteps && (
             <p className="text-xs text-muted-foreground">Paso {currentStep} de 3</p>

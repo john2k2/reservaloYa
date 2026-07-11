@@ -669,7 +669,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     eventName="booking_cta_clicked"
                     href={bookingHref}
                     pagePath={`/${slug}`}
-                    className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     Reservar turno
                   </PublicTrackedLink>
@@ -678,7 +678,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                       href={whatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="inline-flex min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       Contactar por WhatsApp
                     </a>
@@ -687,7 +687,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                     href={mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-9 sm:min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                       Ver ubicación
                   </a>
@@ -704,7 +704,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={instagramHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         aria-label={`Abrir Instagram de ${pageData.business.name}`}
                       >
                         <Instagram className="size-3.5 sm:size-4" aria-hidden="true" />
@@ -715,7 +715,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={facebookHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         aria-label={`Abrir Facebook de ${pageData.business.name}`}
                       >
                         <Facebook className="size-3.5 sm:size-4" aria-hidden="true" />
@@ -726,7 +726,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={tiktokHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         aria-label={`Abrir TikTok de ${pageData.business.name}`}
                       >
                         <TikTokIcon className="size-3.5 sm:size-4" aria-hidden="true" />
@@ -737,7 +737,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex size-9 sm:size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         aria-label={`Contactar a ${pageData.business.name} por WhatsApp`}
                       >
                         <WhatsAppIcon className="size-3.5 sm:size-4" aria-hidden="true" />

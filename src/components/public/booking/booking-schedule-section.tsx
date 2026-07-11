@@ -11,6 +11,7 @@ type BookingScheduleSectionProps = {
   accentColor: string;
   initialSelectedDate: string;
   initialDateOptions: string[];
+  initialSlots?: string[];
   todayDate: string;
   rescheduleStartTime?: string;
   onNoSlots?: (date: string | null) => void;
@@ -38,18 +39,26 @@ export function BookingScheduleSection({
   accentColor,
   initialSelectedDate,
   initialDateOptions,
+  initialSlots,
   todayDate,
   rescheduleStartTime,
   onNoSlots,
   onSelectSlot,
 }: BookingScheduleSectionProps) {
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
-  // Tracks which date's slots are loaded — null means "not yet loaded"
-  const [loadedSlots, setLoadedSlots] = useState<SlotsState | null>(null);
+  const [loadedSlots, setLoadedSlots] = useState<SlotsState | null>(() =>
+    initialSlots
+      ? { date: initialSelectedDate, slots: initialSlots }
+      : null
+  );
   const [loadError, setLoadError] = useState<LoadErrorState | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
+    if (loadedSlots?.date === selectedDate) {
+      return;
+    }
+
     let cancelled = false;
 
     void fetch(
