@@ -1,11 +1,14 @@
 import { LandingHeader } from "./header";
 import { Footer } from "./footer";
+import { getLandingHeaderSession } from "@/server/landing-session";
 
 interface LandingPageShellProps {
   children: React.ReactNode;
 }
 
-export function LandingPageShell({ children }: LandingPageShellProps) {
+export async function LandingPageShell({ children }: LandingPageShellProps) {
+  const session = await getLandingHeaderSession();
+
   return (
     <main
       id="main-content"
@@ -19,7 +22,7 @@ export function LandingPageShell({ children }: LandingPageShellProps) {
       <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-gradient-to-br from-gray-200/50 to-transparent blur-3xl animate-float" />
       <div className="pointer-events-none absolute -right-40 top-1/3 h-80 w-80 rounded-full bg-gradient-to-bl from-gray-200/40 to-transparent blur-3xl animate-float delay-500" />
 
-      <LandingHeader />
+      <LandingHeader session={session} />
 
       {children}
 

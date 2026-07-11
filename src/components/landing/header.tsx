@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, startTransition } from "react";
 import { Menu, User } from "lucide-react";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Sheet, SheetContent, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import type { LandingHeaderSession } from "@/server/landing-session";
 
 const navLinks = [
   { href: "/funcionalidades", label: "Beneficios" },
@@ -16,23 +16,7 @@ const navLinks = [
   { href: "/preguntas-frecuentes", label: "Preguntas" },
 ];
 
-interface SessionInfo {
-  loggedIn: boolean;
-  isPlatformAdmin: boolean;
-  displayName: string;
-}
-
-async function getSessionInfo(signal?: AbortSignal): Promise<SessionInfo> {
-  try {
-    const res = await fetch("/api/auth/session", { cache: "no-store", signal });
-    if (!res.ok) return { loggedIn: false, isPlatformAdmin: false, displayName: "" };
-    return res.json();
-  } catch {
-    return { loggedIn: false, isPlatformAdmin: false, displayName: "" };
-  }
-}
-
-function UserButton({ session }: { session: SessionInfo }) {
+function UserButton({ session }: { session: LandingHeaderSession }) {
   if (!session.loggedIn) {
     return (
       <Link
@@ -55,7 +39,7 @@ function UserButton({ session }: { session: SessionInfo }) {
   );
 }
 
-function MobileUserButton({ session }: { session: SessionInfo }) {
+function MobileUserButton({ session }: { session: LandingHeaderSession }) {
   if (!session.loggedIn) {
     return (
       <Link
@@ -83,28 +67,11 @@ function MobileUserButton({ session }: { session: SessionInfo }) {
   );
 }
 
-export function LandingHeader() {
-  const [session, setSession] = useState<SessionInfo>({ loggedIn: false, isPlatformAdmin: false, displayName: "" });
-  const [mounted, setMounted] = useState(false);
+interface LandingHeaderProps {
+  session: LandingHeaderSession;
+}
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    startTransition(() => {
-      setMounted(true);
-    });
-
-    getSessionInfo(controller.signal).then((sessionInfo) => {
-      if (!controller.signal.aborted) {
-        setSession(sessionInfo);
-      }
-    });
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
+export function LandingHeader({ session }: LandingHeaderProps) {
   return (
     <header className="fixed top-0 z-50 w-full transition-all duration-300 bg-background border-b border-border/40">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -129,11 +96,7 @@ export function LandingHeader() {
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
 
-          {/* Desktop CTA */}
-          {mounted && <UserButton session={session} />}
-          {!mounted && (
-            <div className="hidden h-10 w-20 animate-pulse rounded-lg bg-secondary lg:inline-flex" />
-          )}
+          <UserButton session={session} />
 
           <Link
             href="/admin/signup"
@@ -169,11 +132,7 @@ export function LandingHeader() {
                 ))}
               </nav>
               <SheetFooter className="gap-2">
-                {mounted ? (
-                  <MobileUserButton session={session} />
-                ) : (
-                  <div className="h-12 w-full animate-pulse rounded-lg bg-secondary" />
-                )}
+                <MobileUserButton session={session} />
                 <Link
                   href="/admin/signup"
                   className={cn(

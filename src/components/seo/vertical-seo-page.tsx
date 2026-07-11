@@ -6,11 +6,14 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import type { SeoLandingPage } from "@/constants/seo-landing-pages";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { cn } from "@/lib/utils";
+import { getLandingHeaderSession } from "@/server/landing-session";
 
-export function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
+export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
+  const session = await getLandingHeaderSession();
+
   return (
     <main id="main-content" className="landing-theme min-h-screen bg-background text-foreground">
-      <LandingHeader />
+      <LandingHeader session={session} />
 
       <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 pt-32 sm:px-6 sm:py-18 sm:pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-24 lg:pt-40">
         <div>
