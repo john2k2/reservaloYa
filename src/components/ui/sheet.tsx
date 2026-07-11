@@ -26,6 +26,8 @@ const SheetContext = React.createContext<{
   setOpen: (open: boolean) => void;
 } | null>(null);
 
+const SHEET_TRANSITION_MS = 200;
+
 function useSheet() {
   const context = React.useContext(SheetContext);
   if (!context) {
@@ -64,6 +66,44 @@ function SheetTrigger({ children, asChild }: SheetTriggerProps) {
 
 function SheetContent({ children, side = "right", className }: SheetContentProps) {
   const { open, setOpen } = useSheet();
+  const [shouldRender, setShouldRender] = React.useState(open);
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) {
+      setIsVisible(false);
+      return;
+    }
+
+    setShouldRender(true);
+    setIsVisible(false);
+  }, [open]);
+
+  React.useLayoutEffect(() => {
+    if (!shouldRender || !open || isVisible) return;
+
+    let enterFrame = 0;
+    const mountFrame = requestAnimationFrame(() => {
+      enterFrame = requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(mountFrame);
+      cancelAnimationFrame(enterFrame);
+    };
+  }, [shouldRender, open, isVisible]);
+
+  React.useEffect(() => {
+    if (open || isVisible) return;
+
+    const timeout = window.setTimeout(() => {
+      setShouldRender(false);
+    }, SHEET_TRANSITION_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [open, isVisible]);
 
   React.useEffect(() => {
     if (open) {
@@ -76,7 +116,6 @@ function SheetContent({ children, side = "right", className }: SheetContentProps
     };
   }, [open]);
 
-  // Close on escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -94,36 +133,43 @@ function SheetContent({ children, side = "right", className }: SheetContentProps
     bottom: "bottom-0 w-full h-auto max-h-[85vh]",
   };
 
-  const slideClasses = {
-    left: open ? "translate-x-0" : "-translate-x-full",
-    right: open ? "translate-x-0" : "translate-x-full",
-    top: open ? "translate-y-0" : "-translate-y-full",
-    bottom: open ? "translate-y-0" : "translate-y-full",
+  const hiddenSlideClasses = {
+    left: "-translate-x-full",
+    right: "translate-x-full",
+    top: "-translate-y-full",
+    bottom: "translate-y-full",
   };
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 transition-opacity duration-300"
+        className={cn(
+          "fixed inset-0 bg-black/60 transition-opacity duration-200 ease-out motion-reduce:transition-none",
+          isVisible ? "opacity-100" : "opacity-0"
+        )}
         onClick={() => setOpen(false)}
         aria-hidden="true"
       />
-      
-      {/* Content */}
+
       <div
         className={cn(
-          "fixed bg-background shadow-2xl transition-transform duration-300 ease-out flex flex-col",
+          "fixed bg-background shadow-2xl transition-transform duration-200 ease-out motion-reduce:transition-none flex flex-col",
           sideClasses[side],
-          slideClasses[side],
+          isVisible ? "translate-x-0 translate-y-0" : hiddenSlideClasses[side],
           className
         )}
         role="dialog"
         aria-modal="true"
+        data-sheet-state={isVisible ? "open" : "closed"}
+        onTransitionEnd={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (!open && !isVisible) {
+            setShouldRender(false);
+          }
+        }}
       >
-        {/* Header con título y botón cerrar */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <span className="text-base font-semibold text-foreground">Menú</span>
           <button
@@ -135,9 +181,11 @@ function SheetContent({ children, side = "right", className }: SheetContentProps
             <X className="size-5" />
           </button>
         </div>
-        
-        {/* Contenido */}
-        <div className="flex-1 overflow-y-auto">
+
+        <div
+          className="group/sheet flex-1 overflow-y-auto"
+          data-sheet-state={isVisible ? "open" : "closed"}
+        >
           {children}
         </div>
       </div>
@@ -175,7 +223,12 @@ function SheetDescription({ className, ...props }: React.HTMLAttributes<HTMLPara
 function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col gap-3 border-t border-border bg-muted/30 p-5", className)}
+      className={cn(
+        "flex flex-col gap-3 border-t border-border bg-muted/30 p-5 transition-all duration-200 ease-out motion-reduce:transition-none",
+        "translate-y-2 opacity-0 group-data-[sheet-state=open]/sheet:translate-y-0 group-data-[sheet-state=open]/sheet:opacity-100",
+        "group-data-[sheet-state=open]/sheet:delay-200",
+        className
+      )}
       {...props}
     />
   );

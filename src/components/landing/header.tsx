@@ -121,11 +121,18 @@ export function LandingHeader({ session }: LandingHeaderProps) {
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col gap-1 p-2">
-                {navLinks.map((link) => (
+                {navLinks.map((link, index) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex h-12 items-center rounded-lg px-4 text-base font-medium text-foreground transition-colors hover:bg-secondary"
+                    className={cn(
+                      "flex h-12 items-center rounded-lg px-4 text-base font-medium text-foreground transition-all duration-200 ease-out motion-reduce:transition-none hover:bg-secondary",
+                      "translate-x-3 opacity-0 group-data-[sheet-state=open]/sheet:translate-x-0 group-data-[sheet-state=open]/sheet:opacity-100",
+                      index === 0 && "group-data-[sheet-state=open]/sheet:delay-75",
+                      index === 1 && "group-data-[sheet-state=open]/sheet:delay-100",
+                      index === 2 && "group-data-[sheet-state=open]/sheet:delay-125",
+                      index === 3 && "group-data-[sheet-state=open]/sheet:delay-150"
+                    )}
                   >
                     {link.label}
                   </Link>
