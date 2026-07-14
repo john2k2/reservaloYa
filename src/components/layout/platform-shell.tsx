@@ -9,6 +9,7 @@ import { useTheme } from "next-themes";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { productName } from "@/constants/site";
 import { cn } from "@/lib/utils";
+import { startCircularThemeTransition } from "@/lib/theme-transition";
 
 const platformNavigation = [
   { href: "/platform/dashboard", label: "Dashboard", icon: BarChart2 },
@@ -24,9 +25,12 @@ function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  const handleToggle = () => {
+  const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     const current = resolvedTheme || theme;
-    setTheme(current === "dark" ? "light" : "dark");
+    const next = current === "dark" ? "light" : "dark";
+    startCircularThemeTransition(event, () => {
+      setTheme(next);
+    });
   };
 
   const isDark = mounted && (resolvedTheme ?? theme) === "dark";

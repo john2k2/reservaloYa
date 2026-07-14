@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { resendVerificationAction } from "@/app/login/actions";
+import { startCircularThemeTransition } from "@/lib/theme-transition";
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -32,10 +33,12 @@ function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  const handleToggle = () => {
+  const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     const current = resolvedTheme || theme;
     const next = current === "dark" ? "light" : "dark";
-    setTheme(next);
+    startCircularThemeTransition(event, () => {
+      setTheme(next);
+    });
   };
 
   const isDark = mounted && (resolvedTheme ?? theme) === "dark";

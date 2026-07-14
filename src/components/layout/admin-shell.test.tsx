@@ -52,8 +52,8 @@ describe("AdminShell navigation", () => {
       </AdminShell>
     );
 
-    expect(screen.getAllByText("Equipo").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Mi negocio").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Equipo" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Mi negocio" })).toBeInTheDocument();
   });
 
   it("hides owner-only sections for staff", () => {
@@ -71,8 +71,8 @@ describe("AdminShell navigation", () => {
       </AdminShell>
     );
 
-    expect(screen.queryByText("Equipo")).not.toBeInTheDocument();
-    expect(screen.queryByText("Mi negocio")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Equipo" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Mi negocio" })).not.toBeInTheDocument();
     expect(screen.getAllByText("Turnos").length).toBeGreaterThan(0);
   });
 });

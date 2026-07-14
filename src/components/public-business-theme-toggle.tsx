@@ -3,6 +3,8 @@
 import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 
+import { startCircularThemeTransition } from "@/lib/theme-transition";
+
 const PUBLIC_THEME_KEY = "public-theme";
 const PUBLIC_THEME_CHANGE_EVENT = "public-theme-change";
 
@@ -38,22 +40,21 @@ export function PublicBusinessThemeToggle({
     );
   }
 
-  const handleToggle = () => {
+  const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     const next = !isDark;
-    setIsDark(next);
-    localStorage.setItem(PUBLIC_THEME_KEY, next ? "dark" : "light");
-    window.dispatchEvent(new Event(PUBLIC_THEME_CHANGE_EVENT));
-    if (next) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    startCircularThemeTransition(event, () => {
+      setIsDark(next);
+      localStorage.setItem(PUBLIC_THEME_KEY, next ? "dark" : "light");
+      window.dispatchEvent(new Event(PUBLIC_THEME_CHANGE_EVENT));
+      document.documentElement.classList.toggle("dark", next);
+    });
   };
 
   return (
     <button
+      type="button"
       onClick={handleToggle}
-      className="inline-flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/80 backdrop-blur-sm transition-colors hover:bg-background"
+      className="relative inline-flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/80 backdrop-blur-sm transition-colors hover:bg-background"
       aria-label={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
     >
       <Sun
