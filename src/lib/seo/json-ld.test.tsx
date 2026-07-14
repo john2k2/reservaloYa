@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   FAQPageJsonLd,
+  OrganizationJsonLd,
   SoftwareApplicationJsonLd,
 } from "@/lib/seo/json-ld";
+import { siteConfig } from "@/lib/seo/metadata";
 
 function getLdJsonScript(): HTMLScriptElement | null {
   return document.querySelector('script[type="application/ld+json"]');
@@ -41,5 +43,14 @@ describe("json-ld XSS protection", () => {
 
     const content = getLdJsonScript()?.textContent ?? "";
     expect(content).not.toContain("</script>");
+  });
+});
+
+describe("OrganizationJsonLd", () => {
+  it("usa logo cuadrado y no el OG landscape", () => {
+    render(<OrganizationJsonLd />);
+    const content = getLdJsonScript()?.textContent ?? "";
+    expect(content).toContain(`${siteConfig.url}/icon-512x512.png`);
+    expect(content).not.toContain(siteConfig.ogImage);
   });
 });

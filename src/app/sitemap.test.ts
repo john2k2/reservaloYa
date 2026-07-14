@@ -14,8 +14,22 @@ describe("sitemap", () => {
     expect(urls).toContain(siteConfig.url);
     expect(urls).toContain(`${siteConfig.url}/contacto`);
     expect(urls).toContain(`${siteConfig.url}/sobre-reservaya`);
+    expect(urls).toContain(`${siteConfig.url}/precios`);
+    expect(urls).toContain(`${siteConfig.url}/funcionalidades`);
+    expect(urls).toContain(`${siteConfig.url}/como-funciona`);
+    expect(urls).toContain(`${siteConfig.url}/preguntas-frecuentes`);
     expect(urls).toContain(`${siteConfig.url}/terminos`);
     expect(urls).toContain(`${siteConfig.url}/privacidad`);
+    expect(urls).not.toContain(`${siteConfig.url}/about`);
+  });
+
+  it("incluye landings SEO por rubro", async () => {
+    const result = await sitemap();
+    const urls = result.map((r) => r.url);
+
+    expect(urls).toContain(`${siteConfig.url}/turnos-online-barberias`);
+    expect(urls).toContain(`${siteConfig.url}/turnos-online-nails`);
+    expect(urls).toContain(`${siteConfig.url}/turnos-online-consultorios`);
   });
 
   it("incluye rutas de negocios demo cuando no hay datos", async () => {

@@ -2,7 +2,7 @@ import { VerticalSeoPage } from "@/components/seo/vertical-seo-page";
 import { getSeoLandingPage } from "@/constants/seo-landing-pages";
 import { createPageMetadata } from "@/lib/seo/metadata";
 
-const page = getSeoLandingPage("agenda-online-peluquerias")!;
+const page = getSeoLandingPage("turnos-online-nails")!;
 
 export const metadata = createPageMetadata({
   title: page.metadataTitle,
@@ -11,6 +11,6 @@ export const metadata = createPageMetadata({
   keywords: page.keywords,
 });
 
-export default function AgendaOnlinePeluqueriasPage() {
+export default function TurnosOnlineNailsPage() {
   return <VerticalSeoPage page={page} />;
 }

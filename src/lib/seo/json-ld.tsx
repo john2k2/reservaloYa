@@ -6,12 +6,19 @@ import { siteConfig } from "@/lib/seo/metadata";
 import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 
 export function OrganizationJsonLd(): ReactElement {
+  const logoUrl = `${siteConfig.url}/icon-512x512.png`;
   const schema = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: siteConfig.ogImage,
+    logo: {
+      "@type": "ImageObject",
+      url: logoUrl,
+      width: 512,
+      height: 512,
+    },
+    image: logoUrl,
     description: siteConfig.description,
     contactPoint: {
       "@type": "ContactPoint",

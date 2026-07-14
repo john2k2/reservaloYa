@@ -5,18 +5,46 @@ import { Footer, LandingHeader } from "@/components/landing";
 import { buttonVariants } from "@/components/ui/button-variants";
 import type { SeoLandingPage } from "@/constants/seo-landing-pages";
 import { getSiteWhatsAppHref } from "@/lib/contact";
+import { BreadcrumbJsonLd } from "@/lib/seo/business-json-ld";
+import { FAQPageJsonLd, SoftwareApplicationJsonLd } from "@/lib/seo/json-ld";
+import { siteConfig } from "@/lib/seo/metadata";
 import { cn } from "@/lib/utils";
 import { getLandingHeaderSession } from "@/server/landing-session";
 
 export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
   const session = await getLandingHeaderSession();
+  const pageUrl = `${siteConfig.url}/${page.slug}`;
 
   return (
     <main id="main-content" className="landing-theme min-h-screen bg-background text-foreground">
+      <SoftwareApplicationJsonLd
+        name={`${siteConfig.name} - ${page.title}`}
+        description={page.description}
+        url={pageUrl}
+      />
+      <FAQPageJsonLd faqs={page.faqs} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", url: siteConfig.url },
+          { name: page.title, url: pageUrl },
+        ]}
+      />
+
       <LandingHeader session={session} />
 
       <section className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-14 pt-32 sm:px-6 sm:pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8 lg:pt-40">
         <div>
+          <nav aria-label="Migas de pan" className="mb-4 text-sm text-muted-foreground">
+            <ol className="flex flex-wrap items-center gap-1.5">
+              <li>
+                <Link href="/" className="hover:text-foreground hover:underline">
+                  Inicio
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li className="text-foreground">{page.eyebrow}</li>
+            </ol>
+          </nav>
           <p className="mb-4 font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
             {page.eyebrow}
           </p>
@@ -35,18 +63,32 @@ export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
               Probar 15 días gratis
               <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </Link>
-            <a
-              href={getSiteWhatsAppHref(`Hola, quiero consultar por ${page.title}.`)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={`/${page.demoSlug}`}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "whitespace-nowrap rounded-full border-rule font-semibold"
               )}
             >
-              Hablar por WhatsApp
-            </a>
+              {page.demoLabel}
+            </Link>
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            También podés{" "}
+            <Link href="/precios" className="font-medium text-foreground underline underline-offset-4">
+              ver precios
+            </Link>{" "}
+            o{" "}
+            <a
+              href={getSiteWhatsAppHref(`Hola, quiero consultar por ${page.title}.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              escribir por WhatsApp
+            </a>
+            .
+          </p>
         </div>
 
         <aside>
@@ -87,6 +129,46 @@ export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
               ))}
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          Cómo funciona en tu rubro
+        </p>
+        <h2 className="mt-3 max-w-2xl font-display text-3xl font-semibold tracking-tight">
+          Del catálogo al turno confirmado, sin inventar procesos raros
+        </h2>
+        <ol className="mt-8 divide-y divide-rule border-y border-rule">
+          {page.howItWorks.map((step, index) => (
+            <li key={step} className="flex gap-4 py-4 text-sm leading-6 text-muted-foreground">
+              <span className="font-mono text-xs font-semibold text-sello">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href={`/${page.demoSlug}`}
+            className={cn(
+              buttonVariants({ variant: "default", size: "lg" }),
+              "rounded-full bg-foreground font-semibold text-background hover:bg-foreground/90"
+            )}
+          >
+            {page.demoLabel}
+            <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/precios"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "rounded-full border-rule font-semibold"
+            )}
+          >
+            Ver precios
+          </Link>
         </div>
       </section>
 

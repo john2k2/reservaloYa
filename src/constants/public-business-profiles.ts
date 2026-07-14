@@ -110,7 +110,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     faqs: [
       {
         question: "¿Cuánto tarda la reserva?",
-        answer: "Menos de un minuto: eliges servicio, día, horario y confirmas.",
+        answer: "Menos de un minuto: elegís servicio, día, horario y confirmás.",
       },
       {
         question: "¿Puedo cambiar el turno después?",
@@ -125,7 +125,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
     policies: [
       "Se recomienda llegar 5 minutos antes del horario.",
       "La cancelación sin costo se puede hacer desde el link del turno.",
-      "Si llegas muy tarde, el negocio puede ajustar la duración del servicio.",
+      "Si llegás muy tarde, el negocio puede ajustar la duración del servicio.",
     ],
     instagram: "@barberia.libertador",
     facebook: "barberia.libertador",
@@ -195,7 +195,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       },
       {
         question: "¿Cómo cambio el turno?",
-        answer: "Desde el link de gestión que recibes al confirmar la reserva.",
+        answer: "Desde el link de gestión que recibís al confirmar la reserva.",
       },
       {
         question: "¿Cuánto dura cada tratamiento?",
@@ -203,7 +203,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       },
     ],
     policies: [
-      "Si tienes sensibilidad o tratamiento dermatológico, avisa en las notas.",
+      "Si tenés sensibilidad o tratamiento dermatológico, avisá en las notas.",
       "La reprogramación se puede hacer desde el link del turno.",
       "Para tratamientos largos, la tolerancia recomendada es de 10 minutos.",
     ],
@@ -279,9 +279,9 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       },
     ],
     policies: [
-      "Si vienes con otro esmaltado, avísalo al reservar.",
+      "Si venís con otro esmaltado, avisalo al reservar.",
       "Para nail art complejo conviene dejar una nota breve en la reserva.",
-      "Si necesitas cambiar el turno, hazlo desde el link de gestión para no perder el horario.",
+      "Si necesitás cambiar el turno, hacelo desde el link de gestión para no perder el horario.",
     ],
     instagram: "@nudenails.studio",
     tiktok: "@nudenails.studio",
@@ -348,7 +348,7 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       },
       {
         question: "¿Cómo cambio o cancelo el turno?",
-        answer: "Desde el link de gestión que recibes al confirmar la reserva, sin llamar al consultorio.",
+        answer: "Desde el link de gestión que recibís al confirmar la reserva, sin llamar al consultorio.",
       },
       {
         question: "¿Cuánto dura cada consulta?",
@@ -356,8 +356,8 @@ const templatePresets: Record<string, PublicTemplatePreset> = {
       },
     ],
     policies: [
-      "Si es una urgencia, usar canales directos y no la agenda online.",
-      "Si traes estudios o análisis, menciónalo en las notas de la reserva.",
+      "Si es una urgencia, usá canales directos y no la agenda online.",
+      "Si traés estudios o análisis, mencionalo en las notas de la reserva.",
       "La reprogramación se puede hacer desde el link del turno sin costo.",
     ],
     instagram: "@consultorionorte.ba",
@@ -434,7 +434,7 @@ export function getPublicBusinessProfile(
     faqs: [
       {
         question: "¿Cómo funciona la reserva?",
-        answer: "Elegís servicio, fecha, horario y confirmas tus datos.",
+        answer: "Elegís servicio, fecha, horario y confirmás tus datos.",
       },
     ],
     policies: ["La gestión del turno se hace desde el link recibido al confirmar."],

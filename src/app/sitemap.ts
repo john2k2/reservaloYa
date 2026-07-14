@@ -5,7 +5,17 @@ import { demoBusinessOptions } from "@/constants/site";
 import { siteConfig } from "@/lib/seo/metadata";
 import { getPublicBusinessSitemapEntries } from "@/server/queries/public";
 
-const staticRoutes = ["", "/about", "/sobre-reservaya", "/contacto", "/terminos", "/privacidad"];
+const staticRoutes = [
+  "",
+  "/sobre-reservaya",
+  "/contacto",
+  "/precios",
+  "/funcionalidades",
+  "/como-funciona",
+  "/preguntas-frecuentes",
+  "/terminos",
+  "/privacidad",
+];
 const seoRoutes = seoLandingPages.map((page) => `/${page.slug}`);
 
 type SitemapBusinessRoute = {

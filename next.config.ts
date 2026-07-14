@@ -118,6 +118,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       })),
       {
+        source: "/about",
+        destination: "/sobre-reservaya",
+        permanent: true,
+      },
+      {
         source: "/admin",
         destination: "/admin/dashboard",
         permanent: true,

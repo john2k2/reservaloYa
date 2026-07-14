@@ -1,10 +1,8 @@
 import { VerticalSeoPage } from "@/components/seo/vertical-seo-page";
 import { getSeoLandingPage } from "@/constants/seo-landing-pages";
-import { FAQPageJsonLd, SoftwareApplicationJsonLd } from "@/lib/seo/json-ld";
-import { createPageMetadata, siteConfig } from "@/lib/seo/metadata";
+import { createPageMetadata } from "@/lib/seo/metadata";
 
 const page = getSeoLandingPage("turnos-online-barberias")!;
-const url = `${siteConfig.url}/${page.slug}`;
 
 export const metadata = createPageMetadata({
   title: page.metadataTitle,
@@ -14,11 +12,5 @@ export const metadata = createPageMetadata({
 });
 
 export default function TurnosOnlineBarberiasPage() {
-  return (
-    <>
-      <SoftwareApplicationJsonLd name={`${siteConfig.name} - ${page.title}`} description={page.description} url={url} />
-      <FAQPageJsonLd faqs={page.faqs} />
-      <VerticalSeoPage page={page} />
-    </>
-  );
+  return <VerticalSeoPage page={page} />;
 }

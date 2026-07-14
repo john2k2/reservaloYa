@@ -32,8 +32,6 @@ export const siteConfig = {
     "estética",
     "sistema de turnos",
     "reserva de citas",
-    "software para barberías",
-    "software para estéticas",
   ],
   authors: [
     {
