@@ -61,10 +61,11 @@ export default function RootLayout({
                 let resolvedDark;
 
                 if (isPublicBusinessPage) {
-                  // Mirrors PublicBusinessThemeProvider's initial resolution: explicit
-                  // 'public-theme' wins, otherwise fall back to system preference.
+                  // Solo dark explícito. No usar preferencia del sistema acá:
+                  // muchos negocios no habilitan dark mode y el provider lo
+                  // forzaría a light; caer al sistema pintaría mal el primer paint.
                   const publicTheme = localStorage.getItem('public-theme');
-                  resolvedDark = publicTheme === 'dark' ? true : publicTheme === 'light' ? false : systemDark;
+                  resolvedDark = publicTheme === 'dark';
                 } else {
                   const theme = localStorage.getItem('theme') || 'light';
                   resolvedDark = theme === 'system' ? systemDark : theme === 'dark';

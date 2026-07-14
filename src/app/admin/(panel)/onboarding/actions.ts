@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
@@ -307,6 +307,8 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
 
   revalidatePath("/admin/onboarding");
   revalidatePath(`/${businessSlug}`);
+  revalidatePath(`/${businessSlug}/reservar`);
+  revalidateTag("public-business", "max");
 
   return {
     businessSlug,

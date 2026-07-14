@@ -2,27 +2,76 @@ import type { ReactNode } from "react";
 
 import { PublicBusinessThemeProvider } from "./public-business-theme-provider";
 import type { PublicBusinessProfile } from "@/constants/public-business-profiles";
+import {
+  getPublicBusinessThemeStyle,
+  publicBusinessThemeStyleToCssText,
+} from "@/lib/public-business-theme";
 
 interface PublicBusinessPageWrapperProps {
   children: ReactNode;
   profile: PublicBusinessProfile;
 }
 
+/**
+ * Aplica la paleta del negocio en SSR (evita flash) y monta el provider
+ * para dark mode / sincronización con el toggle.
+ */
 export function PublicBusinessPageWrapper({
   children,
   profile,
 }: PublicBusinessPageWrapperProps) {
-  if (!profile.enableDarkMode) {
-    return <>{children}</>;
-  }
+  const lightCss = publicBusinessThemeStyleToCssText(
+    getPublicBusinessThemeStyle(
+      {
+        accent: profile.accent,
+        accentSoft: profile.accentSoft,
+        surfaceTint: profile.surfaceTint,
+      },
+      "light"
+    )
+  );
+
+  const darkColors =
+    profile.enableDarkMode
+      ? profile.darkModeColors ?? {
+          accent: profile.accent,
+          accentSoft: "#27272a",
+          surfaceTint: "#18181b",
+          background: "#111111",
+          foreground: "#fafafa",
+          card: "#1a1a1a",
+          cardForeground: "#fafafa",
+        }
+      : null;
+
+  const darkCss = darkColors
+    ? publicBusinessThemeStyleToCssText(getPublicBusinessThemeStyle(darkColors, "dark"))
+    : null;
 
   return (
-    <PublicBusinessThemeProvider
-      enableDarkMode={profile.enableDarkMode}
-      darkModeColors={profile.darkModeColors}
-    >
-      {children}
-    </PublicBusinessThemeProvider>
+    <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: [
+            `.public-business-theme { ${lightCss} }`,
+            darkCss ? `html.dark .public-business-theme { ${darkCss} }` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        }}
+      />
+      <PublicBusinessThemeProvider
+        enableDarkMode={Boolean(profile.enableDarkMode)}
+        lightColors={{
+          accent: profile.accent,
+          accentSoft: profile.accentSoft,
+          surfaceTint: profile.surfaceTint,
+        }}
+        darkModeColors={profile.darkModeColors}
+      >
+        {children}
+      </PublicBusinessThemeProvider>
+    </>
   );
 }
 

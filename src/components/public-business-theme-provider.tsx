@@ -1,54 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import { useLayoutEffect, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { DarkModeColors } from "@/constants/public-business-profiles";
+import {
+  getPublicBusinessThemeStyle,
+  type PublicBusinessLightColors,
+} from "@/lib/public-business-theme";
 
-// Key de localStorage separada para la página pública, para no pisar el tema del admin.
 const PUBLIC_THEME_KEY = "public-theme";
 const PUBLIC_THEME_CHANGE_EVENT = "public-theme-change";
 
 interface PublicBusinessThemeProviderProps {
   children: ReactNode;
   enableDarkMode: boolean;
+  lightColors: PublicBusinessLightColors;
   darkModeColors?: DarkModeColors;
+}
+
+function readStoredDarkPreference(enableDarkMode: boolean): boolean {
+  if (typeof window === "undefined" || !enableDarkMode) {
+    return false;
+  }
+
+  const saved = localStorage.getItem(PUBLIC_THEME_KEY);
+
+  if (saved === "dark") {
+    return true;
+  }
+
+  if (saved === "light") {
+    return false;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function restoreAdminThemeClass() {
+  const root = document.documentElement;
+  const adminTheme = localStorage.getItem("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const resolvedAdminDark =
+    adminTheme === "dark" || ((adminTheme === "system" || !adminTheme) && systemDark);
+
+  root.classList.toggle("dark", resolvedAdminDark);
+}
+
+function fallbackDarkColors(light: PublicBusinessLightColors): DarkModeColors {
+  return {
+    accent: light.accent,
+    accentSoft: "#27272a",
+    surfaceTint: "#18181b",
+    background: "#111111",
+    foreground: "#fafafa",
+    card: "#1a1a1a",
+    cardForeground: "#fafafa",
+  };
 }
 
 export function PublicBusinessThemeProvider({
   children,
   enableDarkMode,
+  lightColors,
   darkModeColors,
 }: PublicBusinessThemeProviderProps) {
-  const [storedDarkPreference, setStoredDarkPreference] = useState(() => {
-    if (typeof window === "undefined" || !enableDarkMode) {
-      return false;
-    }
-
-    const saved = localStorage.getItem(PUBLIC_THEME_KEY);
-
-    if (saved === "dark") {
-      return true;
-    }
-
-    if (saved === "light") {
-      return false;
-    }
-
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const [storedDarkPreference, setStoredDarkPreference] = useState(() =>
+    readStoredDarkPreference(enableDarkMode)
+  );
   const isDark = enableDarkMode && storedDarkPreference;
 
-  useEffect(() => {
-    if (!enableDarkMode) return;
+  const themeStyle = (
+    isDark
+      ? getPublicBusinessThemeStyle(darkModeColors ?? fallbackDarkColors(lightColors), "dark")
+      : getPublicBusinessThemeStyle(lightColors, "light")
+  ) as CSSProperties;
+
+  useLayoutEffect(() => {
+    if (!enableDarkMode) {
+      return;
+    }
 
     const updatePreference = () => {
-      const saved = localStorage.getItem(PUBLIC_THEME_KEY);
-
-      if (saved === "dark") {
-        setStoredDarkPreference(true);
-      } else if (saved === "light") {
-        setStoredDarkPreference(false);
-      }
+      setStoredDarkPreference(readStoredDarkPreference(true));
     };
 
     window.addEventListener(PUBLIC_THEME_CHANGE_EVENT, updatePreference);
@@ -60,57 +93,29 @@ export function PublicBusinessThemeProvider({
     };
   }, [enableDarkMode]);
 
-  // Aplicar/quitar la clase "dark" en <html> sin tocar el localStorage del admin.
-  // Al desmontar, restaurar la clase según el tema del admin (key "theme").
-  useEffect(() => {
+  // Forzar la clase dark del documento para esta página pública, incluso si
+  // next-themes (tema del admin/sistema) intenta pisarla.
+  useLayoutEffect(() => {
     const root = document.documentElement;
 
-    if (isDark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    const enforce = () => {
+      root.classList.toggle("dark", isDark);
+    };
 
-    // Al desmontar esta página pública, restaurar la clase según el tema del admin
+    enforce();
+
+    const observer = new MutationObserver(enforce);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+
     return () => {
-      const adminTheme = localStorage.getItem("theme");
-      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const resolvedAdminDark =
-        adminTheme === "dark" || (adminTheme !== "light" && systemDark);
-      if (resolvedAdminDark) {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
+      observer.disconnect();
+      restoreAdminThemeClass();
     };
   }, [isDark]);
 
-  // Aplicar colores personalizados de dark mode cuando está activo
-  useEffect(() => {
-    if (!enableDarkMode || !darkModeColors || !isDark) return;
-    const root = document.documentElement;
-    root.style.setProperty("--accent", darkModeColors.accent);
-    root.style.setProperty("--accent-soft", darkModeColors.accentSoft);
-    root.style.setProperty("--surface-tint", darkModeColors.surfaceTint);
-    root.style.setProperty("--background", darkModeColors.background);
-    root.style.setProperty("--foreground", darkModeColors.foreground);
-    root.style.setProperty("--card", darkModeColors.card);
-    root.style.setProperty("--card-foreground", darkModeColors.cardForeground);
-
-    return () => {
-      root.style.removeProperty("--accent");
-      root.style.removeProperty("--accent-soft");
-      root.style.removeProperty("--surface-tint");
-      root.style.removeProperty("--background");
-      root.style.removeProperty("--foreground");
-      root.style.removeProperty("--card");
-      root.style.removeProperty("--card-foreground");
-    };
-  }, [enableDarkMode, darkModeColors, isDark]);
-
   return (
-    <>
+    <div className="public-business-theme min-h-dvh bg-background text-foreground" style={themeStyle}>
       {children}
-    </>
+    </div>
   );
 }
