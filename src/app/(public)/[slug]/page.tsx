@@ -4,7 +4,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { Facebook, Instagram } from "lucide-react";
 
-import { TikTokIcon, WhatsAppIcon } from "@/components/icons";
+import { TikTokIcon } from "@/components/icons";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { BusinessHero } from "@/components/public/business-hero";
@@ -731,17 +731,6 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
                         aria-label={`Abrir TikTok de ${pageData.business.name}`}
                       >
                         <TikTokIcon className="size-3.5 sm:size-4" aria-hidden="true" />
-                      </a>
-                    )}
-                    {whatsappHref && (
-                      <a
-                        href={whatsappHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        aria-label={`Contactar a ${pageData.business.name} por WhatsApp`}
-                      >
-                        <WhatsAppIcon className="size-3.5 sm:size-4" aria-hidden="true" />
                       </a>
                     )}
                   </div>
