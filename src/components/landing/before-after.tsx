@@ -16,37 +16,33 @@ const afterItems = [
   "Agenda organizada automáticamente",
   "Reservas 24/7 sin tu intervención",
   "Recordatorios automáticos por email",
-  "Presencia digital de primer nivel",
+  "Presencia digital clara y compartible",
 ];
 
 export function BeforeAfterSection() {
   return (
-    <section id="beneficios" className="mx-auto w-full max-w-6xl border-t border-border/40 px-6 py-16 md:py-24">
+    <section id="beneficios" className="mx-auto w-full max-w-6xl border-t border-rule px-4 py-16 sm:px-6 md:py-24">
       <AnimatedSection>
-        <div className="text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Antes vs Después
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            Antes vs después
           </p>
-          <h2 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Menos caos, más control.
           </h2>
         </div>
       </AnimatedSection>
 
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
-        {/* Before */}
-        <AnimatedSection delay={100} animation="slideInLeft">
-          <div className="group rounded-2xl border border-destructive/20 bg-gradient-to-br from-destructive/5 to-destructive/10 p-8 transition-all duration-300 hover:shadow-lg">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-destructive/20 transition-transform group-hover:scale-110">
-                <X className="size-5 text-destructive" />
-              </div>
-              <span className="font-semibold text-destructive">Antes</span>
-            </div>
-            <ul className="space-y-4">
+      <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-16">
+        <AnimatedSection delay={80}>
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              Antes
+            </p>
+            <ul className="mt-5 divide-y divide-rule border-y border-rule">
               {beforeItems.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-muted-foreground transition-all hover:translate-x-1">
-                  <X className="mt-0.5 size-4 shrink-0 text-destructive/60" />
+                <li key={item} className="flex items-start gap-3 py-3.5 text-muted-foreground">
+                  <X className="mt-0.5 size-4 shrink-0 text-destructive/70" aria-hidden="true" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -54,19 +50,15 @@ export function BeforeAfterSection() {
           </div>
         </AnimatedSection>
 
-        {/* After */}
-        <AnimatedSection delay={200} animation="slideInRight">
-          <div className="group rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/5 to-green-500/10 p-8 transition-all duration-300 hover:shadow-lg">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-green-500/20 transition-transform group-hover:scale-110">
-                <Check className="size-5 text-green-600" />
-              </div>
-              <span className="font-semibold text-green-600">Con ReservaYa</span>
-            </div>
-            <ul className="space-y-4">
+        <AnimatedSection delay={160}>
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-sello">
+              Con ReservaYa
+            </p>
+            <ul className="mt-5 divide-y divide-rule border-y border-rule">
               {afterItems.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-foreground transition-all hover:translate-x-1">
-                  <Check className="mt-0.5 size-4 shrink-0 text-green-600" />
+                <li key={item} className="flex items-start gap-3 py-3.5 text-foreground">
+                  <Check className="mt-0.5 size-4 shrink-0 text-sello" aria-hidden="true" />
                   <span>{item}</span>
                 </li>
               ))}

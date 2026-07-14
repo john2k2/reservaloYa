@@ -48,10 +48,21 @@ Tokens definidos en `src/app/globals.css`, activos solo dentro de `.landing-them
   ("09:00", "$33.330", "Turno #001", "DEMO #01"). No es una utility caption genérica — si el dato es
   un número que el usuario puede necesitar copiar o comparar, va en mono.
 
+## Marca (logo)
+
+El acento del logo es **`sello`** (`#4b3a8f` / `#a394e8` en dark), no teal. El componente
+`ReservaYaLogo` usa `var(--sello)`; los SVG estáticos en `public/` y el `theme_color` del
+webmanifest siguen el mismo valor. Los PNG de app (`icon-192x192.png`, `icon-512x512.png`),
+`favicon.ico` y `og-image.png` se regeneran desde `public/reservaya-app-icon.svg` /
+`public/og-image.svg` — no edites los PNG a mano. No reintroducir `#14B8A6` / `#0D9488` como
+color de marca en marketing — el teal legacy puede quedar solo en tokens globales de admin no
+migrados (sidebar/ring), no en el wordmark ni en favicons.
+
 ## El motivo de firma: agenda / ticket / sello
 
-El sitio no tiene gradientes ni ilustraciones de stock. Tiene un motivo propio, anclado en el
-vocabulario real del rubro (turnos, agendas, sellos de goma):
+El sitio no tiene gradientes decorativos, orbes blur, mesh ni ilustraciones de stock. El fondo es
+`paper` limpio. Tiene un motivo propio, anclado en el vocabulario real del rubro (turnos, agendas,
+sellos de goma):
 
 - **`TicketStub`** (`src/components/landing/ticket-stub.tsx`): el talón de turno perforado. Aparece
   en el Hero.
@@ -66,22 +77,29 @@ lado más. Si un componente nuevo "necesita" un ticket o un sello, primero pregu
 un momento de decisión importante (precio, confirmación, el gancho numérico). Si no, no lo uses —
 la regla de oro es gastar la audacia visual en un solo lugar por página, no repartirla.
 
+## Hero (presupuesto del primer viewport)
+
+En `/` el primer viewport lleva solo: marca (`ReservaYa` en display), un headline, una frase de
+apoyo, un grupo CTA (trial + ancla a demos) y el `TicketStub`. Sin badge flotante, sin trust row de
+íconos, sin orbes. Si no pasa el brand test (sacar el nav y que siga leyéndose como ReservaYa), el
+branding es demasiado débil.
+
 ## Estructura y layout
 
 - **Rule-dividers, no card-chrome repetido**: separá secciones con `border-t border-rule`, no con
-  cards individuales de `border + shadow + rounded-xl` apiladas una tras otra. Si tres secciones
-  seguidas usan el mismo card con sombra, el ojo deja de distinguirlas — pasó en la primera versión
-  de `DemoSelector` y se corrigió aplanando todo menos el motivo de firma.
-- **No dupliques CTAs**: cada CTA en la página debe tener un trabajo distinto. Si dos bloques dicen
-  esencialmente "empezá gratis" a menos de dos scrolls de distancia, sacá uno. (Se borró
-  `CTASection` completo por esto — quedaba redundante entre el botón propio de `PricingSection` y el
-  CTA final del `Footer`.)
-- **No expliques en abstracto lo que ya se ve en concreto**: si tenés 4 cards de demos reales
-  (`DemoSelector`), no agregues además 3 cards de "esto es lo que vas a ver" describiendo lo mismo
-  con íconos genéricos. Elegí una sola forma de comunicarlo.
+  cards individuales de `border + shadow + rounded-xl` apiladas una tras otra. `DemoSelector` y el
+  bloque SEO usan listas `divide-y border-rule`. Pricing es el único bloque con marco propio, y ahí
+  vive el sello — sin glow ni checks verdes fuera de token.
+- **CTAs con trabajo distinto en `/`**:
+  - Header: "Comenzar gratis" (utilidad de nav)
+  - Hero: "Probar 15 días gratis" + "Ver demos en vivo"
+  - Pricing: "Empezar el trial gratis" (conversión con precio visible)
+  - Footer: WhatsApp + "Ver precios" — **nunca** un tercer "crear cuenta / empezar gratis"
+- **No expliques en abstracto lo que ya se ve en concreto**: si tenés demos reales
+  (`DemoSelector`), no agregues además cards de "esto es lo que vas a ver" con íconos genéricos.
 - **Código muerto**: si un componente de `src/components/landing/` no está importado en ningún
-  `src/app/**/page.tsx`, o lo conectás o lo borrás. No lo dejes "por si acaso" — así se acumularon
-  `TimeCalculatorSection`, `TargetAudienceSection` y `MetricsBar` sin usar antes de esta pasada.
+  `src/app/**/page.tsx`, o lo conectás o lo borrás. Se eliminaron `TargetAudienceSection`,
+  `MetricsBar` y el `TestimonialsSection` de landing (sin uso).
 
 ## Responsive
 
@@ -113,12 +131,13 @@ Con `.landing-theme` aplicado (vía `LandingPageShell` en marketing, o directo e
 cada página en el resto):
 
 - ✅ `/` (home), `/precios`, `/funcionalidades`, `/como-funciona`, `/preguntas-frecuentes`
-- ✅ `/sobre-reservaya`, `/contacto`, `/terminos`, `/privacidad`
+- ✅ `/sobre-reservaya`, `/contacto`, `/terminos`, `/privacidad` — usan `LandingPageShell`
+  (header + footer compartidos)
 - ✅ `src/app/(seo)/*` (las 3 landing pages por rubro — además usan `LandingHeader` compartido en vez
-  de un header bespoke duplicado, y se les sacó un CTA redundante pegado al del `Footer`)
+  de un header bespoke duplicado; benefits/FAQ con `divide-y border-rule`)
 - ✅ `/login`, `/admin/signup`, `/admin/forgot-password`, `/admin/reset-password`,
-  `/admin/subscription` (expirada/pay/success), `admin/(panel)/error.tsx` — pantallas de
-  auth/decisión, con headline en Fraunces donde corresponde
+  `/admin/subscription` (expirada/pay/success), `admin/(panel)/error.tsx`, `/auth/callback`,
+  `not-found.tsx` — pantallas de auth/decisión/error, con headline en Fraunces donde corresponde
 - ✅ `AdminShell` y `PlatformShell` (`src/components/layout/`) — al tener `.landing-theme` en su
   root, cascada automáticamente a las 18 páginas de `admin/(panel)/*` y las 4 de
   `platform/(panel)/*` sin tocar cada `page.tsx` individualmente, porque ya usaban tokens semánticos

@@ -13,8 +13,6 @@ import { createPageMetadata } from "@/lib/seo/metadata";
 import { SoftwareApplicationJsonLd } from "@/lib/seo/json-ld";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 
-import "./landing-animations.css";
-
 export const metadata = createPageMetadata({
   title: "Turnos online para barberías y estética",
   description:
@@ -37,12 +35,12 @@ function VerticalSeoLinksSection() {
         <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
           Soluciones por rubro
         </p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tighter text-foreground md:text-4xl">
-          Sistema de reservas online para negocios de servicios en Argentina y LatAm
+        <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          Sistema de reservas online para negocios de servicios
         </h2>
         <p className="mt-4 text-base leading-7 text-muted-foreground">
-          ReservaYa está pensado para equipos chicos que necesitan ordenar turnos, disponibilidad,
-          clientes y recordatorios sin sumar complejidad operativa.
+          Pensado para equipos chicos que necesitan ordenar turnos, disponibilidad, clientes y
+          recordatorios sin sumar complejidad operativa.
         </p>
       </div>
       <div className="mt-8 divide-y divide-rule border-y border-rule">

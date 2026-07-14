@@ -1,7 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { productName } from "@/constants/site";
 import { createPageMetadata } from "@/lib/seo/metadata";
+import { LandingPageShell } from "@/components/landing";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Términos de uso para reservas online",
@@ -11,19 +12,9 @@ export const metadata: Metadata = createPageMetadata({
 
 export default function TermsPage() {
   return (
-    <main
-      id="main-content"
-      className="landing-theme min-h-screen bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
-    >
-      <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
-        <Link
-          href="/"
-          className="inline-flex h-11 items-center text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
-        >
-          ← Volver al inicio
-        </Link>
-
-        <h1 className="mt-8 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+    <LandingPageShell>
+      <div className="mx-auto max-w-3xl px-6 py-16 pt-32 sm:py-24 sm:pt-36">
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           Términos de uso
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -144,6 +135,6 @@ export default function TermsPage() {
           </Link>
         </div>
       </div>
-    </main>
+    </LandingPageShell>
   );
 }

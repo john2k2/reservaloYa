@@ -11,7 +11,7 @@ export function SectionTitle({
 }: SectionTitleProps) {
   return (
     <div className="max-w-2xl space-y-4">
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">
+      <p className="font-mono text-xs uppercase tracking-[0.3em] text-sello">
         {eyebrow}
       </p>
       <h2 className="font-display text-3xl font-semibold leading-[1.05] text-foreground sm:text-4xl">

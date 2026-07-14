@@ -73,7 +73,7 @@ interface LandingHeaderProps {
 
 export function LandingHeader({ session }: LandingHeaderProps) {
   return (
-    <header className="fixed top-0 z-50 w-full transition-all duration-300 bg-background border-b border-border/40">
+    <header className="fixed top-0 z-50 w-full border-b border-rule bg-background transition-all duration-300">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="inline-flex items-center" aria-label="Ir al inicio de ReservaYa">
           <ReservaYaLogo size="md" />
@@ -102,7 +102,7 @@ export function LandingHeader({ session }: LandingHeaderProps) {
             href="/admin/signup"
             className={cn(
               buttonVariants({ variant: "default", size: "sm" }),
-              "h-12 sm:h-10 rounded-lg px-5 sm:px-4 font-semibold shadow-sm transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 hidden sm:inline-flex bg-foreground text-background hover:bg-foreground/90"
+              "h-12 sm:h-10 rounded-lg px-5 sm:px-4 font-semibold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 hidden sm:inline-flex bg-foreground text-background hover:bg-foreground/90"
             )}
           >
             Comenzar gratis

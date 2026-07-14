@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
 import { SelloStamp } from "./sello-stamp";
@@ -24,16 +23,11 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
   return (
     <section
       id="precios"
-      className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28 overflow-hidden"
+      className="relative mx-auto w-full max-w-6xl border-t border-rule px-4 py-16 sm:px-6 sm:py-20 lg:py-28"
     >
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-b from-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-      
       <AnimatedSection>
-        <div className="flex flex-col items-center text-center relative">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">
-            Precios
-          </p>
+        <div className="flex flex-col items-center text-center">
+          <p className="mb-4 font-mono text-xs uppercase tracking-[0.3em] text-sello">Precios</p>
           <h2 className="font-display text-4xl font-semibold leading-[1.05] text-foreground sm:text-5xl">
             Un plan. Sin permanencia.
           </h2>
@@ -43,80 +37,66 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
         </div>
       </AnimatedSection>
 
-      <AnimatedSection delay={200} animation="fadeInScale">
-        <div className="mt-12 sm:mt-16 flex justify-center px-2 sm:px-0">
-          <div className="relative w-full max-w-lg">
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-[2rem] blur-xl opacity-60" />
-            
-            <div className="relative rounded-[2rem] border border-border/60 bg-card/80 backdrop-blur-sm p-8 sm:p-10 md:p-12 shadow-2xl">
-              {/* Sello */}
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                <SelloStamp label="Plan único" sublabel="Sin permanencia" rotate={-8} className="bg-card shadow-xl" />
-              </div>
+      <AnimatedSection delay={160} animation="fadeInScale">
+        <div className="mt-12 flex justify-center sm:mt-16">
+          <div className="relative w-full max-w-lg border border-rule bg-card px-6 py-10 sm:px-10 sm:py-12">
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+              <SelloStamp label="Plan único" sublabel="Sin permanencia" rotate={-8} className="bg-card" />
+            </div>
 
-              {/* Price */}
-              <div className="text-center mt-4">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Mensualidad</p>
-                <div className="mt-4 flex items-baseline justify-center">
-                  <span className="font-mono text-6xl sm:text-7xl font-bold tracking-tighter">${arsPriceLabel}</span>
-                  <span className="ml-2 text-xl text-muted-foreground">ARS/mes</span>
-                </div>
+            <div className="mt-4 text-center">
+              <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Mensualidad
+              </p>
+              <div className="mt-4 flex items-baseline justify-center">
+                <span className="font-mono text-6xl font-bold tracking-tighter sm:text-7xl">
+                  ${arsPriceLabel}
+                </span>
+                <span className="ml-2 text-xl text-muted-foreground">ARS/mes</span>
               </div>
+            </div>
 
-              {/* Trial badge */}
-              <div className="mt-6 flex justify-center">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-medium text-primary">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ticket opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-ticket"></span>
-                  </span>
-                  15 días gratis para probar
-                </div>
-              </div>
+            <p className="mt-6 text-center font-mono text-xs uppercase tracking-[0.2em] text-ticket">
+              15 días gratis · Sin tarjeta
+            </p>
 
-              {/* Features */}
-              <div className="mt-8 space-y-4">
-                {pricingItems.map((item, index) => (
-                  <div
-                    key={item.text}
-                    className={cn(
-                      "flex items-start gap-3 p-3 rounded-xl transition-all duration-300",
-                      item.highlight && "bg-primary/5 border border-primary/10",
-                      !item.highlight && "border border-transparent hover:border-border/60"
-                    )}
-                    style={{ transitionDelay: `${index * 50}ms` }}
-                  >
-                    <div className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full shrink-0 mt-0.5",
-                      item.highlight ? "bg-primary/20" : "bg-green-100"
-                    )}>
-                      <CheckCircle2 className={cn(
-                        "w-4 h-4",
-                        item.highlight ? "text-primary" : "text-green-600"
-                      )} />
-                    </div>
-                    <span className="text-sm font-medium text-foreground">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* CTA */}
-              <div className="mt-8 space-y-4">
-                <Link
-                  href="/admin/signup"
+            <ul className="mt-8 space-y-0 border-y border-rule">
+              {pricingItems.map((item) => (
+                <li
+                  key={item.text}
                   className={cn(
-                    buttonVariants({ variant: "default", size: "lg" }),
-                    "group h-14 w-full rounded-full font-semibold text-base transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-foreground text-background hover:bg-foreground/90"
+                    "flex items-start gap-3 border-b border-rule py-3 last:border-b-0",
+                    item.highlight && "bg-sello/5"
                   )}
                 >
-                  Comenzar mis 15 días gratis
-                  <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <p className="text-center text-sm text-muted-foreground">
-                  Sin tarjeta de crédito. Sin compromiso. Cancelás cuando quieras.
-                </p>
-              </div>
+                  <Check
+                    className={cn(
+                      "mt-0.5 size-4 shrink-0",
+                      item.highlight ? "text-sello" : "text-foreground"
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="text-sm font-medium text-foreground">{item.text}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 space-y-3">
+              <Link
+                href="/admin/signup"
+                className={cn(
+                  "group inline-flex h-14 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full px-8 text-base",
+                  "bg-foreground font-semibold text-background",
+                  "transition-[transform,box-shadow] duration-300",
+                  "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-foreground/10 active:scale-[0.98]"
+                )}
+              >
+                Empezar el trial gratis
+                <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <p className="text-center text-sm text-muted-foreground">
+                Sin compromiso. Cancelás cuando quieras.
+              </p>
             </div>
           </div>
         </div>

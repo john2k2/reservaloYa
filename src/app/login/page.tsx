@@ -52,7 +52,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
 
           {params.success && (
             <div
-              className="mt-6 rounded-md border border-success/20 bg-success/10 p-4 text-sm text-success"
+              className="mt-6 rounded-md border border-rule bg-secondary p-4 text-sm text-foreground"
               role="status"
               aria-live="polite"
             >
@@ -129,7 +129,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
       </div>
 
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
-        <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+        <div className="absolute inset-0 subtle-grid opacity-20" />
         <div className="relative max-w-lg p-12">
           <h2 className="mb-4 font-display text-3xl font-semibold tracking-tight">Gestión sin complicaciones</h2>
           <p className="text-lg text-muted-foreground">

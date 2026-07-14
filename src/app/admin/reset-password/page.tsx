@@ -50,7 +50,7 @@ export default async function ResetPasswordPage() {
       </div>
 
       <div className="relative hidden w-1/2 items-center justify-center border-l border-border/60 bg-secondary/30 lg:flex">
-        <div className="absolute inset-0 subtle-grid opacity-20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+        <div className="absolute inset-0 subtle-grid opacity-20" />
         <div className="relative max-w-lg p-12">
           <h2 className="mb-4 font-display text-3xl font-semibold tracking-tight">Volvé a entrar seguro</h2>
           <p className="text-lg text-muted-foreground">

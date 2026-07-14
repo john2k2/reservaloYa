@@ -1,10 +1,9 @@
 import { SelloStamp } from "./sello-stamp";
 
 /**
- * Talón de turno — el artefacto visual del hero, primera aparición del motivo
- * agenda/ticket que se repite en DemoSelector y PricingSection (ver plan de
- * rediseño). Puramente ilustrativo: los datos son de ejemplo, no vienen de un
- * turno real.
+ * Talón de turno — artefacto visual del hero.
+ * Primera aparición del motivo agenda/ticket/sello (también en Pricing y
+ * TimeCalculator vía SelloStamp / stampHit). Datos de ejemplo, no de un turno real.
  */
 export function TicketStub() {
   return (
@@ -36,9 +35,8 @@ export function TicketStub() {
         <SelloStamp label="Confirmado" rotate={-6} />
       </div>
 
-      {/* Muescas que simulan el corte perforado del talón */}
-      <div className="pointer-events-none absolute -left-3 top-[60px] h-6 w-6 rounded-full bg-background" />
-      <div className="pointer-events-none absolute -right-3 top-[60px] h-6 w-6 rounded-full bg-background" />
+      <div className="pointer-events-none absolute -left-3 top-[60px] size-6 rounded-full bg-background" />
+      <div className="pointer-events-none absolute -right-3 top-[60px] size-6 rounded-full bg-background" />
     </div>
   );
 }
