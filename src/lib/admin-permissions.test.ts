@@ -23,7 +23,7 @@ describe("admin permissions", () => {
   it("normalizes unknown roles to staff-safe behavior", () => {
     expect(normalizeAdminRole(undefined)).toBe("staff");
     expect(normalizeAdminRole("mystery-role")).toBe("staff");
-    expect(getAdminRoleLabel("mystery-role")).toBe("Staff");
+    expect(getAdminRoleLabel("mystery-role")).toBe("Equipo");
   });
 
   it("returns clear access errors for protected sections", () => {

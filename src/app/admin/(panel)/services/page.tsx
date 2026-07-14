@@ -41,7 +41,7 @@ export default async function AdminServicesPage({ searchParams }: AdminServicesP
             Servicios
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona lo que ofrecés en tu página de reservas.
+            Gestioná lo que ofrecés en tu página de reservas.
           </p>
         </div>
         <div className="flex gap-2">

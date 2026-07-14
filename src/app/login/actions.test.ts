@@ -166,7 +166,7 @@ describe("signupAction", () => {
     await expect(signupAction(formData)).rejects.toThrow("REDIRECT:");
     expect(redirectMock).toHaveBeenCalled();
     expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("error=");
-    expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("contrasena");
+    expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("contraseña");
   });
 
   it("creates account and redirects to onboarding on success", async () => {
@@ -189,7 +189,7 @@ describe("signupAction", () => {
     expect(redirectMock).toHaveBeenCalled();
     const redirectCall = redirectMock.mock.calls.at(-1)?.[0] ?? "";
     expect(redirectCall).toContain("onboarding");
-    expect(redirectCall).toContain("created%3Dmi-barberia");
+    expect(redirectCall).toContain("created=mi-barberia");
     expect(createSupabaseOwnerAccountMock).toHaveBeenCalledWith(
       expect.objectContaining({
         ownerName: "Juan",

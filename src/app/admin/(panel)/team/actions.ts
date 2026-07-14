@@ -11,7 +11,7 @@ async function getOwnerContext() {
   const shellData = await requireAdminRouteAccess("/admin/team");
 
   if (!shellData.businessId || shellData.demoMode) {
-    redirect("/admin/dashboard?error=La gestion de equipo solo esta disponible en modo Supabase.");
+    redirect("/admin/dashboard?error=La%20gestión%20de%20equipo%20no%20está%20disponible%20en%20modo%20demo.");
   }
 
   const user = await getAuthenticatedSupabaseUser();

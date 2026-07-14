@@ -29,20 +29,20 @@ export function getAdminRoleLabel(role: string | undefined) {
   const normalizedRole = normalizeAdminRole(role);
 
   return normalizedRole === "owner"
-    ? "Owner"
+    ? "Dueño"
     : normalizedRole === "admin"
-      ? "Admin"
-      : "Staff";
+      ? "Administrador"
+      : "Equipo";
 }
 
 export function getAdminRouteAccessError(href: string) {
   if (href === "/admin/team") {
-    return "Solo el owner puede gestionar el equipo.";
+    return "Solo el dueño puede gestionar el equipo.";
   }
 
   if (href === "/admin/onboarding" || href === "/admin/settings") {
-    return "Solo el owner puede cambiar la página y la configuración del negocio.";
+    return "Solo el dueño puede cambiar la página y la configuración del negocio.";
   }
 
-  return "No tienes permisos para acceder a esa seccion.";
+  return "No tenés permisos para acceder a esa sección.";
 }

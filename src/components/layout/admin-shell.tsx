@@ -170,7 +170,7 @@ export function AdminShell({
             <div className="flex items-center gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {demoMode ? "Demo" : "Admin"}
+                  {demoMode ? "Demo" : "Panel"}
                 </p>
                 <h1 className="truncate text-sm font-semibold">{businessName}</h1>
               </div>

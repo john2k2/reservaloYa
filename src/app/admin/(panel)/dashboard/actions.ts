@@ -9,7 +9,7 @@ export async function runLocalReminderSweepAction() {
   const shellData = await requireAdminRouteAccess("/admin/dashboard");
 
   if (!shellData.businessId || shellData.demoMode) {
-    redirect("/admin/dashboard?error=Los recordatorios solo estan disponibles en modo Supabase.");
+    redirect("/admin/dashboard?error=Los%20recordatorios%20no%20están%20disponibles%20en%20modo%20demo.");
   }
 
   try {

@@ -300,7 +300,7 @@ export default async function AdminDashboardPage() {
             <p className="mt-3 text-xs text-muted-foreground">
               {dashboardData.reminders?.providerReady
                 ? "✓ Recordatorios por email activos"
-                : "Configurá Resend o Twilio WhatsApp para enviar recordatorios."}
+                : "Activá recordatorios por email o WhatsApp desde Integraciones."}
             </p>
 
             {(dashboardData.demoMode || dashboardData.reminders) && (

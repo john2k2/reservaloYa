@@ -178,7 +178,7 @@ export async function getSupabaseAdminDashboardData(businessId: string) {
     conversionRate: analytics.conversionRate,
     pendingBookings,
     customersCount: businessCustomers.length,
-    customersHint: "Clientes registrados en Supabase",
+    customersHint: "Clientes registrados en tu negocio",
     topCampaignLabel: analytics.topCampaign,
     hasVisits: analytics.visits > 0,
   });
@@ -195,7 +195,7 @@ export async function getSupabaseAdminDashboardData(businessId: string) {
   );
 
   return buildAdminDashboardView({
-    profileName: "Supabase Owner",
+    profileName: "Dueño",
     businessName: business.name,
     businessSlug: business.slug,
     userEmail: "",
