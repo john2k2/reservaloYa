@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
     root: projectRoot,
   },
   outputFileTracingRoot: projectRoot,
+  // El browser de Cursor / algunos clientes usan 127.0.0.1 en vez de localhost.
+  // Sin esto, Next bloquea HMR y chunks de /_next y los client components no hidratan.
+  allowedDevOrigins: ["127.0.0.1"],
   experimental: {
     // Optimize package imports for common libraries
     optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],
@@ -61,17 +64,21 @@ const nextConfig: NextConfig = {
   htmlLimitedBots: /.*/,
 
   async headers() {
+    // React/Next en desarrollo usan eval() / Function() para hidratar y HMR.
+    // Sin 'unsafe-eval' + ws: los client components quedan muertos (p.ej. Menú admin).
+    // En producción no hace falta: el bundle no depende de eval.
+    const isDev = process.env.NODE_ENV === "development";
     const contentSecurityPolicy = [
       "default-src 'self'",
       "base-uri 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline' https:",
+      `script-src 'self' 'unsafe-inline' https:${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https:",
+      `connect-src 'self' https:${isDev ? " ws: wss:" : ""}`,
       "frame-src https://www.google.com https://maps.google.com",
       "upgrade-insecure-requests",
     ].join("; ");
