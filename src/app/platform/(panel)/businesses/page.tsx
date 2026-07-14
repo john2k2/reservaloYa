@@ -11,7 +11,7 @@ import { TrialActions } from "./trial-actions";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Negocios · Plataforma · ReservaYa",
+  title: { absolute: "Negocios · Plataforma · ReservaYa" },
   description: "Gestión de negocios registrados en la plataforma ReservaYa.",
   robots: { index: false, follow: false },
 };

@@ -9,7 +9,10 @@ import { getAdminShellData } from "@/server/queries/admin";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
 
 export const metadata: Metadata = {
-  title: "Panel de administración · ReservaYa",
+  title: {
+    default: "Panel",
+    template: "%s · Panel | ReservaYa",
+  },
   robots: { index: false, follow: false },
 };
 

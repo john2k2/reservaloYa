@@ -64,13 +64,24 @@ describe("ServiceJsonLd", () => {
       businessUrl: "https://reservaya.app/aura-studio",
       serviceName: "Corte",
       description: "Corte de pelo",
-      price: "$ 5000",
+      price: 5000,
       duration: "PT30M",
     });
     const html = renderToStaticMarkup(el);
     expect(html).toContain("Service");
     expect(html).toContain("Corte");
-    expect(html).toContain("5000");
+    expect(html).toContain('"price":5000');
+  });
+
+  it("omite offers cuando no hay precio numérico", () => {
+    const el = ServiceJsonLd({
+      businessName: "Aura Studio",
+      businessUrl: "https://reservaya.app/aura-studio",
+      serviceName: "Consulta",
+      description: "Sin precio fijo",
+    });
+    const html = renderToStaticMarkup(el);
+    expect(html).not.toContain("offers");
   });
 });
 

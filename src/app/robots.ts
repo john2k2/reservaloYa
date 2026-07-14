@@ -15,7 +15,7 @@ export default function robots(): MetadataRoute.Robots {
           "/auth/",
           "/login",
           "/*/reservar",
-          "/*/mi-turno/",
+          "/*/mi-turno",
           "/*/confirmacion",
           "/*/resena",
         ],

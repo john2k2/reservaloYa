@@ -49,14 +49,14 @@ export const defaultMetadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: siteConfig.keywords,
+  // keywords solo en páginas que los declaran explícitamente (Google los ignora; evitar stuffing global)
   authors: siteConfig.authors,
   creator: siteConfig.creator,
   openGraph: {
     type: "website",
     locale: "es_AR",
     url: siteConfig.url,
-    title: siteConfig.name,
+    title: `${siteConfig.name} | Turnos online para barberías y estética`,
     description: siteConfig.description,
     siteName: siteConfig.name,
     images: [
@@ -70,7 +70,7 @@ export const defaultMetadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.name,
+    title: `${siteConfig.name} | Turnos online para barberías y estética`,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
   },
@@ -115,6 +115,10 @@ export const defaultViewport: Viewport = {
   maximumScale: 5,
 };
 
+function withBrand(title: string) {
+  return `${title} | ${siteConfig.name}`;
+}
+
 export function createPageMetadata({
   title,
   description,
@@ -129,11 +133,12 @@ export function createPageMetadata({
   keywords?: string[];
 }): Metadata {
   const url = `${siteConfig.url}${path}`;
+  const socialTitle = withBrand(title);
 
   return {
     title,
     description,
-    keywords,
+    ...(keywords ? { keywords } : {}),
     alternates: {
       canonical: url,
       languages: {
@@ -145,7 +150,7 @@ export function createPageMetadata({
       type: "website",
       locale: "es_AR",
       url,
-      title,
+      title: socialTitle,
       description,
       siteName: siteConfig.name,
       images: [
@@ -153,15 +158,50 @@ export function createPageMetadata({
           url: ogImage || siteConfig.ogImage,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: socialTitle,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: socialTitle,
       description,
       images: [ogImage || siteConfig.ogImage],
+    },
+  };
+}
+
+/** Metadata para rutas privadas/auth: noindex y sin heredar OG/canonical de la home. */
+export function createPrivatePageMetadata({
+  title,
+  path,
+  description = "Área privada de ReservaYa.",
+}: {
+  title: string;
+  path: string;
+  description?: string;
+}): Metadata {
+  const url = `${siteConfig.url}${path}`;
+
+  return {
+    title: { absolute: title },
+    description,
+    robots: { index: false, follow: false },
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      type: "website",
+      locale: "es_AR",
+      url,
+      title,
+      description,
+      siteName: siteConfig.name,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
     },
   };
 }

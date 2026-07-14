@@ -8,7 +8,7 @@ import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Dashboard · Plataforma · ReservaYa",
+  title: { absolute: "Dashboard · Plataforma · ReservaYa" },
   description: "Panel de administración de la plataforma ReservaYa.",
   robots: { index: false, follow: false },
 };

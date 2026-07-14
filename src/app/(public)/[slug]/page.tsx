@@ -48,7 +48,8 @@ export async function generateMetadata({
 
     if (!pageData) {
       return {
-        title: "Negocio no encontrado | ReservaYa",
+        title: { absolute: "Negocio no encontrado | ReservaYa" },
+        robots: { index: false, follow: false },
       };
     }
 
@@ -61,7 +62,7 @@ export async function generateMetadata({
     });
   } catch (error) {
     logger.error("Error generating metadata:", error);
-    return { title: "ReservaYa | Turnos online para negocios chicos" };
+    return { title: { absolute: "ReservaYa | Turnos online para negocios chicos" } };
   }
 }
 
@@ -377,7 +378,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           businessUrl={businessUrl}
           serviceName={service.name}
           description={service.description}
-          price={service.priceLabel}
+          price={typeof service.price === "number" ? service.price : null}
           duration={`PT${service.durationMinutes}M`}
         />
       ))}

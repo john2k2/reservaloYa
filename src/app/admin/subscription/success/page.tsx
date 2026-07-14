@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import { getBlueDollarRate } from "@/lib/dollar-rate";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 import { getMPPaymentInfo, isMercadoPagoConfigured } from "@/server/mercadopago";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { getSupabaseSubscriptionByBusinessId } from "@/server/supabase-store";
 import { createLogger } from "@/server/logger";
+
+export const metadata: Metadata = createPrivatePageMetadata({
+  title: "Pago de suscripción · ReservaYa",
+  path: "/admin/subscription/success",
+  description: "Confirmación del pago de suscripción.",
+});
 
 const logger = createLogger("Subscription Success");
 

@@ -1,9 +1,17 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { loginAction } from "@/app/login/actions";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = createPrivatePageMetadata({
+  title: "Ingresar · ReservaYa",
+  path: "/login",
+  description: "Iniciá sesión para gestionar turnos, agenda y clientes de tu negocio.",
+});
 
 type AdminLoginPageProps = {
   searchParams: Promise<{ error?: string; success?: string }>;

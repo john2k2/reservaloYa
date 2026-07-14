@@ -5,12 +5,13 @@ import type { Metadata } from "next";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { ResetPasswordForm } from "./reset-password-form";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPrivatePageMetadata({
   title: "Nueva contraseña · ReservaYa",
+  path: "/admin/reset-password",
   description: "Definí una nueva contraseña para volver a entrar al panel.",
-  robots: { index: false, follow: false },
-};
+});
 
 export default async function ResetPasswordPage() {
   const user = await getAuthenticatedSupabaseUser();

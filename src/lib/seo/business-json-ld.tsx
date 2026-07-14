@@ -56,7 +56,7 @@ export function LocalBusinessJsonLd({
   telephone,
   address,
   image,
-  priceRange = "$$",
+  priceRange,
   openingHours,
   geo,
   services = [],
@@ -71,8 +71,11 @@ export function LocalBusinessJsonLd({
     url,
     telephone: telephone || undefined,
     image: image || undefined,
-    priceRange,
   };
+
+  if (priceRange) {
+    schema.priceRange = priceRange;
+  }
 
   if (address) {
     // Parsear dirección simple
@@ -159,7 +162,8 @@ interface ServiceJsonLdProps {
   businessUrl: string;
   serviceName: string;
   description: string;
-  price?: string;
+  /** Precio numérico en ARS. No pasar labels formateados. */
+  price?: number | null;
   duration?: string; // ISO 8601 duration format, e.g., "PT30M"
   image?: string;
 }
@@ -188,7 +192,7 @@ export function ServiceJsonLd({
     },
   };
 
-  if (price) {
+  if (typeof price === "number" && Number.isFinite(price) && price >= 0) {
     schema.offers = {
       "@type": "Offer",
       price,

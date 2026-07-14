@@ -18,6 +18,7 @@ import { buildManageBookingHref } from "@/server/public-booking-links";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
+import { generateTransactionalMetadata } from "@/lib/seo/business-metadata";
 
 type ConfirmationPageProps = {
   params: Promise<{ slug: string }>;
@@ -30,10 +31,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const pageData = await getPublicBusinessPageData(slug);
 
-  return {
-    title: pageData ? `Confirmación | ${pageData.business.name}` : "Confirmación",
-    robots: { index: false, follow: false },
-  };
+  return generateTransactionalMetadata({
+    businessName: pageData?.business.name,
+    slug,
+    pathSuffix: "/confirmacion",
+    titlePrefix: "Confirmación",
+  });
 }
 
 function toCalendarStamp(date: string, time: string) {

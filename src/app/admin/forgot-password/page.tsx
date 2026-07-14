@@ -6,12 +6,13 @@ import { forgotPasswordAction } from "@/app/login/actions";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPrivatePageMetadata({
   title: "Recuperar contraseña · ReservaYa",
+  path: "/admin/forgot-password",
   description: "Ingresá tu correo y te enviaremos un enlace para definir una nueva contraseña.",
-  robots: { index: false, follow: false },
-};
+});
 
 type ForgotPasswordPageProps = {
   searchParams: Promise<{ error?: string; success?: string }>;

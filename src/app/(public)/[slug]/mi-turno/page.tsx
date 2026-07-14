@@ -12,6 +12,7 @@ import { PublicBusinessPageWrapper } from "@/components/public-business-page-wra
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 import { CancelBookingConfirmButton } from "./cancel-booking-confirm-button";
+import { generateTransactionalMetadata } from "@/lib/seo/business-metadata";
 
 type ManageBookingPageProps = {
   params: Promise<{ slug: string }>;
@@ -24,10 +25,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const pageData = await getPublicBusinessPageData(slug);
 
-  return {
-    title: pageData ? `Mi turno | ${pageData.business.name}` : "Mi turno",
-    robots: { index: false, follow: false },
-  };
+  return generateTransactionalMetadata({
+    businessName: pageData?.business.name,
+    slug,
+    pathSuffix: "/mi-turno",
+    titlePrefix: "Mi turno",
+  });
 }
 
 export default async function ManageBookingPage({

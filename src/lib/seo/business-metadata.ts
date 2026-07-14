@@ -38,7 +38,7 @@ export function generateBusinessMetadata({
   );
 
   return {
-    title,
+    title: { absolute: title },
     description: metaDescription,
     alternates: {
       canonical: url,
@@ -98,7 +98,7 @@ export function generateBookingMetadata({
   const description = `Reservá tu turno en ${businessName}. Elegí fecha, horario y servicio con confirmación inmediata desde ReservaYa.`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: {
       canonical: url,
@@ -114,24 +114,60 @@ export function generateBookingMetadata({
       title,
       description,
       siteName: businessName,
-      images: [
-        {
-          url: `${siteUrl}/icon-512x512.png`,
-          width: 512,
-          height: 512,
-          alt: `Reservas online para ${businessName}`,
-        },
-      ],
+      // Sin images: el segmento [slug] ya tiene opengraph-image.tsx 1200×630
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [`${siteUrl}/icon-512x512.png`],
     },
     robots: {
       index: false,
       follow: true,
+    },
+  };
+}
+
+/**
+ * Metadata para flujos no indexables (confirmación, mi turno, reseña).
+ * Evita heredar canonical/OG de la homepage.
+ */
+export function generateTransactionalMetadata({
+  businessName,
+  slug,
+  pathSuffix,
+  titlePrefix,
+}: {
+  businessName?: string | null;
+  slug: string;
+  pathSuffix: "/confirmacion" | "/mi-turno" | "/resena";
+  titlePrefix: string;
+}): Metadata {
+  const url = `${siteUrl}/${slug}${pathSuffix}`;
+  const title = businessName ? `${titlePrefix} | ${businessName}` : titlePrefix;
+  const description = businessName
+    ? `${titlePrefix} de ${businessName}. Página privada de gestión del turno.`
+    : `${titlePrefix}. Página privada de gestión del turno.`;
+
+  return {
+    title: { absolute: title },
+    description,
+    robots: { index: false, follow: false },
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      type: "website",
+      locale: "es_AR",
+      url,
+      title,
+      description,
+      siteName: businessName || "ReservaYa",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
     },
   };
 }

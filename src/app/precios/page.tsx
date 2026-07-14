@@ -7,7 +7,7 @@ import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 
 export const metadata = createPageMetadata({
-  title: "Precios de ReservaYa",
+  title: "Precios",
   description:
     "Plan simple y accesible para negocios de servicios en Argentina. Pagá en pesos argentinos sin sorpresas.",
   path: "/precios",

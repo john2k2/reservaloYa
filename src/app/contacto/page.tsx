@@ -5,10 +5,9 @@ import { Mail, MessageCircle } from "lucide-react";
 import { LandingPageShell } from "@/components/landing";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
-import { OrganizationJsonLd } from "@/lib/seo/json-ld";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Contacto comercial de ReservaYa",
+  title: "Contacto comercial",
   description:
     "Contactá a ReservaYa para consultar por turnos online, implementación, soporte comercial o configuración de reservas para tu negocio.",
   path: "/contacto",
@@ -17,7 +16,6 @@ export const metadata: Metadata = createPageMetadata({
 export default function ContactPage() {
   return (
     <LandingPageShell>
-      <OrganizationJsonLd />
       <div className="mx-auto max-w-3xl px-6 py-16 pt-32 sm:py-24 sm:pt-36">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">
           Contacto

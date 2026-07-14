@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import { productName } from "@/constants/site";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 import { getAdminShellData } from "@/server/queries/admin";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
+
+export const metadata: Metadata = createPrivatePageMetadata({
+  title: "Suscripción · ReservaYa",
+  path: "/admin/subscription",
+  description: "Estado de la suscripción de tu negocio en ReservaYa.",
+});
 
 export default async function SubscriptionExpiredPage() {
   const shellData = await getAdminShellData();

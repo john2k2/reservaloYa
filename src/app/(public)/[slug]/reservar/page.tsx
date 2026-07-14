@@ -37,7 +37,7 @@ export async function generateMetadata({
     const pageData = await getPageData(slug);
     
     if (!pageData) {
-      return { title: "Reserva no encontrada | ReservaYa" };
+      return { title: { absolute: "Reserva no encontrada | ReservaYa" }, robots: { index: false, follow: false } };
     }
 
     const serviceName = service
@@ -51,7 +51,7 @@ export async function generateMetadata({
     });
   } catch (error) {
     logger.error("Error generating metadata:", error);
-    return { title: "Reservar turno | ReservaYa" };
+    return { title: { absolute: "Reservar turno | ReservaYa" }, robots: { index: false, follow: false } };
   }
 }
 

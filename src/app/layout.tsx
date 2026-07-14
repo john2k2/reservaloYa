@@ -34,7 +34,7 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es-AR" suppressHydrationWarning>
       <head>
         <link rel="dns-prefetch" href="https://jshlqmfggyzbnwjejkyb.supabase.co" />
         <link rel="preconnect" href="https://jshlqmfggyzbnwjejkyb.supabase.co" crossOrigin="anonymous" />
@@ -48,9 +48,11 @@ export default function RootLayout({
                 // (the [slug] catch-all lives at the root, so anything not in this
                 // list is treated as a business slug).
                 const reservedFirstSegments = [
-                  'about', 'admin', 'api', 'auth', 'como-funciona', 'contacto',
-                  'favicon.ico', 'funcionalidades', 'login', 'platform', 'precios',
-                  'preguntas-frecuentes', 'privacidad', 'sobre-reservaya', 'terminos'
+                  'about', 'admin', 'agenda-online-peluquerias', 'api', 'auth',
+                  'como-funciona', 'contacto', 'favicon.ico', 'funcionalidades',
+                  'login', 'platform', 'precios', 'preguntas-frecuentes', 'privacidad',
+                  'sistema-reservas-centros-estetica', 'sobre-reservaya', 'terminos',
+                  'turnos-online-barberias', 'turnos-online-consultorios', 'turnos-online-nails'
                 ];
                 const firstSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
                 const isPublicBusinessPage = firstSegment !== '' && reservedFirstSegments.indexOf(firstSegment) === -1;

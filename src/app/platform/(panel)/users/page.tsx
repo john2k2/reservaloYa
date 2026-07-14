@@ -5,7 +5,7 @@ import { getPlatformUsersList } from "@/server/queries/platform";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Usuarios · Plataforma · ReservaYa",
+  title: { absolute: "Usuarios · Plataforma · ReservaYa" },
   description: "Gestión de usuarios registrados en la plataforma ReservaYa.",
   robots: { index: false, follow: false },
 };

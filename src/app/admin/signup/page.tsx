@@ -8,12 +8,13 @@ import { demoBusinessOptions } from "@/constants/site";
 import { demoPresets } from "@/constants/demo";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPrivatePageMetadata({
   title: "Crear cuenta · ReservaYa",
-  description: "Crea tu cuenta y tu negocio en ReservaYa. Entrá directo a configurar tu página y tu panel.",
-  robots: { index: false, follow: false },
-};
+  path: "/admin/signup",
+  description: "Creá tu cuenta y tu negocio en ReservaYa. Entrá directo a configurar tu página y tu panel.",
+});
 
 type AdminSignupPageProps = {
   searchParams: Promise<{ error?: string }>;

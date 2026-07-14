@@ -9,7 +9,7 @@ describe("generateBusinessMetadata", () => {
       description: "Barbería premium en Palermo",
     });
 
-    expect(meta.title).toBe("Aura Studio | Reserva tu turno online");
+    expect(meta.title).toEqual({ absolute: "Aura Studio | Reserva tu turno online" });
     expect(meta.description).toBe("Barbería premium en Palermo");
     expect(meta.alternates?.canonical).toEqual(expect.stringContaining("/aura-studio"));
   });
@@ -80,9 +80,9 @@ describe("generateBookingMetadata", () => {
       serviceName: "Corte de pelo",
     });
 
-    expect(meta.title).toBe("Reservar Corte de pelo | Aura Studio");
+    expect(meta.title).toEqual({ absolute: "Reservar Corte de pelo | Aura Studio" });
     expect(meta.robots).toEqual({ index: false, follow: true });
-    expect(meta.openGraph?.images).toBeDefined();
+    expect(meta.openGraph?.images).toBeUndefined();
   });
 
   it("usa titulo generico cuando no hay servicio", () => {
@@ -91,7 +91,24 @@ describe("generateBookingMetadata", () => {
       slug: "aura-studio",
     });
 
-    expect(meta.title).toBe("Reservar turno | Aura Studio");
+    expect(meta.title).toEqual({ absolute: "Reservar turno | Aura Studio" });
+  });
+});
+
+describe("generateTransactionalMetadata", () => {
+  it("setea noindex y canonical del flujo", async () => {
+    const { generateTransactionalMetadata } = await import("./business-metadata");
+    const meta = generateTransactionalMetadata({
+      businessName: "Aura Studio",
+      slug: "aura-studio",
+      pathSuffix: "/confirmacion",
+      titlePrefix: "Confirmación",
+    });
+
+    expect(meta.title).toEqual({ absolute: "Confirmación | Aura Studio" });
+    expect(meta.robots).toEqual({ index: false, follow: false });
+    expect(meta.alternates?.canonical).toEqual(expect.stringContaining("/aura-studio/confirmacion"));
+    expect(meta.openGraph?.url).toEqual(expect.stringContaining("/aura-studio/confirmacion"));
   });
 });
 

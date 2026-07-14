@@ -1,8 +1,16 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 import { sanitizeAuthCallbackNextPath } from "@/server/auth-callback";
 import { AuthCallbackClient } from "./auth-callback-client";
+
+export const metadata: Metadata = createPrivatePageMetadata({
+  title: "Accediendo al panel · ReservaYa",
+  path: "/auth/callback",
+  description: "Validando el enlace seguro de acceso al panel.",
+});
 
 export default async function AuthCallbackPage({
   searchParams,

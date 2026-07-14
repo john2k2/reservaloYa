@@ -7,12 +7,13 @@ import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { generateCsrfToken } from "@/lib/csrf";
 import { SubscriptionPayButton } from "./subscription-pay-button";
+import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPrivatePageMetadata({
   title: "Abonar suscripción · ReservaYa",
+  path: "/admin/subscription/pay",
   description: "Reactivá tu acceso al panel de ReservaYa abonando la suscripción mensual.",
-  robots: { index: false, follow: false },
-};
+});
 
 export default async function SubscriptionPayPage() {
   const shellData = await getAdminShellData();

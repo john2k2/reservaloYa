@@ -6,7 +6,7 @@ import { productName } from "@/constants/site";
 import { createPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Sobre ReservaYa — Sistema de turnos online",
+  title: "Sobre nosotros — Sistema de turnos online",
   description:
     "Conocé la historia, enfoque y criterios de confianza de ReservaYa, el sistema de turnos online para negocios de servicios en Argentina.",
   path: "/sobre-reservaya",

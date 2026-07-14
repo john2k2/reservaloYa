@@ -3,7 +3,6 @@ import type { ReactElement } from "react";
 import { getSiteWhatsAppPhoneForSchema, siteContact } from "@/lib/contact";
 import { safeJsonLdStringify } from "@/lib/seo/safe-json-ld";
 import { siteConfig } from "@/lib/seo/metadata";
-import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 
 export function OrganizationJsonLd(): ReactElement {
   const logoUrl = `${siteConfig.url}/icon-512x512.png`;
@@ -46,17 +45,13 @@ export function SoftwareApplicationJsonLd({
   description?: string;
   url?: string;
 } = {}): ReactElement {
+  // Sin offers: la UI muestra precio en ARS (dólar blue); no inventar USD en schema.
   const schema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: String(SUBSCRIPTION_USD_PRICE),
-      priceCurrency: "USD",
-    },
     description,
     url,
   };

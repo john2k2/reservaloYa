@@ -1,21 +1,30 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
-
 import { formatDateLabel } from "@/lib/bookings/format";
 import { isValidBookingReviewToken } from "@/server/public-booking-links";
 import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
 import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { ReviewForm } from "@/components/public/review/review-form";
+import { generateTransactionalMetadata } from "@/lib/seo/business-metadata";
 
 type ReviewPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ booking?: string; token?: string }>;
 };
+
+export async function generateMetadata({ params }: ReviewPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const pageData = await getPublicBusinessPageData(slug);
+
+  return generateTransactionalMetadata({
+    businessName: pageData?.business.name,
+    slug,
+    pathSuffix: "/resena",
+    titlePrefix: "Dejar reseña",
+  });
+}
 
 export default async function ReviewPage({ params, searchParams }: ReviewPageProps) {
   const { slug } = await params;
@@ -34,8 +43,7 @@ export default async function ReviewPage({ params, searchParams }: ReviewPagePro
     notFound();
   }
 
-  const profile =
-    pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+  const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
 
   const accentColor = profile.accent ?? "#3b82f6";
 
