@@ -98,6 +98,15 @@ Usar frases cortas; no repetir todo el voiceover.
 
 ## Export y uso
 
+**Archivo grabado (2026-07-17):**
+
+| Archivo | Notas |
+|---------|-------|
+| [`assets/reservaya-demo-2026-07-17.webm`](./assets/reservaya-demo-2026-07-17.webm) | Screen recording Playwright (sin voz) |
+| [`assets/reservaya-demo-2026-07-17.mp4`](./assets/reservaya-demo-2026-07-17.mp4) | Misma toma en MP4 (más fácil de subir) |
+
+Recorrido: landing → demo barbería → reservar → confirmación → cierre. **Sin admin** (requiere login). Para voz en off, usá el guión de abajo en CapCut/DaVinci.
+
 | Canal | Formato sugerido |
 |-------|------------------|
 | LinkedIn | 1:1 o 16:9, ≤ 60 s |
