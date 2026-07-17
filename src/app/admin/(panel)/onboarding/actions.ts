@@ -284,7 +284,8 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     accent: palette.accent,
     accentSoft: palette.accentSoft,
     surfaceTint: palette.surfaceTint,
-    trustPoints: profile.trustPoints,
+    // Do not re-seed template trust chips into overrides; public pages hide
+    // template defaults for real businesses until trust points are customized.
     benefits: profile.benefits,
     policies: profile.policies,
     website: parsed.data.website || profile.website,

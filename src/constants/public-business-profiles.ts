@@ -517,3 +517,49 @@ export function mergePublicBusinessProfile(
         : baseProfile.heroImageAlt,
   };
 }
+
+/** Normalize location chips so template defaults compare equal across cities. */
+function normalizeTrustPointForCompare(point: string) {
+  return /^ubicaci[oó]n en /i.test(point) ? "__LOCATION__" : point.trim();
+}
+
+/**
+ * Demo pages keep template trust chips. Real businesses only show trust points
+ * when they differ from the template defaults (custom branding), otherwise [].
+ */
+export function resolvePublicTrustPoints(input: {
+  isDemo: boolean;
+  profileTrustPoints: string[];
+  businessSlug: string;
+  businessName: string;
+  templateSlug?: string | null;
+  shortAddressLabel: string;
+}): string[] {
+  const withAddress = (point: string) =>
+    /^ubicaci[oó]n en /i.test(point)
+      ? `Ubicación en ${input.shortAddressLabel}`
+      : point;
+
+  if (input.isDemo) {
+    return input.profileTrustPoints.map(withAddress);
+  }
+
+  if (input.profileTrustPoints.length === 0) {
+    return [];
+  }
+
+  const templateTrustPoints = getPublicBusinessProfile(
+    input.businessSlug,
+    input.businessName,
+    input.templateSlug ?? undefined
+  ).trustPoints;
+
+  const currentKey = input.profileTrustPoints.map(normalizeTrustPointForCompare).join("|");
+  const templateKey = templateTrustPoints.map(normalizeTrustPointForCompare).join("|");
+
+  if (currentKey === templateKey) {
+    return [];
+  }
+
+  return input.profileTrustPoints.map(withAddress);
+}

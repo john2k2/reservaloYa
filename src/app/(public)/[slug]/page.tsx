@@ -15,6 +15,7 @@ import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
 import { isDemoBusiness } from "@/constants/demo";
+import { resolvePublicTrustPoints } from "@/constants/public-business-profiles";
 import { OptimizedImage, ThumbnailImage } from "@/components/ui/optimized-image";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import {
@@ -229,15 +230,18 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   const shortAddressLabel = getShortAddressLabel(pageData.business.address);
   const nextAvailableSlot = getNextAvailableSlotLabel(firstActiveDay);
 
-  // Templates hardcode a location trust point (e.g. "Ubicación en Palermo")
-  // for the demo business it was written for. Every real business inherits
-  // the same literal text regardless of where they actually are -- swap it
-  // for the business's real short address instead.
+  // Demo pages keep template trust chips. Real businesses hide template
+  // defaults and only show trust points when branding customized them.
   const heroProfile = {
     ...pageData.profile,
-    trustPoints: pageData.profile.trustPoints.map((point) =>
-      /^ubicaci[oó]n en /i.test(point) ? `Ubicación en ${shortAddressLabel}` : point
-    ),
+    trustPoints: resolvePublicTrustPoints({
+      isDemo,
+      profileTrustPoints: pageData.profile.trustPoints,
+      businessSlug: pageData.business.slug,
+      businessName: pageData.business.name,
+      templateSlug: pageData.profile.templateKey,
+      shortAddressLabel,
+    }),
   };
 
   const whatsappHref = buildWhatsAppHref(pageData.business.phone, pageData.business.name);

@@ -4,29 +4,31 @@
 
 ---
 
-## Estado actual (2026-04-24)
+## Estado actual (2026-07-17)
 
 | Item | Estado |
 |------|--------|
 | App desplegada en Vercel | ✅ |
 | Build productivo pasando | ✅ |
 | Tests pasando | ✅ |
-| Emails HTML inline (sin dominio requerido) | ✅ |
+| Emails HTML inline + dominio Resend | ✅ |
 | CRUD admin completo | ✅ |
 | Flujo público de reserva completo | ✅ |
-| Pago online via MercadoPago | ✅ |
-| Suscripcion plataforma via MercadoPago | ✅ |
+| Pago de turnos via MercadoPago OAuth (por negocio) | ✅ |
+| Suscripción plataforma via Polar + transferencia ARS | ⏳ activar vars + migración |
+| Suscripción plataforma via MercadoPago | Legacy (solo si `MP_ACCESS_TOKEN`) |
 | Follow-up post-turno con link a reseña | ✅ |
 | Lista de espera (waitlist) | ✅ |
 | Reseñas post-turno | ✅ |
 | Páginas legales /privacidad y /terminos | ✅ |
 | Endpoint cron `/api/jobs/booking-reminders` | ✅ |
 | `vercel.json` con cron `0 13 * * *` (1pm UTC) | ✅ |
-| Variables de entorno en Vercel | ⏳ ver abajo |
+| Variables Polar / transferencia en Vercel | ⏳ ver abajo |
 | Supabase en producción | ✅ |
-| Cron activo y probado | ⏳ pendiente |
-| Dominio propio en Resend | ⏳ pendiente |
-| Sentry configurado en producción | ⏳ pendiente |
+| Migración Polar (`polarSubscriptionId`) | ⏳ pendiente en prod |
+| Cron activo y probado | ⏳ verificar dry-run |
+| Dominio propio en Resend | ✅ (`turnos@reservaya.ar`) |
+| Sentry configurado en producción | ⏳ verificar Issues |
 
 ---
 

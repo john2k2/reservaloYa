@@ -12,7 +12,7 @@ Producto-servicio para vender turnos online a negocios chicos que hoy operan por
 
 Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y operación.
 
-## Estado actual (2026-05-01)
+## Estado actual (2026-07-17)
 
 ### Flujo publico de reserva
 
@@ -30,13 +30,14 @@ Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y 
 - Politica de cancelacion visible por negocio
 - Tema dark/light coherente en todas las paginas publicas
 - Paginas legales `/privacidad` y `/terminos`
+- Trust points de template ocultos en negocios reales (solo demos o branding custom)
 
 ### Notificaciones automaticas
 
 - Email de confirmacion al cliente y al negocio (Resend, HTML inline)
 - Email de recordatorio 24hs antes del turno
 - Email de seguimiento post-turno (~1h despues) con link a resena
-- WhatsApp recordatorio via Twilio (opcional, complementa email)
+- WhatsApp recordatorio via Meta Cloud API / Twilio (opcional, complementa email)
 - Historial de comunicaciones por booking en el store
 
 ### Admin
@@ -48,8 +49,15 @@ Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y 
 - Gestion de disponibilidad semanal y bloqueos especiales
 - Branding profundo editable: logo, hero, galeria, paleta, redes
 - Politica de cancelacion editable por negocio
-- Integracion MercadoPago OAuth: boton de conexion por negocio
+- Integracion MercadoPago OAuth: boton de conexion por negocio (cobro de turnos)
 - Onboarding: clonar demo y editar desde cero sin tocar codigo
+- Signup siembra servicios y horarios desde plantilla del rubro
+
+### Billing de plataforma (suscripcion SaaS)
+
+- **Primario:** transferencia ARS (`BILLING_TRANSFER_*`) + activacion manual en panel platform ("Marcar pagado")
+- **Primario:** Polar checkout USD + webhooks (`/api/payments/polar/*`)
+- **Legacy:** MercadoPago de plataforma solo si `MP_ACCESS_TOKEN` esta configurado (cuenta de cobro cerrada; no es el camino de venta)
 
 ### Infraestructura
 
@@ -62,34 +70,32 @@ Arquitectura multi-tenant sobre Supabase como backend único para auth, datos y 
 - Tracking UTM en toda la cadena de reserva
 - Deploy en Vercel + Supabase
 - CI: lint + typecheck + test + build + coverage thresholds + smoke E2E
-- Suscripciones de plataforma con attempts historicos y webhook MercadoPago validado
 
 ---
 
-## Lo que falta para produccion real
+## Lo que falta para produccion real / primer cobro
 
-### Prioritario (para lanzar)
+### Ops (activar en Vercel / Polar / Supabase)
 
-1. Configurar `RESEND_API_KEY` para emails reales
-2. Configurar `BOOKING_LINK_SECRET` y `CRON_SECRET` en Vercel
-3. Activar cron real de recordatorios y follow-ups
-4. Validar flujo completo en produccion con reserva real
+1. Aplicar migracion Polar (`polarSubscriptionId` / `polarCustomerId`) en Supabase prod
+2. Cargar `POLAR_*` y `BILLING_TRANSFER_*` en Vercel Production + redeploy
+3. Webhook Polar apuntando a `https://reservaya.ar/api/payments/polar/webhook`
+4. Verificar cron dry-run y un flujo de reserva con email real
+5. Confirmar `MP_WEBHOOK_SECRET` solo para cobros de turnos por negocio (no bloquea SaaS)
 
-### Antes del primer cliente pago
+### GTM
 
-5. Supabase validado con backups, RLS y credenciales correctas en todos los entornos
-6. Dominio propio en Resend para emails sin restriccion de destinatarios
-7. Video demo 30-45s para lanzamiento comercial
+6. Video demo 30-45s + capturas + post LinkedIn / piloto
 
 ### Post-lanzamiento
 
-- Profundizar analytics y observabilidad sobre Supabase
+- Vercel Pro / re-habilitar image optimizer cuando haya MRR
+- Profundizar analytics (GA4 / PostHog)
 - Seleccion de profesional/staff por parte del cliente
-- GA4 o PostHog para analytics avanzado
 
 ---
 
-## Criterio de cierre de la siguiente iteracion
+## Criterio de cierre de esta iteracion
 
 Un negocio piloto debe poder:
 
@@ -98,13 +104,14 @@ Un negocio piloto debe poder:
 - Recibir recordatorio 24hs antes del turno
 - Recibir follow-up post-turno con link para dejar resena
 - Gestionar turnos desde el admin sin friccion
-- Cobrar online via MercadoPago si lo desea
+- Pagar la suscripcion SaaS por transferencia o Polar
+- Cobrar turnos online via MercadoPago OAuth si lo desea
 
 ---
 
 ## Riesgo principal
 
-Que el producto ya haga mucho, pero el operador no active los servicios clave (email, cron, dominio) y los clientes no reciban confirmaciones reales.
+Que el producto ya haga mucho, pero falten vars de cobro (Polar/transfer) o el operador no valide emails/cron, y el piloto no perciba valor.
 
 ## Regla operativa
 
