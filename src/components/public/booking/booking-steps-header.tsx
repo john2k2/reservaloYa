@@ -20,6 +20,8 @@ type BookingStepsHeaderProps = {
   title?: string;
   /** Hide the 1-2-3 stepper (e.g. manage-booking page) */
   showSteps?: boolean;
+  /** Hide the intro card entirely; keep only the back link (e.g. confirmation) */
+  showIntroCard?: boolean;
 };
 
 export function BookingStepsHeader({
@@ -29,6 +31,7 @@ export function BookingStepsHeader({
   overline = "Reserva guiada",
   title = "Completá tu turno en 3 pasos simples",
   showSteps = true,
+  showIntroCard = true,
 }: BookingStepsHeaderProps) {
   return (
     <div className="mb-6 space-y-4 sm:mb-8">
@@ -40,72 +43,79 @@ export function BookingStepsHeader({
         Volver al negocio
       </Link>
 
-      <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-4 shadow-sm backdrop-blur sm:p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              {overline}
-            </p>
-            <p className="mt-2 text-lg font-semibold text-foreground sm:text-xl">
-              {title}
-            </p>
+      {showIntroCard && (
+        <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-4 shadow-sm backdrop-blur sm:p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                {overline}
+              </p>
+              <p className="mt-2 text-lg font-semibold text-foreground sm:text-xl">
+                {title}
+              </p>
+            </div>
+            {showSteps && (
+              <p className="text-xs text-muted-foreground">Paso {currentStep} de 3</p>
+            )}
           </div>
+
           {showSteps && (
-            <p className="text-xs text-muted-foreground">Paso {currentStep} de 3</p>
-          )}
-        </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {bookingSteps.map((step) => {
+                const isCurrent = step.id === currentStep;
+                const isCompleted = step.id < currentStep;
 
-        {showSteps && <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {bookingSteps.map((step) => {
-            const isCurrent = step.id === currentStep;
-            const isCompleted = step.id < currentStep;
-
-            return (
-              <div
-                key={step.id}
-                className={cn(
-                  "rounded-2xl border px-4 py-3 transition-colors",
-                  isCurrent
-                    ? "border-transparent bg-secondary/70 text-foreground"
-                    : isCompleted
-                      ? "border-border/60 bg-background text-foreground"
-                      : "border-border/60 bg-background/70 text-muted-foreground"
-                )}
-                style={
-                  isCurrent && accentColor
-                    ? {
-                        backgroundColor: `${accentColor}12`,
-                        borderColor: `${accentColor}33`,
-                      }
-                    : undefined
-                }
-              >
-                <div className="flex items-center gap-3">
-                  <span
+                return (
+                  <div
+                    key={step.id}
                     className={cn(
-                      "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                      isCurrent || isCompleted
-                        ? "bg-foreground text-background"
-                        : "bg-secondary text-foreground"
+                      "rounded-2xl border px-4 py-3 transition-colors",
+                      isCurrent
+                        ? "border-transparent bg-secondary/70 text-foreground"
+                        : isCompleted
+                          ? "border-border/60 bg-background text-foreground"
+                          : "border-border/60 bg-background/70 text-muted-foreground"
                     )}
                     style={
                       isCurrent && accentColor
-                        ? { backgroundColor: accentColor, color: getAccentForeground(accentColor) }
+                        ? {
+                            backgroundColor: `${accentColor}12`,
+                            borderColor: `${accentColor}33`,
+                          }
                         : undefined
                     }
                   >
-                    {step.id}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold">{step.label}</p>
-                    <p className="text-xs text-muted-foreground">{step.helper}</p>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                          isCurrent || isCompleted
+                            ? "bg-foreground text-background"
+                            : "bg-secondary text-foreground"
+                        )}
+                        style={
+                          isCurrent && accentColor
+                            ? {
+                                backgroundColor: accentColor,
+                                color: getAccentForeground(accentColor),
+                              }
+                            : undefined
+                        }
+                      >
+                        {step.id}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold">{step.label}</p>
+                        <p className="text-xs text-muted-foreground">{step.helper}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
