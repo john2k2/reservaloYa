@@ -416,6 +416,12 @@ export async function unlockBusinessSubscription(businessId: string): Promise<vo
     .eq("businessId", businessId);
 }
 
+/** Activa la suscripción tras comprobar una transferencia bancaria manual. */
+export async function markSubscriptionPaid(businessId: string): Promise<void> {
+  const { activateSupabaseSubscription } = await import("@/server/supabase-store/subscription");
+  await activateSupabaseSubscription(businessId);
+}
+
 const IMPERSONATION_TOKEN_TTL_MS = 2 * 60 * 1000;
 
 /**

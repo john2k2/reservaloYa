@@ -40,7 +40,7 @@ describe("requireAdminRouteAccess", () => {
 
     await expect(requireAdminRouteAccess("/admin/onboarding")).rejects.toThrow("REDIRECT:");
     expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
-      "Solo el owner puede cambiar la página y la configuración del negocio."
+      "Solo el dueño puede cambiar la página y la configuración del negocio."
     );
   });
 

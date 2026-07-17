@@ -1,9 +1,27 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CreditCard, CalendarDays, CheckCircle2, Clock, XCircle, AlertTriangle } from "lucide-react";
+import {
+  CreditCard,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  AlertTriangle,
+  ArrowRight,
+  ExternalLink,
+} from "lucide-react";
 
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminBillingData } from "@/server/queries/admin";
 import { cancelSubscriptionAction } from "./actions";
+import {
+  getBillingTransferDetails,
+  hasBillingTransferDetails,
+  buildTransferWhatsAppMessage,
+} from "@/server/billing-transfer";
+import { getSiteWhatsAppHref } from "@/lib/contact";
+import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import { isPolarConfigured } from "@/server/polar-config";
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return null;
@@ -37,6 +55,10 @@ const statusConfig = {
   },
 } as const;
 
+const ERROR_MESSAGES: Record<string, string> = {
+  polar_not_configured: "El portal de Polar no está disponible. Escribinos por WhatsApp.",
+};
+
 interface BillingPageProps {
   searchParams: Promise<{
     error?: string;
@@ -65,6 +87,16 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
 
   const isCancelled = status === "cancelled";
   const canCancel = status === "active" || status === "trial";
+  const needsPayment = status === "suspended" || status === "cancelled" || shellData.subscriptionExpired;
+  const showPolarPortal = isPolarConfigured() && Boolean(subscription?.polarCustomerId);
+  const transfer = getBillingTransferDetails();
+  const showTransfer = hasBillingTransferDetails(transfer);
+  const whatsappHref = getSiteWhatsAppHref(
+    buildTransferWhatsAppMessage({ businessName: shellData.businessName || "mi negocio" })
+  );
+  const errorMessage = params.error
+    ? (ERROR_MESSAGES[params.error] ?? params.error)
+    : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
@@ -73,9 +105,9 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         <h1 className="text-xl font-semibold text-foreground">Suscripción</h1>
       </div>
 
-      {params.error && (
+      {errorMessage && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {params.error}
+          {errorMessage}
         </div>
       )}
 
@@ -85,7 +117,6 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         </div>
       )}
 
-      {/* Estado actual */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
           Estado actual
@@ -95,6 +126,10 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
           <StatusIcon className="size-4" />
           {config.label}
         </div>
+
+        <p className="text-sm text-muted-foreground">
+          Plan único — USD {SUBSCRIPTION_USD_PRICE}/mes (transferencia en ARS o tarjeta en USD).
+        </p>
 
         {subscription && (
           <dl className="space-y-3 text-sm">
@@ -113,7 +148,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
                 <CalendarDays className="size-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <div>
                   <dt className="text-muted-foreground">
-                    {isCancelled ? "Acceso hasta" : "Próximo cobro"}
+                    {isCancelled ? "Acceso hasta" : "Próximo cobro / renovación"}
                   </dt>
                   <dd className="font-medium text-foreground">{formatDate(subscription.nextBillingDate)}</dd>
                 </div>
@@ -130,28 +165,49 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
           </dl>
         )}
 
-        {!subscription && status === "trial" && (
-          <p className="text-sm text-muted-foreground">
-            Estás en período de prueba. Si tenés dudas sobre tu plan, escribinos a{" "}
-            <a href="mailto:soporte@reservaya.app" className="underline">
-              soporte@reservaya.app
-            </a>
-            .
-          </p>
+        {(needsPayment || isCancelled) && (
+          <Link
+            href="/admin/subscription/pay"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm font-semibold text-background"
+          >
+            Renovar / pagar
+            <ArrowRight className="size-4" />
+          </Link>
         )}
 
-        {!subscription && status !== "trial" && (
-          <p className="text-sm text-muted-foreground">
-            No encontramos información de suscripción. Contactanos a{" "}
-            <a href="mailto:soporte@reservaya.app" className="underline">
-              soporte@reservaya.app
-            </a>
-            .
-          </p>
+        {showPolarPortal && (
+          <Link
+            href="/api/payments/polar/portal"
+            className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline"
+          >
+            Gestionar facturación en Polar
+            <ExternalLink className="size-3.5" />
+          </Link>
         )}
       </div>
 
-      {/* Cancelar suscripción */}
+      {showTransfer && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Transferencia
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Podés pagar por transferencia y enviar el comprobante. Datos:{" "}
+            {transfer.alias ? `alias ${transfer.alias}` : null}
+            {transfer.alias && transfer.cbu ? " · " : null}
+            {transfer.cbu ? `CBU ${transfer.cbu}` : null}.
+          </p>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex text-sm font-medium underline"
+          >
+            Enviar comprobante por WhatsApp
+          </a>
+        </div>
+      )}
+
       {canCancel && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -162,7 +218,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
             {subscription?.nextBillingDate
               ? formatDate(subscription.nextBillingDate)
               : "el fin del período actual"}
-            . Después de esa fecha no se realizarán más cobros.
+            . Si pagás con Polar, también podés cancelar la renovación desde el portal.
           </p>
           <form action={cancelSubscriptionAction} className="space-y-3">
             <div className="space-y-1.5">
@@ -185,18 +241,6 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
               Cancelar suscripción
             </button>
           </form>
-        </div>
-      )}
-
-      {isCancelled && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-          <p className="text-sm text-muted-foreground">
-            ¿Querés reactivar tu cuenta? Escribinos a{" "}
-            <a href="mailto:soporte@reservaya.app" className="underline text-foreground">
-              soporte@reservaya.app
-            </a>{" "}
-            y te ayudamos.
-          </p>
         </div>
       )}
     </div>

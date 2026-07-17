@@ -7,13 +7,15 @@ import {
   extendTrialAction,
   cancelSubscriptionAction,
   unlockSubscriptionAction,
+  markSubscriptionPaidAction,
 } from "@/server/actions/platform";
 
 type TrialAction =
   | { type: "enable"; days: number }
   | { type: "extend"; days: number }
   | { type: "cancel" }
-  | { type: "unlock" };
+  | { type: "unlock" }
+  | { type: "markPaid" };
 
 interface TrialActionsProps {
   businessId: string;
@@ -50,6 +52,11 @@ export function TrialActions({
         case "unlock":
           if (window.confirm("¿Desbloquear la suscripción de este negocio?")) {
             await unlockSubscriptionAction(businessId);
+          }
+          break;
+        case "markPaid":
+          if (window.confirm("¿Marcar esta suscripción como pagada por transferencia (+30 días)?")) {
+            await markSubscriptionPaidAction(businessId);
           }
           break;
       }
@@ -152,6 +159,16 @@ export function TrialActions({
           disabled={isPending}
         >
           Desbloquear
+        </button>
+      )}
+
+      {subscriptionStatus !== "active" && (
+        <button
+          onClick={() => handleAction({ type: "markPaid" })}
+          className="text-xs font-medium text-emerald-700 hover:text-emerald-900 disabled:opacity-50"
+          disabled={isPending}
+        >
+          Marcar pagado
         </button>
       )}
     </div>

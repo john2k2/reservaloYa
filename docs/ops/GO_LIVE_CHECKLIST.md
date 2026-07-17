@@ -82,13 +82,36 @@ Ir a: **Vercel Dashboard → reservaya-kappa → Settings → Environment Variab
 
 > Sin estas variables, solo se envían reminders por email. No bloquea ningún flujo.
 
-### Para MercadoPago (pagos online y suscripciones)
+### Para Polar (suscripción de plataforma en USD)
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `POLAR_ACCESS_TOKEN` | Access token org | Dashboard Polar → Settings |
+| `POLAR_WEBHOOK_SECRET` | Secret del webhook | Endpoint `/api/payments/polar/webhook` |
+| `POLAR_PRODUCT_ID` | ID del producto recurrente | Plan mensual USD 22 |
+| `POLAR_SERVER` | `sandbox` o `production` | Usar sandbox hasta validar |
+
+Webhook URL prod: `https://reservaya.ar/api/payments/polar/webhook`  
+Eventos: `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked`, `order.paid`.
+
+### Para transferencia bancaria (cobro manual ARS)
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `BILLING_TRANSFER_ALIAS` | Alias CBU | Visible en `/admin/subscription/pay` |
+| `BILLING_TRANSFER_CBU` | CBU/CVU | Opcional si hay alias |
+| `BILLING_TRANSFER_HOLDER` | Titular | Recomendado |
+| `BILLING_TRANSFER_BANK` | Banco | Opcional |
+
+Activación: panel platform → negocios → **Marcar pagado**.
+
+### Para MercadoPago (OAuth de turnos por negocio; cobro SaaS legacy)
 
 | Variable | Valor | Notas |
 |----------|-------|-------|
 | `MP_APP_ID` | ID de la app MP | Desde Mercado Pago Developers |
 | `MP_APP_SECRET` | Secret de la app | Para OAuth por negocio |
-| `MP_ACCESS_TOKEN` | Access token de plataforma | Para cobrar suscripciones de negocios |
+| `MP_ACCESS_TOKEN` | Access token de plataforma | Legacy: checkout SaaS solo si está set |
 | `MP_WEBHOOK_SECRET` | Secret del webhook | Validación de firma para `/api/payments/webhook`; requerido en producción |
 
 ### Para Supabase

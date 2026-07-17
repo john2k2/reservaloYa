@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 
 import { writeAuditLog, type AuditAction } from "@/server/audit-log";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
-import { togglePlatformBusinessActive, enableTrial, extendTrial, cancelSubscription, unlockBusinessSubscription, generateImpersonationToken } from "@/server/queries/platform";
+import {
+  togglePlatformBusinessActive,
+  enableTrial,
+  extendTrial,
+  cancelSubscription,
+  unlockBusinessSubscription,
+  markSubscriptionPaid,
+  generateImpersonationToken,
+} from "@/server/queries/platform";
 
 type PlatformAdminUser = NonNullable<Awaited<ReturnType<typeof getAuthenticatedPlatformAdmin>>>;
 
@@ -77,6 +85,16 @@ export async function unlockSubscriptionAction(businessId: string) {
 
   await unlockBusinessSubscription(businessId);
   await writePlatformAuditLog(user, businessId, "platform.subscription_unlocked");
+  revalidatePath("/platform/businesses");
+  revalidatePath("/platform/dashboard");
+}
+
+export async function markSubscriptionPaidAction(businessId: string) {
+  const user = await getAuthenticatedPlatformAdmin();
+  if (!user) throw new Error("No autorizado");
+
+  await markSubscriptionPaid(businessId);
+  await writePlatformAuditLog(user, businessId, "platform.subscription_paid");
   revalidatePath("/platform/businesses");
   revalidatePath("/platform/dashboard");
 }

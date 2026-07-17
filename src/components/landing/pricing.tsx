@@ -32,7 +32,7 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
             Un plan. Sin permanencia.
           </h2>
           <p className="mt-6 max-w-[500px] text-lg text-muted-foreground">
-            Arrancás gratis con 15 días de trial. Después abonás al tipo de cambio blue.
+            Arrancás gratis con 15 días de trial. Después pagás por transferencia o con tarjeta en USD.
           </p>
         </div>
       </AnimatedSection>
@@ -57,7 +57,7 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
             </div>
 
             <p className="mt-6 text-center font-mono text-xs uppercase tracking-[0.2em] text-ticket">
-              15 días gratis · Sin tarjeta
+              15 días gratis · Transferencia o tarjeta
             </p>
 
             <ul className="mt-8 space-y-0 border-y border-rule">

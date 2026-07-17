@@ -8,6 +8,7 @@ const {
   extendTrialMock,
   cancelSubscriptionMock,
   unlockBusinessSubscriptionMock,
+  markSubscriptionPaidMock,
   generateImpersonationTokenMock,
   writeAuditLogMock,
 } = vi.hoisted(() => ({
@@ -18,6 +19,7 @@ const {
   extendTrialMock: vi.fn(),
   cancelSubscriptionMock: vi.fn(),
   unlockBusinessSubscriptionMock: vi.fn(),
+  markSubscriptionPaidMock: vi.fn(),
   generateImpersonationTokenMock: vi.fn(),
   writeAuditLogMock: vi.fn(),
 }));
@@ -36,6 +38,7 @@ vi.mock("@/server/queries/platform", () => ({
   extendTrial: extendTrialMock,
   cancelSubscription: cancelSubscriptionMock,
   unlockBusinessSubscription: unlockBusinessSubscriptionMock,
+  markSubscriptionPaid: markSubscriptionPaidMock,
   generateImpersonationToken: generateImpersonationTokenMock,
 }));
 
@@ -52,6 +55,7 @@ describe("platform actions", () => {
     extendTrialMock.mockReset();
     cancelSubscriptionMock.mockReset();
     unlockBusinessSubscriptionMock.mockReset();
+    markSubscriptionPaidMock.mockReset();
     generateImpersonationTokenMock.mockReset();
     writeAuditLogMock.mockReset();
 
@@ -93,12 +97,14 @@ describe("platform actions", () => {
       extendTrialAction,
       cancelSubscriptionAction,
       unlockSubscriptionAction,
+      markSubscriptionPaidAction,
     } = await import("./platform");
 
     await enableTrialAction("biz_123", 14);
     await extendTrialAction("biz_123", 7);
     await cancelSubscriptionAction("biz_123");
     await unlockSubscriptionAction("biz_123");
+    await markSubscriptionPaidAction("biz_123");
 
     expect(writeAuditLogMock).toHaveBeenCalledWith(
       expect.any(Object),
@@ -115,6 +121,13 @@ describe("platform actions", () => {
     expect(writeAuditLogMock).toHaveBeenCalledWith(
       expect.any(Object),
       "platform.subscription_cancelled",
+      "biz_123",
+      {}
+    );
+    expect(markSubscriptionPaidMock).toHaveBeenCalledWith("biz_123");
+    expect(writeAuditLogMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      "platform.subscription_paid",
       "biz_123",
       {}
     );

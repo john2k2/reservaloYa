@@ -20,6 +20,18 @@ const envSchema = z.object({
   MP_APP_SECRET: z.string().min(1).optional(),
   MP_ACCESS_TOKEN: z.string().min(1).optional(),
   MP_WEBHOOK_SECRET: z.string().min(1).optional(),
+
+  // Polar (suscripción de plataforma)
+  POLAR_ACCESS_TOKEN: z.string().min(1).optional(),
+  POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
+  POLAR_PRODUCT_ID: z.string().min(1).optional(),
+  POLAR_SERVER: z.string().optional(),
+
+  // Transferencia bancaria (cobro manual ARS)
+  BILLING_TRANSFER_ALIAS: z.string().min(1).optional(),
+  BILLING_TRANSFER_CBU: z.string().min(1).optional(),
+  BILLING_TRANSFER_HOLDER: z.string().min(1).optional(),
+  BILLING_TRANSFER_BANK: z.string().min(1).optional(),
   
   // Twilio
   TWILIO_ACCOUNT_SID: z.string().min(1).optional(),

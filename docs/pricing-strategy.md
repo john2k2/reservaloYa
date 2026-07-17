@@ -2,8 +2,15 @@
 
 ## Plan actual (implementado)
 
-**Plan único** — `SUBSCRIPTION_USD_PRICE` en `src/server/payments-domain.ts` ($22 USD/mes),
-cobrado en ARS al tipo de cambio blue del día (`src/components/landing/pricing.tsx`).
+**Plan único** — `SUBSCRIPTION_USD_PRICE` en `src/server/payments-domain.ts` ($22 USD/mes).
+
+**Canales de cobro de plataforma** (en este orden operativo):
+
+1. **Transferencia ARS** — datos en `BILLING_TRANSFER_*`; activación manual desde panel platform (“Marcar pagado”).
+2. **Polar (tarjeta / USD)** — checkout + webhooks en `/api/payments/polar/*`; renovación automática.
+3. **MercadoPago de plataforma** — legacy; solo se muestra si `MP_ACCESS_TOKEN` está configurado. No es el camino primario (cuenta de cobro de plataforma no disponible).
+
+El equivalente en ARS de la landing usa el dólar blue (`getBlueDollarRate`) como referencia para transferencias.
 
 **Incluye**:
 - Landing pública profesional del negocio
@@ -31,7 +38,7 @@ de tiempo que da automatizar reservas y recordatorios.
 ### Ideas de features para una futura expansión (no comprometidas a un roadmap)
 
 - Recordatorios por WhatsApp (no solo email)
-- Pagos online integrados (MercadoPago)
+- Pagos online integrados (MercadoPago OAuth por negocio — ya existe para turnos)
 - Múltiples usuarios/staff
 - Reportes y analytics avanzados
 - Marketing automation (cupones, promociones)

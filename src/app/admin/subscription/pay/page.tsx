@@ -1,13 +1,24 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ArrowRight, Building2, CreditCard } from "lucide-react";
 
 import { getAdminShellData } from "@/server/queries/admin";
-import { getSubscriptionArsPrice } from "@/server/payments-domain";
+import { getSubscriptionArsPrice, SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { generateCsrfToken } from "@/lib/csrf";
 import { SubscriptionPayButton } from "./subscription-pay-button";
 import { createPrivatePageMetadata } from "@/lib/seo/metadata";
+import { isMercadoPagoConfigured } from "@/server/mercadopago";
+import { isPolarConfigured } from "@/server/polar-config";
+import {
+  buildTransferWhatsAppMessage,
+  getBillingTransferDetails,
+  hasBillingTransferDetails,
+} from "@/server/billing-transfer";
+import { getSiteWhatsAppHref } from "@/lib/contact";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = createPrivatePageMetadata({
   title: "Abonar suscripción · ReservaYa",
@@ -15,7 +26,22 @@ export const metadata: Metadata = createPrivatePageMetadata({
   description: "Reactivá tu acceso al panel de ReservaYa abonando la suscripción mensual.",
 });
 
-export default async function SubscriptionPayPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  mp_not_configured: "MercadoPago no está disponible ahora. Usá transferencia o tarjeta (Polar).",
+  polar_not_configured: "El pago con tarjeta no está configurado todavía. Usá transferencia bancaria.",
+  preference_failed: "No pudimos iniciar el pago con MercadoPago. Probá de nuevo o usá otro método.",
+  attempt_failed: "No pudimos registrar el intento de pago. Probá de nuevo en unos minutos.",
+  payment_failed: "El pago no se completó. Podés reintentar o pagar por transferencia.",
+  payment_pending: "Tu pago quedó pendiente. Cuando se acredite, te reactivamos el acceso.",
+  unauthorized: "Tu sesión expiró. Volvé a iniciar sesión e intentá de nuevo.",
+  invalid_csrf: "La sesión de pago expiró. Recargá la página e intentá de nuevo.",
+};
+
+interface SubscriptionPayPageProps {
+  searchParams: Promise<{ error?: string }>;
+}
+
+export default async function SubscriptionPayPage({ searchParams }: SubscriptionPayPageProps) {
   const shellData = await getAdminShellData();
 
   if (!shellData) {
@@ -32,44 +58,165 @@ export default async function SubscriptionPayPage() {
     redirect("/login");
   }
 
+  const params = await searchParams;
   const blueRate = await getBlueDollarRate();
   const arsPrice = getSubscriptionArsPrice(blueRate);
-  const formattedPrice = Math.round(arsPrice).toLocaleString("es-AR");
+  const formattedArs = arsPrice > 0 ? Math.round(arsPrice).toLocaleString("es-AR") : null;
   const csrfToken = generateCsrfToken(user.id);
+  const showMp = isMercadoPagoConfigured();
+  const showPolar = isPolarConfigured();
+  const transfer = getBillingTransferDetails();
+  const showTransfer = hasBillingTransferDetails(transfer);
+  const businessName = shellData.businessName || "mi negocio";
+  const errorMessage = params.error
+    ? (ERROR_MESSAGES[params.error] ?? `No pudimos procesar el pago (${params.error}).`)
+    : null;
+
+  const whatsappHref = getSiteWhatsAppHref(
+    buildTransferWhatsAppMessage({
+      businessName,
+      amountArsLabel: formattedArs ?? undefined,
+    })
+  );
 
   return (
     <div className="landing-theme flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-md space-y-6 text-center">
-        <div className="space-y-2">
-          <div className="text-6xl">💳</div>
+      <div className="w-full max-w-lg space-y-6">
+        <div className="space-y-2 text-center">
           <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
             Abonar tu suscripción
           </h1>
           <p className="text-muted-foreground">
-            {shellData?.businessName
-              ? `${shellData.businessName}`
-              : "Tu negocio"}{" "}
-            - $ {formattedPrice} ARS por mes
+            {businessName} — USD {SUBSCRIPTION_USD_PRICE}/mes
+            {formattedArs ? ` (≈ $${formattedArs} ARS)` : ""}
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Resumen</p>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Plan Mensual</span>
-              <span className="font-mono font-medium">$ {formattedPrice} ARS</span>
-            </div>
+        {errorMessage && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
           </div>
+        )}
 
-          <SubscriptionPayButton
-            csrfToken={csrfToken}
-            label="Pagar con MercadoPago"
-          />
-        </div>
+        {showTransfer && (
+          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="size-5 text-foreground" aria-hidden />
+              <h2 className="text-sm font-semibold text-foreground">Transferencia bancaria (ARS)</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Transferí el monto en pesos y enviá el comprobante por WhatsApp con el nombre del
+              negocio. Te activamos el acceso el mismo día.
+            </p>
+            <dl className="space-y-2 rounded-lg border border-border bg-background px-4 py-3 text-sm">
+              {transfer.holder && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Titular</dt>
+                  <dd className="font-medium text-right">{transfer.holder}</dd>
+                </div>
+              )}
+              {transfer.bank && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Banco</dt>
+                  <dd className="font-medium text-right">{transfer.bank}</dd>
+                </div>
+              )}
+              {transfer.alias && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Alias</dt>
+                  <dd className="font-mono font-medium text-right">{transfer.alias}</dd>
+                </div>
+              )}
+              {transfer.cbu && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">CBU/CVU</dt>
+                  <dd className="font-mono font-medium text-right break-all">{transfer.cbu}</dd>
+                </div>
+              )}
+              {formattedArs && (
+                <div className="flex justify-between gap-3 border-t border-border pt-2">
+                  <dt className="text-muted-foreground">Monto sugerido</dt>
+                  <dd className="font-mono font-semibold">${formattedArs} ARS</dd>
+                </div>
+              )}
+            </dl>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold",
+                "bg-foreground text-background transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+              )}
+            >
+              Enviar comprobante por WhatsApp
+              <ArrowRight className="size-4" />
+            </a>
+          </section>
+        )}
 
-        <p className="text-xs text-muted-foreground">
-          Pago procesado por MercadoPago. Después de pagar, tu acceso se reactivará automáticamente.
+        {showPolar && (
+          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <CreditCard className="size-5 text-foreground" aria-hidden />
+              <h2 className="text-sm font-semibold text-foreground">Tarjeta / USD (Polar)</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Pago con tarjeta en dólares. La suscripción se renueva automáticamente cada mes.
+            </p>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Plan mensual</span>
+              <span className="font-mono font-medium">USD {SUBSCRIPTION_USD_PRICE}</span>
+            </div>
+            <Link
+              href="/api/payments/polar/checkout"
+              className={cn(
+                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold",
+                "border border-border bg-background text-foreground",
+                "transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+              )}
+            >
+              Pagar con tarjeta
+              <ArrowRight className="size-4" />
+            </Link>
+          </section>
+        )}
+
+        {showMp && (
+          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">MercadoPago</h2>
+            <p className="text-sm text-muted-foreground">
+              {formattedArs
+                ? `$${formattedArs} ARS por mes (tipo de cambio blue).`
+                : "Pago mensual en ARS."}
+            </p>
+            <SubscriptionPayButton csrfToken={csrfToken} label="Pagar con MercadoPago" />
+          </section>
+        )}
+
+        {!showTransfer && !showPolar && !showMp && (
+          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 space-y-3 text-sm text-amber-900">
+            <p className="font-medium">No hay métodos de pago automáticos configurados.</p>
+            <p>
+              Escribinos por WhatsApp y te pasamos los datos para transferir y activar tu cuenta.
+            </p>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex font-semibold underline"
+            >
+              Hablar por WhatsApp
+            </a>
+          </section>
+        )}
+
+        <p className="text-center text-xs text-muted-foreground">
+          ¿Problemas para pagar?{" "}
+          <a href={whatsappHref} className="underline" target="_blank" rel="noopener noreferrer">
+            Contactanos
+          </a>
+          .
         </p>
       </div>
     </div>

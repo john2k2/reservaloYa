@@ -18,6 +18,7 @@ export type AuditAction =
   | "platform.trial_extended"
   | "platform.subscription_cancelled"
   | "platform.subscription_unlocked"
+  | "platform.subscription_paid"
   | "platform.impersonation_link_created";
 
 export type AuditActor = {

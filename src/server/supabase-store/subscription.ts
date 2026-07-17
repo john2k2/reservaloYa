@@ -1,8 +1,23 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "./_core";
-import { resolveSubscriptionStatus, normalizeSubscriptionPaymentAttempt } from "./helpers";
+import { normalizeSubscriptionPaymentAttempt } from "./helpers";
 import { isActiveSubscriptionExpired } from "@/server/payments-domain";
 import type { SupabaseSubscriptionPaymentAttempt } from "./types";
+
+export type ActivateSubscriptionOptions = {
+  nextBillingDate?: string | Date | null;
+  polarSubscriptionId?: string | null;
+  polarCustomerId?: string | null;
+};
+
+function toIsoDate(value?: string | Date | null): string {
+  if (!value) {
+    const nextBillingDate = new Date();
+    nextBillingDate.setDate(nextBillingDate.getDate() + 30);
+    return nextBillingDate.toISOString();
+  }
+  return value instanceof Date ? value.toISOString() : value;
+}
 
 export async function getSupabaseSubscriptionData(businessId: string) {
   const client = await createServerClient();
@@ -21,6 +36,8 @@ export async function getSupabaseSubscriptionData(businessId: string) {
     trialEndsAt: sub.trialEndsAt as string | null,
     nextBillingDate: sub.nextBillingDate as string | null,
     mpSubscriptionId: sub.mpSubscriptionId as string | null,
+    polarSubscriptionId: sub.polarSubscriptionId as string | null,
+    polarCustomerId: sub.polarCustomerId as string | null,
     created: sub.created as string,
   };
 }
@@ -29,29 +46,126 @@ export async function getSupabaseSubscriptionByBusinessId(businessId: string) {
   const client = await getSupabaseAdminClient();
   const { data, error } = await client
     .from("subscriptions")
-    .select("id, status, businessId")
+    .select("id, status, businessId, polarSubscriptionId, polarCustomerId, nextBillingDate")
     .eq("businessId", businessId)
     .single();
 
   if (error || !data) return null;
-  return data as { id: string; status: string; businessId: string };
+  return data as {
+    id: string;
+    status: string;
+    businessId: string;
+    polarSubscriptionId: string | null;
+    polarCustomerId: string | null;
+    nextBillingDate: string | null;
+  };
 }
 
-export async function activateSupabaseSubscription(businessId: string) {
+export async function getSupabaseSubscriptionByPolarId(polarSubscriptionId: string) {
+  const client = await getSupabaseAdminClient();
+  const { data, error } = await client
+    .from("subscriptions")
+    .select("id, status, businessId, polarSubscriptionId, polarCustomerId, nextBillingDate")
+    .eq("polarSubscriptionId", polarSubscriptionId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as {
+    id: string;
+    status: string;
+    businessId: string;
+    polarSubscriptionId: string | null;
+    polarCustomerId: string | null;
+    nextBillingDate: string | null;
+  };
+}
+
+export async function activateSupabaseSubscription(
+  businessId: string,
+  opts: ActivateSubscriptionOptions = {}
+) {
   const client = await getSupabaseAdminClient();
 
-  const nextBillingDate = new Date();
-  nextBillingDate.setDate(nextBillingDate.getDate() + 30);
+  const update: Record<string, unknown> = {
+    status: "active",
+    nextBillingDate: toIsoDate(opts.nextBillingDate),
+    lockedAt: null,
+  };
+
+  if (opts.polarSubscriptionId !== undefined) {
+    update.polarSubscriptionId = opts.polarSubscriptionId;
+  }
+  if (opts.polarCustomerId !== undefined) {
+    update.polarCustomerId = opts.polarCustomerId;
+  }
 
   const { error } = await client
     .from("subscriptions")
-    .update({
-      status: "active",
-      nextBillingDate: nextBillingDate.toISOString(),
-    })
+    .update(update)
     .eq("businessId", businessId);
 
   if (error) throw new Error("No se pudo activar la suscripción.");
+}
+
+export async function renewSupabaseSubscription(
+  businessId: string,
+  opts: {
+    nextBillingDate: string | Date;
+    polarSubscriptionId?: string | null;
+    polarCustomerId?: string | null;
+  }
+) {
+  const client = await getSupabaseAdminClient();
+
+  const update: Record<string, unknown> = {
+    status: "active",
+    nextBillingDate: toIsoDate(opts.nextBillingDate),
+    lockedAt: null,
+  };
+
+  if (opts.polarSubscriptionId !== undefined) {
+    update.polarSubscriptionId = opts.polarSubscriptionId;
+  }
+  if (opts.polarCustomerId !== undefined) {
+    update.polarCustomerId = opts.polarCustomerId;
+  }
+
+  const { error } = await client
+    .from("subscriptions")
+    .update(update)
+    .eq("businessId", businessId);
+
+  if (error) throw new Error("No se pudo renovar la suscripción.");
+}
+
+export async function suspendSupabaseSubscription(businessId: string) {
+  const client = await getSupabaseAdminClient();
+  const { error } = await client
+    .from("subscriptions")
+    .update({ status: "suspended" })
+    .eq("businessId", businessId);
+
+  if (error) throw new Error("No se pudo suspender la suscripción.");
+}
+
+export async function markSupabaseSubscriptionCancelledAtPeriodEnd(
+  businessId: string,
+  nextBillingDate?: string | Date | null
+) {
+  const client = await getSupabaseAdminClient();
+  const update: Record<string, unknown> = {
+    status: "cancelled",
+  };
+  if (nextBillingDate) {
+    update.nextBillingDate = toIsoDate(nextBillingDate);
+  }
+
+  const { error } = await client
+    .from("subscriptions")
+    .update(update)
+    .eq("businessId", businessId);
+
+  if (error) throw new Error("No se pudo cancelar la suscripción.");
 }
 
 export async function createSupabaseSubscriptionPaymentAttempt(input: {

@@ -145,6 +145,8 @@ export type SubscriptionRecord = {
   trialEndsAt?: string;
   nextBillingDate?: string;
   mpSubscriptionId?: string;
+  polarSubscriptionId?: string;
+  polarCustomerId?: string;
 };
 
 export type WaitlistEntryRecord = {
