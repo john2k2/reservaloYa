@@ -19,7 +19,11 @@ export type AuditAction =
   | "platform.subscription_cancelled"
   | "platform.subscription_unlocked"
   | "platform.subscription_paid"
-  | "platform.impersonation_link_created";
+  | "platform.impersonation_link_created"
+  | "platform.user_activated"
+  | "platform.user_deactivated"
+  | "platform.owners_consolidated"
+  | "platform.transfer_claim_rejected";
 
 export type AuditActor = {
   userId: string;

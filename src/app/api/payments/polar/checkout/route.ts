@@ -18,6 +18,12 @@ function payErrorRedirect(error: string) {
   );
 }
 
+/** Polar rechaza TLDs reservados (.local, .test, etc.). */
+function isPolarCustomerEmail(email: string | null | undefined): email is string {
+  if (!email?.includes("@")) return false;
+  return !/\.(local|test|example|invalid)$/i.test(email);
+}
+
 export async function GET(req: NextRequest) {
   if (!isPolarConfigured()) {
     return payErrorRedirect("polar_not_configured");
@@ -37,16 +43,14 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   url.searchParams.set("products", productId);
   url.searchParams.set("customerExternalId", user.businessId);
-  if (user.email) {
+  if (isPolarCustomerEmail(user.email)) {
     url.searchParams.set("customerEmail", user.email);
   }
   if (user.name) {
     url.searchParams.set("customerName", user.name);
   }
-  url.searchParams.set(
-    "metadata",
-    encodeURIComponent(JSON.stringify({ businessId: user.businessId }))
-  );
+  // No encodeURIComponent: searchParams.set encodea; Polar hace JSON.parse del valor ya decodificado.
+  url.searchParams.set("metadata", JSON.stringify({ businessId: user.businessId }));
 
   const checkout = Checkout({
     accessToken,

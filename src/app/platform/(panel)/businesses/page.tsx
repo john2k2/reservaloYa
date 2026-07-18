@@ -6,6 +6,7 @@ import { getPlatformBusinessesList, type PlatformSubscriptionInfo } from "@/serv
 import { BusinessSearchFilter } from "./business-search-filter";
 import { ImpersonateButton } from "./impersonate-button";
 import { ToggleBusinessButton } from "./toggle-business-button";
+import { ConsolidateOwnersButton } from "./consolidate-owners-button";
 import { TrialActions } from "./trial-actions";
 
 export const dynamic = "force-dynamic";
@@ -233,6 +234,16 @@ export default async function PlatformBusinessesPage({
                     subscriptionStatus={b.subscription.status}
                     lockedAt={b.subscription.lockedAt}
                   />
+                  {b.ownerCount > 1 && (
+                    <ConsolidateOwnersButton
+                      businessId={b.id}
+                      businessName={b.name}
+                      preferredOwnerEmail={
+                        process.env.PLATFORM_SUPERADMIN_EMAIL?.trim() ||
+                        (b.ownerEmail.includes("@") ? b.ownerEmail : undefined)
+                      }
+                    />
+                  )}
                 </div>
               </div>
             ))

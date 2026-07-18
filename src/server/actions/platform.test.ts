@@ -4,6 +4,8 @@ const {
   revalidatePathMock,
   getAuthenticatedPlatformAdminMock,
   togglePlatformBusinessActiveMock,
+  togglePlatformUserActiveMock,
+  consolidateBusinessOwnersMock,
   enableTrialMock,
   extendTrialMock,
   cancelSubscriptionMock,
@@ -15,6 +17,8 @@ const {
   revalidatePathMock: vi.fn(),
   getAuthenticatedPlatformAdminMock: vi.fn(),
   togglePlatformBusinessActiveMock: vi.fn(),
+  togglePlatformUserActiveMock: vi.fn(),
+  consolidateBusinessOwnersMock: vi.fn(),
   enableTrialMock: vi.fn(),
   extendTrialMock: vi.fn(),
   cancelSubscriptionMock: vi.fn(),
@@ -34,6 +38,8 @@ vi.mock("@/server/platform-auth", () => ({
 
 vi.mock("@/server/queries/platform", () => ({
   togglePlatformBusinessActive: togglePlatformBusinessActiveMock,
+  togglePlatformUserActive: togglePlatformUserActiveMock,
+  consolidateBusinessOwners: consolidateBusinessOwnersMock,
   enableTrial: enableTrialMock,
   extendTrial: extendTrialMock,
   cancelSubscription: cancelSubscriptionMock,
@@ -51,6 +57,8 @@ describe("platform actions", () => {
     revalidatePathMock.mockReset();
     getAuthenticatedPlatformAdminMock.mockReset();
     togglePlatformBusinessActiveMock.mockReset();
+    togglePlatformUserActiveMock.mockReset();
+    consolidateBusinessOwnersMock.mockReset();
     enableTrialMock.mockReset();
     extendTrialMock.mockReset();
     cancelSubscriptionMock.mockReset();
@@ -63,6 +71,29 @@ describe("platform actions", () => {
       id: "platform_admin_1",
       email: "platform@reservaya.app",
     });
+  });
+
+  it("audita activacion/desactivacion de usuarios", async () => {
+    const { toggleUserActiveAction } = await import("./platform");
+
+    await toggleUserActiveAction("user_2", false, "biz_123");
+
+    expect(togglePlatformUserActiveMock).toHaveBeenCalledWith("user_2", false);
+    expect(writeAuditLogMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      "platform.user_deactivated",
+      "biz_123",
+      { userId: "user_2", active: false }
+    );
+  });
+
+  it("no permite desactivar al propio platform admin", async () => {
+    const { toggleUserActiveAction } = await import("./platform");
+
+    await expect(toggleUserActiveAction("platform_admin_1", false, "biz_123")).rejects.toThrow(
+      "No podés desactivarte a vos mismo"
+    );
+    expect(togglePlatformUserActiveMock).not.toHaveBeenCalled();
   });
 
   it("rechaza acciones sin platform admin autenticado", async () => {

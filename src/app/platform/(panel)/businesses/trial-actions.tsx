@@ -126,7 +126,7 @@ export function TrialActions({
       {(subscriptionStatus === "none" || subscriptionStatus === "cancelled") && (
         <button
           onClick={() => setShowEnableForm(true)}
-          className="text-xs font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+          className="rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
           disabled={isPending}
         >
           + Trial
@@ -165,7 +165,7 @@ export function TrialActions({
       {subscriptionStatus !== "active" && (
         <button
           onClick={() => handleAction({ type: "markPaid" })}
-          className="text-xs font-medium text-emerald-700 hover:text-emerald-900 disabled:opacity-50"
+          className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
           disabled={isPending}
         >
           Marcar pagado

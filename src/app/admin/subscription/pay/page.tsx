@@ -6,19 +6,17 @@ import { ArrowRight, Building2, CreditCard } from "lucide-react";
 import { getAdminShellData } from "@/server/queries/admin";
 import { getSubscriptionArsPrice, SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
-import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
-import { generateCsrfToken } from "@/lib/csrf";
-import { SubscriptionPayButton } from "./subscription-pay-button";
 import { createPrivatePageMetadata } from "@/lib/seo/metadata";
-import { isMercadoPagoConfigured } from "@/server/mercadopago";
 import { isPolarConfigured } from "@/server/polar-config";
 import {
   buildTransferWhatsAppMessage,
   getBillingTransferDetails,
   hasBillingTransferDetails,
 } from "@/server/billing-transfer";
+import { getPendingTransferClaimForBusiness } from "@/server/billing-transfer-claims";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { cn } from "@/lib/utils";
+import { TransferReceiptForm } from "./transfer-receipt-form";
 
 export const metadata: Metadata = createPrivatePageMetadata({
   title: "Abonar suscripción · ReservaYa",
@@ -27,14 +25,10 @@ export const metadata: Metadata = createPrivatePageMetadata({
 });
 
 const ERROR_MESSAGES: Record<string, string> = {
-  mp_not_configured: "MercadoPago no está disponible ahora. Usá transferencia o tarjeta (Polar).",
   polar_not_configured: "El pago con tarjeta no está configurado todavía. Usá transferencia bancaria.",
-  preference_failed: "No pudimos iniciar el pago con MercadoPago. Probá de nuevo o usá otro método.",
-  attempt_failed: "No pudimos registrar el intento de pago. Probá de nuevo en unos minutos.",
   payment_failed: "El pago no se completó. Podés reintentar o pagar por transferencia.",
   payment_pending: "Tu pago quedó pendiente. Cuando se acredite, te reactivamos el acceso.",
   unauthorized: "Tu sesión expiró. Volvé a iniciar sesión e intentá de nuevo.",
-  invalid_csrf: "La sesión de pago expiró. Recargá la página e intentá de nuevo.",
 };
 
 interface SubscriptionPayPageProps {
@@ -52,22 +46,17 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
     redirect("/admin/dashboard");
   }
 
-  const user = await getAuthenticatedSupabaseUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   const params = await searchParams;
   const blueRate = await getBlueDollarRate();
   const arsPrice = getSubscriptionArsPrice(blueRate);
   const formattedArs = arsPrice > 0 ? Math.round(arsPrice).toLocaleString("es-AR") : null;
-  const csrfToken = generateCsrfToken(user.id);
-  const showMp = isMercadoPagoConfigured();
   const showPolar = isPolarConfigured();
   const transfer = getBillingTransferDetails();
   const showTransfer = hasBillingTransferDetails(transfer);
   const businessName = shellData.businessName || "mi negocio";
+  const pendingClaim = shellData.businessId
+    ? await getPendingTransferClaimForBusiness(shellData.businessId)
+    : null;
   const errorMessage = params.error
     ? (ERROR_MESSAGES[params.error] ?? `No pudimos procesar el pago (${params.error}).`)
     : null;
@@ -105,8 +94,8 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
               <h2 className="text-sm font-semibold text-foreground">Transferencia bancaria (ARS)</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Transferí el monto en pesos y enviá el comprobante por WhatsApp con el nombre del
-              negocio. Te activamos el acceso el mismo día.
+              Transferí el monto en pesos y subí el comprobante acá. Lo revisamos y te activamos el
+              acceso el mismo día.
             </p>
             <dl className="space-y-2 rounded-lg border border-border bg-background px-4 py-3 text-sm">
               {transfer.holder && (
@@ -140,18 +129,24 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
                 </div>
               )}
             </dl>
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold",
-                "bg-foreground text-background transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
-              )}
-            >
-              Enviar comprobante por WhatsApp
-              <ArrowRight className="size-4" />
-            </a>
+            {pendingClaim ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Comprobante recibido. Estamos revisándolo
+                {pendingClaim.createdAt
+                  ? ` (enviado ${new Date(pendingClaim.createdAt).toLocaleString("es-AR")})`
+                  : ""}
+                .
+              </div>
+            ) : (
+              <TransferReceiptForm />
+            )}
+            <p className="text-center text-xs text-muted-foreground">
+              ¿Problemas para subir el archivo?{" "}
+              <a href={whatsappHref} className="underline" target="_blank" rel="noopener noreferrer">
+                Escribinos por WhatsApp
+              </a>
+              .
+            </p>
           </section>
         )}
 
@@ -182,19 +177,7 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
           </section>
         )}
 
-        {showMp && (
-          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">MercadoPago</h2>
-            <p className="text-sm text-muted-foreground">
-              {formattedArs
-                ? `$${formattedArs} ARS por mes (tipo de cambio blue).`
-                : "Pago mensual en ARS."}
-            </p>
-            <SubscriptionPayButton csrfToken={csrfToken} label="Pagar con MercadoPago" />
-          </section>
-        )}
-
-        {!showTransfer && !showPolar && !showMp && (
+        {!showTransfer && !showPolar && (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 space-y-3 text-sm text-amber-900">
             <p className="font-medium">No hay métodos de pago automáticos configurados.</p>
             <p>

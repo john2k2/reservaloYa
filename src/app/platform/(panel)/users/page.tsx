@@ -2,6 +2,7 @@ import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
 import { getPlatformUsersList } from "@/server/queries/platform";
+import { UserActions } from "./user-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -52,12 +53,13 @@ export default async function PlatformUsersPage() {
 
       <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
         {/* Header */}
-        <div className="hidden md:grid grid-cols-[1fr_1fr_auto_auto_auto] gap-4 border-b border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="hidden md:grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-4 border-b border-border/60 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <span>Usuario</span>
           <span>Negocio</span>
           <span>Rol</span>
           <span>Estado</span>
           <span>Verificado</span>
+          <span>Acciones</span>
         </div>
 
         <div className="divide-y divide-border/40">
@@ -69,7 +71,7 @@ export default async function PlatformUsersPage() {
             users.map((u) => (
               <div
                 key={u.id}
-                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto_auto] gap-2 md:gap-4 items-center px-6 py-4"
+                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-2 md:gap-4 items-center px-6 py-4"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{u.name}</p>
@@ -111,6 +113,13 @@ export default async function PlatformUsersPage() {
                 >
                   {u.verified ? "Verificado" : "Pendiente"}
                 </span>
+
+                <UserActions
+                  userId={u.id}
+                  businessId={u.businessId}
+                  active={u.active}
+                  email={u.email}
+                />
               </div>
             ))
           )}

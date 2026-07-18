@@ -1,9 +1,26 @@
-import { BarChart2, Building2, CalendarCheck, TrendingUp, Users, CreditCard, Clock, AlertCircle, DollarSign, Ghost, Timer } from "lucide-react";
+import {
+  AlertCircle,
+  BarChart2,
+  Building2,
+  CalendarCheck,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Ghost,
+  HeartPulse,
+  Timer,
+  TrendingUp,
+  Users,
+  Wallet,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
 import { getPlatformDashboardData } from "@/server/queries/platform";
 import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import { TransferClaimActions } from "./transfer-claim-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +106,10 @@ export default async function PlatformDashboardPage() {
     {
       label: "MRR estimado",
       value: data.mrr > 0 ? `$${data.mrr.toLocaleString("es-AR")}` : "—",
-      sub: data.mrr > 0 ? `${data.subscriptionActive} × U$D ${SUBSCRIPTION_USD_PRICE} · dólar blue` : "Sin precio configurado",
+      sub:
+        data.mrr > 0
+          ? `${data.subscriptionActive} × U$D ${SUBSCRIPTION_USD_PRICE} · dólar blue`
+          : "Sin precio configurado",
       icon: DollarSign,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-500/10",
@@ -104,6 +124,34 @@ export default async function PlatformDashboardPage() {
           <span className="text-xs uppercase tracking-wider font-semibold">Plataforma</span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+      </div>
+
+      {/* Health */}
+      <div className="rounded-2xl border border-border/60 bg-card p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <HeartPulse className="size-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Salud del sistema
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {data.health.map((check) => (
+            <div
+              key={check.key}
+              className="flex items-start gap-2 rounded-xl border border-border/50 px-3 py-2.5"
+            >
+              {check.ok ? (
+                <CheckCircle2 className="size-4 mt-0.5 text-emerald-600 shrink-0" />
+              ) : (
+                <XCircle className="size-4 mt-0.5 text-red-600 shrink-0" />
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{check.label}</p>
+                <p className="text-xs text-muted-foreground truncate">{check.detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* KPIs generales */}
@@ -157,6 +205,120 @@ export default async function PlatformDashboardPage() {
         </div>
       </div>
 
+      {/* Cobros: cola única (comprobantes pendientes + historial) */}
+      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-border/60 px-6 py-4">
+          <Wallet className="size-4 text-muted-foreground" />
+          <h2 className="font-semibold">Cobros</h2>
+          <span className="text-xs text-muted-foreground">
+            — comprobantes a revisar + pagos recientes
+          </span>
+        </div>
+
+        {data.pendingTransferClaims.length > 0 && (
+          <div className="border-b border-border/60 bg-amber-500/5">
+            <div className="flex items-center gap-2 px-6 py-3">
+              <CreditCard className="size-3.5 text-amber-700 dark:text-amber-400" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                Pendientes de revisar ({data.pendingTransferClaims.length})
+              </p>
+            </div>
+            <div className="divide-y divide-amber-500/15">
+              {data.pendingTransferClaims.map((claim) => (
+                <div
+                  key={claim.id}
+                  className="flex items-start justify-between gap-4 px-6 py-3"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-medium truncate">{claim.businessName}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {claim.ownerEmail}
+                      {claim.amountArs != null
+                        ? ` · $${Math.round(claim.amountArs).toLocaleString("es-AR")} ARS`
+                        : ""}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Enviado{" "}
+                      {new Date(claim.createdAt).toLocaleString("es-AR", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    {claim.receiptUrl && claim.receiptMime?.startsWith("image/") && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={claim.receiptUrl}
+                        alt={`Comprobante de ${claim.businessName}`}
+                        className="mt-1 max-h-28 rounded-lg border border-border/60 object-contain bg-background"
+                      />
+                    )}
+                  </div>
+                  <TransferClaimActions
+                    claimId={claim.id}
+                    businessId={claim.businessId}
+                    receiptUrl={claim.receiptUrl}
+                    receiptMime={claim.receiptMime}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="divide-y divide-border/40">
+          {data.recentPayments.length === 0 && data.pendingTransferClaims.length === 0 ? (
+            <p className="px-6 py-8 text-sm text-muted-foreground text-center">
+              Todavía no hay cobros ni comprobantes.
+            </p>
+          ) : data.recentPayments.length === 0 ? (
+            <p className="px-6 py-6 text-sm text-muted-foreground text-center">
+              Sin pagos confirmados todavía.
+            </p>
+          ) : (
+            data.recentPayments.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-4 px-6 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{p.businessName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{p.note}</p>
+                  {p.receiptUrl && (
+                    <a
+                      href={p.receiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-sky-700 hover:underline dark:text-sky-400"
+                    >
+                      Ver comprobante
+                    </a>
+                  )}
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-semibold uppercase tracking-wide">
+                    {p.method === "transfer"
+                      ? "Transferencia"
+                      : p.method === "polar"
+                        ? "Polar"
+                        : "Otro"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{p.amountLabel}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {p.occurredAt
+                      ? new Date(p.occurredAt).toLocaleString("es-AR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Trials expirando pronto */}
       {data.trialsExpiringSoon.length > 0 && (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5">
@@ -177,7 +339,11 @@ export default async function PlatformDashboardPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   {b.subscription.trialEndsAt && (
                     <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                      Vence {new Date(b.subscription.trialEndsAt).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                      Vence{" "}
+                      {new Date(b.subscription.trialEndsAt).toLocaleDateString("es-AR", {
+                        day: "numeric",
+                        month: "short",
+                      })}
                     </span>
                   )}
                   <Link
@@ -198,8 +364,12 @@ export default async function PlatformDashboardPage() {
         <div className="rounded-2xl border border-border/60 bg-card">
           <div className="flex items-center gap-2 border-b border-border/60 px-6 py-4">
             <Ghost className="size-4 text-muted-foreground" />
-            <h2 className="font-semibold">Negocios sin configurar ({data.dormantBusinesses.length})</h2>
-            <span className="text-xs text-muted-foreground">— sin servicios o sin disponibilidad activa</span>
+            <h2 className="font-semibold">
+              Negocios sin configurar ({data.dormantBusinesses.length})
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              — sin servicios o sin disponibilidad activa
+            </span>
           </div>
           <div className="divide-y divide-border/40">
             {data.dormantBusinesses.map((b) => (
@@ -209,10 +379,13 @@ export default async function PlatformDashboardPage() {
                   <p className="text-xs text-muted-foreground truncate">{b.ownerEmail}</p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0 text-[10px] text-muted-foreground">
-                  <span>{b.servicesCount} servicio{b.servicesCount !== 1 ? "s" : ""}</span>
-                  <span>{b.activeAvailabilityRules} regla{b.activeAvailabilityRules !== 1 ? "s" : ""} activa{b.activeAvailabilityRules !== 1 ? "s" : ""}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(b.createdAt).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                  <span>
+                    {b.servicesCount} servicio{b.servicesCount !== 1 ? "s" : ""}
+                  </span>
+                  <span>
+                    {b.activeAvailabilityRules} regla
+                    {b.activeAvailabilityRules !== 1 ? "s" : ""} activa
+                    {b.activeAvailabilityRules !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
@@ -244,6 +417,7 @@ export default async function PlatformDashboardPage() {
                   <p className="text-sm font-medium truncate">{b.name}</p>
                   <p className="text-xs text-muted-foreground truncate">
                     /{b.slug} · {b.ownerEmail}
+                    {b.ownerCount > 1 ? ` · ${b.ownerCount} dueños` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -260,7 +434,7 @@ export default async function PlatformDashboardPage() {
                   {(b.subscription.status === "suspended" ||
                     b.subscription.status === "cancelled") && (
                     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-red-500/10 text-red-600 dark:text-red-400">
-                      Suspendido
+                      {b.subscription.status === "cancelled" ? "Cancelado" : "Suspendido"}
                     </span>
                   )}
                   {b.subscription.status === "none" && (

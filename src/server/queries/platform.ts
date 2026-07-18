@@ -1,8 +1,23 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { randomBytes } from "node:crypto";
 
+import { demoPresets, isDemoBusiness } from "@/constants/demo";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
+import {
+  getBillingTransferDetails,
+  hasBillingTransferDetails,
+} from "@/server/billing-transfer";
+import {
+  listTransferClaims,
+  type TransferClaimRow,
+} from "@/server/billing-transfer-claims";
+import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import {
+  getPolarServer,
+  isPolarConfigured,
+  isPolarWebhookConfigured,
+} from "@/server/polar-config";
 import { buildImpersonationRedirectTo } from "@/server/platform-impersonation";
 
 export type PlatformSubscriptionInfo = {
@@ -26,18 +41,39 @@ export type PlatformBusinessRow = {
   servicesCount: number;
   activeAvailabilityRules: number;
   notificationsSent30d: number;
+  ownerCount: number;
 };
 
 export type PlatformUserRow = {
   id: string;
   name: string;
   email: string;
+  businessId: string;
   businessName: string;
   businessSlug: string;
   role: string;
   active: boolean;
   verified: boolean;
   createdAt: string;
+};
+
+export type PlatformPaymentRow = {
+  id: string;
+  businessId: string;
+  businessName: string;
+  businessSlug: string;
+  method: "transfer" | "polar" | "unknown";
+  amountLabel: string;
+  occurredAt: string;
+  note: string;
+  receiptUrl?: string | null;
+};
+
+export type PlatformHealthCheck = {
+  key: string;
+  label: string;
+  ok: boolean;
+  detail: string;
 };
 
 export type PlatformDashboardData = {
@@ -51,6 +87,11 @@ export type PlatformDashboardData = {
   subscriptionSuspended: number;
   mrr: number;
   trialsExpiringSoon: PlatformBusinessRow[];
+  /** Cola única: comprobantes pendientes de revisar. */
+  pendingTransferClaims: TransferClaimRow[];
+  /** Historial unificado: transferencias aprobadas + Polar (sin demos). */
+  recentPayments: PlatformPaymentRow[];
+  health: PlatformHealthCheck[];
   dormantBusinesses: PlatformBusinessRow[];
   recentBusinesses: PlatformBusinessRow[];
 };
@@ -93,24 +134,47 @@ async function fetchPlatformData(options?: { page?: number; limit?: number; all?
     client.from("communication_events").select("id, business_id, created").gte("created", since30d).limit(1000),
   ]);
 
-  const businesses = businessesRes.data ?? [];
-  const appUsers = appUsersRes.data ?? [];
-  const bookings = bookingsRes.data ?? [];
+  // Las demos son vitrina pública: no entran al panel operativo.
+  const businesses = (businessesRes.data ?? []).filter(
+    (b) => !isDemoBusiness(String(b.slug ?? ""))
+  );
+  const liveBusinessIds = new Set(businesses.map((b) => b.id as string));
+  const appUsers = (appUsersRes.data ?? []).filter(
+    (u) => !u.business_id || liveBusinessIds.has(u.business_id as string)
+  );
+  const bookings = (bookingsRes.data ?? []).filter((booking) => {
+    const bizId = (booking as { business_id?: string }).business_id;
+    return !bizId || liveBusinessIds.has(bizId);
+  });
   const authUsers = authUsersRes.data?.users ?? [];
-  const subscriptions = subsRes.data ?? [];
-  const services = servicesRes.data ?? [];
-  const availabilityRules = availabilityRes.data ?? [];
-  const notifications = notificationsRes.data ?? [];
+  const subscriptions = (subsRes.data ?? []).filter((s) =>
+    liveBusinessIds.has(s.businessId as string)
+  );
+  const services = (servicesRes.data ?? []).filter((s) =>
+    liveBusinessIds.has(s.business_id as string)
+  );
+  const availabilityRules = (availabilityRes.data ?? []).filter((r) =>
+    liveBusinessIds.has(r.business_id as string)
+  );
+  const notifications = (notificationsRes.data ?? []).filter((n) =>
+    liveBusinessIds.has(n.business_id as string)
+  );
 
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? ""]));
 
   const ownerMap = new Map<string, { name: string; email: string }>();
+  const ownerCountMap = new Map<string, number>();
   for (const user of appUsers) {
     if (user.role === "owner" && user.business_id) {
-      ownerMap.set(user.business_id, {
-        name: String(user.name ?? emailMap.get(user.id) ?? "—"),
-        email: emailMap.get(user.id) ?? "—",
-      });
+      ownerCountMap.set(user.business_id, (ownerCountMap.get(user.business_id) ?? 0) + 1);
+      // Preferir el primer owner activo; si hay varios, el mapa queda con el último — se corrige abajo.
+      const existing = ownerMap.get(user.business_id);
+      if (!existing || user.active !== false) {
+        ownerMap.set(user.business_id, {
+          name: String(user.name ?? emailMap.get(user.id) ?? "—"),
+          email: emailMap.get(user.id) ?? "—",
+        });
+      }
     }
   }
 
@@ -136,7 +200,18 @@ async function fetchPlatformData(options?: { page?: number; limit?: number; all?
     notifMap.set(n.business_id, (notifMap.get(n.business_id) ?? 0) + 1);
   }
 
-  return { businesses, appUsers, bookings, emailMap, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap };
+  return {
+    businesses,
+    appUsers,
+    bookings,
+    emailMap,
+    ownerMap,
+    ownerCountMap,
+    subMap,
+    serviceCountMap,
+    availabilityMap,
+    notifMap,
+  };
 }
 
 function buildSubscriptionInfo(
@@ -159,7 +234,8 @@ function buildBusinessRow(
   subMap: Map<string, Record<string, unknown>>,
   serviceCountMap: Map<string, number> = new Map(),
   availabilityMap: Map<string, number> = new Map(),
-  notifMap: Map<string, number> = new Map()
+  notifMap: Map<string, number> = new Map(),
+  ownerCountMap: Map<string, number> = new Map()
 ): PlatformBusinessRow {
   const owner = ownerMap.get(b.id as string);
   return {
@@ -176,20 +252,35 @@ function buildBusinessRow(
     servicesCount: serviceCountMap.get(b.id as string) ?? 0,
     activeAvailabilityRules: availabilityMap.get(b.id as string) ?? 0,
     notificationsSent30d: notifMap.get(b.id as string) ?? 0,
+    ownerCount: ownerCountMap.get(b.id as string) ?? 0,
   };
 }
 
 export async function getPlatformDashboardData(): Promise<PlatformDashboardData | null> {
   noStore();
 
-  const { businesses, appUsers, bookings, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap } = await fetchPlatformData({ all: true });
+  const {
+    businesses,
+    appUsers,
+    bookings,
+    ownerMap,
+    ownerCountMap,
+    subMap,
+    serviceCountMap,
+    availabilityMap,
+    notifMap,
+  } = await fetchPlatformData({ all: true });
+
+  const toRow = (b: Record<string, unknown>) =>
+    buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap, ownerCountMap);
 
   const now = new Date();
+  const nowIso = now.toISOString();
   const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const in7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const allSubs = Array.from(subMap.values());
   const subscriptionActiveCount = allSubs.filter((s) => s.status === "active").length;
-  const priceUsd = Number(process.env.SUBSCRIPTION_PRICE_USD ?? "0");
+  const priceUsd = Number(process.env.SUBSCRIPTION_PRICE_USD ?? SUBSCRIPTION_USD_PRICE);
   const blueRate = priceUsd > 0 ? (await getBlueDollarRate() ?? 0) : 0;
   const pricePerMonth = Math.round(priceUsd * blueRate);
 
@@ -198,16 +289,24 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
       const sub = subMap.get(b.id as string);
       if (!sub || sub.status !== "trial") return false;
       const endsAt = sub.trialEndsAt as string | undefined;
-      return !!endsAt && endsAt > now.toISOString() && endsAt <= in7d;
+      return !!endsAt && endsAt > nowIso && endsAt <= in7d;
     })
-    .map((b) => buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap));
+    .map(toRow);
 
   const dormantBusinesses = businesses
     .filter((b) => {
       if ((b.created as string) > since7d) return false;
       return (serviceCountMap.get(b.id as string) ?? 0) === 0 || (availabilityMap.get(b.id as string) ?? 0) === 0;
     })
-    .map((b) => buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap));
+    .map(toRow);
+
+  const [pendingTransferClaims, recentPayments, health] = await Promise.all([
+    listTransferClaims({ status: "pending", limit: 30 })
+      .then((claims) => claims.filter((c) => !isDemoBusiness(c.businessSlug)))
+      .catch(() => [] as TransferClaimRow[]),
+    getPlatformRecentPayments(businesses as Record<string, unknown>[]),
+    getPlatformHealthChecks(),
+  ]);
 
   return {
     totalBusinesses: businesses.length,
@@ -217,12 +316,176 @@ export async function getPlatformDashboardData(): Promise<PlatformDashboardData 
     newBusinessesThisWeek: businesses.filter((b) => (b.created as string) >= since7d).length,
     subscriptionActive: subscriptionActiveCount,
     subscriptionTrial: allSubs.filter((s) => s.status === "trial").length,
-    subscriptionSuspended: allSubs.filter((s) => s.status === "suspended").length,
+    // Incluye cancelados: el KPI de churn debe reflejar ambos estados.
+    subscriptionSuspended: allSubs.filter(
+      (s) => s.status === "suspended" || s.status === "cancelled"
+    ).length,
     mrr: subscriptionActiveCount * pricePerMonth,
     trialsExpiringSoon,
+    pendingTransferClaims,
+    recentPayments,
+    health,
     dormantBusinesses,
-    recentBusinesses: businesses.slice(0, 10).map((b) => buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap)),
+    recentBusinesses: businesses.slice(0, 10).map(toRow),
   };
+}
+
+async function getPlatformRecentPayments(
+  businesses: Record<string, unknown>[]
+): Promise<PlatformPaymentRow[]> {
+  const client = createAdminClient();
+  const bizById = new Map(businesses.map((b) => [b.id as string, b]));
+  const liveIds = new Set(bizById.keys());
+  const rows: PlatformPaymentRow[] = [];
+  const claimCoveredBizDates = new Set<string>();
+
+  const approvedClaims = (
+    await listTransferClaims({ status: "approved", limit: 20 }).catch(
+      () => [] as TransferClaimRow[]
+    )
+  ).filter((c) => liveIds.has(c.businessId) && !isDemoBusiness(c.businessSlug));
+
+  for (const claim of approvedClaims) {
+    const day = claim.reviewedAt?.slice(0, 10) ?? claim.createdAt.slice(0, 10);
+    claimCoveredBizDates.add(`${claim.businessId}:${day}`);
+    rows.push({
+      id: `claim-${claim.id}`,
+      businessId: claim.businessId,
+      businessName: claim.businessName,
+      businessSlug: claim.businessSlug,
+      method: "transfer",
+      amountLabel:
+        claim.amountArs != null
+          ? `$${Math.round(claim.amountArs).toLocaleString("es-AR")} ARS`
+          : `USD ${SUBSCRIPTION_USD_PRICE} (transferencia)`,
+      occurredAt: claim.reviewedAt ?? claim.createdAt,
+      note: claim.note ?? "Comprobante aprobado",
+      receiptUrl: claim.receiptUrl,
+    });
+  }
+
+  const { data: auditRows } = await client
+    .from("audit_logs")
+    .select("id, business_id, action, created, metadata")
+    .eq("action", "platform.subscription_paid")
+    .order("created", { ascending: false })
+    .limit(30);
+
+  for (const row of auditRows ?? []) {
+    const businessId = String(row.business_id ?? "");
+    if (!liveIds.has(businessId)) continue;
+    const biz = bizById.get(businessId);
+    const slug = String(biz?.slug ?? "");
+    if (isDemoBusiness(slug)) continue;
+
+    const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+    // Evita duplicar: el claim aprobado ya representa ese cobro.
+    if (metadata.method === "transfer_claim" || metadata.claimId) continue;
+    const day = String(row.created ?? "").slice(0, 10);
+    if (claimCoveredBizDates.has(`${businessId}:${day}`)) continue;
+
+    rows.push({
+      id: String(row.id),
+      businessId,
+      businessName: String(biz?.name ?? "Negocio"),
+      businessSlug: slug,
+      method: "transfer",
+      amountLabel: `USD ${SUBSCRIPTION_USD_PRICE} (transferencia)`,
+      occurredAt: String(row.created ?? ""),
+      note: "Marcado pagado manualmente",
+    });
+  }
+
+  const { data: polarSubs } = await client
+    .from("subscriptions")
+    .select("id, businessId, status, nextBillingDate, polarSubscriptionId, updated")
+    .not("polarSubscriptionId", "is", null)
+    .order("updated", { ascending: false })
+    .limit(20);
+
+  for (const sub of polarSubs ?? []) {
+    const businessId = String(sub.businessId ?? "");
+    if (!liveIds.has(businessId)) continue;
+    const biz = bizById.get(businessId);
+    const slug = String(biz?.slug ?? "");
+    if (isDemoBusiness(slug)) continue;
+    rows.push({
+      id: `polar-${sub.id}`,
+      businessId,
+      businessName: String(biz?.name ?? "Negocio"),
+      businessSlug: slug,
+      method: "polar",
+      amountLabel: `USD ${SUBSCRIPTION_USD_PRICE} (${String(sub.status)})`,
+      occurredAt: String(sub.updated ?? sub.nextBillingDate ?? ""),
+      note: sub.polarSubscriptionId
+        ? `Polar ${String(sub.polarSubscriptionId).slice(0, 8)}…`
+        : "Polar",
+    });
+  }
+
+  return rows
+    .filter((r) => r.occurredAt)
+    .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1))
+    .slice(0, 20);
+}
+
+async function getPlatformHealthChecks(): Promise<PlatformHealthCheck[]> {
+  const client = createAdminClient();
+  const transfer = getBillingTransferDetails();
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { count: failedNotifs } = await client
+    .from("communication_events")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "failed")
+    .gte("created", since24h);
+
+  const { data: lastReminder } = await client
+    .from("communication_events")
+    .select("created")
+    .eq("kind", "reminder")
+    .order("created", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const polarOk = isPolarConfigured() && isPolarWebhookConfigured();
+  const transferOk = hasBillingTransferDetails(transfer);
+
+  return [
+    {
+      key: "polar",
+      label: "Polar",
+      ok: polarOk,
+      detail: polarOk
+        ? `Configurado (${getPolarServer()})`
+        : "Falta token, product id o webhook secret",
+    },
+    {
+      key: "transfer",
+      label: "Transferencia",
+      ok: transferOk,
+      detail: transferOk
+        ? `Alias ${transfer.alias ?? "—"}`
+        : "Faltan BILLING_TRANSFER_ALIAS / CBU",
+    },
+    {
+      key: "notifications",
+      label: "Notificaciones 24h",
+      ok: (failedNotifs ?? 0) === 0,
+      detail:
+        (failedNotifs ?? 0) === 0
+          ? "Sin fallos recientes"
+          : `${failedNotifs} fallos en las últimas 24h`,
+    },
+    {
+      key: "reminders",
+      label: "Último reminder",
+      ok: Boolean(lastReminder?.created),
+      detail: lastReminder?.created
+        ? new Date(String(lastReminder.created)).toLocaleString("es-AR")
+        : "Sin reminders registrados",
+    },
+  ];
 }
 
 export async function getPlatformBusinessesList(pagination?: PaginationOptions): Promise<PlatformBusinessRow[] | null> {
@@ -231,9 +494,11 @@ export async function getPlatformBusinessesList(pagination?: PaginationOptions):
   const client = createAdminClient();
   const { from, to } = resolvePaginationRange(pagination, DEFAULT_PLATFORM_LIMIT);
 
+  const demoSlugs = Object.keys(demoPresets);
   const { data: businesses, error: businessesError } = await client
     .from("businesses")
     .select("*")
+    .not("slug", "in", `(${demoSlugs.join(",")})`)
     .order("created", { ascending: false })
     .range(from, to);
 
@@ -241,7 +506,10 @@ export async function getPlatformBusinessesList(pagination?: PaginationOptions):
     return null;
   }
 
-  const businessIds = businesses.map((b) => b.id as string);
+  const liveBusinesses = businesses;
+  if (liveBusinesses.length === 0) return [];
+
+  const businessIds = liveBusinesses.map((b) => b.id as string);
 
   const [appUsersRes, subsRes, servicesRes, availabilityRes, notificationsRes] = await Promise.all([
     client.from("app_users").select("*").in("business_id", businessIds).limit(1000),
@@ -262,12 +530,17 @@ export async function getPlatformBusinessesList(pagination?: PaginationOptions):
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email ?? ""]));
 
   const ownerMap = new Map<string, { name: string; email: string }>();
+  const ownerCountMap = new Map<string, number>();
   for (const user of appUsers) {
     if (user.role === "owner" && user.business_id) {
-      ownerMap.set(user.business_id, {
-        name: String(user.name ?? emailMap.get(user.id) ?? "—"),
-        email: emailMap.get(user.id) ?? "—",
-      });
+      ownerCountMap.set(user.business_id, (ownerCountMap.get(user.business_id) ?? 0) + 1);
+      const existing = ownerMap.get(user.business_id);
+      if (!existing || user.active !== false) {
+        ownerMap.set(user.business_id, {
+          name: String(user.name ?? emailMap.get(user.id) ?? "—"),
+          email: emailMap.get(user.id) ?? "—",
+        });
+      }
     }
   }
 
@@ -293,7 +566,9 @@ export async function getPlatformBusinessesList(pagination?: PaginationOptions):
     notifMap.set(n.business_id, (notifMap.get(n.business_id) ?? 0) + 1);
   }
 
-  return businesses.map((b) => buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap));
+  return liveBusinesses.map((b) =>
+    buildBusinessRow(b, ownerMap, subMap, serviceCountMap, availabilityMap, notifMap, ownerCountMap)
+  );
 }
 
 export async function getPlatformUsersList(pagination?: PaginationOptions): Promise<PlatformUserRow[] | null> {
@@ -323,6 +598,7 @@ export async function getPlatformUsersList(pagination?: PaginationOptions): Prom
         id: u.id,
         name: String(u.name ?? emailMap.get(u.id) ?? "—"),
         email: emailMap.get(u.id) ?? "—",
+        businessId: String(u.business_id ?? ""),
         businessName: biz?.name ?? "—",
         businessSlug: biz?.slug ?? "—",
         role: String(u.role ?? "staff"),
@@ -330,7 +606,8 @@ export async function getPlatformUsersList(pagination?: PaginationOptions): Prom
         verified: true,
         createdAt: u.created as string,
       };
-    });
+    })
+    .filter((u) => !u.businessSlug || !isDemoBusiness(u.businessSlug));
 }
 
 export async function togglePlatformBusinessActive(businessId: string, active: boolean) {
@@ -340,6 +617,66 @@ export async function togglePlatformBusinessActive(businessId: string, active: b
     .update({ active, updated: new Date().toISOString() })
     .eq("id", businessId);
   if (error) throw error;
+}
+
+export async function togglePlatformUserActive(userId: string, active: boolean) {
+  const client = createAdminClient();
+  const { error } = await client
+    .from("app_users")
+    .update({ active, updated: new Date().toISOString() })
+    .eq("id", userId);
+  if (error) throw new Error(`No se pudo actualizar el usuario: ${error.message}`);
+
+  // Ban/unban en Auth para que no pueda iniciar sesión si está inactivo.
+  const { error: authError } = active
+    ? await client.auth.admin.updateUserById(userId, { ban_duration: "none" })
+    : await client.auth.admin.updateUserById(userId, { ban_duration: "876000h" });
+  if (authError) {
+    throw new Error(`Usuario actualizado en app, pero Auth falló: ${authError.message}`);
+  }
+}
+
+/**
+ * Deja un solo owner por negocio (el email preferido si existe) y pasa el resto a staff inactivo.
+ */
+export async function consolidateBusinessOwners(
+  businessId: string,
+  preferredOwnerEmail?: string
+): Promise<{ keptOwnerId: string; demoted: number }> {
+  const client = createAdminClient();
+  const { data: owners, error } = await client
+    .from("app_users")
+    .select("id, role, active")
+    .eq("business_id", businessId)
+    .eq("role", "owner");
+
+  if (error) throw new Error(error.message);
+  if (!owners || owners.length <= 1) {
+    return { keptOwnerId: owners?.[0]?.id ?? "", demoted: 0 };
+  }
+
+  const { data: authUsersData } = await client.auth.admin.listUsers({ perPage: 1000 });
+  const emailById = new Map((authUsersData?.users ?? []).map((u) => [u.id, (u.email ?? "").toLowerCase()]));
+
+  const preferred = preferredOwnerEmail?.toLowerCase().trim();
+  const keep =
+    owners.find((o) => preferred && emailById.get(o.id) === preferred) ??
+    owners.find((o) => o.active !== false) ??
+    owners[0];
+
+  let demoted = 0;
+  for (const owner of owners) {
+    if (owner.id === keep.id) continue;
+    const { error: updateError } = await client
+      .from("app_users")
+      .update({ role: "staff", active: false, updated: new Date().toISOString() })
+      .eq("id", owner.id);
+    if (updateError) throw new Error(updateError.message);
+    await client.auth.admin.updateUserById(owner.id, { ban_duration: "876000h" });
+    demoted += 1;
+  }
+
+  return { keptOwnerId: keep.id, demoted };
 }
 
 export async function enableTrial(businessId: string, days: number): Promise<void> {

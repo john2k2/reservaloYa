@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 import { writeAuditLog, type AuditAction } from "@/server/audit-log";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
 import {
+  approveTransferClaim,
+  rejectTransferClaim,
+} from "@/server/billing-transfer-claims";
+import {
   togglePlatformBusinessActive,
+  togglePlatformUserActive,
+  consolidateBusinessOwners,
   enableTrial,
   extendTrial,
   cancelSubscription,
@@ -106,4 +112,62 @@ export async function impersonateBusinessOwnerAction(businessId: string): Promis
   const token = await generateImpersonationToken(businessId);
   await writePlatformAuditLog(user, businessId, "platform.impersonation_link_created");
   return token;
+}
+
+export async function toggleUserActiveAction(userId: string, active: boolean, businessId: string) {
+  const user = await getAuthenticatedPlatformAdmin();
+  if (!user) throw new Error("No autorizado");
+  if (userId === user.id) throw new Error("No podés desactivarte a vos mismo");
+
+  await togglePlatformUserActive(userId, active);
+  await writePlatformAuditLog(
+    user,
+    businessId || user.id,
+    active ? "platform.user_activated" : "platform.user_deactivated",
+    { userId, active }
+  );
+  revalidatePath("/platform/users");
+  revalidatePath("/platform/businesses");
+}
+
+export async function consolidateOwnersAction(businessId: string, preferredOwnerEmail?: string) {
+  const user = await getAuthenticatedPlatformAdmin();
+  if (!user) throw new Error("No autorizado");
+
+  const result = await consolidateBusinessOwners(businessId, preferredOwnerEmail);
+  await writePlatformAuditLog(user, businessId, "platform.owners_consolidated", result);
+  revalidatePath("/platform/users");
+  revalidatePath("/platform/businesses");
+  revalidatePath("/platform/dashboard");
+  return result;
+}
+
+export async function approveTransferClaimAction(claimId: string, businessId: string) {
+  const user = await getAuthenticatedPlatformAdmin();
+  if (!user) throw new Error("No autorizado");
+
+  await approveTransferClaim({ claimId, reviewerId: user.id });
+  await writePlatformAuditLog(user, businessId, "platform.subscription_paid", {
+    method: "transfer_claim",
+    claimId,
+  });
+  revalidatePath("/platform/dashboard");
+  revalidatePath("/platform/businesses");
+}
+
+export async function rejectTransferClaimAction(
+  claimId: string,
+  businessId: string,
+  note?: string
+) {
+  const user = await getAuthenticatedPlatformAdmin();
+  if (!user) throw new Error("No autorizado");
+
+  await rejectTransferClaim({ claimId, reviewerId: user.id, note });
+  await writePlatformAuditLog(user, businessId, "platform.transfer_claim_rejected", {
+    claimId,
+    note: note ?? null,
+  });
+  revalidatePath("/platform/dashboard");
+  revalidatePath("/platform/businesses");
 }
