@@ -37,6 +37,10 @@ function createThenableBuilder(tableData: unknown) {
       record("eq", args);
       return builder;
     }),
+    not: vi.fn((...args: unknown[]) => {
+      record("not", args);
+      return builder;
+    }),
     in: vi.fn((...args: unknown[]) => {
       record("in", args);
       return builder;
