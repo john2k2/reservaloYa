@@ -123,13 +123,9 @@ export async function withBookingDateLock<T>(
 
   const lockKey = buildBookingDateLockKey(input);
 
+  let handle;
   try {
-    const handle = await acquireSharedBookingLock(lockKey);
-    try {
-      return await operation();
-    } finally {
-      await releaseSharedBookingLock(handle);
-    }
+    handle = await acquireSharedBookingLock(lockKey);
   } catch (error) {
     const pgError = error as { code?: string; message?: string } | null;
     const canUseLocalFallback = process.env.NODE_ENV === "development";
@@ -147,6 +143,12 @@ export async function withBookingDateLock<T>(
       message: error instanceof Error ? error.message : String(error),
     });
     throw error;
+  }
+
+  try {
+    return await operation();
+  } finally {
+    await releaseSharedBookingLock(handle);
   }
 }
 

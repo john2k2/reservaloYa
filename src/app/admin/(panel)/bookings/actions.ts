@@ -32,7 +32,7 @@ const bookingSchema = z.object({
   bookingId: z.string().trim().min(1),
   bookingDate: bookingDateSchema,
   startTime: bookingTimeSchema,
-  status: z.enum(["pending", "confirmed", "completed", "cancelled", "no_show"]),
+  status: z.enum(["pending", "pending_payment", "confirmed", "completed", "cancelled", "no_show"]),
   notes: z.string().trim().max(400),
 });
 
@@ -107,16 +107,17 @@ async function updateSupabaseAdminBooking(input: {
   return withBookingDateLock(
     { businessKey: input.businessSlug, bookingDate: input.bookingDate },
     async () => {
-      const booking = await getSupabaseRecord<BookingRecord & { service: Pick<ServiceRecord, "id" | "business_id" | "name" | "durationMinutes"> | null }>(
-        "bookings",
-        input.bookingId
-      );
+      const booking = await getSupabaseRecord<BookingRecord>("bookings", input.bookingId);
 
       if (booking.business_id !== input.businessId) {
         throw new Error("No encontramos el turno a actualizar.");
       }
 
-      const service = booking.service;
+      if (!booking.service_id) {
+        throw new Error("No encontramos el servicio del turno.");
+      }
+
+      const service = await getSupabaseRecord<ServiceRecord>("services", booking.service_id);
 
       if (!service || service.business_id !== input.businessId) {
         throw new Error("No encontramos el servicio del turno.");
