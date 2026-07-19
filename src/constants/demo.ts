@@ -562,8 +562,11 @@ export const demoPresets: Record<string, DemoPreset> = {
 // Template testimonials/trust points are invented showcase content, not real
 // customer feedback. Only render them for the demo businesses themselves --
 // real businesses show actual reviews instead (see reviews table).
+/** Alias históricos de demos mantenidos para enlaces compartidos. */
+const demoSlugAliases = new Set(["barberia-demo"]);
+
 export function isDemoBusiness(slug: string): boolean {
-  return slug in demoPresets;
+  return slug in demoPresets || demoSlugAliases.has(slug);
 }
 
 export const demoSlots = ["10:00", "10:45", "11:30", "16:00", "16:45", "17:30"];
