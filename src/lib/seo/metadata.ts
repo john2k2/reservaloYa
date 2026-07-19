@@ -45,7 +45,7 @@ export const siteConfig = {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Turnos online para barberías y estética",
+    default: "Sistema de turnos online para barberías y estética",
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -56,7 +56,7 @@ export const defaultMetadata: Metadata = {
     type: "website",
     locale: "es_AR",
     url: siteConfig.url,
-    title: `${siteConfig.name} | Turnos online para barberías y estética`,
+    title: `${siteConfig.name} | Sistema de turnos online para barberías y estética`,
     description: siteConfig.description,
     siteName: siteConfig.name,
     images: [
@@ -70,7 +70,7 @@ export const defaultMetadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} | Turnos online para barberías y estética`,
+    title: `${siteConfig.name} | Sistema de turnos online para barberías y estética`,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
   },

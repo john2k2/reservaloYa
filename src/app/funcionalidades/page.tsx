@@ -6,16 +6,16 @@ import {
 import { createPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = createPageMetadata({
-  title: "Funcionalidades",
+  title: "Funciones del sistema de turnos online",
   description:
-    "Descubrí todo lo que ReservaYa puede hacer por tu negocio: reservas online, recordatorios automáticos, agenda simple y operación sin caos.",
+    "Conocé las funciones de ReservaYa: reservas online, agenda, clientes y recordatorios automáticos para negocios de servicios en Argentina.",
   path: "/funcionalidades",
 });
 
 export default function FuncionalidadesPage() {
   return (
     <LandingPageShell>
-      <FeaturesSection />
+      <FeaturesSection headingLevel="h1" />
       <BeforeAfterSection />
     </LandingPageShell>
   );

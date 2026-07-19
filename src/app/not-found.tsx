@@ -1,8 +1,14 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Home, ArrowLeft } from "lucide-react";
+import { Home } from "lucide-react";
 import { demoBusinessOptions, productName } from "@/constants/site";
+import { BackButton } from "@/components/back-button";
+
+export const metadata: Metadata = {
+  title: { absolute: "Página no encontrada | ReservaYa" },
+  robots: { index: false, follow: false },
+  alternates: { canonical: null },
+};
 
 export default function NotFoundPage() {
   return (
@@ -25,14 +31,7 @@ export default function NotFoundPage() {
             <Home className="size-4 shrink-0" />
             Volver al inicio
           </Link>
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border border-rule px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/50 sm:w-auto"
-          >
-            <ArrowLeft className="size-4 shrink-0" />
-            Volver atrás
-          </button>
+          <BackButton />
         </div>
 
         <div className="mt-12 border-t border-rule pt-8">

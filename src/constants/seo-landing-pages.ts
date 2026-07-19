@@ -10,7 +10,7 @@ export type SeoLandingPage = {
   benefits: string[];
   useCases: string[];
   howItWorks: string[];
-  demoSlug: string;
+  demoSlug?: string;
   demoLabel: string;
   keywords: string[];
   faqs: Array<{ question: string; answer: string }>;
@@ -20,10 +20,10 @@ export const seoLandingPages = [
   {
     slug: "turnos-online-barberias",
     title: "Turnos online para barberías",
-    metadataTitle: "Turnos online para barberías",
+    metadataTitle: "Sistema de turnos para barberías en Argentina",
     description:
       "Sistema de turnos online para barberías en Argentina y LatAm. Organizá cortes, barba, disponibilidad y recordatorios desde una agenda web simple.",
-    h1: "Turnos online para barberías que quieren ordenar WhatsApp y llenar mejor la agenda",
+    h1: "Sistema de turnos online para barberías en Argentina",
     eyebrow: "Barberías",
     intro:
       "ReservaYa ayuda a barberías chicas y medianas a publicar servicios, horarios disponibles y una página de reservas para que el cliente elija su turno sin esperar respuesta manual.",
@@ -75,10 +75,10 @@ export const seoLandingPages = [
   {
     slug: "agenda-online-peluquerias",
     title: "Agenda online para peluquerías",
-    metadataTitle: "Agenda online para peluquerías",
+    metadataTitle: "Agenda online para peluquerías en Argentina",
     description:
       "Agenda online para peluquerías que quieren recibir reservas por internet, ordenar servicios y reducir mensajes repetidos en WhatsApp.",
-    h1: "Agenda online para peluquerías: menos mensajes repetidos, más turnos ordenados",
+    h1: "Agenda online para peluquerías en Argentina: menos mensajes, más orden",
     eyebrow: "Peluquerías",
     intro:
       "Con ReservaYa, una peluquería puede ofrecer una experiencia simple de reserva online para cortes, peinados, coloración y tratamientos, manteniendo la operación diaria en un panel claro.",
@@ -100,8 +100,7 @@ export const seoLandingPages = [
       "Compartís el link en Instagram, Google o WhatsApp.",
       "El cliente reserva y vos ves todo ordenado en el panel.",
     ],
-    demoSlug: "demo-barberia",
-    demoLabel: "Ver demo en vivo",
+    demoLabel: "Ver funcionalidades",
     keywords: [
       "agenda online peluquerías",
       "sistema de turnos para peluquerías",
@@ -130,10 +129,10 @@ export const seoLandingPages = [
   {
     slug: "sistema-reservas-centros-estetica",
     title: "Sistema de reservas para centros de estética",
-    metadataTitle: "Sistema de reservas para centros de estética",
+    metadataTitle: "Reservas para centros de estética en Argentina",
     description:
-      "Sistema de reservas online para centros de estética, skincare y spas. Organizá turnos, servicios, clientes y recordatorios desde una agenda web.",
-    h1: "Sistema de reservas online para centros de estética y spas",
+      "Sistema de reservas online para centros de estética, skincare y spas en Argentina. Organizá turnos, servicios, clientes y recordatorios.",
+    h1: "Sistema de reservas para centros de estética y spas en Argentina",
     eyebrow: "Estética y bienestar",
     intro:
       "ReservaYa permite que centros de estética y profesionales de belleza reciban reservas online para sesiones, tratamientos y servicios con horarios definidos.",
@@ -185,10 +184,10 @@ export const seoLandingPages = [
   {
     slug: "turnos-online-nails",
     title: "Turnos online para nails studios",
-    metadataTitle: "Turnos online para nails studios",
+    metadataTitle: "Turnos online para nails studios en Argentina",
     description:
       "Agenda y turnos online para nails studios en Argentina. Ordená manicura, semipermanente y nail art sin mensajes cruzados en Instagram.",
-    h1: "Turnos online para nails studios que venden por Instagram",
+    h1: "Turnos online para nails studios en Argentina que venden por Instagram",
     eyebrow: "Nails",
     intro:
       "ReservaYa le da a un nails studio una página de reservas clara: servicios con duración, horarios visibles y menos ida y vuelta para agendar manicura o semipermanente.",
@@ -240,10 +239,10 @@ export const seoLandingPages = [
   {
     slug: "turnos-online-consultorios",
     title: "Turnos online para consultorios",
-    metadataTitle: "Turnos online para consultorios",
+    metadataTitle: "Agenda online para consultorios en Argentina",
     description:
       "Agenda online para consultorios y profesionales de la salud en Argentina. Primero consultas y seguimientos con menos llamados para coordinar.",
-    h1: "Turnos online para consultorios: menos llamados, más claridad antes de cada consulta",
+    h1: "Agenda de turnos online para consultorios en Argentina",
     eyebrow: "Consultorios",
     intro:
       "ReservaYa ayuda a consultorios y profesionales a publicar horarios, tipificar consultas y dar una página de reservas confiable para primera vez y seguimiento.",

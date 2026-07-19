@@ -3,7 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { Footer, LandingHeader } from "@/components/landing";
 import { buttonVariants } from "@/components/ui/button-variants";
-import type { SeoLandingPage } from "@/constants/seo-landing-pages";
+import { seoLandingPages, type SeoLandingPage } from "@/constants/seo-landing-pages";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { BreadcrumbJsonLd } from "@/lib/seo/business-json-ld";
 import { FAQPageJsonLd, SoftwareApplicationJsonLd } from "@/lib/seo/json-ld";
@@ -14,6 +14,8 @@ import { getLandingHeaderSession } from "@/server/landing-session";
 export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
   const session = await getLandingHeaderSession();
   const pageUrl = `${siteConfig.url}/${page.slug}`;
+  const demoHref = page.demoSlug ? `/${page.demoSlug}` : "/funcionalidades";
+  const relatedPages = seoLandingPages.filter((relatedPage) => relatedPage.slug !== page.slug);
 
   return (
     <main id="main-content" className="landing-theme min-h-screen bg-background text-foreground">
@@ -64,7 +66,7 @@ export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
               <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </Link>
             <Link
-              href={`/${page.demoSlug}`}
+              href={demoHref}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "whitespace-nowrap rounded-full border-rule font-semibold"
@@ -151,7 +153,7 @@ export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
         </ol>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href={`/${page.demoSlug}`}
+            href={demoHref}
             className={cn(
               buttonVariants({ variant: "default", size: "lg" }),
               "rounded-full bg-foreground font-semibold text-background hover:bg-foreground/90"
@@ -187,6 +189,37 @@ export async function VerticalSeoPage({ page }: { page: SeoLandingPage }) {
               <h3 className="font-semibold">{faq.question}</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{faq.answer}</p>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl border-t border-rule px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
+          Soluciones relacionadas
+        </p>
+        <h2 className="mt-3 max-w-2xl font-display text-3xl font-semibold tracking-tight">
+          Sistemas de turnos para otros negocios de servicios
+        </h2>
+        <div className="mt-8 divide-y divide-rule border-y border-rule">
+          {relatedPages.map((relatedPage) => (
+            <Link
+              key={relatedPage.slug}
+              href={`/${relatedPage.slug}`}
+              className="group flex items-center justify-between gap-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <div>
+                <h3 className="font-semibold text-foreground group-hover:text-sello group-hover:underline">
+                  {relatedPage.title}
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {relatedPage.description}
+                </p>
+              </div>
+              <ArrowRight
+                className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-sello"
+                aria-hidden="true"
+              />
+            </Link>
           ))}
         </div>
       </section>

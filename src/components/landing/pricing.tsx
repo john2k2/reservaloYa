@@ -16,10 +16,12 @@ const pricingItems = [
 
 type PricingSectionProps = {
   arsPrice: number;
+  headingLevel?: "h1" | "h2";
 };
 
-export function PricingSection({ arsPrice }: PricingSectionProps) {
+export function PricingSection({ arsPrice, headingLevel = "h2" }: PricingSectionProps) {
   const arsPriceLabel = arsPrice.toLocaleString("es-AR");
+  const Heading = headingLevel;
 
   return (
     <section
@@ -29,9 +31,9 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
       <AnimatedSection>
         <div className="flex flex-col items-center text-center">
           <p className="mb-4 font-mono text-xs uppercase tracking-[0.3em] text-sello">Precios</p>
-          <h2 className="font-display text-4xl font-semibold leading-[1.05] text-foreground sm:text-5xl">
-            Un plan. Sin permanencia.
-          </h2>
+          <Heading className="font-display text-4xl font-semibold leading-[1.05] text-foreground sm:text-5xl">
+            Precio del sistema de turnos online: un plan, sin permanencia
+          </Heading>
           <p className="mt-6 max-w-[500px] text-lg text-muted-foreground">
             Arrancás gratis con 15 días de trial. Después, precio promo por transferencia en pesos
             o tarjeta en USD.

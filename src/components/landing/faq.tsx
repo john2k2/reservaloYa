@@ -6,8 +6,9 @@ import { landingSeoFaqs } from "@/constants/site";
 import { cn } from "@/lib/utils";
 import { AnimatedSection } from "./animated-section";
 
-export function FAQSection() {
+export function FAQSection({ headingLevel = "h2" }: { headingLevel?: "h1" | "h2" }) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const Heading = headingLevel;
 
   return (
     <section
@@ -19,9 +20,9 @@ export function FAQSection() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:mb-4 sm:text-sm">
             Preguntas frecuentes
           </p>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            ¿Tenés dudas?
-          </h2>
+          <Heading className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+            Preguntas frecuentes sobre ReservaYa y los turnos online
+          </Heading>
         </div>
       </AnimatedSection>
 

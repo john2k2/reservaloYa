@@ -14,9 +14,9 @@ import { SoftwareApplicationJsonLd } from "@/lib/seo/json-ld";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 
 export const metadata = createPageMetadata({
-  title: "Turnos online para barberías y estética",
+  title: "Sistema de turnos online para barberías y estética",
   description:
-    "ReservaYa automatiza reservas, agenda online, clientes y recordatorios para negocios de servicios en Argentina y Latinoamérica.",
+    "Sistema de turnos online para barberías, peluquerías y estética en Argentina. Automatizá reservas, agenda, clientes y recordatorios con ReservaYa.",
   path: "/",
   keywords: [
     "sistema de turnos online",

@@ -43,30 +43,38 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const { slug } = await params;
+  let pageData: Awaited<ReturnType<typeof getPageData>>;
+
   try {
-    const { slug } = await params;
-    const pageData = await getPageData(slug);
-
-    if (!pageData) {
-      return {
-        title: { absolute: "Negocio no encontrado | ReservaYa" },
-        robots: { index: false, follow: false },
-      };
-    }
-
-    return generateBusinessMetadata({
-      businessName: pageData.business.name,
-      slug,
-      description: pageData.profile?.description,
-      address: pageData.business.address,
-      phone: pageData.business.phone,
-    });
+    pageData = await getPageData(slug);
   } catch (error) {
     logger.error("Error generating metadata:", error);
-    return { title: { absolute: "ReservaYa | Turnos online para negocios chicos" } };
+    return {
+      title: { absolute: "ReservaYa | Turnos online para negocios chicos" },
+      robots: { index: false, follow: false },
+    };
   }
-}
 
+  if (!pageData) notFound();
+
+  const metadata = generateBusinessMetadata({
+    businessName: pageData.business.name,
+    slug,
+    description: pageData.profile?.description,
+    address: pageData.business.address,
+    phone: pageData.business.phone,
+  });
+
+  if (isDemoBusiness(slug)) {
+    return {
+      ...metadata,
+      robots: { index: false, follow: true },
+    };
+  }
+
+  return metadata;
+}
 
 type BusinessPageProps = {
   params: Promise<{ slug: string }>;
@@ -94,7 +102,6 @@ function buildTikTokHref(value?: string) {
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
   return `https://www.tiktok.com/${value.startsWith("@") ? value : `@${value}`}`;
 }
-
 
 function buildWhatsAppHref(phone?: string, businessName?: string): string | undefined {
   const normalizedPhone = phone?.replace(/\D/g, "");

@@ -1,24 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { LandingPageShell } from "@/components/landing";
-import { createPageMetadata } from "@/lib/seo/metadata";
 import { getSupportThreadByToken, listSupportMessages } from "@/server/support-inbox";
 import { cn } from "@/lib/utils";
 import { ThreadAutoRefresh } from "@/components/support/thread-auto-refresh";
 import { VisitorReplyForm } from "./visitor-reply-form";
 
 export const dynamic = "force-dynamic";
+const getThread = cache(getSupportThreadByToken);
 
-export const metadata: Metadata = {
-  ...createPageMetadata({
-    title: "Tu consulta · ReservaYa",
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const thread = await getThread(token);
+
+  return {
+    title: { absolute: thread ? `${thread.subject} · ReservaYa` : "Tu consulta · ReservaYa" },
     description: "Seguí tu consulta comercial con ReservaYa desde este link privado.",
-    path: "/consulta",
-  }),
-  robots: { index: false, follow: false },
-};
+    robots: { index: false, follow: false },
+    alternates: { canonical: null },
+  };
+}
 
 interface ConsultaPageProps {
   params: Promise<{ token: string }>;
@@ -31,7 +39,7 @@ function authorLabel(author: string) {
 
 export default async function ConsultaPage({ params }: ConsultaPageProps) {
   const { token } = await params;
-  const thread = await getSupportThreadByToken(token);
+  const thread = await getThread(token);
   if (!thread) notFound();
 
   const messages = await listSupportMessages(thread.id);

@@ -16,7 +16,7 @@ export function HeroSection() {
 
         <AnimatedSection delay={80}>
           <h1 className="mt-4 max-w-[620px] font-display text-4xl font-bold leading-[1.05] text-balance text-foreground sm:mt-5 sm:text-5xl lg:text-6xl">
-            Dejá de perder clientes por WhatsApp
+            Sistema de turnos online para dejar de perder clientes por WhatsApp
           </h1>
         </AnimatedSection>
 

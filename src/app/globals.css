@@ -176,7 +176,7 @@
     --secondary: color-mix(in srgb, var(--ink) 6%, var(--paper));
     --secondary-foreground: var(--ink);
     --muted: color-mix(in srgb, var(--ink) 6%, var(--paper));
-    --muted-foreground: color-mix(in srgb, var(--ink) 55%, var(--paper));
+    --muted-foreground: color-mix(in srgb, var(--ink) 65%, var(--paper));
     --accent: color-mix(in srgb, var(--ink) 6%, var(--paper));
     --accent-foreground: var(--ink);
     --border: var(--rule);

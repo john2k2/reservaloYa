@@ -1,0 +1,28 @@
+# ReservaYa
+
+ReservaYa es un sistema de turnos online para barberías, peluquerías, centros de estética, nails studios y consultorios en Argentina. Permite publicar servicios y disponibilidad, recibir reservas desde una página propia y gestionar agenda, clientes y recordatorios.
+
+## Información del producto
+
+- [Inicio](https://reservaya.ar/)
+- [Funcionalidades](https://reservaya.ar/funcionalidades)
+- [Cómo funciona](https://reservaya.ar/como-funciona)
+- [Precios](https://reservaya.ar/precios)
+- [Preguntas frecuentes](https://reservaya.ar/preguntas-frecuentes)
+- [Contacto](https://reservaya.ar/contacto)
+
+## Soluciones por rubro
+
+- [Turnos online para barberías](https://reservaya.ar/turnos-online-barberias)
+- [Agenda online para peluquerías](https://reservaya.ar/agenda-online-peluquerias)
+- [Reservas para centros de estética](https://reservaya.ar/sistema-reservas-centros-estetica)
+- [Turnos online para nails studios](https://reservaya.ar/turnos-online-nails)
+- [Agenda online para consultorios](https://reservaya.ar/turnos-online-consultorios)
+
+## Información institucional
+
+- [Sobre ReservaYa](https://reservaya.ar/sobre-reservaya)
+- [Privacidad](https://reservaya.ar/privacidad)
+- [Términos](https://reservaya.ar/terminos)
+
+El contenido público está en español de Argentina. Las rutas de administración, autenticación y gestión de reservas son privadas o transaccionales y no deben indexarse.

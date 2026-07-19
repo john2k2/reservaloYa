@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
 
 import { seoLandingPages } from "@/constants/seo-landing-pages";
-import { demoBusinessOptions } from "@/constants/site";
+import { isDemoBusiness } from "@/constants/demo";
 import { siteConfig } from "@/lib/seo/metadata";
 import { getPublicBusinessSitemapEntries } from "@/server/queries/public";
+
+// Revalidar el sitemap una vez por día; estable para evitar regeneraciones frecuentes
+export const revalidate = 86400;
 
 const staticRoutes = [
   "",
@@ -23,21 +26,30 @@ type SitemapBusinessRoute = {
   lastModified?: Date;
 };
 
+function isValidSlug(slug: unknown): slug is string {
+  return typeof slug === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+
+function parseLastModified(updated: unknown): Date | undefined {
+  if (!updated) return undefined;
+  const d = new Date(updated as string);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
 async function getIndexableBusinessRoutes(): Promise<SitemapBusinessRoute[]> {
   try {
     const businesses = await getPublicBusinessSitemapEntries();
 
-    if (businesses.length > 0) {
-      return businesses.map((business) => ({
+    return businesses
+      .filter((business) => isValidSlug(business.slug) && !isDemoBusiness(business.slug))
+      .map((business) => ({
         path: `/${business.slug}`,
-        lastModified: business.updated ? new Date(business.updated) : undefined,
+        lastModified: parseLastModified(business.updated),
       }));
-    }
   } catch (error) {
     console.warn("No se pudieron cargar negocios públicos para el sitemap", error);
+    return [];
   }
-
-  return demoBusinessOptions.map(({ slug }) => ({ path: `/${slug}` }));
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

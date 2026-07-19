@@ -7,9 +7,9 @@ import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { getSubscriptionArsPrice } from "@/server/payments-domain";
 
 export const metadata = createPageMetadata({
-  title: "Precios",
+  title: "Precio del sistema de turnos online",
   description:
-    "Plan simple y accesible para negocios de servicios en Argentina. Pagá en pesos argentinos sin sorpresas.",
+    "Precio simple para usar ReservaYa en Argentina: 15 días gratis y un plan mensual sin permanencia, por transferencia en pesos o tarjeta.",
   path: "/precios",
 });
 
@@ -19,7 +19,7 @@ export default async function PreciosPage() {
 
   return (
     <LandingPageShell>
-      <PricingSection arsPrice={arsPrice} />
+      <PricingSection arsPrice={arsPrice} headingLevel="h1" />
     </LandingPageShell>
   );
 }

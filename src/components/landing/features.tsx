@@ -39,14 +39,15 @@ const features = [
   },
 ];
 
-export function FeaturesSection() {
+export function FeaturesSection({ headingLevel = "h2" }: { headingLevel?: "h1" | "h2" }) {
   return (
     <section className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
       <AnimatedSection>
         <SectionTitle
           eyebrow="Beneficios"
-          title="Todo lo que necesitás, nada que no."
-          description="Características pensadas para resolver problemas reales de negocios como el tuyo."
+          title="Funciones de un sistema de turnos online para negocios"
+          description="Reservas, agenda, clientes y recordatorios pensados para resolver problemas reales sin sumar complejidad."
+          headingLevel={headingLevel}
         />
       </AnimatedSection>
 

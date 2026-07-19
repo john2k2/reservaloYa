@@ -28,7 +28,7 @@ const steps = [
   },
 ];
 
-export function HowItWorksSection() {
+export function HowItWorksSection({ headingLevel = "h2" }: { headingLevel?: "h1" | "h2" }) {
   return (
     <section
       id="como-funciona"
@@ -37,8 +37,9 @@ export function HowItWorksSection() {
       <AnimatedSection>
         <SectionTitle
           eyebrow="Cómo funciona"
-          title="Tu cliente reserva en 3 pasos."
-          description="Sin apps que descargar, sin registros complejos. Simple para ellos, claro para vos."
+          title="Cómo funciona ReservaYa: turnos online en 3 pasos"
+          description="Sin apps que descargar ni registros complejos. Simple para tus clientes, claro para vos."
+          headingLevel={headingLevel}
         />
       </AnimatedSection>
 

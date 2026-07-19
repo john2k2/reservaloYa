@@ -6,16 +6,16 @@ import {
 import { createPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = createPageMetadata({
-  title: "Cómo funciona",
+  title: "Cómo funciona el sistema de turnos online",
   description:
-    "Tres pasos simples: mostrá un negocio en vivo, probá el panel de administración y empezá a cobrar con tu sistema de turnos online.",
+    "Descubrí cómo funciona ReservaYa: publicá servicios y horarios, compartí tu página y recibí turnos online sin coordinar por WhatsApp.",
   path: "/como-funciona",
 });
 
 export default function ComoFuncionaPage() {
   return (
     <LandingPageShell>
-      <HowItWorksSection />
+      <HowItWorksSection headingLevel="h1" />
       <SignatureMoment />
     </LandingPageShell>
   );
