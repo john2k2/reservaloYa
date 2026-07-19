@@ -64,7 +64,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5 pb-10">
+    <div className="flex flex-col gap-5 pb-6">
       {/* Header con acciones rápidas */}
       <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -149,11 +149,9 @@ export default async function AdminDashboardPage() {
         ))}
       </section>
 
-      {/* Layout de 2 columnas para pantallas grandes */}
-      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-        {/* Columna 1: Turnos + Analytics */}
+      {/* Turnos + recordatorios */}
+      <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-4">
-          {/* Alerta turnos pendientes */}
           {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes de confirmar")) && (
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700">
               <AlertCircle className="size-4 shrink-0" />
@@ -164,7 +162,6 @@ export default async function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Próximos turnos */}
           <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold tracking-tight text-foreground">
@@ -224,114 +221,110 @@ export default async function AdminDashboardPage() {
               </div>
             )}
           </article>
-
-          {/* Analytics compacto */}
-          {dashboardData.analytics && (
-            <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-              <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
-                Actividad de reservas
-              </h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-secondary/30 p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CalendarPlus className="size-4" />
-                    Clics para reservar
-                  </div>
-                  <p className="mt-2 text-2xl font-bold">{dashboardData.analytics.ctaClicks}</p>
-                </div>
-                <div className="rounded-lg bg-secondary/30 p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <TrendingUp className="size-4" />
-                    Formularios iniciados
-                  </div>
-                  <p className="mt-2 text-2xl font-bold">
-                    {dashboardData.analytics.bookingIntents}
-                  </p>
-                </div>
-              </div>
-            </article>
-          )}
         </div>
 
-        {/* Columna 2: Recordatorios + Canales */}
-        <div className="space-y-4">
-          {/* Recordatorios */}
+        <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                Recordatorios
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Se avisa con {dashboardData.reminders?.reminderWindowHours ?? 24} hs de anticipación
+              </p>
+            </div>
+            <Send aria-hidden="true" className="size-5 text-muted-foreground" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+              <p className="text-xl font-semibold text-foreground">
+                {dashboardData.reminders?.pending ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                para enviar
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+              <p className="text-xl font-semibold text-foreground">
+                {dashboardData.reminders?.missingEmail ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                sin email
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+              <p className="text-xl font-semibold text-foreground">
+                {dashboardData.reminders?.sentRecently ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                ya avisados
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs text-muted-foreground">
+            {dashboardData.reminders?.providerReady
+              ? "✓ Recordatorios por email activos"
+              : "Activá recordatorios por email o WhatsApp desde Integraciones."}
+          </p>
+
+          {(dashboardData.demoMode || dashboardData.reminders) && (
+            <form action={runLocalReminderSweepAction} className="mt-4">
+              <LoadingButton
+                pendingLabel="Procesando..."
+                className="h-10 w-full text-sm"
+              >
+                {dashboardData.demoMode
+                  ? "Procesar recordatorios demo"
+                  : "Procesar recordatorios"}
+              </LoadingButton>
+            </form>
+          )}
+
+          {dashboardData.reminders?.nextBookingAt && (
+            <div className="mt-3 rounded-lg border border-border/50 bg-secondary/20 p-3">
+              <p className="text-xs text-muted-foreground">Próximo turno a recordar</p>
+              <p className="mt-0.5 text-sm font-medium text-foreground">
+                {dashboardData.reminders.nextBookingAt}
+              </p>
+            </div>
+          )}
+        </article>
+      </div>
+
+      {/* Actividad + canales en fila compacta (evita el hueco de la columna corta) */}
+      {dashboardData.analytics && (
+        <div className="grid items-start gap-5 lg:grid-cols-2">
           <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                  Recordatorios
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Se avisa con {dashboardData.reminders?.reminderWindowHours ?? 24} hs de anticipación
-                </p>
+            <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
+              Actividad de reservas
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-secondary/30 p-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CalendarPlus className="size-4" />
+                  Clics para reservar
+                </div>
+                <p className="mt-2 text-2xl font-bold tabular-nums">{dashboardData.analytics.ctaClicks}</p>
               </div>
-              <Send aria-hidden="true" className="size-5 text-muted-foreground" />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
-                <p className="text-xl font-semibold text-foreground">
-                  {dashboardData.reminders?.pending ?? 0}
-                </p>
-                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  para enviar
-                </p>
-              </div>
-              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
-                <p className="text-xl font-semibold text-foreground">
-                  {dashboardData.reminders?.missingEmail ?? 0}
-                </p>
-                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  sin email
-                </p>
-              </div>
-              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
-                <p className="text-xl font-semibold text-foreground">
-                  {dashboardData.reminders?.sentRecently ?? 0}
-                </p>
-                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  ya avisados
+              <div className="rounded-lg bg-secondary/30 p-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <TrendingUp className="size-4" />
+                  Formularios iniciados
+                </div>
+                <p className="mt-2 text-2xl font-bold tabular-nums">
+                  {dashboardData.analytics.bookingIntents}
                 </p>
               </div>
             </div>
-
-            <p className="mt-3 text-xs text-muted-foreground">
-              {dashboardData.reminders?.providerReady
-                ? "✓ Recordatorios por email activos"
-                : "Activá recordatorios por email o WhatsApp desde Integraciones."}
-            </p>
-
-            {(dashboardData.demoMode || dashboardData.reminders) && (
-              <form action={runLocalReminderSweepAction} className="mt-4">
-                <LoadingButton
-                  pendingLabel="Procesando..."
-                  className="h-10 w-full text-sm"
-                >
-                  {dashboardData.demoMode
-                    ? "Procesar recordatorios demo"
-                    : "Procesar recordatorios"}
-                </LoadingButton>
-              </form>
-            )}
-
-            {/* Próximo turno a recordar */}
-            {dashboardData.reminders?.nextBookingAt && (
-              <div className="mt-3 rounded-lg border border-border/50 bg-secondary/20 p-3">
-                <p className="text-xs text-muted-foreground">Próximo turno a recordar</p>
-                <p className="mt-0.5 text-sm font-medium text-foreground">
-                  {dashboardData.reminders.nextBookingAt}
-                </p>
-              </div>
-            )}
           </article>
 
-          {/* Canales */}
           <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
             <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
               Origen de clientes
             </h2>
-            {dashboardData.analytics?.channels?.length ? (
+            {dashboardData.analytics.channels?.length ? (
               <div className="space-y-2">
                 {dashboardData.analytics.channels.map((channel) => (
                   <div
@@ -344,7 +337,7 @@ export default async function AdminDashboardPage() {
                         {channel.visits} visitas
                       </p>
                     </div>
-                    <span className="text-sm font-semibold text-muted-foreground">
+                    <span className="text-sm font-semibold tabular-nums text-muted-foreground">
                       {channel.conversionRate}% reservaron
                     </span>
                   </div>
@@ -352,14 +345,14 @@ export default async function AdminDashboardPage() {
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-pretty">
                   Cuando tengas visitas, verás de dónde vienen tus clientes.
                 </p>
               </div>
             )}
           </article>
         </div>
-      </div>
+      )}
     </div>
   );
 }
