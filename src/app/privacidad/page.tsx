@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { productName } from "@/constants/site";
+import { siteContact } from "@/lib/contact";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { LandingPageShell } from "@/components/landing";
 
@@ -112,10 +113,10 @@ export default function PrivacyPage() {
             <p>
               Para consultas sobre privacidad escribinos a{" "}
               <a
-                href="mailto:hola@reservaya.app"
+                href={`mailto:${siteContact.email}`}
                 className="font-medium text-foreground underline underline-offset-4"
               >
-                hola@reservaya.app
+                {siteContact.email}
               </a>
               . Respondemos solicitudes de acceso, rectificación o eliminación con prioridad
               y, cuando corresponda, coordinamos con el negocio responsable de la reserva.

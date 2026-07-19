@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { productName } from "@/constants/site";
+import { siteContact } from "@/lib/contact";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { LandingPageShell } from "@/components/landing";
 
@@ -116,10 +117,10 @@ export default function TermsPage() {
             <p>
               Para consultas sobre estos términos escribinos a{" "}
               <a
-                href="mailto:hola@reservaya.app"
+                href={`mailto:${siteContact.email}`}
                 className="font-medium text-foreground underline underline-offset-4"
               >
-                hola@reservaya.app
+                {siteContact.email}
               </a>
               .
             </p>

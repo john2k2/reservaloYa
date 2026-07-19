@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 import { productName } from "@/constants/site";
+import { siteContact } from "@/lib/contact";
 import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 import { getAdminShellData } from "@/server/queries/admin";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
@@ -84,8 +85,8 @@ export default async function SubscriptionExpiredPage() {
 
           <p className="text-xs text-muted-foreground">
             ¿Tenés preguntas? Escribinos a{" "}
-            <a href="mailto:soporte@reservaya.app" className="underline">
-              soporte@reservaya.app
+            <a href={`mailto:${siteContact.email}`} className="underline">
+              {siteContact.email}
             </a>
           </p>
         </div>
