@@ -100,8 +100,22 @@ async function getBusinessBySlug(slug: string) {
   return businesses[0];
 }
 
+/**
+ * Resolves a business by slug and enforces that it belongs to the caller's
+ * session. Onboarding writes run through the service-role client (RLS bypassed),
+ * so tenant isolation depends on this application-level check — without it any
+ * owner could mutate a competitor's business by submitting its public slug.
+ */
+async function getOwnedBusinessBySlug(slug: string, sessionBusinessId?: string) {
+  const business = await getBusinessBySlug(slug);
+  if (!sessionBusinessId || business.id !== sessionBusinessId) {
+    throw new Error("No tenés permisos para editar este negocio.");
+  }
+  return business;
+}
+
 async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboardedBusinessResult> {
-  await requireAdminRouteAccess("/admin/onboarding");
+  const shell = await requireAdminRouteAccess("/admin/onboarding");
 
   const parsed = updateBusinessSchema.safeParse({
     businessSlug: String(formData.get("businessSlug") ?? "").trim(),
@@ -121,7 +135,7 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
   const email = parsed.data.email ?? "";
   const cancellationPolicy = parsed.data.cancellationPolicy ?? "";
 
-  const business = await getBusinessBySlug(businessSlug);
+  const business = await getOwnedBusinessBySlug(businessSlug, shell.businessId);
 
   await updateSupabaseRecord("businesses", business.id, {
     name,
@@ -142,12 +156,15 @@ async function updateOnboardedBusiness(formData: FormData): Promise<UpdateOnboar
 }
 
 async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardingBrandingResult> {
-  await requireAdminRouteAccess("/admin/onboarding");
+  const shell = await requireAdminRouteAccess("/admin/onboarding");
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
 
   if (!businessSlug) {
     throw new Error("Negocio invalido.");
   }
+
+  // Enforce ownership before any storage upload, since uploads are keyed by slug.
+  const business = await getOwnedBusinessBySlug(businessSlug, shell.businessId);
 
   let uploadedLogoUrl: string | null = null;
   let uploadedHeroUrl: string | null = null;
@@ -218,7 +235,6 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
     throw new Error("Revisa colores, textos e imagenes antes de guardar identidad.");
   }
 
-  const business = await getBusinessBySlug(parsed.data.businessSlug);
   const profile = business.publicProfileOverrides
     ? JSON.parse(business.publicProfileOverrides)
     : {};
@@ -432,12 +448,12 @@ export async function saveOnboardingBrandingInlineAction(formData: FormData) {
 }
 
 export async function disconnectMercadoPagoInlineAction(formData: FormData) {
-  await requireAdminRouteAccess("/admin/onboarding");
+  const shell = await requireAdminRouteAccess("/admin/onboarding");
 
   const businessSlug = String(formData.get("businessSlug") ?? "").trim();
   if (!businessSlug) throw new Error("businessSlug requerido.");
 
-  const business = await getBusinessBySlug(businessSlug);
+  const business = await getOwnedBusinessBySlug(businessSlug, shell.businessId);
   await clearSupabaseBusinessMPTokens(business.id);
 
   revalidatePath("/admin/onboarding");

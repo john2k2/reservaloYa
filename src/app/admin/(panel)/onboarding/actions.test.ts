@@ -3,23 +3,27 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   redirectMock,
   revalidatePathMock,
+  revalidateTagMock,
   requireAdminRouteAccessMock,
   saveBrandingImageUploadMock,
   listSupabaseRecordsMock,
   createSupabaseRecordMock,
   updateSupabaseRecordMock,
   getSupabaseRecordMock,
+  clearSupabaseBusinessMPTokensMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
   }),
   revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
   requireAdminRouteAccessMock: vi.fn(),
   saveBrandingImageUploadMock: vi.fn(),
   listSupabaseRecordsMock: vi.fn(),
   createSupabaseRecordMock: vi.fn(),
   updateSupabaseRecordMock: vi.fn(),
   getSupabaseRecordMock: vi.fn(),
+  clearSupabaseBusinessMPTokensMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -31,6 +35,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
 }));
 
 vi.mock("@/server/admin-access", () => ({
@@ -49,7 +54,7 @@ vi.mock("@/server/supabase-store/_core", () => ({
 }));
 
 vi.mock("@/server/supabase-store", () => ({
-  clearSupabaseBusinessMPTokens: vi.fn(),
+  clearSupabaseBusinessMPTokens: clearSupabaseBusinessMPTokensMock,
 }));
 
 vi.mock("date-fns-tz", () => ({
@@ -71,6 +76,8 @@ describe("onboarding owner-only actions", () => {
     createSupabaseRecordMock.mockReset();
     updateSupabaseRecordMock.mockReset();
     getSupabaseRecordMock.mockReset();
+    revalidateTagMock.mockReset();
+    clearSupabaseBusinessMPTokensMock.mockReset();
   });
 
   it("blocks staff from creating businesses from onboarding quickly", async () => {
@@ -154,5 +161,89 @@ describe("onboarding owner-only actions", () => {
       "REDIRECT:/admin/onboarding?businessUpdated=Nueva%20Barberia"
     );
     expect(updateSupabaseRecordMock).toHaveBeenCalledWith("businesses", "biz_123", expect.any(Object));
+  });
+
+  it("rejects updating a business that does not belong to the caller", async () => {
+    requireAdminRouteAccessMock.mockResolvedValue({
+      businessId: "biz_123",
+      userRole: "owner",
+      demoMode: false,
+    });
+    // Attacker's session owns biz_123 but submits a competitor's public slug,
+    // which resolves to a foreign business row.
+    listSupabaseRecordsMock.mockResolvedValue([
+      {
+        id: "biz_victim",
+        slug: "competencia",
+        name: "Competencia",
+        active: true,
+      },
+    ]);
+
+    const { updateOnboardedBusinessAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("businessSlug", "competencia");
+    formData.set("name", "Hackeado");
+    formData.set("phone", "1122334455");
+    formData.set("email", "attacker@example.com");
+    formData.set("address", "Calle 456");
+
+    await expect(updateOnboardedBusinessAction(formData)).rejects.toThrow(/permisos/);
+    expect(updateSupabaseRecordMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects saving branding for a business that does not belong to the caller", async () => {
+    requireAdminRouteAccessMock.mockResolvedValue({
+      businessId: "biz_123",
+      userRole: "owner",
+      demoMode: false,
+    });
+    listSupabaseRecordsMock.mockResolvedValue([
+      {
+        id: "biz_victim",
+        slug: "competencia",
+        name: "Competencia",
+        active: true,
+      },
+    ]);
+
+    const { saveOnboardingBrandingAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("businessSlug", "competencia");
+    formData.set("badge", "Barberia");
+    formData.set("eyebrow", "Cortes premium");
+    formData.set("headline", "Reserva tu turno online");
+    formData.set("description", "La mejor barberia de la ciudad para vos");
+    formData.set("primaryCta", "Reservar");
+    formData.set("secondaryCta", "Ver mas");
+    formData.set("palette", "esmeralda");
+
+    await expect(saveOnboardingBrandingAction(formData)).rejects.toThrow(/permisos/);
+    // Neither the DB write nor the image uploads (which are keyed by slug) run.
+    expect(updateSupabaseRecordMock).not.toHaveBeenCalled();
+    expect(saveBrandingImageUploadMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects disconnecting MercadoPago for a business that does not belong to the caller", async () => {
+    requireAdminRouteAccessMock.mockResolvedValue({
+      businessId: "biz_123",
+      userRole: "owner",
+      demoMode: false,
+    });
+    listSupabaseRecordsMock.mockResolvedValue([
+      {
+        id: "biz_victim",
+        slug: "competencia",
+        name: "Competencia",
+        active: true,
+      },
+    ]);
+
+    const { disconnectMercadoPagoInlineAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("businessSlug", "competencia");
+
+    await expect(disconnectMercadoPagoInlineAction(formData)).rejects.toThrow();
+    expect(clearSupabaseBusinessMPTokensMock).not.toHaveBeenCalled();
   });
 });
