@@ -58,7 +58,7 @@ export default async function ConsultaPage({ params }: ConsultaPageProps) {
               <div
                 key={message.id}
                 className={cn(
-                  "rounded-xl px-4 py-3 text-sm",
+                  "animate-fade-in rounded-xl px-4 py-3 text-sm",
                   fromVisitor ? "bg-secondary/60 ml-0 mr-6" : "bg-sello/10 ml-6 mr-0"
                 )}
               >

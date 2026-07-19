@@ -83,7 +83,7 @@ export default async function PlatformConsultaDetailPage({
             <div
               key={message.id}
               className={cn(
-                "rounded-xl px-4 py-3 text-sm",
+                "animate-fade-in rounded-xl px-4 py-3 text-sm",
                 fromVisitor
                   ? "ml-0 mr-8 bg-secondary/60"
                   : fromAi
