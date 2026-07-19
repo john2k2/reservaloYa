@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "next-env.d.ts",
     ".codex-output/**",
+    "docs/**",
+    ".playwright/**",
+    ".playwright-cli/**",
   ]),
   {
     // Playwright already sets forbidOnly in CI; Vitest has no built-in

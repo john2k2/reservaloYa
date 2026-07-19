@@ -109,6 +109,8 @@ e2e/.auth/
 # browser testing snapshots
 snapshot*.txt
 .playwright-mcp/
+.playwright-cli/
+.playwright/
 
 .env*.local
 

@@ -4,7 +4,7 @@ Materiales listos para el lanzamiento público de [ReservaYa](https://reservaya.
 
 **Posicionamiento:** Dejá de perder clientes por WhatsApp. Tus clientes reservan online; vos recibís el turno confirmado y reducís las ausencias.
 
-**Oferta:** 15 días gratis · USD 22/mes (transferencia en ARS o tarjeta vía Polar) · sin permanencia.
+**Oferta:** 15 días gratis · promo transferencia ≈ USD 22/mes (ARS al blue) · tarjeta USD 27/mes · sin permanencia.
 
 ---
 
