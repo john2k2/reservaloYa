@@ -17,6 +17,8 @@ const {
     const filters: Array<(row: Record<string, unknown>) => boolean> = [];
     let orderAsc = true;
     let limitN: number | null = null;
+    let rangeFrom: number | null = null;
+    let rangeTo: number | null = null;
     let countOnly = false;
 
     const api = {
@@ -35,6 +37,11 @@ const {
       },
       limit(n: number) {
         limitN = n;
+        return api;
+      },
+      range(from: number, to: number) {
+        rangeFrom = from;
+        rangeTo = to;
         return api;
       },
       async maybeSingle() {
@@ -64,7 +71,8 @@ const {
         const bv = String(b.created ?? b.last_message_at ?? "");
         return orderAsc ? av.localeCompare(bv) : bv.localeCompare(av);
       });
-      if (limitN != null) rows = rows.slice(0, limitN);
+      if (rangeFrom != null && rangeTo != null) rows = rows.slice(rangeFrom, rangeTo + 1);
+      else if (limitN != null) rows = rows.slice(0, limitN);
       return rows;
     }
 
@@ -279,9 +287,30 @@ describe("support-inbox", () => {
     const needsReply = await listSupportThreads("needs_reply");
     const answered = await listSupportThreads("answered");
 
-    expect(needsReply.map((t) => t.id)).toContain(b.thread.id);
-    expect(needsReply.map((t) => t.id)).not.toContain(a.thread.id);
-    expect(answered.map((t) => t.id)).toContain(a.thread.id);
+    expect(needsReply.threads.map((t) => t.id)).toContain(b.thread.id);
+    expect(needsReply.threads.map((t) => t.id)).not.toContain(a.thread.id);
+    expect(answered.threads.map((t) => t.id)).toContain(a.thread.id);
+    expect(needsReply.hasMore).toBe(false);
+  });
+
+  it("pagina la lista de consultas con hasMore", async () => {
+    const { createSupportThread, listSupportThreads } = await import("@/server/support-inbox");
+
+    for (let i = 0; i < 3; i += 1) {
+      await createSupportThread({
+        visitorName: `Visitante ${i}`,
+        visitorEmail: `visitante${i}@example.com`,
+        body: "Mensaje de prueba con más de diez caracteres.",
+      });
+    }
+
+    const firstPage = await listSupportThreads("all", { limit: 2 });
+    expect(firstPage.threads).toHaveLength(2);
+    expect(firstPage.hasMore).toBe(true);
+
+    const secondPage = await listSupportThreads("all", { offset: 2, limit: 2 });
+    expect(secondPage.threads.length).toBeGreaterThanOrEqual(1);
+    expect(secondPage.hasMore).toBe(false);
   });
 
   it("action de staff rechaza sin auth", async () => {

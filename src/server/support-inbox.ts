@@ -309,7 +309,15 @@ export async function listSupportMessages(threadId: string) {
   return ((data ?? []) as MessageRow[]).map(mapMessage);
 }
 
-export async function listSupportThreads(filter: SupportThreadFilter = "all") {
+export const SUPPORT_THREADS_PAGE_SIZE = 30;
+
+export async function listSupportThreads(
+  filter: SupportThreadFilter = "all",
+  options: { offset?: number; limit?: number } = {}
+) {
+  const limit = options.limit ?? SUPPORT_THREADS_PAGE_SIZE;
+  const offset = options.offset ?? 0;
+
   const client = createAdminClient();
   let query = client.from("support_threads").select("*").order("last_message_at", {
     ascending: false,
@@ -323,9 +331,12 @@ export async function listSupportThreads(filter: SupportThreadFilter = "all") {
     query = query.eq("status", "closed");
   }
 
-  const { data, error } = await query.limit(200);
+  // Pedimos un registro extra para saber si hay más páginas sin una query de count aparte.
+  const { data, error } = await query.range(offset, offset + limit);
   if (error) throw new Error(error.message);
-  return ((data ?? []) as ThreadRow[]).map(mapThread);
+  const rows = (data ?? []) as ThreadRow[];
+  const hasMore = rows.length > limit;
+  return { threads: rows.slice(0, limit).map(mapThread), hasMore };
 }
 
 export async function countSupportThreadsNeedingReply() {

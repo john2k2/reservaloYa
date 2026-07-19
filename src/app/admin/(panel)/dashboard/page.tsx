@@ -64,14 +64,14 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 pb-10">
+    <div className="flex flex-col gap-5 pb-10">
       {/* Header con acciones rápidas */}
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Panel de {dashboardData.businessName}
           </h1>
-          <p className="mt-2 max-w-2xl text-base text-muted-foreground">
+          <p className="mt-1.5 max-w-2xl text-base text-muted-foreground">
             {dashboardData.demoMode
               ? "Modo demo activo. Revisá turnos, servicios, clientes y análisis."
               : "Todo lo que necesitás saber de tu negocio, en un solo lugar."}
@@ -90,11 +90,10 @@ export default async function AdminDashboardPage() {
       {/* Link de reservas */}
       <BookingLinkBar businessSlug={dashboardData.businessSlug} appUrl={appUrl} />
 
-
       {/* Checklist de configuración inicial */}
       {!setupDone && (
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/10">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <AlertCircle className="size-4 text-amber-600 dark:text-amber-400" />
             <h2 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
               Completá la configuración para recibir reservas
@@ -138,7 +137,7 @@ export default async function AdminDashboardPage() {
       )}
 
       {/* Métricas principales */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {dashboardData.metrics.map((item) => (
           <MetricCard
             key={item.label}
@@ -151,9 +150,9 @@ export default async function AdminDashboardPage() {
       </section>
 
       {/* Layout de 2 columnas para pantallas grandes */}
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         {/* Columna 1: Turnos + Analytics */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Alerta turnos pendientes */}
           {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes de confirmar")) && (
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700">
@@ -166,8 +165,8 @@ export default async function AdminDashboardPage() {
           )}
 
           {/* Próximos turnos */}
-          <article className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
+          <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 Próximos turnos
               </h2>
@@ -228,8 +227,8 @@ export default async function AdminDashboardPage() {
 
           {/* Analytics compacto */}
           {dashboardData.analytics && (
-            <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
+            <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+              <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
                 Actividad de reservas
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -255,10 +254,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Columna 2: Recordatorios + Canales */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Recordatorios */}
-          <article className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
+          <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground">
                   Recordatorios
@@ -328,8 +327,8 @@ export default async function AdminDashboardPage() {
           </article>
 
           {/* Canales */}
-          <article className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
+          <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+            <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
               Origen de clientes
             </h2>
             {dashboardData.analytics?.channels?.length ? (
@@ -360,7 +359,6 @@ export default async function AdminDashboardPage() {
             )}
           </article>
         </div>
-
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import {
   countSupportThreadsNeedingReply,
   listSupportThreads,
+  SUPPORT_THREADS_PAGE_SIZE,
   type SupportThreadFilter,
 } from "@/server/support-inbox";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ const FILTERS: Array<{ id: SupportThreadFilter; label: string }> = [
 ];
 
 interface PlatformConsultasPageProps {
-  searchParams: Promise<{ filtro?: string }>;
+  searchParams: Promise<{ filtro?: string; pagina?: string }>;
 }
 
 function parseFilter(value: string | undefined): SupportThreadFilter {
@@ -35,17 +36,28 @@ function parseFilter(value: string | undefined): SupportThreadFilter {
   return "needs_reply";
 }
 
+function parsePage(value: string | undefined): number {
+  const page = Number.parseInt(value ?? "1", 10);
+  return Number.isFinite(page) && page > 1 ? page : 1;
+}
+
 export default async function PlatformConsultasPage({ searchParams }: PlatformConsultasPageProps) {
   const params = await searchParams;
   const filter = parseFilter(params.filtro);
+  const page = parsePage(params.pagina);
+  const offset = (page - 1) * SUPPORT_THREADS_PAGE_SIZE;
 
   let threads;
+  let hasMore = false;
   let needsReplyCount = 0;
   try {
-    [threads, needsReplyCount] = await Promise.all([
-      listSupportThreads(filter),
+    let listResult;
+    [listResult, needsReplyCount] = await Promise.all([
+      listSupportThreads(filter, { offset }),
       countSupportThreadsNeedingReply(),
     ]);
+    threads = listResult.threads;
+    hasMore = listResult.hasMore;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error desconocido";
     return (
@@ -144,6 +156,31 @@ export default async function PlatformConsultasPage({ searchParams }: PlatformCo
           )}
         </div>
       </div>
+
+      {(page > 1 || hasMore) && (
+        <div className="flex items-center justify-between gap-3">
+          {page > 1 ? (
+            <Link
+              href={`/platform/consultas?filtro=${filter}&pagina=${page - 1}`}
+              className="inline-flex h-9 items-center rounded-full border border-border px-4 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ← Anterior
+            </Link>
+          ) : (
+            <span />
+          )}
+          {hasMore ? (
+            <Link
+              href={`/platform/consultas?filtro=${filter}&pagina=${page + 1}`}
+              className="inline-flex h-9 items-center rounded-full border border-border px-4 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Siguiente →
+            </Link>
+          ) : (
+            <span />
+          )}
+        </div>
+      )}
     </div>
   );
 }
