@@ -95,7 +95,7 @@ describe("admin dashboard domain", () => {
     });
 
     expect(metrics[0]).toMatchObject({
-      label: "Visitas publicas",
+      label: "Visitas públicas",
       value: "10",
       hint: "4 clics en reservar",
     });

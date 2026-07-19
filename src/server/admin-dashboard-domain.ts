@@ -140,7 +140,7 @@ export function buildAdminDashboardNotifications(input: DashboardNotificationsIn
 export function buildAdminDashboardMetrics(input: DashboardMetricSummaryInput) {
   return [
     {
-      label: "Visitas publicas",
+      label: "Visitas públicas",
       value: String(input.visits),
       hint: `${input.ctaClicks} clics en reservar`,
       icon: dashboardHighlights[0]?.icon ?? CalendarClock,
@@ -152,9 +152,9 @@ export function buildAdminDashboardMetrics(input: DashboardMetricSummaryInput) {
       icon: CalendarClock,
     },
     {
-      label: "Conversion web",
+      label: "Conversión web",
       value: `${input.conversionRate}%`,
-      hint: input.hasVisits ? `Campana principal: ${input.topCampaignLabel}` : "Todavia sin visitas registradas",
+      hint: input.hasVisits ? `Campaña principal: ${input.topCampaignLabel}` : "Todavía sin visitas registradas",
       icon: Percent,
     },
     {
