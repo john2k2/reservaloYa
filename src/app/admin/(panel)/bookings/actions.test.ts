@@ -86,16 +86,19 @@ describe("admin bookings actions", () => {
   });
 
   it("updates a booking and preserves filters on redirect", async () => {
+    const service = { id: "svc_1", business_id: "biz_123", durationMinutes: 30 };
     const booking = {
       id: "booking_1",
       business_id: "biz_123",
+      service_id: "svc_1",
       bookingDate: "2026-03-20",
       startTime: "10:00",
       status: "pending",
       notes: "",
-      service: { id: "svc_1", business_id: "biz_123", durationMinutes: 30 },
     };
-    getSupabaseRecordMock.mockResolvedValue(booking);
+    getSupabaseRecordMock.mockImplementation(async (table: string) =>
+      table === "services" ? service : booking
+    );
     const mockRules = Array.from({ length: 7 }, (_, i) => ({
       id: `rule_${i}`,
       business_id: "biz_123",
@@ -133,17 +136,20 @@ describe("admin bookings actions", () => {
   });
 
   it("recomputes endTime from the service duration when rescheduling to a new startTime", async () => {
+    const service = { id: "svc_2", business_id: "biz_123", durationMinutes: 45 };
     const booking = {
       id: "booking_2",
       business_id: "biz_123",
+      service_id: "svc_2",
       bookingDate: "2026-03-20",
       startTime: "09:00",
       endTime: "09:45",
       status: "pending",
       notes: "",
-      service: { id: "svc_2", business_id: "biz_123", durationMinutes: 45 },
     };
-    getSupabaseRecordMock.mockResolvedValue(booking);
+    getSupabaseRecordMock.mockImplementation(async (table: string) =>
+      table === "services" ? service : booking
+    );
     const mockRules = Array.from({ length: 7 }, (_, i) => ({
       id: `rule_${i}`,
       business_id: "biz_123",
@@ -208,10 +214,11 @@ describe("admin bookings actions", () => {
 
   it("serializes concurrent reschedules so only one wins the same slot", async () => {
     const service = { id: "svc_1", business_id: "biz_123", name: "Corte", durationMinutes: 30 };
-    const bookings: Record<string, { id: string; business_id: string; bookingDate: string; startTime: string; endTime: string; status: string; notes: string; service: typeof service }> = {
+    const bookings: Record<string, { id: string; business_id: string; service_id: string; bookingDate: string; startTime: string; endTime: string; status: string; notes: string; service: typeof service }> = {
       booking_A: {
         id: "booking_A",
         business_id: "biz_123",
+        service_id: "svc_1",
         bookingDate: "2026-03-24",
         startTime: "09:00",
         endTime: "09:30",
@@ -222,6 +229,7 @@ describe("admin bookings actions", () => {
       booking_B: {
         id: "booking_B",
         business_id: "biz_123",
+        service_id: "svc_1",
         bookingDate: "2026-03-24",
         startTime: "10:00",
         endTime: "10:30",
@@ -239,7 +247,9 @@ describe("admin bookings actions", () => {
       active: true,
     }));
 
-    getSupabaseRecordMock.mockImplementation(async (_table: string, id: string) => bookings[id]);
+    getSupabaseRecordMock.mockImplementation(async (table: string, id: string) =>
+      table === "services" ? service : bookings[id]
+    );
     listSupabaseRecordsMock.mockImplementation(async (table: string) => {
       if (table === "availability_rules") return allDayRules;
       if (table === "blocked_slots") return [];
