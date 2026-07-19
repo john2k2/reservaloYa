@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { CalendarClock, Clock3, MessageSquareText, Download, Phone, Plus } from "lucide-react";
 
 import { updateBookingAction } from "@/app/admin/(panel)/bookings/actions";
 import { BookingSubmitButton } from "@/app/admin/(panel)/bookings/booking-submit-button";
+import { bookingStatusOptions } from "@/app/admin/(panel)/bookings/booking-status-options";
+import { BookingsFilters } from "@/app/admin/(panel)/bookings/bookings-filters";
 import { ManualBookingWrapper } from "@/app/admin/(panel)/bookings/manual-booking-wrapper";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { getAdminBookingsData, getAdminServicesData } from "@/server/queries/admin";
 
@@ -19,14 +21,6 @@ type AdminBookingsPageProps = {
     q?: string;
   }>;
 };
-
-const statusOptions = [
-  { value: "pending", label: "Pendiente", hint: "Esperando confirmación" },
-  { value: "confirmed", label: "Confirmado", hint: "Turno confirmado" },
-  { value: "completed", label: "Completado", hint: "El servicio ya se realizó" },
-  { value: "cancelled", label: "Cancelado", hint: "El turno fue cancelado" },
-  { value: "no_show", label: "No asistió", hint: "El cliente no se presentó" },
-] as const;
 
 function formatDateLabel(date: string) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -66,7 +60,6 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
   const bookingsExportHref = bookingsExportQuery
     ? `/admin/export/bookings?${bookingsExportQuery}`
     : "/admin/export/bookings";
-  const filtersStatusSelectId = "booking-filters-status";
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -108,59 +101,13 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
       {/* Formulario turno manual (se muestra si ?nuevo=1) */}
       <ManualBookingWrapper services={services} />
 
-      {/* Filtros compactos */}
-      <section className="rounded-xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm">
-        <form className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2">
-          <input
-            name="q"
-            type="search"
-            defaultValue={activeFilters.q}
-            placeholder="Buscar cliente..."
-            className="h-10 sm:h-9 w-full sm:min-w-[180px] sm:flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30"
-          />
-          <div className="flex gap-2">
-            <label htmlFor={filtersStatusSelectId} className="sr-only">
-              Filtrar turnos por estado
-            </label>
-            <select
-              id={filtersStatusSelectId}
-              name="status"
-              defaultValue={activeFilters.status}
-              aria-label="Filtrar turnos por estado"
-              className="h-10 sm:h-9 flex-1 sm:w-28 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-            >
-              <option value="">Estado</option>
-              {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <input
-              name="date"
-              type="date"
-              defaultValue={activeFilters.date}
-              className="h-10 sm:h-9 w-32 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
-            />
-          </div>
-          <div className="flex gap-2 mt-1 sm:mt-0">
-            {hasActiveFilters && (
-              <Link
-                href="/admin/bookings"
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-10 sm:h-9 px-2 flex-1 sm:flex-none justify-center")}
-              >
-                Limpiar
-              </Link>
-            )}
-            <SubmitButton
-              variant="default"
-              size="sm"
-              pendingLabel="Filtrando..."
-              className="h-10 sm:h-9 flex-1 sm:flex-none"
-            >
-              Filtrar
-            </SubmitButton>
-          </div>
-        </form>
-      </section>
+      <Suspense fallback={null}>
+        <BookingsFilters
+          status={activeFilters.status}
+          date={activeFilters.date}
+          q={activeFilters.q}
+        />
+      </Suspense>
 
       {/* Lista de turnos */}
       {bookings.length > 0 ? (
@@ -233,7 +180,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                         aria-label={`Estado del turno de ${booking.customerName}`}
                         className="h-9 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-foreground/30"
                       >
-                        {statusOptions.map((opt) => (
+                        {bookingStatusOptions.map((opt) => (
                           <option key={opt.value} value={opt.value} title={opt.hint}>{opt.label}</option>
                         ))}
                       </select>

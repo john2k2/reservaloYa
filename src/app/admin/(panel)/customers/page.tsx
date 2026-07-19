@@ -1,7 +1,8 @@
-import { Search, Calendar, FileText, Download, Phone, CalendarClock } from "lucide-react";
+import { Calendar, FileText, Download, Phone, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { CustomersSearch } from "@/app/admin/(panel)/customers/customers-search";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { getAdminCustomersDataWithFilter } from "@/server/queries/admin";
@@ -43,27 +44,7 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
         </Link>
       </header>
 
-      {/* Búsqueda */}
-      <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-        <form className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              name="q"
-              type="search"
-              defaultValue={query}
-              placeholder="Buscar por nombre, teléfono o email..."
-              className="h-9 w-full rounded-md border border-border bg-background py-2 pl-10 pr-3 text-sm outline-none focus:border-foreground/30"
-            />
-          </div>
-          <button
-            type="submit"
-            className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-9")}
-          >
-            Buscar
-          </button>
-        </form>
-      </section>
+      <CustomersSearch q={query} />
 
       {/* Grid de clientes */}
       {customers.length > 0 ? (
