@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   Moon,
   Sun,
+  Terminal,
   Users,
   X,
 } from "lucide-react";
@@ -23,7 +24,18 @@ import { startCircularThemeTransition } from "@/lib/theme-transition";
 
 const platformNavigation = [
   { href: "/platform/dashboard", label: "Dashboard", icon: BarChart2 },
-  { href: "/platform/consultas", label: "Consultas", icon: MessageSquareText },
+  {
+    href: "/platform/consultas",
+    label: "Consultas",
+    icon: MessageSquareText,
+    badgeKey: "needsReply" as const,
+  },
+  {
+    href: "/platform/consola",
+    label: "Consola",
+    icon: Terminal,
+    badgeKey: "jobFailures" as const,
+  },
   { href: "/platform/businesses", label: "Negocios", icon: Building2 },
   { href: "/platform/users", label: "Usuarios", icon: Users },
 ];
@@ -72,15 +84,21 @@ interface PlatformShellProps {
   children: React.ReactNode;
   userEmail: string;
   needsReplyCount?: number;
+  jobFailureCount?: number;
 }
 
 export function PlatformShell({
   children,
   userEmail,
   needsReplyCount = 0,
+  jobFailureCount = 0,
 }: PlatformShellProps) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+  const badgeCounts: Record<string, number> = {
+    needsReply: needsReplyCount,
+    jobFailures: jobFailureCount,
+  };
 
   React.useEffect(() => {
     setMobileNavOpen(false);
@@ -105,7 +123,7 @@ export function PlatformShell({
             const Icon = item.icon;
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const showBadge = item.href === "/platform/consultas";
+            const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : 0;
             return (
               <Link
                 key={item.href}
@@ -119,7 +137,7 @@ export function PlatformShell({
               >
                 <Icon aria-hidden="true" className="size-4" />
                 {item.label}
-                {showBadge ? <NavBadge count={needsReplyCount} /> : null}
+                <NavBadge count={badgeCount} />
               </Link>
             );
           })}
@@ -173,7 +191,7 @@ export function PlatformShell({
                   const Icon = item.icon;
                   const active =
                     pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  const showBadge = item.href === "/platform/consultas";
+                  const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : 0;
                   return (
                     <Link
                       key={item.href}
@@ -187,7 +205,7 @@ export function PlatformShell({
                     >
                       <Icon aria-hidden="true" className="size-4" />
                       <span className="truncate">{item.label}</span>
-                      {showBadge ? <NavBadge count={needsReplyCount} /> : null}
+                      <NavBadge count={badgeCount} />
                     </Link>
                   );
                 })}

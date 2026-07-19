@@ -9,6 +9,7 @@ import {
   listSupportMessages,
 } from "@/server/support-inbox";
 import { cn } from "@/lib/utils";
+import { ThreadAutoRefresh } from "@/components/support/thread-auto-refresh";
 import { StaffReplyForm } from "../staff-reply-form";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export default async function PlatformConsultaDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <ThreadAutoRefresh enabled={thread.status !== "closed"} />
       <div>
         <Link
           href="/platform/consultas"

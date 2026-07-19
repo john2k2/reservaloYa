@@ -6,6 +6,7 @@ import { LandingPageShell } from "@/components/landing";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { getSupportThreadByToken, listSupportMessages } from "@/server/support-inbox";
 import { cn } from "@/lib/utils";
+import { ThreadAutoRefresh } from "@/components/support/thread-auto-refresh";
 import { VisitorReplyForm } from "./visitor-reply-form";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function ConsultaPage({ params }: ConsultaPageProps) {
 
   return (
     <LandingPageShell>
+      <ThreadAutoRefresh enabled={thread.status !== "closed"} />
       <div className="mx-auto max-w-2xl px-6 py-16 pt-32 sm:py-24 sm:pt-36">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-ticket">
           Link privado

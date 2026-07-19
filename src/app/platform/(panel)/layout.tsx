@@ -5,6 +5,7 @@ import { PlatformShell } from "@/components/layout/platform-shell";
 import { ToastProvider } from "@/components/ui/toast";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
 import { countSupportThreadsNeedingReply } from "@/server/support-inbox";
+import { getPlatformJobFailureCount } from "@/server/queries/platform";
 
 export const metadata: Metadata = {
   title: "Panel de plataforma · ReservaYa",
@@ -23,10 +24,15 @@ export default async function PlatformPanelLayout({
   }
 
   let needsReplyCount = 0;
+  let jobFailureCount = 0;
   try {
-    needsReplyCount = await countSupportThreadsNeedingReply();
+    [needsReplyCount, jobFailureCount] = await Promise.all([
+      countSupportThreadsNeedingReply(),
+      getPlatformJobFailureCount(),
+    ]);
   } catch {
     needsReplyCount = 0;
+    jobFailureCount = 0;
   }
 
   return (
@@ -34,6 +40,7 @@ export default async function PlatformPanelLayout({
       <PlatformShell
         userEmail={String(user.email ?? "")}
         needsReplyCount={needsReplyCount}
+        jobFailureCount={jobFailureCount}
       >
         {children}
       </PlatformShell>
