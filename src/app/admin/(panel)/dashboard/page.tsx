@@ -153,13 +153,13 @@ export default async function AdminDashboardPage() {
       {/* Turnos + recordatorios */}
       <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
         <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Próximos turnos
+              Pendientes de confirmar
             </h2>
             <Link
-              href="/admin/bookings"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              href="/admin/bookings?status=pending"
+              className="shrink-0 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Ver todos →
             </Link>
@@ -167,7 +167,7 @@ export default async function AdminDashboardPage() {
 
           {dashboardData.bookings.length > 0 ? (
             <div className="space-y-3">
-              {dashboardData.bookings.slice(0, 5).map((booking) => (
+              {dashboardData.bookings.map((booking) => (
                 <div
                   key={booking.id}
                   className="flex items-center justify-between rounded-lg border border-border/40 p-3 transition-colors hover:bg-secondary/20"
@@ -181,24 +181,17 @@ export default async function AdminDashboardPage() {
                       </span>
                     </div>
                   </div>
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
-                      booking.status === "Confirmado"
-                        ? "bg-success/15 text-success"
-                        : booking.status === "Pendiente"
-                        ? "bg-amber-500/15 text-amber-700"
-                        : "bg-secondary text-foreground"
-                    )}
-                  >
+                  <span className="shrink-0 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-700">
                     {booking.status}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
-              <p className="text-sm text-muted-foreground">No hay turnos próximos</p>
+            <div className="rounded-lg border border-dashed border-border/50 px-4 py-5 text-center">
+              <p className="text-sm text-muted-foreground text-pretty">
+                No hay turnos pendientes de confirmar.
+              </p>
               <Link
                 href="/admin/bookings"
                 className={cn(
@@ -206,7 +199,7 @@ export default async function AdminDashboardPage() {
                   "mt-3"
                 )}
               >
-                Gestionar turnos
+                Ver agenda
               </Link>
             </div>
           )}

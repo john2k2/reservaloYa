@@ -96,14 +96,19 @@ export function buildAdminShellView(input: AdminShellViewInput) {
 
 export function buildAdminDashboardBookingPreview<TStatus extends string>(
   bookings: DashboardBookingPreviewInput<TStatus>[],
-  formatStatus: (status: TStatus) => string
+  formatStatus: (status: TStatus) => string,
+  options?: { limit?: number; statuses?: readonly TStatus[] }
 ) {
+  const limit = options?.limit ?? 3;
+  const statuses = options?.statuses;
+
   return bookings
+    .filter((booking) => (statuses ? statuses.includes(booking.status) : true))
     .slice()
     .sort((left, right) =>
       `${left.bookingDate}T${left.startTime}`.localeCompare(`${right.bookingDate}T${right.startTime}`)
     )
-    .slice(0, 5)
+    .slice(0, limit)
     .map((booking) => ({
       id: booking.id,
       name: booking.customerName ?? "Cliente",

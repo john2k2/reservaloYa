@@ -191,7 +191,8 @@ export async function getSupabaseAdminDashboardData(businessId: string) {
       startTime: booking.startTime,
       status: booking.status,
     })),
-    formatStatus
+    formatStatus,
+    { limit: 3, statuses: ["pending", "pending_payment"] }
   );
 
   return buildAdminDashboardView({

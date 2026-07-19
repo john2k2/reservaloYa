@@ -50,13 +50,39 @@ describe("admin dashboard domain", () => {
           startTime: "09:00",
           status: "pending",
         },
+        {
+          id: "booking-3",
+          customerName: "Carla",
+          serviceName: "Color",
+          bookingDate: "2026-03-29",
+          startTime: "11:00",
+          status: "pending",
+        },
+        {
+          id: "booking-4",
+          customerName: "Diego",
+          serviceName: "Corte",
+          bookingDate: "2026-03-30",
+          startTime: "10:00",
+          status: "pending",
+        },
+        {
+          id: "booking-5",
+          customerName: "Eva",
+          serviceName: "Barba",
+          bookingDate: "2026-03-31",
+          startTime: "15:00",
+          status: "pending",
+        },
       ],
-      (status) => status.toUpperCase()
+      (status) => status.toUpperCase(),
+      { limit: 3, statuses: ["pending"] }
     );
 
     expect(shell.businessOptions).toEqual([{ slug: "b", name: "Beta", templateSlug: "b" }]);
-    expect(bookings.map((item) => item.id)).toEqual(["booking-1", "booking-2"]);
+    expect(bookings.map((item) => item.id)).toEqual(["booking-1", "booking-3", "booking-4"]);
     expect(bookings[0]?.status).toBe("PENDING");
+    expect(bookings).toHaveLength(3);
   });
 
   it("builds dashboard metrics, notifications and final view", () => {
