@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { loginAction } from "@/app/login/actions";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = createPrivatePageMetadata({
@@ -92,13 +93,11 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
                   <label htmlFor="password" className="text-sm font-medium text-foreground">
                     Contraseña
                   </label>
-                  <input
+                  <PasswordInput
                     id="password"
                     name="password"
-                    type="password"
                     autoComplete="current-password"
                     placeholder="Tu contraseña"
-                    className="minimalist-input"
                     required
                     aria-invalid={params.error ? "true" : undefined}
                     aria-describedby={params.error ? "login-error" : undefined}
