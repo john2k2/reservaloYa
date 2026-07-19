@@ -31,10 +31,10 @@ export function generateBusinessMetadata({
   phone,
 }: BusinessMetadataInput): Metadata {
   const url = `${siteUrl}/${slug}`;
-  const title = `${businessName} | Reserva tu turno online`;
+  const title = `${businessName} | Reservá tu turno online`;
   const metaDescription = truncateSeoDescription(
     description ||
-      `Reserva tu turno en ${businessName}. Agenda online disponible 24/7. Confirmación inmediata.`
+      `Reservá tu turno en ${businessName}. Agenda online disponible 24/7. Confirmación inmediata.`
   );
 
   return {

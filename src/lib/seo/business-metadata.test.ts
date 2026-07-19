@@ -9,7 +9,7 @@ describe("generateBusinessMetadata", () => {
       description: "Barbería premium en Palermo",
     });
 
-    expect(meta.title).toEqual({ absolute: "Aura Studio | Reserva tu turno online" });
+    expect(meta.title).toEqual({ absolute: "Aura Studio | Reservá tu turno online" });
     expect(meta.description).toBe("Barbería premium en Palermo");
     expect(meta.alternates?.canonical).toEqual(expect.stringContaining("/aura-studio"));
   });

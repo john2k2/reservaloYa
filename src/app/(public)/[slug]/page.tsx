@@ -24,6 +24,7 @@ import {
   LocalBusinessJsonLd,
   ServiceJsonLd,
   WebPageJsonLd,
+  resolveLocalBusinessSchemaType,
 } from "@/lib/seo/business-json-ld";
 import { getPublicAppUrl } from "@/lib/runtime";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
@@ -152,6 +153,35 @@ function getStartingPriceLabel(
   return `Desde ${cheapestService.priceLabel}`;
 }
 
+/**
+ * schema.org priceRange for LocalBusiness. Uses the real ARS min–max range from
+ * priced services rather than symbolic "$$" tiers, whose absolute thresholds age
+ * badly under Argentine inflation. Returns undefined when no service is priced.
+ */
+function getPriceRangeSymbol(
+  services: Array<{
+    priceLabel?: string;
+    price?: number | null;
+  }>
+): string | undefined {
+  const pricedServices = services.filter(
+    (service): service is { price: number; priceLabel: string } =>
+      typeof service.price === "number" && Boolean(service.priceLabel)
+  );
+
+  if (pricedServices.length === 0) {
+    return undefined;
+  }
+
+  const sorted = [...pricedServices].sort((a, b) => a.price - b.price);
+  const cheapest = sorted[0];
+  const priciest = sorted[sorted.length - 1];
+
+  return cheapest.price === priciest.price
+    ? cheapest.priceLabel
+    : `${cheapest.priceLabel} - ${priciest.priceLabel}`;
+}
+
 function getGalleryAlt(input: {
   alt?: string | null;
   businessName: string;
@@ -228,6 +258,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   }));
 
   const startingPriceLabel = getStartingPriceLabel(services);
+  const priceRangeSymbol = getPriceRangeSymbol(services);
   const firstActiveDay = getFirstActiveDayLabel(pageData.weeklyHours);
   // Template testimonials are invented showcase content -- only the demo
   // businesses themselves show them. Real businesses show real reviews
@@ -365,11 +396,13 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
       {/* SEO: JSON-LD Structured Data */}
       <LocalBusinessJsonLd
         name={pageData.business.name}
-        description={pageData.profile?.description || `Reserva tu turno en ${pageData.business.name}`}
+        description={pageData.profile?.description || `Reservá tu turno en ${pageData.business.name}`}
         url={businessUrl}
+        businessType={resolveLocalBusinessSchemaType(pageData.profile?.templateKey)}
         telephone={pageData.business.phone}
         address={pageData.business.address}
         image={pageData.profile?.heroImageUrl || pageData.profile?.logoUrl}
+        priceRange={priceRangeSymbol}
         openingHours={openingHoursForJsonLd}
         geo={geo}
         services={services.map((s) => s.name)}
@@ -378,7 +411,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
       />
       <WebPageJsonLd
         name={pageData.business.name}
-        description={pageData.profile?.description || `Reserva tu turno en ${pageData.business.name}`}
+        description={pageData.profile?.description || `Reservá tu turno en ${pageData.business.name}`}
         url={businessUrl}
         image={pageData.profile?.heroImageUrl ?? undefined}
       />

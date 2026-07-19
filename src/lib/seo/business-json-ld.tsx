@@ -16,10 +16,30 @@ function toSchemaDay(spanishDay: string): string {
   return DAY_OF_WEEK_SCHEMA[spanishDay] ?? spanishDay;
 }
 
+/**
+ * Maps a business template/vertical key to the most specific schema.org
+ * LocalBusiness subtype Google understands. Richer than a bare "LocalBusiness"
+ * for local rich results. Falls back to "LocalBusiness" for unknown keys.
+ */
+const TEMPLATE_TO_SCHEMA_TYPE: Record<string, string> = {
+  "demo-barberia": "HairSalon",
+  "demo-peluqueria": "HairSalon",
+  "demo-estetica": "BeautySalon",
+  "demo-nails": "NailSalon",
+  "demo-consultorio": "MedicalClinic",
+};
+
+export function resolveLocalBusinessSchemaType(templateKey?: string | null): string {
+  if (!templateKey) return "LocalBusiness";
+  return TEMPLATE_TO_SCHEMA_TYPE[templateKey] ?? "LocalBusiness";
+}
+
 interface LocalBusinessJsonLdProps {
   name: string;
   description: string;
   url: string;
+  /** schema.org LocalBusiness subtype, e.g. "HairSalon". Defaults to "LocalBusiness". */
+  businessType?: string;
   telephone?: string | null;
   address?: string | null;
   image?: string | null;
@@ -53,6 +73,7 @@ export function LocalBusinessJsonLd({
   name,
   description,
   url,
+  businessType = "LocalBusiness",
   telephone,
   address,
   image,
@@ -65,7 +86,7 @@ export function LocalBusinessJsonLd({
 }: LocalBusinessJsonLdProps): ReactElement {
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": businessType,
     name,
     description,
     url,
