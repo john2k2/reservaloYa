@@ -284,6 +284,100 @@ export function buildBusinessNotificationHtml(p: {
   return emailBase(headline, content);
 }
 
+export function buildTrialEndingEmailHtml(p: {
+  businessName: string;
+  daysLeft: number;
+  billingUrl: string;
+}): string {
+  const businessName = escapeHtml(p.businessName);
+  const billingUrl = escapeHtml(p.billingUrl);
+  const daysLeft = Math.max(0, Math.floor(p.daysLeft));
+  const whenLabel =
+    daysLeft <= 0
+      ? "hoy"
+      : daysLeft === 1
+        ? "mañana"
+        : `en ${daysLeft} días`;
+
+  const headline = "Tu prueba gratis está por terminar";
+  const content = `
+    <h1 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Tu prueba gratis termina ${whenLabel}</h1>
+    <p style="margin:0 0 16px;color:#6b7280;font-size:15px;">
+      Hola <strong>${businessName}</strong>, tu período de prueba de ReservaYa termina <strong>${whenLabel}</strong>.
+      Para que tu página pública y tu agenda sigan activas sin interrupciones, activá tu suscripción ahora.
+    </p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">
+      Tus datos, turnos y clientes quedan tal cual — solo tenés que elegir tu forma de pago.
+    </p>
+
+    <a href="${billingUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+      Activar mi suscripción
+    </a>
+    <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
+      ¿Dudas? Respondé este email y te ayudamos a elegir el mejor plan.
+    </p>`;
+
+  return emailBase(headline, content);
+}
+
+export function buildDunningEmailHtml(p: {
+  businessName: string;
+  billingUrl: string;
+  graceDays: number;
+}): string {
+  const businessName = escapeHtml(p.businessName);
+  const billingUrl = escapeHtml(p.billingUrl);
+  const graceDays = Math.max(1, Math.floor(p.graceDays));
+
+  const headline = "No pudimos registrar tu pago";
+  const content = `
+    <h1 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">No pudimos registrar tu pago</h1>
+    <p style="margin:0 0 16px;color:#6b7280;font-size:15px;">
+      Hola <strong>${businessName}</strong>, no nos figura el pago de tu suscripción a ReservaYa.
+      Tenés unos días para regularizarlo antes de que tu página y tu agenda queden en pausa.
+    </p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">
+      Si ya pagaste, ignorá este mensaje. Si no, actualizá tu pago para evitar la suspensión.
+    </p>
+
+    <a href="${billingUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+      Actualizar mi pago
+    </a>
+    <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
+      Tenés ${graceDays} días de gracia. Después de eso pausamos el servicio hasta recibir el pago.
+    </p>`;
+
+  return emailBase(headline, content);
+}
+
+export function buildSubscriptionSuspendedEmailHtml(p: {
+  businessName: string;
+  billingUrl: string;
+}): string {
+  const businessName = escapeHtml(p.businessName);
+  const billingUrl = escapeHtml(p.billingUrl);
+
+  const headline = "Tu suscripción quedó suspendida";
+  const content = `
+    <h1 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Tu suscripción quedó suspendida</h1>
+    <p style="margin:0 0 16px;color:#6b7280;font-size:15px;">
+      Hola <strong>${businessName}</strong>, no registramos el pago de tu suscripción a ReservaYa,
+      así que la pausamos por ahora. Tu página pública y tu agenda quedan en pausa hasta que regularices el pago.
+    </p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">
+      Tus datos, turnos y clientes están a salvo. Apenas actualices el pago, se reactiva todo tal como estaba.
+    </p>
+
+    <a href="${billingUrl}" style="display:block;text-align:center;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;margin-bottom:16px;">
+      Reactivar mi suscripción
+    </a>
+    <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
+      ¿Ya pagaste o tenés dudas? Respondé este email y te ayudamos.
+    </p>`;
+
+  return emailBase(headline, content);
+}
+
 export function buildFollowUpEmailHtml(p: {
   customerName: string;
   businessName: string;

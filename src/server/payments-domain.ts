@@ -51,6 +51,50 @@ export function isActiveSubscriptionExpired(
   return new Date(nextBillingDate).getTime() + graceMs < now.getTime();
 }
 
+/** Días antes de `trialEndsAt` en que se avisa al negocio que el trial termina. */
+export const SUBSCRIPTION_TRIAL_ENDING_NOTICE_DAYS = 3;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Un trial está "por vencer" si `trialEndsAt` cae dentro de la ventana de aviso
+ * y todavía no pasó. Ya vencido devuelve false (no tiene sentido avisar tarde).
+ */
+export function isTrialEndingSoon(
+  trialEndsAt: string | null | undefined,
+  now: Date = new Date(),
+  noticeDays: number = SUBSCRIPTION_TRIAL_ENDING_NOTICE_DAYS
+): boolean {
+  if (!trialEndsAt) return false;
+  const endsMs = new Date(trialEndsAt).getTime();
+  const nowMs = now.getTime();
+  return endsMs >= nowMs && endsMs - nowMs <= noticeDays * DAY_MS;
+}
+
+/** Días enteros que faltan hasta `trialEndsAt` (mínimo 0). */
+export function trialDaysLeft(
+  trialEndsAt: string | null | undefined,
+  now: Date = new Date()
+): number {
+  if (!trialEndsAt) return 0;
+  const diffMs = new Date(trialEndsAt).getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diffMs / DAY_MS));
+}
+
+/**
+ * Una suscripción `active` está en período de dunning si venció su
+ * `nextBillingDate` pero todavía no superó la gracia (aún no se suspende).
+ * Es la ventana en la que conviene recordarle al negocio que pague.
+ */
+export function isActiveSubscriptionInDunning(
+  nextBillingDate: string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  if (!nextBillingDate) return false;
+  const overdue = new Date(nextBillingDate).getTime() < now.getTime();
+  return overdue && !isActiveSubscriptionExpired(nextBillingDate, now);
+}
+
 export type BusinessPaymentSettings = {
   businessId: string;
   businessSlug: string;

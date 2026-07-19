@@ -5,7 +5,10 @@ import {
   buildBusinessMercadoPagoTokenClearPatch,
   buildBusinessMercadoPagoTokenPatch,
   buildBusinessPaymentSettings,
+  isActiveSubscriptionInDunning,
+  isTrialEndingSoon,
   normalizeMercadoPagoCollectorId,
+  trialDaysLeft,
 } from "@/server/payments-domain";
 
 vi.mock("@/server/mp-token-crypto", () => ({
@@ -87,6 +90,32 @@ describe("payments domain helpers", () => {
       mpCollectorId: "",
       mpTokenExpiresAt: "",
       mpConnected: false,
+    });
+  });
+
+  describe("subscription lifecycle predicates", () => {
+    const now = new Date("2026-07-15T12:00:00.000Z");
+
+    it("flags a trial ending within the notice window but not one further out or past", () => {
+      expect(isTrialEndingSoon("2026-07-17T12:00:00.000Z", now)).toBe(true); // 2 days left
+      expect(isTrialEndingSoon("2026-07-15T18:00:00.000Z", now)).toBe(true); // same day
+      expect(isTrialEndingSoon("2026-07-20T12:00:00.000Z", now)).toBe(false); // 5 days out
+      expect(isTrialEndingSoon("2026-07-14T12:00:00.000Z", now)).toBe(false); // already expired
+      expect(isTrialEndingSoon(null, now)).toBe(false);
+    });
+
+    it("computes whole days left, clamped at zero", () => {
+      expect(trialDaysLeft("2026-07-17T12:00:00.000Z", now)).toBe(2);
+      expect(trialDaysLeft("2026-07-15T20:00:00.000Z", now)).toBe(1);
+      expect(trialDaysLeft("2026-07-10T12:00:00.000Z", now)).toBe(0);
+      expect(trialDaysLeft(null, now)).toBe(0);
+    });
+
+    it("flags dunning only when overdue but still within the grace period", () => {
+      expect(isActiveSubscriptionInDunning("2026-07-14T12:00:00.000Z", now)).toBe(true); // 1 day overdue, within 3-day grace
+      expect(isActiveSubscriptionInDunning("2026-07-16T12:00:00.000Z", now)).toBe(false); // not overdue yet
+      expect(isActiveSubscriptionInDunning("2026-07-01T12:00:00.000Z", now)).toBe(false); // past grace → suspend, not dunning
+      expect(isActiveSubscriptionInDunning(null, now)).toBe(false);
     });
   });
 });
