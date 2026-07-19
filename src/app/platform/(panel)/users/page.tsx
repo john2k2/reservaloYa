@@ -41,12 +41,11 @@ export default async function PlatformUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 text-muted-foreground mb-1">
-          <Users className="size-4" />
-          <span className="text-xs uppercase tracking-wider font-semibold">Plataforma</span>
-        </div>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Usuarios</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            <Users className="size-5 text-muted-foreground" aria-hidden />
+            Usuarios
+          </h1>
           <span className="text-sm text-muted-foreground">{users.length} total</span>
         </div>
       </div>

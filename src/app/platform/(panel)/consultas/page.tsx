@@ -70,12 +70,11 @@ export default async function PlatformConsultasPage({ searchParams }: PlatformCo
   return (
     <div className="space-y-6">
       <div>
-        <div className="mb-1 flex items-center gap-2 text-muted-foreground">
-          <MessageSquareText className="size-4" />
-          <span className="text-xs font-semibold uppercase tracking-wider">Plataforma</span>
-        </div>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">Consultas</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            <MessageSquareText className="size-5 text-muted-foreground" aria-hidden />
+            Consultas
+          </h1>
           {needsReplyCount > 0 ? (
             <span className="rounded-full bg-ticket/20 px-2.5 py-1 font-mono text-xs font-semibold text-ticket">
               {needsReplyCount} sin responder

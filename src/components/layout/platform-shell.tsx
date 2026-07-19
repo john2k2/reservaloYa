@@ -62,7 +62,7 @@ function ThemeToggle() {
 function NavBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-ticket px-1.5 py-0.5 font-mono text-[10px] font-bold text-ink">
+    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 font-mono text-[10px] font-bold text-white">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -148,7 +148,7 @@ export function PlatformShell({
       </aside>
 
       <div className="flex h-screen flex-1 flex-col overflow-hidden">
-        <header className="border-b border-border/60 bg-background px-4 lg:px-6">
+        <header className="border-b border-border/60 bg-background px-4 lg:px-6 xl:hidden">
           <div className="flex min-h-14 items-center justify-between gap-4 py-2">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
