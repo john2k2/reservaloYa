@@ -17,7 +17,7 @@ WhatsApp funciona… hasta que te come el día. Mientras contestás mensajes, pe
 - Confirmación y recordatorios automáticos por email
 - Panel para ver la agenda, clientes y turnos del día
 
-**Probá 15 días gratis**, sin tarjeta y sin permanencia. Después: **USD 22/mes** (transferencia en pesos o tarjeta en dólares).
+**Probá 15 días gratis**, sin tarjeta y sin permanencia. Después: **promo transferencia ≈ USD 22/mes** (ARS al blue) o **tarjeta USD 27/mes**.
 
 👉 **Mirá la demo en vivo:** https://reservaya.ar/demo-barberia  
 👉 **Empezá tu prueba:** https://reservaya.ar/admin/signup
@@ -36,7 +36,7 @@ Hecho por **John Labs** — software simple para negocios que no tienen tiempo d
 
 ReservaYa = turnos online + recordatorios + panel de agenda.
 
-15 días gratis · USD 22/mes · sin permanencia.
+15 días gratis · promo transferencia ≈ USD 22 · tarjeta USD 27 · sin permanencia.
 
 Demo: https://reservaya.ar/demo-barberia  
 Probar: https://reservaya.ar/admin/signup

@@ -110,16 +110,16 @@ https://reservaya.ar/{slug}
 
 | Método | Flujo |
 |--------|-------|
-| **Transferencia ARS** | Dueño va a `/admin/subscription/pay` → ve alias/CBU y monto en pesos (referencia dólar blue) → transfiere → vos marcás pagado en panel platform |
-| **Tarjeta USD (Polar)** | Dueño va a `/admin/subscription/pay` → "Pagar con tarjeta" → checkout Polar → activación automática vía webhook |
+| **Transferencia ARS (promo)** | Dueño va a `/admin/subscription/pay` → ve alias/CBU y monto en pesos (≈ USD 22 al blue) → transfiere → sube el comprobante en la misma página → vos aprobás en panel platform (Cobros) |
+| **Tarjeta USD (Polar)** | Dueño va a `/admin/subscription/pay` → "Pagar con tarjeta" (USD 27) → checkout Polar → activación automática vía webhook |
 
-**Precio:** USD 22/mes (equivalente ARS visible en pantalla para transferencia).
+**Precio:** promo transferencia ≈ USD 22/mes (ARS al blue) · tarjeta USD 27/mes.
 
 ### Script para el dueño
 
-> "Tenés 15 días para probarlo con clientes reales. Si te sirve, abonás USD 22 por mes — por transferencia en pesos o tarjeta en dólares. Cancelás cuando quieras."
+> "Tenés 15 días para probarlo con clientes reales. Si te sirve, abonás por mes: promo por transferencia en pesos (≈ USD 22 al blue) o tarjeta en dólares (USD 27). Cancelás cuando quieras."
 
-**Listo cuando:** el dueño sabe dónde pagar (`/admin/subscription/pay`) y a quién avisar después de transferir (WhatsApp comercial ReservaYa).
+**Listo cuando:** el dueño sabe dónde pagar (`/admin/subscription/pay`) y que, si paga por transferencia, tiene que subir el comprobante ahí mismo.
 
 ---
 
