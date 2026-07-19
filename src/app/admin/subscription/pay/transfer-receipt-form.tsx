@@ -30,12 +30,21 @@ export function TransferReceiptForm() {
         });
       }}
     >
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-6 text-center transition-colors hover:bg-secondary/40">
-        <Upload className="size-5 text-muted-foreground" aria-hidden />
-        <span className="text-sm font-medium text-foreground">
-          {fileName ? fileName : "Subí el comprobante (JPG, PNG o PDF)"}
+      <label
+        className={cn(
+          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-7 text-center transition-colors",
+          fileName
+            ? "border-sello/50 bg-sello/5"
+            : "border-rule bg-background hover:border-sello/40 hover:bg-sello/[0.04]"
+        )}
+      >
+        <span className="flex size-10 items-center justify-center rounded-full bg-sello/10 text-sello">
+          <Upload className="size-5" aria-hidden />
         </span>
-        <span className="text-xs text-muted-foreground">Máximo 5 MB</span>
+        <span className="text-sm font-semibold text-foreground">
+          {fileName ? fileName : "Subí el comprobante"}
+        </span>
+        <span className="text-xs text-muted-foreground">JPG, PNG o PDF · máximo 5 MB</span>
         <input
           type="file"
           name="receipt"
@@ -50,7 +59,7 @@ export function TransferReceiptForm() {
       </label>
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-lg border border-red-300/60 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
           {error}
         </p>
       )}
@@ -60,11 +69,12 @@ export function TransferReceiptForm() {
         disabled={isPending}
         className={cn(
           "inline-flex h-12 w-full items-center justify-center rounded-full px-6 text-sm font-semibold",
-          "bg-emerald-600 text-white transition-transform hover:-translate-y-0.5 active:scale-[0.98]",
-          "disabled:cursor-not-allowed disabled:opacity-70"
+          "bg-ink text-paper shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--sello)_80%,transparent)]",
+          "transition-transform hover:-translate-y-0.5 active:scale-[0.98]",
+          "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
         )}
       >
-        {isPending ? "Enviando..." : "Enviar comprobante"}
+        {isPending ? "Enviando..." : "Enviar comprobante y activar"}
       </button>
     </form>
   );

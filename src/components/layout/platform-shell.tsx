@@ -3,7 +3,17 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Building2, LogOut, Menu, Moon, Sun, Users, X } from "lucide-react";
+import {
+  BarChart2,
+  Building2,
+  LogOut,
+  Menu,
+  MessageSquareText,
+  Moon,
+  Sun,
+  Users,
+  X,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
@@ -13,6 +23,7 @@ import { startCircularThemeTransition } from "@/lib/theme-transition";
 
 const platformNavigation = [
   { href: "/platform/dashboard", label: "Dashboard", icon: BarChart2 },
+  { href: "/platform/consultas", label: "Consultas", icon: MessageSquareText },
   { href: "/platform/businesses", label: "Negocios", icon: Building2 },
   { href: "/platform/users", label: "Usuarios", icon: Users },
 ];
@@ -48,12 +59,26 @@ function ThemeToggle() {
   );
 }
 
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-ticket px-1.5 py-0.5 font-mono text-[10px] font-bold text-ink">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 interface PlatformShellProps {
   children: React.ReactNode;
   userEmail: string;
+  needsReplyCount?: number;
 }
 
-export function PlatformShell({ children, userEmail }: PlatformShellProps) {
+export function PlatformShell({
+  children,
+  userEmail,
+  needsReplyCount = 0,
+}: PlatformShellProps) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
@@ -63,7 +88,6 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
 
   return (
     <div className="landing-theme flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
-      {/* Sidebar Desktop */}
       <aside className="hidden w-56 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
         <div className="px-4 py-6">
           <Link href="/" className="inline-flex items-center" aria-label={`Ir al inicio de ${productName}`}>
@@ -79,7 +103,9 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
         <nav className="flex-1 space-y-0.5 px-2">
           {platformNavigation.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const showBadge = item.href === "/platform/consultas";
             return (
               <Link
                 key={item.href}
@@ -93,13 +119,14 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
               >
                 <Icon aria-hidden="true" className="size-4" />
                 {item.label}
+                {showBadge ? <NavBadge count={needsReplyCount} /> : null}
               </Link>
             );
           })}
         </nav>
 
         <div className="border-t border-border/60 p-3 space-y-1">
-          <div className="rounded-lg bg-secondary/40 p-3 mb-2">
+          <div className="mb-2 rounded-lg bg-secondary/40 p-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
               Superadmin
             </p>
@@ -111,7 +138,7 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
           <form action="/auth/signout" method="post">
             <button
               type="submit"
-              className="flex w-full h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               <LogOut aria-hidden="true" className="size-4" />
               Cerrar sesión
@@ -120,9 +147,7 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex h-screen flex-1 flex-col overflow-hidden">
-        {/* Header Mobile */}
         <header className="border-b border-border/60 bg-background px-4 lg:px-6">
           <div className="flex min-h-14 items-center justify-between gap-4 py-2">
             <div>
@@ -146,7 +171,9 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
               <nav className="grid grid-cols-2 gap-2">
                 {platformNavigation.map((item) => {
                   const Icon = item.icon;
-                  const active = pathname === item.href;
+                  const active =
+                    pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  const showBadge = item.href === "/platform/consultas";
                   return (
                     <Link
                       key={item.href}
@@ -159,7 +186,8 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
                       )}
                     >
                       <Icon aria-hidden="true" className="size-4" />
-                      {item.label}
+                      <span className="truncate">{item.label}</span>
+                      {showBadge ? <NavBadge count={needsReplyCount} /> : null}
                     </Link>
                   );
                 })}
@@ -180,11 +208,8 @@ export function PlatformShell({ children, userEmail }: PlatformShellProps) {
           ) : null}
         </header>
 
-        {/* Page Content */}
         <main id="main-content" className="flex-1 overflow-y-auto bg-background p-4 lg:p-6 xl:p-8">
-          <div className="mx-auto max-w-7xl space-y-6">
-            {children}
-          </div>
+          <div className="mx-auto max-w-7xl space-y-6">{children}</div>
         </main>
       </div>
     </div>

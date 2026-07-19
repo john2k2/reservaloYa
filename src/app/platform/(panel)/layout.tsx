@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { PlatformShell } from "@/components/layout/platform-shell";
 import { ToastProvider } from "@/components/ui/toast";
 import { getAuthenticatedPlatformAdmin } from "@/server/platform-auth";
+import { countSupportThreadsNeedingReply } from "@/server/support-inbox";
 
 export const metadata: Metadata = {
   title: "Panel de plataforma · ReservaYa",
@@ -21,9 +22,19 @@ export default async function PlatformPanelLayout({
     redirect("/login");
   }
 
+  let needsReplyCount = 0;
+  try {
+    needsReplyCount = await countSupportThreadsNeedingReply();
+  } catch {
+    needsReplyCount = 0;
+  }
+
   return (
     <ToastProvider>
-      <PlatformShell userEmail={String(user.email ?? "")}>
+      <PlatformShell
+        userEmail={String(user.email ?? "")}
+        needsReplyCount={needsReplyCount}
+      >
         {children}
       </PlatformShell>
     </ToastProvider>

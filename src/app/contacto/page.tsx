@@ -5,6 +5,7 @@ import { Mail, MessageCircle } from "lucide-react";
 import { LandingPageShell } from "@/components/landing";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
+import { ContactInquiryForm } from "./contact-inquiry-form";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Contacto comercial",
@@ -24,9 +25,20 @@ export default function ContactPage() {
           Hablemos sobre la agenda online de tu negocio
         </h1>
         <p className="mt-5 text-base leading-7 text-muted-foreground">
-          Escribinos para consultar precios, implementación, pagos online, recordatorios o una demo
-          personalizada de ReservaYa.
+          Escribinos desde el formulario y seguí la conversación en la web. WhatsApp sigue disponible
+          si preferís chat rápido.
         </p>
+
+        <section className="mt-10 rounded-2xl border border-rule bg-card p-5 sm:p-6">
+          <h2 className="font-display text-xl font-semibold text-foreground">Escribinos acá</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Respondemos desde el panel y te avisamos por email. Guardá el link del hilo para volver
+            cuando quieras.
+          </p>
+          <div className="mt-6">
+            <ContactInquiryForm />
+          </div>
+        </section>
 
         <div className="mt-10 divide-y divide-rule border-y border-rule">
           <a
@@ -51,7 +63,7 @@ export default function ContactPage() {
                 {siteContact.email}
               </a>
               <p className="mt-1 text-sm text-muted-foreground">
-                Respondemos consultas comerciales y soporte inicial.
+                Canal secundario. Preferimos el formulario para llevar seguimiento.
               </p>
             </div>
           </div>

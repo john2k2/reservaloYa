@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowRight, Building2, CreditCard } from "lucide-react";
+import { ArrowRight, CreditCard } from "lucide-react";
 
 import { getAdminShellData } from "@/server/queries/admin";
 import {
@@ -20,6 +20,8 @@ import {
 import { getPendingTransferClaimForBusiness } from "@/server/billing-transfer-claims";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { cn } from "@/lib/utils";
+import { SelloStamp } from "@/components/landing/sello-stamp";
+import "@/app/landing-animations.css";
 import { TransferReceiptForm } from "./transfer-receipt-form";
 
 export const metadata: Metadata = createPrivatePageMetadata({
@@ -73,136 +75,195 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
   );
 
   return (
-    <div className="landing-theme flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-lg space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-            Abonar tu suscripción
+    <div className="landing-theme relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12 bg-background">
+      {/* Renglones de agenda — atmósfera, sin orbes */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, transparent, transparent 31px, color-mix(in srgb, var(--rule) 55%, transparent) 31px, color-mix(in srgb, var(--rule) 55%, transparent) 32px)",
+        }}
+      />
+
+      <div className="relative w-full max-w-lg space-y-8">
+        <header className="space-y-3 text-center">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-ticket">
+            Acceso pausado
+          </p>
+          <h1 className="font-display text-[2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl">
+            Reactivá tu panel
           </h1>
           <p className="text-muted-foreground">
-            {businessName} — plan mensual
-            {formattedArs ? ` desde ≈ $${formattedArs} ARS` : ""} (promo transferencia) o USD{" "}
-            {SUBSCRIPTION_CARD_USD_PRICE} con tarjeta
+            <span className="font-medium text-foreground">{businessName}</span>
+            {" — "}
+            elegí cómo seguir el mes.
           </p>
-        </div>
+        </header>
 
         {errorMessage && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-300/60 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
             {errorMessage}
           </div>
         )}
 
         {showTransfer && (
-          <section className="rounded-xl border border-emerald-500/30 bg-card p-6 space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Building2 className="size-5 text-foreground" aria-hidden />
-                <h2 className="text-sm font-semibold text-foreground">
-                  Transferencia bancaria (ARS)
-                </h2>
+          <section className="relative">
+            {/* Sello flotante — firma visual */}
+            <div className="pointer-events-none absolute -right-2 -top-5 z-10 sm:-right-4 sm:-top-6">
+              <div className="animate-stamp-hit">
+                <SelloStamp label="Promo" sublabel={`USD ${SUBSCRIPTION_USD_PRICE}`} rotate={-12} />
               </div>
-              <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                Promo
-              </span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Precio promocional: equivalente a USD {SUBSCRIPTION_USD_PRICE}/mes al dólar blue.
-              Transferí, subí el comprobante y te activamos el mismo día.
-            </p>
-            <dl className="space-y-2 rounded-lg border border-border bg-background px-4 py-3 text-sm">
-              {transfer.holder && (
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">Titular</dt>
-                  <dd className="font-medium text-right">{transfer.holder}</dd>
-                </div>
-              )}
-              {transfer.bank && (
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">Banco</dt>
-                  <dd className="font-medium text-right">{transfer.bank}</dd>
-                </div>
-              )}
-              {transfer.alias && (
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">Alias</dt>
-                  <dd className="font-mono font-medium text-right">{transfer.alias}</dd>
-                </div>
-              )}
-              {transfer.cbu && (
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">CBU/CVU</dt>
-                  <dd className="font-mono font-medium text-right break-all">{transfer.cbu}</dd>
-                </div>
-              )}
-              {formattedArs && (
-                <div className="flex justify-between gap-3 border-t border-border pt-2">
-                  <dt className="text-muted-foreground">Monto sugerido</dt>
-                  <dd className="font-mono font-semibold">${formattedArs} ARS</dd>
-                </div>
-              )}
-            </dl>
-            {pendingClaim ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Comprobante recibido. Estamos revisándolo
-                {pendingClaim.createdAt
-                  ? ` (enviado ${new Date(pendingClaim.createdAt).toLocaleString("es-AR")})`
-                  : ""}
-                .
+
+            {/* Talón de pago */}
+            <div className="relative overflow-hidden rounded-2xl border border-rule bg-card shadow-[0_20px_50px_-28px_color-mix(in_srgb,var(--ink)_55%,transparent)]">
+              <div className="flex items-center justify-between border-b border-dashed border-rule px-5 py-3.5 sm:px-6">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  Transferencia ARS
+                </span>
+                <span className="rounded-sm bg-ticket/20 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-ticket">
+                  Mejor precio
+                </span>
               </div>
-            ) : (
-              <TransferReceiptForm />
-            )}
-            <p className="text-center text-xs text-muted-foreground">
-              ¿Problemas para subir el archivo?{" "}
-              <a href={whatsappHref} className="underline" target="_blank" rel="noopener noreferrer">
-                Escribinos por WhatsApp
-              </a>
-              .
-            </p>
+
+              <div className="space-y-5 px-5 py-6 sm:px-6">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Monto del mes
+                  </p>
+                  {formattedArs ? (
+                    <p className="mt-1 font-mono text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
+                      <span className="text-2xl font-semibold text-muted-foreground sm:text-3xl">
+                        $
+                      </span>
+                      {formattedArs}
+                    </p>
+                  ) : (
+                    <p className="mt-1 font-mono text-5xl font-bold tracking-tight text-foreground">
+                      USD {SUBSCRIPTION_USD_PRICE}
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Equivalente a{" "}
+                    <span className="font-mono font-semibold text-sello">
+                      USD {SUBSCRIPTION_USD_PRICE}
+                    </span>{" "}
+                    al dólar blue · activación el mismo día
+                  </p>
+                </div>
+
+                <dl className="divide-y divide-rule border-y border-rule text-sm">
+                  {transfer.holder && (
+                    <div className="flex justify-between gap-3 py-2.5">
+                      <dt className="text-muted-foreground">Titular</dt>
+                      <dd className="text-right font-medium">{transfer.holder}</dd>
+                    </div>
+                  )}
+                  {transfer.bank && (
+                    <div className="flex justify-between gap-3 py-2.5">
+                      <dt className="text-muted-foreground">Banco</dt>
+                      <dd className="text-right font-medium">{transfer.bank}</dd>
+                    </div>
+                  )}
+                  {transfer.alias && (
+                    <div className="flex justify-between gap-3 py-2.5">
+                      <dt className="text-muted-foreground">Alias</dt>
+                      <dd className="font-mono text-right text-base font-bold tracking-wide text-sello">
+                        {transfer.alias}
+                      </dd>
+                    </div>
+                  )}
+                  {transfer.cbu && (
+                    <div className="flex justify-between gap-3 py-2.5">
+                      <dt className="text-muted-foreground">CBU/CVU</dt>
+                      <dd className="break-all text-right font-mono font-medium">{transfer.cbu}</dd>
+                    </div>
+                  )}
+                </dl>
+
+                {pendingClaim ? (
+                  <div className="rounded-xl border border-ticket/50 bg-ticket/10 px-4 py-3 text-sm text-foreground">
+                    <p className="font-semibold">Comprobante recibido</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      Lo estamos revisando
+                      {pendingClaim.createdAt
+                        ? ` · enviado ${new Date(pendingClaim.createdAt).toLocaleString("es-AR")}`
+                        : ""}
+                      . Te avisamos cuando esté activo.
+                    </p>
+                  </div>
+                ) : (
+                  <TransferReceiptForm />
+                )}
+
+                <p className="text-center text-xs text-muted-foreground">
+                  ¿Problemas para subir el archivo?{" "}
+                  <a
+                    href={whatsappHref}
+                    className="font-medium text-sello underline underline-offset-2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Escribinos por WhatsApp
+                  </a>
+                  .
+                </p>
+              </div>
+
+              {/* Perforaciones del talón */}
+              <div className="pointer-events-none absolute -left-3 top-[72px] size-6 rounded-full bg-background" />
+              <div className="pointer-events-none absolute -right-3 top-[72px] size-6 rounded-full bg-background" />
+            </div>
           </section>
         )}
 
         {showPolar && (
-          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <CreditCard className="size-5 text-foreground" aria-hidden />
-              <h2 className="text-sm font-semibold text-foreground">Tarjeta / USD (Polar)</h2>
+          <section className="rounded-2xl border border-dashed border-rule bg-card/60 px-5 py-5 sm:px-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="size-4 text-muted-foreground" aria-hidden />
+                  <h2 className="text-sm font-semibold text-foreground">Tarjeta en dólares</h2>
+                </div>
+                <p className="font-mono text-2xl font-bold tracking-tight">
+                  USD {SUBSCRIPTION_CARD_USD_PRICE}
+                  <span className="ml-2 font-sans text-xs font-normal text-muted-foreground">
+                    /mes · renovación automática
+                  </span>
+                </p>
+                {showTransfer && (
+                  <p className="text-xs text-muted-foreground">
+                    Con transferencia ahorrás el precio promo (USD {SUBSCRIPTION_USD_PRICE} al blue).
+                  </p>
+                )}
+              </div>
+              <Link
+                href="/api/payments/polar/checkout"
+                className={cn(
+                  "inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 text-sm font-semibold",
+                  "border border-rule bg-background text-foreground",
+                  "transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+                )}
+              >
+                Pagar con tarjeta
+                <ArrowRight className="size-4 shrink-0" />
+              </Link>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Pago con tarjeta en dólares. La suscripción se renueva automáticamente cada mes.
-            </p>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Plan mensual</span>
-              <span className="font-mono font-medium">USD {SUBSCRIPTION_CARD_USD_PRICE}</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Con transferencia pagás el precio promo (USD {SUBSCRIPTION_USD_PRICE} al blue).
-            </p>
-            <Link
-              href="/api/payments/polar/checkout"
-              className={cn(
-                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold",
-                "border border-border bg-background text-foreground",
-                "transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
-              )}
-            >
-              Pagar con tarjeta
-              <ArrowRight className="size-4" />
-            </Link>
           </section>
         )}
 
         {!showTransfer && !showPolar && (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 space-y-3 text-sm text-amber-900">
+          <section className="rounded-2xl border border-ticket/40 bg-ticket/10 p-6 space-y-3 text-sm">
             <p className="font-medium">No hay métodos de pago automáticos configurados.</p>
-            <p>
+            <p className="text-muted-foreground">
               Escribinos por WhatsApp y te pasamos los datos para transferir y activar tu cuenta.
             </p>
             <a
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex font-semibold underline"
+              className="inline-flex font-semibold text-sello underline underline-offset-2"
             >
               Hablar por WhatsApp
             </a>
@@ -211,7 +272,12 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
 
         <p className="text-center text-xs text-muted-foreground">
           ¿Problemas para pagar?{" "}
-          <a href={whatsappHref} className="underline" target="_blank" rel="noopener noreferrer">
+          <a
+            href={whatsappHref}
+            className="font-medium text-sello underline underline-offset-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Contactanos
           </a>
           .
