@@ -21,15 +21,16 @@ Verificar columnas en tabla `subscriptions`:
 
 ## 2. Cuenta Polar
 
-1. Crear org en [Polar](https://polar.sh) (sandbox primero).
-2. Producto recurrente: **ReservaYa** — **USD 22 / mes**.
-3. Copiar `POLAR_PRODUCT_ID`.
-4. Access token de organización → `POLAR_ACCESS_TOKEN`.
-5. Webhook:
+1. Crear org en [Polar](https://polar.sh) (sandbox primero para smoke; live en polar.sh).
+2. Producto recurrente: **ReservaYa** — **USD 27 / mes** (tarjeta; promo transferencia = USD 22).
+3. Completar **Finance → Account** (identidad + payout). Sin esto Polar responde `PaymentNotReady` y no cobra.
+4. Copiar `POLAR_PRODUCT_ID`.
+5. Access token de organización → `POLAR_ACCESS_TOKEN`.
+6. Webhook:
    - URL: `https://reservaya.ar/api/payments/polar/webhook`
    - Eventos: `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked`, `order.paid`
    - Secret → `POLAR_WEBHOOK_SECRET`
-6. `POLAR_SERVER=sandbox` hasta validar; luego `production`.
+7. `POLAR_SERVER=production` en Vercel Production para cobro real (`sandbox` solo para pruebas).
 
 ## 3. Transferencia ARS
 
