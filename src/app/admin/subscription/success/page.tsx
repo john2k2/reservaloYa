@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 import { createPrivatePageMetadata } from "@/lib/seo/metadata";
-import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import { SUBSCRIPTION_CARD_USD_PRICE } from "@/server/payments-domain";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
 import { getSupabaseSubscriptionByBusinessId } from "@/server/supabase-store";
 
@@ -45,7 +45,7 @@ export default async function SubscriptionSuccessPage() {
             <p className="text-sm font-medium">Detalles del plan</p>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plan mensual</span>
-              <span className="font-mono font-medium">USD {SUBSCRIPTION_USD_PRICE}</span>
+              <span className="font-mono font-medium">USD {SUBSCRIPTION_CARD_USD_PRICE}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Estado</span>

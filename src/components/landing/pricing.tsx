@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { SUBSCRIPTION_CARD_USD_PRICE, SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 import { AnimatedSection } from "./animated-section";
 import { SelloStamp } from "./sello-stamp";
 
@@ -32,7 +33,8 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
             Un plan. Sin permanencia.
           </h2>
           <p className="mt-6 max-w-[500px] text-lg text-muted-foreground">
-            Arrancás gratis con 15 días de trial. Después pagás por transferencia o con tarjeta en USD.
+            Arrancás gratis con 15 días de trial. Después, precio promo por transferencia en pesos
+            o tarjeta en USD.
           </p>
         </div>
       </AnimatedSection>
@@ -57,7 +59,10 @@ export function PricingSection({ arsPrice }: PricingSectionProps) {
             </div>
 
             <p className="mt-6 text-center font-mono text-xs uppercase tracking-[0.2em] text-ticket">
-              15 días gratis · Transferencia o tarjeta
+              15 días gratis · Promo transferencia ≈ USD {SUBSCRIPTION_USD_PRICE}
+            </p>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Tarjeta: USD {SUBSCRIPTION_CARD_USD_PRICE}/mes
             </p>
 
             <ul className="mt-8 space-y-0 border-y border-rule">

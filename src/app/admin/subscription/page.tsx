@@ -49,6 +49,9 @@ export default async function SubscriptionExpiredPage() {
           <div className="space-y-1">
             <p className="text-sm font-medium">Plan Mensual</p>
             <p className="font-mono text-3xl font-bold">${formattedPrice} <span className="font-sans text-sm font-normal text-muted-foreground">ARS/mes</span></p>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+              Precio promo por transferencia
+            </p>
           </div>
 
           <div className="space-y-2 text-sm text-left">

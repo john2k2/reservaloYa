@@ -3,11 +3,20 @@ import { decryptMPToken, encryptMPToken } from "@/server/mp-token-crypto";
 
 // ─── Subscription pricing ────────────────────────────────────────────────────
 
-/** Precio mensual de suscripcion en USD */
+/**
+ * Precio promo / transferencia (USD de referencia).
+ * En ARS se convierte con dólar blue — es el precio que empujamos.
+ */
 export const SUBSCRIPTION_USD_PRICE = 22;
 
 /**
- * Calcula el precio de suscripcion en ARS dado un rate de dolar blue.
+ * Precio tarjeta (Polar) pensado para dejar ~USD 22 netos tras fees MoR.
+ * El monto real lo define el producto en Polar; este valor es la UI/contrato.
+ */
+export const SUBSCRIPTION_CARD_USD_PRICE = 27;
+
+/**
+ * Calcula el precio promo de suscripcion en ARS (transferencia) dado un rate blue.
  *
  * El rate viene de `getBlueDollarRate()` que:
  * - Consulta APIs en tiempo real (cache 1hs)

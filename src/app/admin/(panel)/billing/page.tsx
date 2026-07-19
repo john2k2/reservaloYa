@@ -20,7 +20,10 @@ import {
   buildTransferWhatsAppMessage,
 } from "@/server/billing-transfer";
 import { getSiteWhatsAppHref } from "@/lib/contact";
-import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import {
+  SUBSCRIPTION_CARD_USD_PRICE,
+  SUBSCRIPTION_USD_PRICE,
+} from "@/server/payments-domain";
 import { isPolarConfigured } from "@/server/polar-config";
 
 function formatDate(dateStr: string | null | undefined) {
@@ -128,7 +131,8 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Plan único — USD {SUBSCRIPTION_USD_PRICE}/mes (transferencia en ARS o tarjeta en USD).
+          Plan único — promo transferencia USD {SUBSCRIPTION_USD_PRICE}/mes (ARS al blue) o
+          tarjeta USD {SUBSCRIPTION_CARD_USD_PRICE}/mes.
         </p>
 
         {subscription && (

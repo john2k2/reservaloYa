@@ -12,7 +12,10 @@ import {
   listTransferClaims,
   type TransferClaimRow,
 } from "@/server/billing-transfer-claims";
-import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import {
+  SUBSCRIPTION_CARD_USD_PRICE,
+  SUBSCRIPTION_USD_PRICE,
+} from "@/server/payments-domain";
 import {
   getPolarServer,
   isPolarConfigured,
@@ -415,7 +418,7 @@ async function getPlatformRecentPayments(
       businessName: String(biz?.name ?? "Negocio"),
       businessSlug: slug,
       method: "polar",
-      amountLabel: `USD ${SUBSCRIPTION_USD_PRICE} (${String(sub.status)})`,
+      amountLabel: `USD ${SUBSCRIPTION_CARD_USD_PRICE} (${String(sub.status)})`,
       occurredAt: String(sub.updated ?? sub.nextBillingDate ?? ""),
       note: sub.polarSubscriptionId
         ? `Polar ${String(sub.polarSubscriptionId).slice(0, 8)}…`

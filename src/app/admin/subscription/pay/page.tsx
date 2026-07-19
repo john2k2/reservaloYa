@@ -4,7 +4,11 @@ import type { Metadata } from "next";
 import { ArrowRight, Building2, CreditCard } from "lucide-react";
 
 import { getAdminShellData } from "@/server/queries/admin";
-import { getSubscriptionArsPrice, SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
+import {
+  getSubscriptionArsPrice,
+  SUBSCRIPTION_CARD_USD_PRICE,
+  SUBSCRIPTION_USD_PRICE,
+} from "@/server/payments-domain";
 import { getBlueDollarRate } from "@/lib/dollar-rate";
 import { createPrivatePageMetadata } from "@/lib/seo/metadata";
 import { isPolarConfigured } from "@/server/polar-config";
@@ -76,8 +80,9 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
             Abonar tu suscripción
           </h1>
           <p className="text-muted-foreground">
-            {businessName} — USD {SUBSCRIPTION_USD_PRICE}/mes
-            {formattedArs ? ` (≈ $${formattedArs} ARS)` : ""}
+            {businessName} — plan mensual
+            {formattedArs ? ` desde ≈ $${formattedArs} ARS` : ""} (promo transferencia) o USD{" "}
+            {SUBSCRIPTION_CARD_USD_PRICE} con tarjeta
           </p>
         </div>
 
@@ -88,14 +93,21 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
         )}
 
         {showTransfer && (
-          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Building2 className="size-5 text-foreground" aria-hidden />
-              <h2 className="text-sm font-semibold text-foreground">Transferencia bancaria (ARS)</h2>
+          <section className="rounded-xl border border-emerald-500/30 bg-card p-6 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="size-5 text-foreground" aria-hidden />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Transferencia bancaria (ARS)
+                </h2>
+              </div>
+              <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                Promo
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Transferí el monto en pesos y subí el comprobante acá. Lo revisamos y te activamos el
-              acceso el mismo día.
+              Precio promocional: equivalente a USD {SUBSCRIPTION_USD_PRICE}/mes al dólar blue.
+              Transferí, subí el comprobante y te activamos el mismo día.
             </p>
             <dl className="space-y-2 rounded-lg border border-border bg-background px-4 py-3 text-sm">
               {transfer.holder && (
@@ -161,8 +173,11 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
             </p>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Plan mensual</span>
-              <span className="font-mono font-medium">USD {SUBSCRIPTION_USD_PRICE}</span>
+              <span className="font-mono font-medium">USD {SUBSCRIPTION_CARD_USD_PRICE}</span>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Con transferencia pagás el precio promo (USD {SUBSCRIPTION_USD_PRICE} al blue).
+            </p>
             <Link
               href="/api/payments/polar/checkout"
               className={cn(
