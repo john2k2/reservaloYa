@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Circle,
   Clock3,
-  ExternalLink,
   Send,
   TrendingUp,
 } from "lucide-react";
@@ -66,7 +65,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-5 pb-6">
       {/* Header con acciones rápidas */}
-      <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <header className="flex flex-col gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Panel de {dashboardData.businessName}
@@ -77,14 +76,6 @@ export default async function AdminDashboardPage() {
               : "Todo lo que necesitás saber de tu negocio, en un solo lugar."}
           </p>
         </div>
-        <Link
-          href={`/${dashboardData.businessSlug}`}
-          target="_blank"
-          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-        >
-          <ExternalLink aria-hidden="true" className="size-3.5" />
-          Ver página pública
-        </Link>
       </header>
 
       {/* Link de reservas */}
@@ -149,79 +140,77 @@ export default async function AdminDashboardPage() {
         ))}
       </section>
 
+      {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes de confirmar")) && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700">
+          <AlertCircle className="size-4 shrink-0" />
+          Tenés turnos pendientes de confirmar
+          <Link href="/admin/bookings?status=pending" className="ml-auto text-xs underline underline-offset-2">
+            Ver →
+          </Link>
+        </div>
+      )}
+
       {/* Turnos + recordatorios */}
       <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-4">
-          {dashboardData.notifications && dashboardData.notifications.some(n => n.includes("pendientes de confirmar")) && (
-            <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700">
-              <AlertCircle className="size-4 shrink-0" />
-              Tenés turnos pendientes de confirmar
-              <Link href="/admin/bookings?status=pending" className="ml-auto text-xs underline underline-offset-2">
-                Ver →
+        <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              Próximos turnos
+            </h2>
+            <Link
+              href="/admin/bookings"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Ver todos →
+            </Link>
+          </div>
+
+          {dashboardData.bookings.length > 0 ? (
+            <div className="space-y-3">
+              {dashboardData.bookings.slice(0, 5).map((booking) => (
+                <div
+                  key={booking.id}
+                  className="flex items-center justify-between rounded-lg border border-border/40 p-3 transition-colors hover:bg-secondary/20"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">{booking.name}</p>
+                    <div className="mt-0.5 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock3 aria-hidden="true" className="size-3.5" />
+                      <span className="truncate">
+                        {booking.time} - {booking.service}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
+                      booking.status === "Confirmado"
+                        ? "bg-success/15 text-success"
+                        : booking.status === "Pendiente"
+                        ? "bg-amber-500/15 text-amber-700"
+                        : "bg-secondary text-foreground"
+                    )}
+                  >
+                    {booking.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
+              <p className="text-sm text-muted-foreground">No hay turnos próximos</p>
+              <Link
+                href="/admin/bookings"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "mt-3"
+                )}
+              >
+                Gestionar turnos
               </Link>
             </div>
           )}
-
-          <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                Próximos turnos
-              </h2>
-              <Link
-                href="/admin/bookings"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Ver todos →
-              </Link>
-            </div>
-
-            {dashboardData.bookings.length > 0 ? (
-              <div className="space-y-3">
-                {dashboardData.bookings.slice(0, 5).map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between rounded-lg border border-border/40 p-3 transition-colors hover:bg-secondary/20"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground">{booking.name}</p>
-                      <div className="mt-0.5 flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock3 aria-hidden="true" className="size-3.5" />
-                        <span className="truncate">
-                          {booking.time} - {booking.service}
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
-                        booking.status === "Confirmado"
-                          ? "bg-success/15 text-success"
-                          : booking.status === "Pendiente"
-                          ? "bg-amber-500/15 text-amber-700"
-                          : "bg-secondary text-foreground"
-                      )}
-                    >
-                      {booking.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
-                <p className="text-sm text-muted-foreground">No hay turnos próximos</p>
-                <Link
-                  href="/admin/bookings"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "mt-3"
-                  )}
-                >
-                  Gestionar turnos
-                </Link>
-              </div>
-            )}
-          </article>
-        </div>
+        </article>
 
         <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
@@ -293,9 +282,8 @@ export default async function AdminDashboardPage() {
         </article>
       </div>
 
-      {/* Actividad + canales en fila compacta (evita el hueco de la columna corta) */}
       {dashboardData.analytics && (
-        <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="grid items-stretch gap-5 lg:grid-cols-2">
           <article className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
             <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
               Actividad de reservas
@@ -320,7 +308,7 @@ export default async function AdminDashboardPage() {
             </div>
           </article>
 
-          <article className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+          <article className="flex h-full flex-col rounded-xl border border-border/60 bg-background p-4 shadow-sm">
             <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
               Origen de clientes
             </h2>
@@ -344,7 +332,7 @@ export default async function AdminDashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+              <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border/50 p-4 text-center">
                 <p className="text-xs text-muted-foreground text-pretty">
                   Cuando tengas visitas, verás de dónde vienen tus clientes.
                 </p>
