@@ -105,9 +105,9 @@ export function PlatformShell({
   }, [pathname]);
 
   return (
-    <div className="landing-theme flex min-h-screen overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
-      <aside className="hidden w-56 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
-        <div className="px-4 py-6">
+    <div className="landing-theme flex h-dvh overflow-hidden bg-background font-sans text-foreground selection:bg-foreground selection:text-background">
+      <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-border/60 bg-secondary/20 xl:flex">
+        <div className="shrink-0 px-4 py-6">
           <Link href="/" className="inline-flex items-center" aria-label={`Ir al inicio de ${productName}`}>
             <ReservaYaLogo size="sm" />
           </Link>
@@ -118,7 +118,7 @@ export function PlatformShell({
           </div>
         </div>
 
-        <nav className="flex-1 space-y-0.5 px-2">
+        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2">
           {platformNavigation.map((item) => {
             const Icon = item.icon;
             const active =
@@ -143,7 +143,7 @@ export function PlatformShell({
           })}
         </nav>
 
-        <div className="border-t border-border/60 p-3 space-y-1">
+        <div className="shrink-0 border-t border-border/60 p-3 space-y-1">
           <div className="mb-2 rounded-lg bg-secondary/40 p-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
               Superadmin
@@ -165,7 +165,7 @@ export function PlatformShell({
         </div>
       </aside>
 
-      <div className="flex h-screen flex-1 flex-col overflow-hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
         <header className="border-b border-border/60 bg-background px-4 lg:px-6 xl:hidden">
           <div className="flex min-h-14 items-center justify-between gap-4 py-2">
             <div>
