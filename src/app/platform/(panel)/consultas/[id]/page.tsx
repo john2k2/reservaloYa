@@ -76,17 +76,31 @@ export default async function PlatformConsultaDetailPage({
       <div className="space-y-3 rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
         {messages.map((message) => {
           const fromVisitor = message.author === "visitor";
+          const fromAi = message.author === "ai";
           return (
             <div
               key={message.id}
               className={cn(
                 "rounded-xl px-4 py-3 text-sm",
-                fromVisitor ? "bg-secondary/60" : "bg-foreground/5"
+                fromVisitor
+                  ? "ml-0 mr-8 bg-secondary/60"
+                  : fromAi
+                    ? "ml-8 mr-0 bg-violet-500/10 border border-violet-500/20"
+                    : "ml-8 mr-0 bg-primary/10 border border-primary/20"
               )}
             >
               <div className="mb-1 flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {fromVisitor ? "Visitante" : message.author === "ai" ? "IA" : "ReservaYa"}
+                <span
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-wider",
+                    fromVisitor
+                      ? "text-muted-foreground"
+                      : fromAi
+                        ? "text-violet-600 dark:text-violet-300"
+                        : "text-primary"
+                  )}
+                >
+                  {fromVisitor ? "Visitante" : fromAi ? "IA" : "ReservaYa"}
                 </span>
                 <time className="font-mono text-[10px] text-muted-foreground">
                   {new Date(message.createdAt).toLocaleString("es-AR")}
