@@ -1,5 +1,3 @@
-"use server";
-
 import { trackSupabaseAnalyticsEvent } from "@/server/supabase-store";
 
 export type AnalyticsEventInput = {
