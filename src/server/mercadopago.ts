@@ -422,6 +422,15 @@ export function isValidMPWebhookSignature({
     return false;
   }
 
+  // Rechaza firmas viejas o futuras para evitar replay attacks.
+  // MP envia el ts en segundos (ver ejemplos en su documentacion).
+  const timestampSeconds = Number(timestamp);
+  const nowSeconds = Date.now() / 1000;
+
+  if (!Number.isFinite(timestampSeconds) || Math.abs(nowSeconds - timestampSeconds) > 300) {
+    return false;
+  }
+
   const manifest = `id:${paymentId};request-id:${requestId};ts:${timestamp};`;
   const expectedHash = createHmac("sha256", secret).update(manifest).digest("hex");
   const received = Buffer.from(hash, "utf8");
