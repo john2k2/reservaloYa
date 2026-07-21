@@ -87,7 +87,12 @@ jobs:
       - name: Run smoke E2E
         env:
           PLAYWRIGHT_BASE_URL: https://reservaya.ar
-        run: npm run test:e2e:smoke
+        run: npm run test:e2e
+
+      - name: Run public booking flow E2E
+        env:
+          PLAYWRIGHT_BASE_URL: https://reservaya.ar
+        run: npm run test:e2e:booking
 
   # Automated pre-merge gate: runs the public smoke suite against a local
   # build backed by a local Supabase instance (CLI + Docker), so the golden
@@ -135,5 +140,8 @@ jobs:
           echo "ALLOW_DEV_SECRETS=1" >> "$GITHUB_ENV"
 
       - name: Run public smoke E2E against local build
-        run: npm run test:e2e:smoke
+        run: npm run test:e2e
+
+      - name: Run public booking flow E2E against local build
+        run: npm run test:e2e:booking
 

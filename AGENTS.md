@@ -24,6 +24,7 @@ npm test                 # Vitest watch mode
 npm test -- src/server/actions/public-booking.test.ts  # single file
 npm run test:coverage    # v8 coverage, thresholds enforced
 npm run test:e2e         # Playwright public-smoke (Firefox)
+npm run test:e2e:booking # Playwright public-booking flow (read-only, demo-barberia)
 npm run test:e2e:admin   # Playwright admin-authenticated (requires setup)
 npm run test:e2e:all     # all Playwright projects
 ```
@@ -67,6 +68,7 @@ npm run test:e2e:all     # all Playwright projects
 - **Coverage thresholds**: 35% statements/functions/lines, 20% branches (enforced in CI).
 - **E2E projects**:
   - `public-smoke` (Firefox) — stable smoke tests
+  - `public-booking` (Firefox) — read-only public booking flow against `demo-barberia`; runs in CI
   - `admin-authenticated` (Chrome) — requires auth setup state
   - `manual-chromium`, `manual-mobile`, `manual-firefox` — ad-hoc suites
 - **Single test file**: `npm test -- <path>`
@@ -106,7 +108,7 @@ GitHub Actions (`ubuntu-latest`, Node 22):
 1. `npm ci`
 2. `npm run check` (lint + typecheck + tests + build)
 3. `npm run test:coverage` (separate job, uploads artifact)
-4. E2E smoke runs only on `workflow_dispatch` against production URL.
+4. E2E `public-smoke` + `public-booking` run on every PR against a local Supabase (`e2e-smoke-pr`), and on `workflow_dispatch` against the production URL (`e2e-smoke`).
 
 ---
 

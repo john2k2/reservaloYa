@@ -21,11 +21,11 @@ e2e/
 ## Ejecutar tests
 
 ```bash
-# Smoke público estable (default)
+# Smoke público estable (default, canónico)
 npm run test:e2e
 
-# Smoke público/manual
-npm run test:e2e:smoke
+# Flujo público de reserva (solo lectura, negocio demo-barberia)
+npm run test:e2e:booking
 
 # Admin autenticado (requiere sesión/credenciales de prueba)
 npm run test:e2e:admin
@@ -57,7 +57,7 @@ http://localhost:3000
 Se puede cambiar con:
 
 ```bash
-PLAYWRIGHT_BASE_URL=https://reservaya.ar npm run test:e2e:smoke
+PLAYWRIGHT_BASE_URL=https://reservaya.ar npm run test:e2e
 ```
 
 Cuando `PLAYWRIGHT_BASE_URL` apunta a un host externo, Playwright no levanta el dev server local.
@@ -65,7 +65,7 @@ Cuando `PLAYWRIGHT_BASE_URL` apunta a un host externo, Playwright no levanta el 
 En Windows PowerShell:
 
 ```powershell
-$env:PLAYWRIGHT_BASE_URL="https://reservaya.ar"; npm run test:e2e:smoke
+$env:PLAYWRIGHT_BASE_URL="https://reservaya.ar"; npm run test:e2e
 ```
 
 ## Reportes y artefactos
@@ -85,9 +85,20 @@ npm run test:e2e:report
 
 ## CI
 
-El smoke E2E no corre automáticamente en cada push para evitar ruido y consumo innecesario de GitHub Actions en plan gratuito.
+Hay dos jobs E2E en `.github/workflows/ci.yml`:
 
-El job `e2e-smoke` queda disponible manualmente desde GitHub Actions mediante `workflow_dispatch` y ejecuta el proyecto `public-smoke`.
+- `e2e-smoke-pr`: corre automáticamente en cada PR. Levanta un Supabase local (CLI + Docker, con el negocio `demo-barberia` seedeado por migraciones) y ejecuta los proyectos `public-smoke` y `public-booking` contra el dev server local.
+- `e2e-smoke`: disponible manualmente mediante `workflow_dispatch`. Ejecuta los mismos dos proyectos contra producción (`https://reservaya.ar`).
+
+### Flujo público de reserva (`public-booking`)
+
+`e2e/tests/public-booking.spec.ts` es **solo lectura**: navega las páginas públicas de `demo-barberia`, verifica SEO, responsive, horarios y manejo de errores, pero **nunca envía el formulario de reserva**. Por eso es seguro correrlo contra producción: no crea turnos reales ni dispara emails/WhatsApp.
+
+Lo que **falta** para automatizar la creación de una reserva end-to-end (submit del formulario):
+
+1. Ese test crea un turno real y potencialmente envía email/WhatsApp de confirmación, por lo que **no debe correr contra producción**.
+2. Para automatizarlo contra el Supabase local del CI haría falta: seeds completos (servicios, disponibilidad y credenciales admin reproducibles), secrets de desarrollo (`BOOKING_LINK_SECRET`, etc.) y stubs de Resend/Twilio para que no salgan notificaciones reales.
+3. Mientras tanto, los specs que envían formularios (`booking-management.spec.ts`, `admin-panel.spec.ts`) quedan en los proyectos `manual-*` para corrida local.
 
 ## Buenas prácticas
 

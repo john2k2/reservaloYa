@@ -70,6 +70,14 @@ export default defineConfig({
       workers: 1,
     },
 
+    /* Flujo público de reserva (solo lectura: no envía formularios) */
+    {
+      name: "public-booking",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch: /public-booking\.spec\.ts/,
+      workers: 1,
+    },
+
     {
       name: "manual-chromium",
       use: { ...devices["Desktop Chrome"] },

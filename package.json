@@ -14,7 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "check": "npm run lint && npm run typecheck && npm test -- --run && npm run build",
     "test:e2e": "playwright test --project=public-smoke",
-    "test:e2e:public": "playwright test --project=public-smoke",
+    "test:e2e:booking": "playwright test --project=public-booking",
     "test:e2e:admin": "playwright test --project=admin-authenticated",
     "test:e2e:manual": "playwright test --project=manual-chromium",
     "test:e2e:all": "playwright test",
@@ -22,8 +22,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "notifications:test": "node scripts/dev/test-notifications.mjs --dry-run",
-    "test:e2e:smoke": "playwright test --project=public-smoke"
+    "notifications:test": "node scripts/dev/test-notifications.mjs --dry-run"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
