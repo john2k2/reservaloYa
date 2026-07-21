@@ -128,6 +128,95 @@ export async function getSupabaseManageBookingData(input: {
   });
 }
 
+type SupabaseAdminClient = Awaited<ReturnType<typeof getSupabaseAdminClient>>;
+
+type AvailabilityContext = {
+  dayRules: AvailabilityRuleRecord[];
+  blockedSlots: BlockedSlotRecord[];
+  bookings: BookingRecord[];
+};
+
+async function fetchActiveServiceForBusiness(
+  client: SupabaseAdminClient,
+  serviceId: string,
+  businessId: string
+): Promise<ServiceRecord> {
+  const { data: serviceData, error: serviceError } = await client
+    .from("services")
+    .select("*")
+    .eq("id", serviceId)
+    .single();
+
+  if (serviceError || !serviceData) {
+    throw new Error("Servicio no encontrado.");
+  }
+  const service = serviceData as ServiceRecord;
+
+  if (service.business_id !== businessId || !service.active) {
+    throw new Error("Servicio no encontrado.");
+  }
+
+  return service;
+}
+
+async function fetchAvailabilityContext(
+  client: SupabaseAdminClient,
+  businessId: string,
+  bookingDate: string
+): Promise<AvailabilityContext> {
+  const selectedDayOfWeek = getDayOfWeek(bookingDate);
+
+  const [{ data: rulesData }, { data: blockedData }, { data: bookingsData }] = await Promise.all([
+    client
+      .from("availability_rules")
+      .select("*")
+      .eq("business_id", businessId)
+      .eq("dayOfWeek", selectedDayOfWeek),
+    client
+      .from("blocked_slots")
+      .select("*")
+      .eq("business_id", businessId)
+      .eq("blockedDate", bookingDate),
+    client
+      .from("bookings")
+      .select("*")
+      .eq("business_id", businessId)
+      .eq("bookingDate", bookingDate),
+  ]);
+
+  const rules = (rulesData ?? []) as AvailabilityRuleRecord[];
+  const blockedSlots = (blockedData ?? []) as BlockedSlotRecord[];
+
+  return {
+    dayRules: rules.filter((rule) => isActiveRecord(rule)),
+    blockedSlots: blockedSlots.filter((slot) => slot.blockedDate === bookingDate),
+    bookings: (bookingsData ?? []) as BookingRecord[],
+  };
+}
+
+function assertBookingSlotAvailable(
+  context: AvailabilityContext,
+  candidateBookings: BookingRecord[],
+  bookingWindow: ReturnType<typeof buildBookingTimeWindow>
+) {
+  if (!fitsBookingWithinAvailability(context.dayRules, bookingWindow)) {
+    throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
+  }
+
+  if (hasBlockedSlotConflict(context.blockedSlots, bookingWindow)) {
+    throw new Error("Ese horario esta bloqueado.");
+  }
+
+  if (
+    hasBookingConflict(candidateBookings, {
+      ...bookingWindow,
+      allowedStatuses: ["pending", "pending_payment", "confirmed"],
+    })
+  ) {
+    throw new Error("Ese horario ya no esta disponible.");
+  }
+}
+
 export async function createSupabasePublicBooking(input: {
   businessSlug: string;
   serviceId: string;
@@ -161,46 +250,12 @@ export async function createSupabasePublicBooking(input: {
       }
       const business = businessData as BusinessRecord;
 
-      const { data: serviceData, error: serviceError } = await client
-        .from("services")
-        .select("*")
-        .eq("id", input.serviceId)
-        .single();
-
-      if (serviceError || !serviceData) {
-        throw new Error("Servicio no encontrado.");
-      }
-      const service = serviceData as ServiceRecord;
-
-      if (service.business_id !== business.id || !service.active) {
-        throw new Error("Servicio no encontrado.");
-      }
+      const service = await fetchActiveServiceForBusiness(client, input.serviceId, business.id);
 
       const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
 
-      const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-
-      const [
-        { data: rulesData },
-        { data: blockedData },
-        { data: bookingsData },
-        { data: customersData },
-      ] = await Promise.all([
-        client
-          .from("availability_rules")
-          .select("*")
-          .eq("business_id", business.id)
-          .eq("dayOfWeek", selectedDayOfWeek),
-        client
-          .from("blocked_slots")
-          .select("*")
-          .eq("business_id", business.id)
-          .eq("blockedDate", input.bookingDate),
-        client
-          .from("bookings")
-          .select("*")
-          .eq("business_id", business.id)
-          .eq("bookingDate", input.bookingDate),
+      const [availabilityContext, { data: customersData }] = await Promise.all([
+        fetchAvailabilityContext(client, business.id, input.bookingDate),
         client
           .from("customers")
           .select("*")
@@ -208,16 +263,9 @@ export async function createSupabasePublicBooking(input: {
           .order("fullName"),
       ]);
 
-      const rules = (rulesData ?? []) as AvailabilityRuleRecord[];
-      const blockedSlots = (blockedData ?? []) as BlockedSlotRecord[];
-      const bookings = (bookingsData ?? []) as BookingRecord[];
       const customers = (customersData ?? []) as CustomerRecord[];
 
-      const dayRules = rules.filter((rule) => isActiveRecord(rule));
-      const businessBlockedSlots = blockedSlots.filter(
-        (slot) => slot.blockedDate === input.bookingDate
-      );
-      const businessBookings = bookings.filter((booking) =>
+      const businessBookings = availabilityContext.bookings.filter((booking) =>
         ["pending", "pending_payment", "confirmed"].includes(booking.status)
       );
       const email = input.email?.trim();
@@ -231,22 +279,7 @@ export async function createSupabasePublicBooking(input: {
 
       let customer = matchedByEmail ?? matchedByPhone;
 
-      if (!fitsBookingWithinAvailability(dayRules, bookingWindow)) {
-        throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
-      }
-
-      if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
-        throw new Error("Ese horario esta bloqueado.");
-      }
-
-      if (
-        hasBookingConflict(businessBookings, {
-          ...bookingWindow,
-          allowedStatuses: ["pending", "pending_payment", "confirmed"],
-        })
-      ) {
-        throw new Error("Ese horario ya no esta disponible.");
-      }
+      assertBookingSlotAvailable(availabilityContext, businessBookings, bookingWindow);
 
       if (!customer) {
         customer = await createSupabaseRecord<CustomerRecord>("customers", {
@@ -324,74 +357,24 @@ export async function rescheduleSupabasePublicBooking(input: {
         throw new Error("Este turno ya no se puede reprogramar.");
       }
 
-      const { data: serviceData, error: serviceError } = await client
-        .from("services")
-        .select("*")
-        .eq("id", input.serviceId)
-        .single();
-
-      if (serviceError || !serviceData) {
-        throw new Error("Servicio no encontrado.");
-      }
-      const service = serviceData as ServiceRecord;
-
-      if (service.business_id !== business.id || !service.active) {
-        throw new Error("Servicio no encontrado.");
-      }
+      const service = await fetchActiveServiceForBusiness(client, input.serviceId, business.id);
 
       const bookingWindow = buildBookingTimeWindow(input.startTime, Number(service.durationMinutes));
 
-      const selectedDayOfWeek = getDayOfWeek(input.bookingDate);
-
-      const [{ data: rulesData }, { data: blockedData }, { data: bookingsData }] = await Promise.all([
-        client
-          .from("availability_rules")
-          .select("*")
-          .eq("business_id", business.id)
-          .eq("dayOfWeek", selectedDayOfWeek),
-        client
-          .from("blocked_slots")
-          .select("*")
-          .eq("business_id", business.id)
-          .eq("blockedDate", input.bookingDate),
-        client
-          .from("bookings")
-          .select("*")
-          .eq("business_id", business.id)
-          .eq("bookingDate", input.bookingDate),
-      ]);
-
-      const rules = (rulesData ?? []) as AvailabilityRuleRecord[];
-      const blockedSlots = (blockedData ?? []) as BlockedSlotRecord[];
-      const bookings = (bookingsData ?? []) as BookingRecord[];
-
-      const dayRules = rules.filter((rule) => isActiveRecord(rule));
-      const businessBlockedSlots = blockedSlots.filter(
-        (slot) => slot.blockedDate === input.bookingDate
+      const availabilityContext = await fetchAvailabilityContext(
+        client,
+        business.id,
+        input.bookingDate
       );
-      const businessBookings = bookings.filter(
+
+      const businessBookings = availabilityContext.bookings.filter(
         (candidate) =>
           candidate.bookingDate === input.bookingDate &&
           canMutatePublicBooking(candidate.status) &&
           candidate.id !== booking.id
       );
 
-      if (!fitsBookingWithinAvailability(dayRules, bookingWindow)) {
-        throw new Error("Ese horario queda fuera de la disponibilidad configurada.");
-      }
-
-      if (hasBlockedSlotConflict(businessBlockedSlots, bookingWindow)) {
-        throw new Error("Ese horario esta bloqueado.");
-      }
-
-      if (
-        hasBookingConflict(businessBookings, {
-          ...bookingWindow,
-          allowedStatuses: ["pending", "pending_payment", "confirmed"],
-        })
-      ) {
-        throw new Error("Ese horario ya no esta disponible.");
-      }
+      assertBookingSlotAvailable(availabilityContext, businessBookings, bookingWindow);
 
       await updateSupabaseRecord("customers", booking.customer_id!, {
         ...buildBookingCustomerDetails(input),
