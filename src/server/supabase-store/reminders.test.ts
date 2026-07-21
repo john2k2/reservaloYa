@@ -62,6 +62,10 @@ function buildMockClient(
     chain.select = chainable;
     chain.eq = chainable;
     chain.in = chainable;
+    chain.lt = chainable;
+    chain.lte = chainable;
+    chain.gte = chainable;
+    chain.not = chainable;
     chain.order = chainable;
     chain.limit = chainable;
     chain.then = (onFulfilled: (v: { data: Row[]; error: null }) => unknown) =>

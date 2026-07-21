@@ -122,10 +122,14 @@ export async function runSupabaseBookingReminderSweep(input?: {
   let autoCompleted = 0;
 
   if (!dryRun) {
+    // Filtro en SQL para que solo viajen los bookings ya vencidos; el chequeo en
+    // JS queda como verificación final de la misma condición.
+    const pendingPaymentCutoff = new Date(now.getTime() - PENDING_PAYMENT_EXPIRY_MS).toISOString();
     const { data: expiredPayments } = await client
       .from("bookings")
       .select("id, created")
-      .eq("status", "pending_payment");
+      .eq("status", "pending_payment")
+      .lt("created", pendingPaymentCutoff);
 
     for (const booking of expiredPayments ?? []) {
       const createdAt = new Date(booking.created).getTime();
@@ -135,10 +139,20 @@ export async function runSupabaseBookingReminderSweep(input?: {
       }
     }
 
+    // La conversión bookingDate+endTime (hora local del negocio) a UTC no se puede
+    // expresar en SQL por la dependencia del timezone, pero sí se puede acotar:
+    // con offsets de hasta UTC+14, un turno cuyo bookingDate sea posterior a la
+    // fecha de "ahora + 14h" todavía no pudo terminar hace más de 1h. El chequeo
+    // exacto sigue haciéndose en JS con el timezone real.
+    const autoCompleteDateCutoff = new Date(now.getTime() + 14 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
     const { data: pastConfirmed } = await client
       .from("bookings")
       .select("id, bookingDate, endTime, business:businesses(timezone)")
-      .in("status", ["pending", "confirmed"]);
+      .in("status", ["pending", "confirmed"])
+      .not("endTime", "is", null)
+      .lte("bookingDate", autoCompleteDateCutoff);
 
     for (const booking of pastConfirmed ?? []) {
       const endTime = booking.endTime as string | undefined;
@@ -177,16 +191,38 @@ export async function runSupabaseBookingReminderSweep(input?: {
   };
 
   for (const business of businesses) {
+    // Dedupe de recordatorios/follow-ups: solo importan los eventos "sent"
+    // recientes. Un recordatorio enviado solo bloquea turnos dentro de la
+    // ventana de 24h (se envió como mucho ~24h atrás) y un follow-up solo
+    // bloquea turnos completados dentro de FOLLOWUP_MAX_MS (25h). 48h cubre
+    // ambos casos con margen sin traer el historial completo del negocio.
+    const commEventsSince = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
+    // Los recordatorios solo aplican a turnos que empiezan dentro de [ahora,
+    // ahora+24h]. Con offsets de hasta UTC-12/+14, el bookingDate de un
+    // candidato cae siempre dentro de ±2 días de "ahora": el rango en SQL
+    // evita traer el historial completo de turnos del negocio y el chequeo
+    // exacto sigue haciéndose en JS con el timezone real.
+    const reminderDateFrom = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const reminderDateTo = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
     const [{ data: bookingsData }, { data: commData }] = await Promise.all([
       client
         .from("bookings")
         .select("*, customer:customers(*), service:services(*)")
         .eq("business_id", business.id)
-        .in("status", ["pending", "confirmed"]),
+        .in("status", ["pending", "confirmed"])
+        .gte("bookingDate", reminderDateFrom)
+        .lte("bookingDate", reminderDateTo),
       client
         .from("communication_events")
         .select("*")
-        .eq("business_id", business.id),
+        .eq("business_id", business.id)
+        .in("kind", ["reminder", "followup"])
+        .eq("status", "sent")
+        .gte("created", commEventsSince),
     ]);
 
     const businessBookings = (bookingsData ?? []) as (BookingRecord & {
