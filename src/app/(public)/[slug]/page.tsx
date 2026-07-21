@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Facebook, Instagram } from "lucide-react";
 
@@ -9,14 +9,17 @@ import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
 import { BusinessHero } from "@/components/public/business-hero";
 import { FaqContactSection } from "@/components/public/faq-contact-section";
-import { GalleryLightbox } from "@/components/public/gallery-lightbox";
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
+import {
+  PublicGallerySection,
+  PublicGallerySectionSkeleton,
+} from "@/components/public/public-gallery-section";
 import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
 import { isDemoBusiness } from "@/constants/demo";
 import { resolvePublicTrustPoints } from "@/constants/public-business-profiles";
-import { OptimizedImage, ThumbnailImage } from "@/components/ui/optimized-image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import {
   BreadcrumbJsonLd,
@@ -30,7 +33,6 @@ import { getPublicAppUrl } from "@/lib/runtime";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
-import { fetchInstagramGallery } from "@/lib/instagram-oembed";
 import { productName } from "@/constants/site";
 import { createLogger } from "@/server/logger";
 
@@ -182,23 +184,6 @@ function getPriceRangeSymbol(
     : `${cheapest.priceLabel} - ${priciest.priceLabel}`;
 }
 
-function getGalleryAlt(input: {
-  alt?: string | null;
-  businessName: string;
-  index: number;
-  source: "instagram" | "gallery";
-}) {
-  const alt = input.alt?.trim();
-
-  if (alt) {
-    return alt;
-  }
-
-  return input.source === "instagram"
-    ? `Foto ${input.index + 1} de ${input.businessName} en Instagram`
-    : `Foto ${input.index + 1} de ${input.businessName}`;
-}
-
 function getFirstActiveDayLabel(
   weeklyHours: Array<{
     dayLabel: string;
@@ -311,31 +296,9 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
     campaign: tracking.utm_campaign,
   });
 
-  const instagramGalleryItems =
-    pageData.profile.instagramGallery && pageData.profile.instagramGallery.length > 0
-      ? await fetchInstagramGallery(pageData.profile.instagramGallery)
-      : [];
-  const galleryItems =
-    instagramGalleryItems.length > 0
-      ? instagramGalleryItems.map((item, index) => ({
-          url: item.thumbnailUrl,
-          alt: getGalleryAlt({
-            businessName: pageData.business.name,
-            index,
-            source: "instagram",
-          }),
-          postUrl: item.postUrl,
-        }))
-      : (pageData.profile.gallery ?? []).map((item, index) => ({
-          ...item,
-          alt: getGalleryAlt({
-            alt: item.alt,
-            businessName: pageData.business.name,
-            index,
-            source: "gallery",
-          }),
-          postUrl: null,
-        }));
+  const hasGallery =
+    Boolean(pageData.profile.instagramGallery && pageData.profile.instagramGallery.length > 0) ||
+    Boolean(pageData.profile.gallery && pageData.profile.gallery.length > 0);
 
   // Preparar datos para JSON-LD
   const siteUrl = getPublicAppUrl();
@@ -493,67 +456,23 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           }
         />
 
-        {/* Gallery */}
-        {galleryItems.length > 0 && (
-          <section id="galeria" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:scroll-mt-24 sm:px-6 sm:py-16 lg:py-20">
-            <div className="mb-6 sm:mb-10">
-              <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                Galería
-              </p>
-              <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                Así se vive la experiencia del negocio
-              </h2>
-            </div>
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {galleryItems.map((image, index) => {
-                const inner = (
-                  <>
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <ThumbnailImage
-                        src={image.url}
-                        alt={image.alt || `Foto ${index + 1}`}
-                        className="transition-transform duration-500 group-hover:scale-110"
-                      />
-                    </div>
-                    {image.alt && (
-                      <div className="p-3 sm:p-4">
-                        <p className="text-xs sm:text-sm text-muted-foreground">{image.alt}</p>
-                      </div>
-                    )}
-                  </>
-                );
-                const className = cn(
-                  "group overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/60 bg-card shadow-sm",
-                  index >= pageData.profile.sectionLayout.mobileGalleryItems ? "hidden sm:block" : ""
-                );
-                return image.postUrl ? (
-                  <a
-                    key={`${image.url}-${index}`}
-                    href={image.postUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(className, "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background")}
-                    aria-label={`${image.alt || `Foto ${index + 1}`} — abrir en Instagram`}
-                  >
-                    {inner}
-                  </a>
-                ) : (
-                  <button
-                    key={`${image.url}-${index}`}
-                    type="button"
-                    className={cn(className, "cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background")}
-                    aria-label={`${image.alt || `Foto ${index + 1}`} — abrir galería`}
-                    data-lightbox-index={index}
-                  >
-                    {inner}
-                  </button>
-                );
-              })}
-            </div>
-            {instagramGalleryItems.length === 0 && (
-              <GalleryLightbox images={galleryItems} />
-            )}
-          </section>
+        {/* Gallery — streameada: el fetch de Instagram (oEmbed) no bloquea hero + servicios */}
+        {hasGallery && (
+          <Suspense
+            fallback={
+              <PublicGallerySectionSkeleton
+                mobileGalleryItems={pageData.profile.sectionLayout.mobileGalleryItems}
+              />
+            }
+          >
+            <PublicGallerySection
+              businessName={pageData.business.name}
+              accent={pageData.profile.accent}
+              mobileGalleryItems={pageData.profile.sectionLayout.mobileGalleryItems}
+              gallery={pageData.profile.gallery}
+              instagramGallery={pageData.profile.instagramGallery}
+            />
+          </Suspense>
         )}
 
         {pageData.reviews && pageData.reviews.length > 0 && (
