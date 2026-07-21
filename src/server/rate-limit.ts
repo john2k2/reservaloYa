@@ -73,16 +73,6 @@ function consumeMemoryRateLimit(input: RateLimitBucketConfig): RateLimitResult {
   return { ok: true, remaining: Math.max(input.max - current.count, 0), retryAfterSeconds: 0, store: "memory" };
 }
 
-function isMissingRateLimitRpc(error: unknown) {
-  const pgError = error as { code?: string; message?: string } | null;
-  return (
-    pgError?.code === "42883" ||
-    pgError?.code === "PGRST202" ||
-    pgError?.message?.includes("consume_rate_limit") ||
-    pgError?.message?.includes("Could not find the function")
-  );
-}
-
 function normalizeRpcRateLimitResult(
   data: SupabaseRpcRateLimitRow | SupabaseRpcRateLimitRow[] | null,
   input: RateLimitBucketConfig
@@ -124,70 +114,17 @@ async function consumeSupabaseRateLimitViaRpc(input: RateLimitBucketConfig): Pro
   return normalizeRpcRateLimitResult(data as SupabaseRpcRateLimitRow | SupabaseRpcRateLimitRow[] | null, input);
 }
 
-async function consumeSupabaseRateLimitViaEvents(input: RateLimitBucketConfig): Promise<RateLimitResult> {
-  const now = new Date();
-  const nowIso = now.toISOString();
-  const expiresAtIso = new Date(now.getTime() + input.windowMs).toISOString();
-  const identifierHash = hashIdentifier(input);
-  const client = await getSupabaseAdminClient();
-
-  // best-effort cleanup of expired events
-  void client
-    .from("rate_limit_events")
-    .delete()
-    .lte("expiresAt", nowIso);
-
-  const { data: activeEvents, error: selectError } = await client
-    .from("rate_limit_events")
-    .select("id, expiresAt")
-    .eq("bucket", input.bucket)
-    .eq("identifierHash", identifierHash)
-    .gt("expiresAt", nowIso)
-    .limit(input.max + 1);
-
-  if (selectError) throw selectError;
-
-  const count = (activeEvents ?? []).length;
-
-  if (count >= input.max) {
-    const earliestReset = (activeEvents ?? []).reduce((min: number, e: { expiresAt: string }) => {
-      const t = new Date(e.expiresAt).getTime();
-      return Math.min(min, t);
-    }, Number.POSITIVE_INFINITY);
-
-    return {
-      ok: false,
-      remaining: 0,
-      retryAfterSeconds: Number.isFinite(earliestReset)
-        ? Math.max(Math.ceil((earliestReset - now.getTime()) / 1000), 1)
-        : Math.max(Math.ceil(input.windowMs / 1000), 1),
-      store: "supabase",
-    };
-  }
-
-  const { error: insertError } = await client.from("rate_limit_events").insert({
-    bucket: input.bucket,
-    identifierHash: identifierHash,
-    expiresAt: expiresAtIso,
-  });
-
-  if (insertError) throw insertError;
-
-  return {
-    ok: true,
-    remaining: Math.max(input.max - count - 1, 0),
-    retryAfterSeconds: 0,
-    store: "supabase",
-  };
-}
-
 export async function consumeRateLimit(input: RateLimitBucketConfig): Promise<RateLimitResult> {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") {
     return consumeMemoryRateLimit(input);
   }
 
   try {
-    return await consumeSupabaseRateLimit(input);
+    // La RPC consume_rate_limit es atomica y existe via migracion
+    // (supabase/migrations/20260424000000_add_booking_locks_rate_limit_events.sql).
+    // Si no esta disponible el entorno esta roto: fail-closed, sin fallback
+    // SELECT-then-INSERT (no atomico, vulnerable a TOCTOU).
+    return await consumeSupabaseRateLimitViaRpc(input);
   } catch (error) {
     logger.error("Rate limit store no disponible; denegando request en entorno no local", {
       bucket: input.bucket,
@@ -199,21 +136,6 @@ export async function consumeRateLimit(input: RateLimitBucketConfig): Promise<Ra
       retryAfterSeconds: Math.max(Math.ceil(input.windowMs / 1000), 1),
       store: "supabase",
     };
-  }
-}
-
-async function consumeSupabaseRateLimit(input: RateLimitBucketConfig): Promise<RateLimitResult> {
-  try {
-    return await consumeSupabaseRateLimitViaRpc(input);
-  } catch (error) {
-    if (!isMissingRateLimitRpc(error)) throw error;
-
-    logger.warn("RPC consume_rate_limit no disponible; usando fallback no atomico", {
-      bucket: input.bucket,
-      message: error instanceof Error ? error.message : String(error),
-    });
-
-    return consumeSupabaseRateLimitViaEvents(input);
   }
 }
 
@@ -245,13 +167,23 @@ function firstHeaderIp(headers: Headers, name: string): string | undefined {
 }
 
 export function getRateLimitIdentifier(headers: Headers, fallback = "anonymous") {
-  // x-vercel-forwarded-for is Vercel's own computed value and stays reliable even
-  // behind an upstream proxy that rewrites x-forwarded-for; prefer it when present.
+  // x-vercel-forwarded-for lo calcula el edge de Vercel y no es falsificable
+  // por el cliente; preferirlo siempre cuando este presente.
   const vercelForwardedFor = firstHeaderIp(headers, "x-vercel-forwarded-for");
+  if (vercelForwardedFor) return vercelForwardedFor;
+
+  if (process.env.NODE_ENV === "production") {
+    // En produccion x-forwarded-for/x-real-ip solo son confiables si la
+    // request paso por el edge (algun header x-vercel-* presente). Si no,
+    // son falsificables: usar un bucket generico para evitar rotacion.
+    const passedThroughEdge = Boolean(headers.get("x-vercel-id") || headers.get("x-vercel-ip-country"));
+    if (!passedThroughEdge) return "unknown-ip";
+  }
+
   const forwardedFor = firstHeaderIp(headers, "x-forwarded-for");
   const xRealIp = headers.get("x-real-ip") ?? "";
 
-  return vercelForwardedFor || forwardedFor || xRealIp.trim() || fallback;
+  return forwardedFor || xRealIp.trim() || fallback;
 }
 
 export function resetRateLimitStoreForTests() {

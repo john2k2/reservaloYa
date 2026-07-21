@@ -120,24 +120,13 @@ describe("consumeRateLimit — Supabase RPC en producción", () => {
     });
   });
 
-  it("mantiene fallback compatible si la RPC todavía no existe", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const insertMock = vi.fn().mockResolvedValue({ error: null });
-    const limitMock = vi.fn().mockResolvedValue({ data: [], error: null });
-    const gtMock = vi.fn().mockReturnValue({ limit: limitMock });
-    const eqIdentifierMock = vi.fn().mockReturnValue({ gt: gtMock });
-    const eqBucketMock = vi.fn().mockReturnValue({ eq: eqIdentifierMock });
-    const selectMock = vi.fn().mockReturnValue({ eq: eqBucketMock });
-    const deleteMock = vi.fn().mockReturnValue({ lte: vi.fn().mockResolvedValue({ error: null }) });
-    const fromMock = vi.fn().mockReturnValue({ delete: deleteMock, select: selectMock, insert: insertMock });
+  it("deniega (fail-closed) si la RPC consume_rate_limit no existe", async () => {
     const rpcMock = vi.fn().mockResolvedValue({
       data: null,
       error: { code: "PGRST202", message: "Could not find the function public.consume_rate_limit" },
     });
 
-    getSupabaseAdminClientMock
-      .mockResolvedValueOnce({ rpc: rpcMock })
-      .mockResolvedValueOnce({ from: fromMock });
+    getSupabaseAdminClientMock.mockResolvedValue({ rpc: rpcMock });
 
     const { consumeRateLimit } = await import("./rate-limit");
     const result = await consumeRateLimit({
@@ -147,14 +136,8 @@ describe("consumeRateLimit — Supabase RPC en producción", () => {
       windowMs: 60_000,
     });
 
-    expect(result).toEqual({ ok: true, remaining: 2, retryAfterSeconds: 0, store: "supabase" });
+    expect(result).toEqual({ ok: false, remaining: 0, retryAfterSeconds: 60, store: "supabase" });
     expect(rpcMock).toHaveBeenCalledTimes(1);
-    expect(insertMock).toHaveBeenCalledWith({
-      bucket: "public-booking",
-      identifierHash: expect.any(String),
-      expiresAt: expect.any(String),
-    });
-    expect(warnSpy).toHaveBeenCalled();
   });
 });
 
@@ -227,5 +210,30 @@ describe("getRateLimitIdentifier", () => {
     const { getRateLimitIdentifier } = await import("./rate-limit");
     const headers = new Headers({ "x-forwarded-for": "1.2.3.4, 5.6.7.8" });
     expect(getRateLimitIdentifier(headers)).toBe("1.2.3.4");
+  });
+
+  it("en producción ignora x-forwarded-for falsificable si no pasó por el edge de Vercel", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      const { getRateLimitIdentifier } = await import("./rate-limit");
+      const headers = new Headers({ "x-forwarded-for": "1.2.3.4", "x-real-ip": "9.10.11.12" });
+      expect(getRateLimitIdentifier(headers)).toBe("unknown-ip");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("en producción confía en x-forwarded-for si hay evidencia del edge de Vercel", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      const { getRateLimitIdentifier } = await import("./rate-limit");
+      const headers = new Headers({
+        "x-forwarded-for": "1.2.3.4, 5.6.7.8",
+        "x-vercel-id": "cdg1::abc123",
+      });
+      expect(getRateLimitIdentifier(headers)).toBe("1.2.3.4");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
