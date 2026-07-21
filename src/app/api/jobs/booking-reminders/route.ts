@@ -3,6 +3,9 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { finishJobRun, runSupabaseBookingReminderSweep, startJobRun } from "@/server/supabase-store";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("Booking Reminders Job");
 
 // Vercel Hobby's default function window is short; this cron can outgrow a
 // naive sequential sweep as booking volume grows, so give it a bounded but
@@ -82,10 +85,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ ok: true, result });
   } catch (err) {
-    return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Internal error" },
-      { status: 500 }
-    );
+    // El detalle del error queda en el log interno; al cliente solo se le
+    // devuelve un mensaje genérico para no filtrar información interna.
+    logger.error("Falló el job de recordatorios", err);
+    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
   }
 }
 
@@ -102,9 +105,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, result });
   } catch (err) {
-    return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Internal error" },
-      { status: 500 }
-    );
+    logger.error("Falló el job de recordatorios", err);
+    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
   }
 }

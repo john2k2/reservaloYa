@@ -79,6 +79,7 @@ describe("GET /api/jobs/booking-reminders", () => {
     );
 
     expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ ok: false, error: "Internal error" });
     expect(finishJobRunMock).toHaveBeenCalledWith("run-1", "failed", { error: "db down" });
   });
 

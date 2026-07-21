@@ -3,6 +3,9 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { runSupabaseSubscriptionBillingSweep } from "@/server/supabase-store";
+import { createLogger } from "@/server/logger";
+
+const logger = createLogger("Subscription Billing Job");
 
 function timingSafeEqualString(candidate: string, expected: string): boolean {
   const candidateBuffer = Buffer.from(candidate);
@@ -44,14 +47,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(request.url);
-  const dryRun = url.searchParams.get("dryRun");
-  const result = await runBillingJob({
-    now: url.searchParams.get("now") ?? undefined,
-    dryRun: dryRun === "1" || dryRun === "true",
-  });
+  try {
+    const url = new URL(request.url);
+    const dryRun = url.searchParams.get("dryRun");
+    const result = await runBillingJob({
+      now: url.searchParams.get("now") ?? undefined,
+      dryRun: dryRun === "1" || dryRun === "true",
+    });
 
-  return NextResponse.json({ ok: true, result });
+    return NextResponse.json({ ok: true, result });
+  } catch (err) {
+    // El detalle del error queda en el log interno; al cliente solo se le
+    // devuelve un mensaje genérico para no filtrar información interna.
+    logger.error("Falló el job de facturación de suscripciones", err);
+    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -59,10 +69,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { now?: string; dryRun?: boolean }
-    | null;
-  const result = await runBillingJob(body);
+  try {
+    const body = (await request.json().catch(() => null)) as
+      | { now?: string; dryRun?: boolean }
+      | null;
+    const result = await runBillingJob(body);
 
-  return NextResponse.json({ ok: true, result });
+    return NextResponse.json({ ok: true, result });
+  } catch (err) {
+    logger.error("Falló el job de facturación de suscripciones", err);
+    return NextResponse.json({ ok: false, error: "Internal error" }, { status: 500 });
+  }
 }
