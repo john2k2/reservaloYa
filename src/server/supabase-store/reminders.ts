@@ -342,11 +342,26 @@ export async function runSupabaseBookingReminderSweep(input?: {
           .map((e) => e.booking_id)
       );
 
+      // La conversión bookingDate+endTime (hora local del negocio) a UTC no se
+      // puede expresar en SQL, pero sí se puede acotar: el follow-up aplica a
+      // turnos que terminaron entre 1h y 25h atrás, y con offsets de hasta
+      // UTC-12/+14 el bookingDate de un candidato cae siempre dentro de
+      // [ahora-2d, ahora+1d]. El chequeo exacto sigue haciéndose en JS con el
+      // timezone real.
+      const followupDateFrom = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+      const followupDateTo = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
       const { data: completedData } = await client
         .from("bookings")
         .select("*, customer:customers(*), service:services(*)")
         .eq("business_id", business.id)
-        .eq("status", "completed");
+        .eq("status", "completed")
+        .not("endTime", "is", null)
+        .gte("bookingDate", followupDateFrom)
+        .lte("bookingDate", followupDateTo);
 
       const completedBookings = (completedData ?? []) as (BookingRecord & {
         customer?: CustomerRecord;
