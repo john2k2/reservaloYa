@@ -87,7 +87,7 @@ de tocar `src/components/landing/` o de agregar una página nueva fuera de `(pub
 - Vitest with jsdom, file parallelism disabled
 - Tests colocated with source files (`*.test.ts` / `*.test.tsx`)
 - Setup file: `src/test/setup.tsx`
-- Coverage thresholds: 35% statements/functions/lines, 20% branches
+- Coverage thresholds: statements 58, branches 40, functions 55, lines 60
 
 ## Memory (Engram)
 

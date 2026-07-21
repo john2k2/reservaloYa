@@ -65,7 +65,7 @@ npm run test:e2e:all     # all Playwright projects
 - **Framework**: Vitest + jsdom + Testing Library. Playwright for E2E.
 - **Setup**: `src/test/setup.tsx` mocks `next/navigation`, `next/image`, `next/link`, and `IntersectionObserver`.
 - **File parallelism**: explicitly disabled in Vitest config (`fileParallelism: false`). Do not enable.
-- **Coverage thresholds**: 35% statements/functions/lines, 20% branches (enforced in CI).
+- **Coverage thresholds**: statements 58, branches 40, functions 55, lines 60 (enforced in CI).
 - **E2E projects**:
   - `public-smoke` (Firefox) — stable smoke tests
   - `public-booking` (Firefox) — read-only public booking flow against `demo-barberia`; runs in CI

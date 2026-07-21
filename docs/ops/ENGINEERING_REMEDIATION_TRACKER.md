@@ -31,7 +31,7 @@ Concentrar en un solo lugar el seguimiento tecnico del proyecto: deuda, reparaci
 | RY-014 | Reducir matcher de refresh de sesion | P1 | Perf | Cerrado. Sin middleware.ts; refresh es explicito por pagina. No aplica. |
 | RY-015 | Reemplazar `getFullList` por paginacion | P1 | Perf | Cerrado. Todas las llamadas estan acotadas: batch limits (100/max+1), filtros por businessId, o scoped a datos del negocio. OK para MVP. |
 | RY-016 | Optimizar agregaciones del panel admin | P1 | Perf | Cerrado. Agregaciones son server-side (no browser). Volumen de datos por negocio es bajo (barberia/salon). OK para MVP. |
-| RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt | Cerrado. 42 test files, thresholds 35% en CI (ENG-04). Subir gradualmente post-launch. |
+| RY-019 | Cobertura tests en flujos criticos | P2 | TechDebt | Cerrado. 42 test files, thresholds en CI (ENG-04): statements 58, branches 40, functions 55, lines 60. Subir gradualmente post-launch. |
 | RY-020 | Extraer capa de dominio comun entre stores | P2 | TechDebt | Cerrado. 7 modulos domain extraidos en ENG-05. Quedan oportunidades menores post-launch. |
 | RY-021 | Politica de dependencias runtime seguras | P2 | TechDebt | Cerrado. 0 vulnerabilidades en produccion. 3 en dev-only (picomatch, Next HMR). Updates menores disponibles, nada critico. |
 
