@@ -66,7 +66,7 @@ export default defineConfig({
     {
       name: "public-smoke",
       use: { ...devices["Desktop Firefox"] },
-      testMatch: /smoke-test\.spec\.ts/,
+      testMatch: [/smoke-test\.spec\.ts/, /accessibility\.spec\.ts/],
       workers: 1,
     },
 
@@ -81,7 +81,7 @@ export default defineConfig({
     {
       name: "manual-chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts/,
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts|accessibility\.spec\.ts/,
     },
 
     {
@@ -98,13 +98,13 @@ export default defineConfig({
     {
       name: "manual-mobile",
       use: { ...devices["Pixel 5"] },
-      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts/,
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts|accessibility\.spec\.ts/,
     },
 
     {
       name: "manual-firefox",
       use: { ...devices["Desktop Firefox"], navigationTimeout: 60000 },
-      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts/,
+      testIgnore: /auth\.setup\.ts|admin-authenticated\.spec\.ts|smoke-test\.spec\.ts|accessibility\.spec\.ts/,
       workers: 1,
     },
   ],
