@@ -5,9 +5,8 @@ import { getPublicAppUrl } from "@/lib/runtime";
 import { createPublicClient, createServerClient } from "@/lib/supabase/server";
 import { buildBookingDateOptions, findNextBookingDate, getDayOfWeek } from "@/lib/bookings/format";
 import { withBookingDateLock } from "@/server/booking-slot-lock";
-import { createLogger } from "@/server/logger";
 import { buildBookingConfirmationView, buildManageBookingView } from "@/server/bookings-domain";
-import { sendBookingConfirmationEmail, sendBookingConfirmationWhatsApp, sendBusinessNotificationEmail } from "@/server/booking-notifications";
+import { notifyBookingConfirmation } from "@/server/booking-confirmation-notifier";
 import { buildBookingCustomerDetails, buildBookingMutationFields, buildBookingTimeWindow, canMutatePublicBooking, fitsBookingWithinAvailability, hasBlockedSlotConflict, hasBookingConflict, resolveBookingStatus } from "@/server/booking-mutations-domain";
 import { buildBookingPaymentPatch, type BookingPaymentValidationContext, type BookingPaymentUpdateInput } from "@/server/payments-domain";
 import { buildAbsoluteReviewUrl, canGenerateBookingManageLinks, createBookingManageToken } from "@/server/public-booking-links";
@@ -19,8 +18,6 @@ import { formatStatus, isActiveRecord, type BookingRecord, BookingStatus, Busine
 import { getSupabaseAdminClient, createSupabaseRecord, updateSupabaseRecord } from "./_core";
 import { getBusinessBySlug } from "./helpers";
 import type { JoinedBookingConfirmation, JoinedBookingManage, JoinedBookingWithBusiness, JoinedBookingWithBusinessStatus, UpdateSupabaseBookingPaymentInput } from "./types";
-
-const logger = createLogger("Booking Store");
 
 export async function getSupabaseBookingConfirmationData(input: {
   bookingId?: string;
@@ -434,19 +431,7 @@ export async function rescheduleSupabasePublicBooking(input: {
         manageToken: booking.manageToken,
       });
 
-      await sendBookingConfirmationEmail(confirmation, "rescheduled").catch((error) => {
-        logger.error("Error enviando email de reprogramacion", error);
-      });
-
-      await sendBookingConfirmationWhatsApp(confirmation).catch((error) => {
-        logger.error("Error enviando WhatsApp de reprogramacion", error);
-      });
-
-      if (business.email) {
-        await sendBusinessNotificationEmail(confirmation, "rescheduled").catch((error) => {
-          logger.error("Error enviando notificacion de reprogramacion al negocio", error);
-        });
-      }
+      await notifyBookingConfirmation({ confirmation, mode: "rescheduled" });
 
       return booking.id;
     }

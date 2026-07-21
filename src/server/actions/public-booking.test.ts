@@ -84,6 +84,7 @@ vi.mock("@/server/analytics", () => ({
 vi.mock("@/server/booking-notifications", () => ({
   sendBookingConfirmationEmail: sendBookingConfirmationEmailMock,
   sendBookingConfirmationWhatsApp: sendBookingConfirmationWhatsAppMock,
+  sendBusinessNotificationEmail: vi.fn(async () => ({ status: "skipped", reason: "no_business_notification_email" })),
 }));
 
 vi.mock("@/server/supabase-store/_core", () => ({

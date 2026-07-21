@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 
 import { publicBookingSchema } from "@/lib/validations/booking";
 import { trackAnalyticsEvent } from "@/server/analytics";
-import { sendBookingConfirmationEmail, sendBookingConfirmationWhatsApp } from "@/server/booking-notifications";
+import { notifyBookingConfirmation } from "@/server/booking-confirmation-notifier";
 import { getUsableBusinessMercadoPagoAccessToken } from "@/server/mercadopago-business-auth";
 import {
   buildBookingConfirmationHref,
@@ -28,52 +28,6 @@ import {
 } from "@/server/rate-limit";
 import { createLogger } from "@/server/logger";
 import { createPaymentPreferenceForBusiness } from "@/server/mercadopago";
-import { getSupabaseAdminClient } from "@/server/supabase-store/_core";
-
-type ConfirmationEmailOutcomeStatus = "sent" | "failed" | "skipped";
-
-function toCommunicationEventStatus(result: {
-  status: "sent" | "skipped" | "error";
-}): ConfirmationEmailOutcomeStatus {
-  if (result.status === "error") return "failed";
-  return result.status;
-}
-
-async function recordConfirmationEmailEvent(input: {
-  bookingId: string;
-  businessId: string;
-  recipient?: string;
-  status: ConfirmationEmailOutcomeStatus;
-  subject: string;
-  note?: string;
-  channel?: "email" | "whatsapp";
-}) {
-  try {
-    const client = await getSupabaseAdminClient();
-    const { data: booking } = await client
-      .from("bookings")
-      .select("customer_id")
-      .eq("id", input.bookingId)
-      .single();
-
-    const customerId = (booking as { customer_id?: string } | null)?.customer_id;
-    if (!customerId) return;
-
-    await client.from("communication_events").insert({
-      business_id: input.businessId,
-      booking_id: input.bookingId,
-      customer_id: customerId,
-      channel: input.channel ?? "email",
-      kind: "confirmation",
-      status: input.status,
-      recipient: input.recipient ?? "",
-      subject: input.subject,
-      note: input.note ?? "",
-    });
-  } catch (err) {
-    logger.error("No se pudo registrar el evento de confirmacion", err);
-  }
-}
 
 const logger = createLogger("Public Booking");
 
@@ -187,13 +141,8 @@ function buildConfirmationPageHref(input: {
 async function sendConfirmationEmailIfPossible(input: {
   bookingId: string;
   businessSlug: string;
-  customerName: string;
   customerEmail?: string;
   customerPhone?: string;
-  serviceName: string;
-  bookingDate: string;
-  startTime: string;
-  notes?: string;
   mode: "created" | "rescheduled";
 }) {
   const confirmation = await getBookingConfirmationData({
@@ -207,43 +156,13 @@ async function sendConfirmationEmailIfPossible(input: {
     return;
   }
 
-  if (input.customerEmail) {
-    const result = await sendBookingConfirmationEmail(confirmation, input.mode);
-    await recordConfirmationEmailEvent({
-      bookingId: input.bookingId,
-      businessId: confirmation.businessId,
-      recipient: input.customerEmail,
-      status: toCommunicationEventStatus(result),
-      subject: "Confirmacion de reserva",
-      note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
-    });
-  }
-
-  if (input.customerPhone) {
-    const result = await sendBookingConfirmationWhatsApp(confirmation);
-    await recordConfirmationEmailEvent({
-      bookingId: input.bookingId,
-      businessId: confirmation.businessId,
-      recipient: input.customerPhone,
-      status: toCommunicationEventStatus(result),
-      subject: "Confirmacion de reserva",
-      note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
-      channel: "whatsapp",
-    });
-  }
-
-  if (confirmation.businessNotificationEmail) {
-    const { sendBusinessNotificationEmail } = await import("@/server/booking-notifications");
-    const result = await sendBusinessNotificationEmail(confirmation, input.mode);
-    await recordConfirmationEmailEvent({
-      bookingId: input.bookingId,
-      businessId: confirmation.businessId,
-      recipient: confirmation.businessNotificationEmail,
-      status: toCommunicationEventStatus(result),
-      subject: "Notificacion de nueva reserva al negocio",
-      note: result.status === "error" ? result.error : result.status === "skipped" ? result.reason : undefined,
-    });
-  }
+  await notifyBookingConfirmation({
+    // bookingId viene del caller: es el id real del turno recién creado.
+    confirmation: { ...confirmation, bookingId: input.bookingId },
+    mode: input.mode,
+    customerEmail: input.customerEmail,
+    customerPhone: input.customerPhone,
+  });
 }
 
 export async function createPublicBookingAction(formData: FormData) {
@@ -445,13 +364,8 @@ export async function createPublicBookingAction(formData: FormData) {
     await sendConfirmationEmailIfPossible({
       bookingId,
       businessSlug: parsed.data.businessSlug,
-      customerName: parsed.data.fullName,
       customerEmail: parsed.data.email || undefined,
       customerPhone: parsed.data.phone,
-      serviceName: serviceEarly?.name || "Servicio",
-      bookingDate: parsed.data.bookingDate,
-      startTime: parsed.data.startTime,
-      notes: parsed.data.notes,
       mode: "created",
     });
   }

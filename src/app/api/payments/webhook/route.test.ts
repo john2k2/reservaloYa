@@ -72,6 +72,7 @@ vi.mock("@/server/mercadopago-business-auth", () => ({
 
 vi.mock("@/server/booking-notifications", () => ({
   sendBookingConfirmationEmail: sendBookingConfirmationEmailMock,
+  sendBookingConfirmationWhatsApp: vi.fn(async () => ({ status: "skipped", reason: "meta_whatsapp_not_configured" })),
   sendBusinessNotificationEmail: sendBusinessNotificationEmailMock,
 }));
 
