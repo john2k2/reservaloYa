@@ -15,12 +15,6 @@ import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminBillingData } from "@/server/queries/admin";
 import { cancelSubscriptionAction } from "./actions";
 import {
-  getBillingTransferDetails,
-  hasBillingTransferDetails,
-  buildTransferWhatsAppMessage,
-} from "@/server/billing-transfer";
-import { getSiteWhatsAppHref } from "@/lib/contact";
-import {
   SUBSCRIPTION_CARD_USD_PRICE,
   SUBSCRIPTION_USD_PRICE,
 } from "@/server/payments-domain";
@@ -92,11 +86,6 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
   const canCancel = status === "active" || status === "trial";
   const needsPayment = status === "suspended" || status === "cancelled" || shellData.subscriptionExpired;
   const showPolarPortal = isPolarConfigured() && Boolean(subscription?.polarCustomerId);
-  const transfer = getBillingTransferDetails();
-  const showTransfer = hasBillingTransferDetails(transfer);
-  const whatsappHref = getSiteWhatsAppHref(
-    buildTransferWhatsAppMessage({ businessName: shellData.businessName || "mi negocio" })
-  );
   const errorMessage = params.error
     ? (ERROR_MESSAGES[params.error] ?? params.error)
     : null;
@@ -189,28 +178,6 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
           </Link>
         )}
       </div>
-
-      {showTransfer && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Transferencia
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Podés pagar por transferencia y enviar el comprobante. Datos:{" "}
-            {transfer.alias ? `alias ${transfer.alias}` : null}
-            {transfer.alias && transfer.cbu ? " · " : null}
-            {transfer.cbu ? `CBU ${transfer.cbu}` : null}.
-          </p>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex text-sm font-medium underline"
-          >
-            Enviar comprobante por WhatsApp
-          </a>
-        </div>
-      )}
 
       {canCancel && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
