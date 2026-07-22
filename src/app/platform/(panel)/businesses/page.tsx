@@ -228,11 +228,13 @@ export default async function PlatformBusinessesPage({
                     active={b.active}
                     businessName={b.name}
                   />
-                  <TrialActions
-                    businessId={b.id}
-                    subscriptionStatus={b.subscription.status}
-                    lockedAt={b.subscription.lockedAt}
-                  />
+                  <div className="flex items-center gap-1 border-l border-border/60 pl-2">
+                    <TrialActions
+                      businessId={b.id}
+                      subscriptionStatus={b.subscription.status}
+                      lockedAt={b.subscription.lockedAt}
+                    />
+                  </div>
                   {b.ownerCount > 1 && (
                     <ConsolidateOwnersButton
                       businessId={b.id}

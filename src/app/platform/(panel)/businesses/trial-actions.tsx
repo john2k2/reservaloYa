@@ -147,7 +147,7 @@ export function TrialActions({
             className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50"
             disabled={isPending}
           >
-            Cancelar
+            Cancelar suscripción
           </button>
         </>
       )}
