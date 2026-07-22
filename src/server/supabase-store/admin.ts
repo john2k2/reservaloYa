@@ -375,7 +375,7 @@ export async function getSupabaseAdminSettingsData(businessId: string) {
   const client = await createServerClient();
   const business = await getBusinessByIdWithClient(client, businessId);
 
-  return buildAdminSettingsView(
+  const view = buildAdminSettingsView(
     {
       name: business.name,
       slug: business.slug,
@@ -391,6 +391,8 @@ export async function getSupabaseAdminSettingsData(businessId: string) {
     },
     buildBusinessPublicProfile(business)
   );
+
+  return { ...view, publicUrl: `${getPublicAppUrl()}${view.publicUrl}` };
 }
 
 

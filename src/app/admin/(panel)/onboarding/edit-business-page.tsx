@@ -410,7 +410,12 @@ export default function EditBusinessPage({ business, settingsData }: EditBusines
           )}
 
           {activeTab === "public" && (
-            <EditPublicTab publicData={publicData} setPublicData={setPublicData} />
+            <EditPublicTab
+              publicData={publicData}
+              setPublicData={setPublicData}
+              publicUrl={settingsData.publicUrl}
+              businessSlug={business.slug}
+            />
           )}
 
           {activeTab === "integrations" && (
