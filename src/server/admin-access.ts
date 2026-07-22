@@ -18,8 +18,8 @@ export async function requireAdminRouteAccess(route: string) {
     redirect(`/admin/dashboard?error=${encodeURIComponent(getAdminRouteAccessError(route))}`);
   }
 
-  if (shellData.subscriptionExpired && route !== "/admin/subscription") {
-    redirect("/admin/subscription");
+  if (shellData.subscriptionExpired && route !== "/admin/subscription/pay") {
+    redirect("/admin/subscription/pay");
   }
 
   return {

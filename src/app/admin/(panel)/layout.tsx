@@ -33,7 +33,7 @@ export default async function AdminPanelLayout({
   }
 
   if (shellData.subscriptionExpired) {
-    redirect("/admin/subscription");
+    redirect("/admin/subscription/pay");
   }
 
   return (
