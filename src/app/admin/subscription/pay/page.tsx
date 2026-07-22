@@ -75,7 +75,7 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
   );
 
   return (
-    <div className="landing-theme relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12 bg-background">
+    <div className="landing-theme relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-8 bg-background">
       {/* Renglones de agenda — atmósfera, sin orbes */}
       <div
         aria-hidden
@@ -86,8 +86,13 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
         }}
       />
 
-      <div className="relative w-full max-w-lg space-y-8">
-        <header className="space-y-3 text-center">
+      <div
+        className={cn(
+          "relative w-full space-y-6",
+          showTransfer && showPolar ? "max-w-4xl" : "max-w-lg"
+        )}
+      >
+        <header className="space-y-2 text-center">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-ticket">
             Acceso pausado
           </p>
@@ -102,11 +107,17 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
         </header>
 
         {errorMessage && (
-          <div className="rounded-xl border border-red-300/60 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
+          <div className="mx-auto max-w-lg rounded-xl border border-red-300/60 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
             {errorMessage}
           </div>
         )}
 
+        <div
+          className={cn(
+            "grid items-start gap-6",
+            showTransfer && showPolar && "md:grid-cols-[1.15fr_1fr] md:gap-8"
+          )}
+        >
         {showTransfer && (
           <section className="relative">
             {/* Sello flotante — firma visual */}
@@ -127,20 +138,20 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
                 </span>
               </div>
 
-              <div className="space-y-5 px-5 py-6 sm:px-6">
+              <div className="space-y-4 px-5 py-5 sm:px-6">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">
                     Monto del mes
                   </p>
                   {formattedArs ? (
-                    <p className="mt-1 font-mono text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-                      <span className="text-2xl font-semibold text-muted-foreground sm:text-3xl">
+                    <p className="mt-1 font-mono text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+                      <span className="text-xl font-semibold text-muted-foreground sm:text-2xl">
                         $
                       </span>
                       {formattedArs}
                     </p>
                   ) : (
-                    <p className="mt-1 font-mono text-5xl font-bold tracking-tight text-foreground">
+                    <p className="mt-1 font-mono text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
                       USD {SUBSCRIPTION_USD_PRICE}
                     </p>
                   )}
@@ -219,39 +230,38 @@ export default async function SubscriptionPayPage({ searchParams }: Subscription
         )}
 
         {showPolar && (
-          <section className="rounded-2xl border border-dashed border-rule bg-card/60 px-5 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="size-4 text-muted-foreground" aria-hidden />
-                  <h2 className="text-sm font-semibold text-foreground">Tarjeta en dólares</h2>
-                </div>
-                <p className="font-mono text-2xl font-bold tracking-tight">
-                  USD {SUBSCRIPTION_CARD_USD_PRICE}
-                  <span className="ml-2 font-sans text-xs font-normal text-muted-foreground">
-                    /mes · renovación automática
-                  </span>
-                </p>
-                {showTransfer && (
-                  <p className="text-xs text-muted-foreground">
-                    Con transferencia ahorrás el precio promo (USD {SUBSCRIPTION_USD_PRICE} al blue).
-                  </p>
-                )}
+          <section className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-dashed border-rule bg-card/60 px-5 py-5 sm:px-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="size-4 text-muted-foreground" aria-hidden />
+                <h2 className="text-sm font-semibold text-foreground">Tarjeta en dólares</h2>
               </div>
-              <Link
-                href="/api/payments/polar/checkout"
-                className={cn(
-                  "inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 text-sm font-semibold",
-                  "border border-rule bg-background text-foreground",
-                  "transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
-                )}
-              >
-                Pagar con tarjeta
-                <ArrowRight className="size-4 shrink-0" />
-              </Link>
+              <p className="font-mono text-2xl font-bold tracking-tight">
+                USD {SUBSCRIPTION_CARD_USD_PRICE}
+                <span className="ml-2 font-sans text-xs font-normal text-muted-foreground">
+                  /mes · renovación automática
+                </span>
+              </p>
+              {showTransfer && (
+                <p className="text-xs text-muted-foreground">
+                  Con transferencia ahorrás el precio promo (USD {SUBSCRIPTION_USD_PRICE} al blue).
+                </p>
+              )}
             </div>
+            <Link
+              href="/api/payments/polar/checkout"
+              className={cn(
+                "inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 text-sm font-semibold",
+                "border border-rule bg-background text-foreground",
+                "transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+              )}
+            >
+              Pagar con tarjeta
+              <ArrowRight className="size-4 shrink-0" />
+            </Link>
           </section>
         )}
+        </div>
 
         {!showTransfer && !showPolar && (
           <section className="rounded-2xl border border-ticket/40 bg-ticket/10 p-6 space-y-3 text-sm">
