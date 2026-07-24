@@ -262,6 +262,52 @@ describe("public booking action rate limit", () => {
     expect(cancelSupabasePublicBookingMock).not.toHaveBeenCalled();
   });
 
+  it("does not create the booking for free when payment settings can't be read for a priced service", async () => {
+    // service-1 (from the getPublicBusinessPageData mock) has price 500, so a
+    // failed payment settings read must NOT fail open into a free booking.
+    getSupabaseBusinessPaymentSettingsBySlugMock.mockRejectedValue(new Error("Supabase timeout"));
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildBookingFormData())).rejects.toThrow(
+      /REDIRECT:\/demo-barberia\/reservar\?/
+    );
+
+    const redirectedUrl = String(redirectMock.mock.calls.at(-1)?.[0] ?? "");
+    expect(createSupabasePublicBookingMock).not.toHaveBeenCalled();
+    expect(createPaymentPreferenceForBusinessMock).not.toHaveBeenCalled();
+    expect(redirectedUrl).toContain(
+      "error=No+pudimos+verificar+el+estado+de+pago+del+negocio.+Intenta+nuevamente+en+unos+minutos."
+    );
+  });
+
+  it("still confirms a free booking when payment settings can't be read for a free service", async () => {
+    // No price on the service anywhere in this flow, so an unreadable payment
+    // settings row is irrelevant: there is nothing to charge for.
+    getSupabaseBusinessPaymentSettingsBySlugMock.mockRejectedValue(new Error("Supabase timeout"));
+
+    const { getPublicBusinessPageData } = await import("@/server/queries/public");
+    vi.mocked(getPublicBusinessPageData).mockResolvedValueOnce({
+      profile: { businessName: "Demo Barberia" },
+      business: { name: "Demo Barberia", slug: "demo-barberia", mpConnected: false },
+      services: [{ id: "service-1", name: "Corte", price: 0 }],
+      features: { bookingMaxDaysAhead: 30, bookingLockMinutes: 10 },
+    } as unknown as Awaited<ReturnType<typeof getPublicBusinessPageData>>);
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildBookingFormData())).rejects.toThrow(
+      /REDIRECT:\/demo-barberia\/confirmacion\?booking=booking-test-id&token=confirmation-token/
+    );
+
+    expect(createSupabasePublicBookingMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        initialStatus: "confirmed",
+      })
+    );
+    expect(createPaymentPreferenceForBusinessMock).not.toHaveBeenCalled();
+  });
+
   it("returns to booking and cancels the provisional booking when online payment init fails", async () => {
     getSupabaseBusinessPaymentSettingsBySlugMock.mockResolvedValue({
       businessId: "business-1",

@@ -42,6 +42,8 @@ const PUBLIC_BOOKING_EMAIL_LIMIT_MAX = 5;
 const PUBLIC_BOOKING_EMAIL_LIMIT_WINDOW_MS = 10 * 60_000;
 const PAYMENT_INIT_ERROR_MESSAGE =
   "No pudimos iniciar el pago online. Intenta nuevamente en unos minutos o contacta al negocio.";
+const PAYMENT_STATUS_UNKNOWN_ERROR_MESSAGE =
+  "No pudimos verificar el estado de pago del negocio. Intenta nuevamente en unos minutos.";
 
 function hashRateLimitEmail(email: string) {
   return createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
@@ -171,17 +173,29 @@ async function sendConfirmationEmailIfPossible(input: {
 // Resuelve si el turno requiere pago online: trae el payment settings del
 // negocio (nunca en un reschedule) y refresca el access token de MercadoPago
 // si esta por vencer, antes de decidir si el servicio + negocio habilitan cobro.
+// Si el servicio tiene precio y falla la lectura de payment settings, no hay
+// forma de saber si corresponde cobrar: se propaga el error en vez de asumir
+// "no requiere pago" (fail-open dejaria turnos pagos confirmados como gratis
+// ante un error transitorio de Supabase). Si el servicio no tiene precio, el
+// fallo no importa: no hay nada que cobrar.
 async function resolvePaymentRequirement(input: {
   businessSlug: string;
   rescheduleBookingId?: string;
   servicePrice?: number | null;
 }) {
-  const businessPaymentSettings = !input.rescheduleBookingId
-    ? await getSupabaseBusinessPaymentSettingsBySlug(input.businessSlug).catch(() => null)
-    : null;
-
   const serviceHasPrice =
     !input.rescheduleBookingId && input.servicePrice != null && input.servicePrice > 0;
+
+  const businessPaymentSettings = !input.rescheduleBookingId
+    ? await getSupabaseBusinessPaymentSettingsBySlug(input.businessSlug).catch((error) => {
+        if (serviceHasPrice) {
+          throw new Error(PAYMENT_STATUS_UNKNOWN_ERROR_MESSAGE);
+        }
+
+        logger.error("No se pudo obtener el payment settings del negocio", error);
+        return null;
+      })
+    : null;
 
   const businessMPAccessToken = businessPaymentSettings
     ? await getUsableBusinessMercadoPagoAccessToken(businessPaymentSettings, async (tokens) => {
@@ -328,16 +342,24 @@ export async function createPublicBookingAction(formData: FormData) {
   const pageDataEarly = await getPublicBusinessPageData(parsed.data.businessSlug);
   const serviceEarly = pageDataEarly?.services.find((s) => s.id === parsed.data.serviceId);
 
-  const { businessPaymentSettings, businessMPAccessToken, requiresPayment } =
-    await resolvePaymentRequirement({
-      businessSlug: parsed.data.businessSlug,
-      rescheduleBookingId: parsed.data.rescheduleBookingId,
-      servicePrice: serviceEarly?.price,
-    });
+  type PaymentRequirementResult = Awaited<ReturnType<typeof resolvePaymentRequirement>>;
 
   let bookingId: string;
+  let businessPaymentSettings: PaymentRequirementResult["businessPaymentSettings"] = null;
+  let businessMPAccessToken: PaymentRequirementResult["businessMPAccessToken"] = null;
+  let requiresPayment = false;
 
   try {
+    // Si el servicio tiene precio y no se pudo determinar el estado de pago
+    // del negocio, resolvePaymentRequirement tira un error acá adentro: cae
+    // al catch de abajo y no se crea el turno (en vez de crearlo gratis).
+    ({ businessPaymentSettings, businessMPAccessToken, requiresPayment } =
+      await resolvePaymentRequirement({
+        businessSlug: parsed.data.businessSlug,
+        rescheduleBookingId: parsed.data.rescheduleBookingId,
+        servicePrice: serviceEarly?.price,
+      }));
+
     await enforcePublicBookingRateLimit({
       businessSlug: parsed.data.businessSlug,
       email: parsed.data.email,
