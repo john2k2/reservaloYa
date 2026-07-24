@@ -12,7 +12,6 @@ import {
   getSupabaseBusinessPaymentSettingsByCollectorId,
   getSupabaseBookingPaymentValidationContext,
   getSupabaseBookingBusinessSlug,
-  updateSupabaseBookingPayment,
   updateSupabaseBookingPaymentIfStatus,
   updateSupabaseBusinessMPTokens,
   getSupabaseSubscriptionByBusinessId,
@@ -345,6 +344,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
     }
 
+    if (!bookingValidation) {
+      // canApplyBookingPayment already guarantees a booking whenever validation.ok is
+      // true; this guard exists only to narrow the type for TypeScript instead of
+      // reaching for a non-null assertion below.
+      logger.warn("Webhook MP ignorado: booking no encontrado pese a validación ok", {
+        paymentId,
+        bookingId: externalReference,
+      });
+      return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
+    }
+
     let shouldRunApprovedSideEffects = false;
 
     if (paymentStatus === "approved") {
@@ -361,13 +371,17 @@ export async function POST(request: Request) {
         expectedCurrentStatus: "pending_payment",
       });
     } else {
-      await updateSupabaseBookingPayment({
+      // Same idempotency guard as the approved branch: only apply the update if the
+      // booking is still in the status this webhook delivery validated against, so a
+      // duplicate/concurrent delivery of a rejected/cancelled payment can't reapply it.
+      await updateSupabaseBookingPaymentIfStatus({
         bookingId: externalReference,
         paymentStatus,
         paymentAmount: transactionAmount,
         paymentCurrency: currencyId,
         paymentProvider: "mercadopago",
         paymentExternalId: paymentId,
+        expectedCurrentStatus: bookingValidation.status,
       });
     }
 

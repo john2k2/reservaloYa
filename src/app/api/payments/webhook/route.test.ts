@@ -486,6 +486,81 @@ describe("mercadopago webhook route", () => {
     expect(sendBookingConfirmationEmailMock).toHaveBeenCalledTimes(1);
   });
 
+  it("uses the idempotent guarded update for a non-approved payment, matching the previously validated booking status", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "rejected",
+      statusDetail: "cc_rejected_other_reason",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+    });
+    mapMPStatusToPaymentStatusMock.mockReturnValue("rejected");
+
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/payments/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ ok: true });
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledWith({
+      bookingId: "booking-1",
+      paymentStatus: "rejected",
+      paymentAmount: 18000,
+      paymentCurrency: "ARS",
+      paymentProvider: "mercadopago",
+      paymentExternalId: "pay-1",
+      expectedCurrentStatus: "pending_payment",
+    });
+    expect(updateSupabaseBookingPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("does not let a duplicate rejected/cancelled webhook delivery reapply the update once the booking already moved on", async () => {
+    getMPPaymentInfoMock.mockResolvedValue({
+      id: "pay-1",
+      status: "cancelled",
+      statusDetail: "by_collector",
+      externalReference: "booking-1",
+      transactionAmount: 18000,
+      currencyId: "ARS",
+    });
+    mapMPStatusToPaymentStatusMock.mockReturnValue("cancelled");
+    // First delivery wins the conditional update; the duplicate/concurrent delivery
+    // finds the booking already moved past the status it validated against, so it
+    // must not reapply the payment fields either.
+    updateSupabaseBookingPaymentIfStatusMock
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    const { POST } = await import("./route");
+
+    const makeRequest = () =>
+      POST(
+        new Request("http://localhost/api/payments/webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "payment", data: { id: "pay-1" } }),
+        })
+      );
+
+    const [firstResponse, secondResponse] = await Promise.all([makeRequest(), makeRequest()]);
+
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(200);
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledTimes(2);
+    expect(updateSupabaseBookingPaymentIfStatusMock).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingId: "booking-1", expectedCurrentStatus: "pending_payment" })
+    );
+    expect(updateSupabaseBookingPaymentMock).not.toHaveBeenCalled();
+  });
+
   it("ignores approved payments when the amount does not match the booking", async () => {
     getMPPaymentInfoMock.mockResolvedValue({
       id: "pay-1",
