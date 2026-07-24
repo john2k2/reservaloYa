@@ -2,9 +2,8 @@
 
 import { Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
 
-const SEARCH_DEBOUNCE_MS = 280;
+import { useDebouncedSearchParam } from "@/hooks/use-debounced-search-param";
 
 type CustomersSearchProps = {
   q: string;
@@ -14,26 +13,11 @@ export function CustomersSearch({ q: qProp }: CustomersSearchProps) {
   const q = qProp ?? "";
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
-  const [query, setQuery] = useState(q);
 
-  useEffect(() => {
-    setQuery(q);
-  }, [q]);
-
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed === q) return;
-
-    const timer = window.setTimeout(() => {
-      const href = trimmed ? `${pathname}?q=${encodeURIComponent(trimmed)}` : pathname;
-      startTransition(() => {
-        router.push(href);
-      });
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [query, q, pathname, router]);
+  const { query, setQuery, isPending } = useDebouncedSearchParam(q, (trimmed) => {
+    const href = trimmed ? `${pathname}?q=${encodeURIComponent(trimmed)}` : pathname;
+    router.push(href);
+  });
 
   return (
     <section

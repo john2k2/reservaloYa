@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef } from "react";
 
 import { bookingStatusOptions } from "@/app/admin/(panel)/bookings/booking-status-options";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { useDebouncedSearchParam } from "@/hooks/use-debounced-search-param";
 import { cn } from "@/lib/utils";
-
-const SEARCH_DEBOUNCE_MS = 280;
 
 type BookingsFiltersProps = {
   status: string;
@@ -43,19 +42,15 @@ export function BookingsFilters({
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const [query, setQuery] = useState(q);
   const statusSelectId = "booking-filters-status";
   const hasActiveFilters = Boolean(status || date || q);
   const keepNuevo = searchParams.get("nuevo") === "1";
-  const filtersRef = useRef({ status, date, q });
-  filtersRef.current = { status, date, q };
-
+  const filtersRef = useRef({ status, date });
   useEffect(() => {
-    setQuery(q);
-  }, [q]);
+    filtersRef.current = { status, date };
+  });
 
-  function navigate(next: { q: string; status: string; date: string }) {
+  function pushFilters(next: { q: string; status: string; date: string }) {
     const href = buildBookingsHref(next, keepNuevo);
     const normalizedCurrent = buildBookingsHref(
       {
@@ -66,24 +61,13 @@ export function BookingsFilters({
       keepNuevo
     );
     if (href === normalizedCurrent) return;
-    startTransition(() => {
-      router.push(href);
-    });
+    router.push(href);
   }
 
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed === filtersRef.current.q) return;
-
-    const timer = window.setTimeout(() => {
-      const { status: currentStatus, date: currentDate } = filtersRef.current;
-      navigate({ q: trimmed, status: currentStatus, date: currentDate });
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timer);
-    // Solo reaccionamos a cambios de texto local; status/date van por ref.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce de búsqueda
-  }, [query]);
+  const { query, setQuery, isPending, startTransition } = useDebouncedSearchParam(q, (trimmed) => {
+    const { status: currentStatus, date: currentDate } = filtersRef.current;
+    pushFilters({ q: trimmed, status: currentStatus, date: currentDate });
+  });
 
   return (
     <section
@@ -108,7 +92,9 @@ export function BookingsFilters({
             value={status}
             aria-label="Filtrar turnos por estado"
             onChange={(event) =>
-              navigate({ q: query.trim(), status: event.target.value, date })
+              startTransition(() =>
+                pushFilters({ q: query.trim(), status: event.target.value, date })
+              )
             }
             className="h-10 sm:h-9 flex-1 sm:w-36 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
           >
@@ -124,7 +110,9 @@ export function BookingsFilters({
             value={date}
             aria-label="Filtrar por fecha"
             onChange={(event) =>
-              navigate({ q: query.trim(), status, date: event.target.value })
+              startTransition(() =>
+                pushFilters({ q: query.trim(), status, date: event.target.value })
+              )
             }
             className="h-10 sm:h-9 w-32 rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-foreground/30"
           />
