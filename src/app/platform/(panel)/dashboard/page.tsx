@@ -17,6 +17,8 @@ import {
 import Link from "next/link";
 import type { Metadata } from "next";
 
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatEsArDate, formatEsArDateTime } from "@/lib/dates";
 import { getPlatformDashboardData } from "@/server/queries/platform";
 import { SUBSCRIPTION_USD_PRICE } from "@/server/payments-domain";
 import { TransferClaimActions } from "./transfer-claim-actions";
@@ -126,22 +128,22 @@ export default async function PlatformDashboardPage() {
         {/* Salud del sistema, compacta */}
         <div className="flex flex-wrap items-center gap-1.5">
           {data.health.map((check) => (
-            <span
+            <StatusBadge
               key={check.key}
+              tone={check.ok ? "success" : "danger"}
+              size="md"
               title={`${check.label}: ${check.detail}`}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                check.ok
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                  : "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
-              }`}
+              className="text-xs px-2.5 py-1 gap-1.5"
+              icon={
+                check.ok ? (
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                ) : (
+                  <XCircle className="size-3.5 shrink-0" />
+                )
+              }
             >
-              {check.ok ? (
-                <CheckCircle2 className="size-3.5 shrink-0" />
-              ) : (
-                <XCircle className="size-3.5 shrink-0" />
-              )}
               {check.label}
-            </span>
+            </StatusBadge>
           ))}
         </div>
       </div>
@@ -230,13 +232,7 @@ export default async function PlatformDashboardPage() {
                         : ""}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      Enviado{" "}
-                      {new Date(claim.createdAt).toLocaleString("es-AR", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      Enviado {formatEsArDateTime(claim.createdAt)}
                     </p>
                     {claim.receiptUrl && claim.receiptMime?.startsWith("image/") && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -295,14 +291,7 @@ export default async function PlatformDashboardPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">{p.amountLabel}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {p.occurredAt
-                      ? new Date(p.occurredAt).toLocaleString("es-AR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—"}
+                    {p.occurredAt ? formatEsArDateTime(p.occurredAt) : "—"}
                   </p>
                 </div>
               </div>
@@ -331,11 +320,7 @@ export default async function PlatformDashboardPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   {b.subscription.trialEndsAt && (
                     <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                      Vence{" "}
-                      {new Date(b.subscription.trialEndsAt).toLocaleDateString("es-AR", {
-                        day: "numeric",
-                        month: "short",
-                      })}
+                      Vence {formatEsArDate(b.subscription.trialEndsAt, { year: false })}
                     </span>
                   )}
                   <Link
@@ -414,25 +399,19 @@ export default async function PlatformDashboardPage() {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {b.subscription.status === "active" && (
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-                      Activo
-                    </span>
+                    <StatusBadge tone="success">Activo</StatusBadge>
                   )}
                   {b.subscription.status === "trial" && (
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-500/10 text-amber-700 dark:text-amber-400">
-                      Trial
-                    </span>
+                    <StatusBadge tone="warning">Trial</StatusBadge>
                   )}
                   {(b.subscription.status === "suspended" ||
                     b.subscription.status === "cancelled") && (
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-red-500/10 text-red-600 dark:text-red-400">
+                    <StatusBadge tone="danger">
                       {b.subscription.status === "cancelled" ? "Cancelado" : "Suspendido"}
-                    </span>
+                    </StatusBadge>
                   )}
                   {b.subscription.status === "none" && (
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-secondary text-muted-foreground">
-                      Sin sub
-                    </span>
+                    <StatusBadge tone="neutral">Sin sub</StatusBadge>
                   )}
                   <Link
                     href={`/${b.slug}`}

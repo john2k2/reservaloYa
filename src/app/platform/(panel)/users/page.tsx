@@ -1,6 +1,8 @@
 import { Users } from "lucide-react";
 import type { Metadata } from "next";
 
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatEsArDate } from "@/lib/dates";
 import { getPlatformUsersList } from "@/server/queries/platform";
 import { UserActions } from "./user-actions";
 
@@ -76,11 +78,7 @@ export default async function PlatformUsersPage() {
                   <p className="text-sm font-medium truncate">{u.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                   <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                    {new Date(u.createdAt).toLocaleDateString("es-AR", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {formatEsArDate(u.createdAt)}
                   </p>
                 </div>
 
@@ -93,25 +91,13 @@ export default async function PlatformUsersPage() {
                   {roleLabels[u.role] ?? u.role}
                 </span>
 
-                <span
-                  className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                    u.active
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-destructive/10 text-destructive"
-                  }`}
-                >
+                <StatusBadge tone={u.active ? "success" : "danger"}>
                   {u.active ? "Activo" : "Inactivo"}
-                </span>
+                </StatusBadge>
 
-                <span
-                  className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                    u.verified
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  }`}
-                >
+                <StatusBadge tone={u.verified ? "success" : "warning"}>
                   {u.verified ? "Verificado" : "Pendiente"}
-                </span>
+                </StatusBadge>
 
                 <UserActions
                   userId={u.id}

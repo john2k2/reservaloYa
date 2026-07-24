@@ -5,15 +5,14 @@ import { removeBlockedSlotAction } from "@/app/admin/(panel)/availability/action
 import { AvailabilityBlockForm } from "@/app/admin/(panel)/availability/availability-block-form";
 import { WeekScheduleForm } from "@/app/admin/(panel)/availability/week-schedule-form";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { formatEsArDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { getAdminAvailabilityData } from "@/server/queries/admin";
 
 const weekDays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 function formatBlockedDateLabel(date: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00Z`));
+  return formatEsArDate(date, { weekday: true, month: "2-digit", dateOnly: true });
 }
 
 

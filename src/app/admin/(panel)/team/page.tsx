@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { LoadingButton } from "@/components/ui/loading-button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminTeamData } from "@/server/queries/admin";
@@ -110,26 +111,12 @@ export default async function AdminTeamPage() {
                       >
                         {member.role}
                       </span>
-                      <span
-                        className={cn(
-                          "rounded-full px-2.5 py-1 text-[11px] font-medium",
-                          member.active
-                            ? "bg-success/15 text-success"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
+                      <StatusBadge tone={member.active ? "success" : "neutral"}>
                         {member.active ? "Activo" : "Inactivo"}
-                      </span>
-                      <span
-                        className={cn(
-                          "rounded-full px-2.5 py-1 text-[11px] font-medium",
-                          member.verified
-                            ? "bg-secondary text-foreground"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
+                      </StatusBadge>
+                      <StatusBadge tone={member.verified ? "success" : "neutral"}>
                         {member.verified ? "Verificado" : "Sin verificar"}
-                      </span>
+                      </StatusBadge>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">{member.email}</p>
                   </div>

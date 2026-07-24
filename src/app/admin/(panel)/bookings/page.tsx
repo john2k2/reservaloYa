@@ -9,6 +9,7 @@ import { bookingStatusOptions } from "@/app/admin/(panel)/bookings/booking-statu
 import { BookingsFilters } from "@/app/admin/(panel)/bookings/bookings-filters";
 import { ManualBookingWrapper } from "@/app/admin/(panel)/bookings/manual-booking-wrapper";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { formatEsArDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { getAdminBookingsData, getAdminServicesData } from "@/server/queries/admin";
 
@@ -23,13 +24,7 @@ type AdminBookingsPageProps = {
 };
 
 function formatDateLabel(date: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00Z`));
+  return formatEsArDate(date, { weekday: true, month: "2-digit", dateOnly: true });
 }
 
 export default async function AdminBookingsPage({ searchParams }: AdminBookingsPageProps) {

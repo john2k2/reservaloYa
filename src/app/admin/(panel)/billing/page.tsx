@@ -11,6 +11,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatEsArDate } from "@/lib/dates";
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminBillingData } from "@/server/queries/admin";
 import { cancelSubscriptionAction } from "./actions";
@@ -22,33 +24,33 @@ import { isPolarConfigured } from "@/server/polar-config";
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return null;
-  return new Date(dateStr).toLocaleDateString("es-AR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatEsArDate(dateStr, { month: "long" });
 }
 
 const statusConfig = {
   trial: {
     label: "Período de prueba",
     icon: Clock,
-    className: "text-amber-600 bg-amber-50 border-amber-200",
+    tone: "warning",
   },
   active: {
     label: "Activa",
     icon: CheckCircle2,
-    className: "text-green-600 bg-green-50 border-green-200",
+    tone: "success",
   },
   cancelled: {
     label: "Cancelada",
     icon: XCircle,
-    className: "text-red-600 bg-red-50 border-red-200",
+    tone: "danger",
   },
+  // "suspended" se corta por falta de pago y bloquea el acceso de inmediato
+  // (ver resolveSubscriptionStatus) — es más grave que "trial", entra en
+  // "danger" igual que "cancelled" (mismo criterio que el resto del panel
+  // platform, donde suspended/cancelled ya se agrupan como el mismo estado).
   suspended: {
     label: "Suspendida",
     icon: AlertTriangle,
-    className: "text-orange-600 bg-orange-50 border-orange-200",
+    tone: "danger",
   },
 } as const;
 
@@ -114,10 +116,9 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
           Estado actual
         </h2>
 
-        <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium ${config.className}`}>
-          <StatusIcon className="size-4" />
+        <StatusBadge tone={config.tone} size="md" icon={<StatusIcon className="size-4" />}>
           {config.label}
-        </div>
+        </StatusBadge>
 
         <p className="text-sm text-muted-foreground">
           Plan único — promo transferencia USD {SUBSCRIPTION_USD_PRICE}/mes (ARS al blue) o

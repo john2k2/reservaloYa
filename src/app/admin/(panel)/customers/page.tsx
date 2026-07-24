@@ -4,14 +4,13 @@ import { redirect } from "next/navigation";
 
 import { CustomersSearch } from "@/app/admin/(panel)/customers/customers-search";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { formatEsArDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { getAdminCustomersDataWithFilter } from "@/server/queries/admin";
 
 function formatDateLabel(date: string | null) {
   if (!date) return "Sin turnos";
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00Z`));
+  return formatEsArDate(date, { month: "2-digit", dateOnly: true });
 }
 
 type AdminCustomersPageProps = {

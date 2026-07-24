@@ -2,6 +2,8 @@ import { Building2, Bell, ExternalLink, Wifi, WifiOff } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatEsArDate } from "@/lib/dates";
 import { getPlatformBusinessesList, type PlatformSubscriptionInfo } from "@/server/queries/platform";
 import { BusinessSearchFilter } from "./business-search-filter";
 import { ImpersonateButton } from "./impersonate-button";
@@ -21,15 +23,14 @@ function SubscriptionBadge({ sub }: { sub: PlatformSubscriptionInfo }) {
   const now = new Date();
 
   if (sub.status === "active") {
-    const nextBilling = sub.nextBillingDate ? new Date(sub.nextBillingDate) : null;
     return (
       <div className="flex flex-col gap-0.5">
         <span className="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
           Activo
         </span>
-        {nextBilling && (
+        {sub.nextBillingDate && (
           <span className="text-[10px] text-muted-foreground">
-            Vence {nextBilling.toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+            Vence {formatEsArDate(sub.nextBillingDate, { year: false })}
           </span>
         )}
       </div>
@@ -44,9 +45,9 @@ function SubscriptionBadge({ sub }: { sub: PlatformSubscriptionInfo }) {
         <span className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${expired ? "bg-red-500/10 text-red-600 dark:text-red-400" : "bg-amber-500/10 text-amber-700 dark:text-amber-400"}`}>
           {expired ? "Trial vencido" : "Trial"}
         </span>
-        {trialEnd && (
+        {sub.trialEndsAt && (
           <span className="text-[10px] text-muted-foreground">
-            {expired ? "Venció" : "Vence"} {trialEnd.toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+            {expired ? "Venció" : "Vence"} {formatEsArDate(sub.trialEndsAt, { year: false })}
           </span>
         )}
       </div>
@@ -158,13 +159,7 @@ export default async function PlatformBusinessesPage({
                   <p className="text-sm font-medium truncate">{b.name}</p>
                   <p className="text-xs text-muted-foreground">/{b.slug}</p>
                   <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                    {b.createdAt && b.createdAt !== ""
-                      ? new Date(b.createdAt).toLocaleDateString("es-AR", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "—"}
+                    {b.createdAt && b.createdAt !== "" ? formatEsArDate(b.createdAt) : "—"}
                   </p>
                 </div>
 
@@ -202,15 +197,9 @@ export default async function PlatformBusinessesPage({
                 </Link>
 
                 {/* Estado activo/inactivo */}
-                <span
-                  className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                    b.active
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-secondary text-muted-foreground"
-                  }`}
-                >
+                <StatusBadge tone={b.active ? "success" : "neutral"}>
                   {b.active ? "Activo" : "Inactivo"}
-                </span>
+                </StatusBadge>
 
                 {/* Acciones */}
                 <div className="flex items-center gap-2 flex-wrap">
