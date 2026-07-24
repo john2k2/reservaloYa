@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { Calendar, Check, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -16,9 +17,13 @@ import { cn } from "@/lib/utils";
 import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
 import { buildManageBookingHref } from "@/server/public-booking-links";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { TransactionalPageShell } from "@/components/public/transactional-page-shell";
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
-import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
+import { resolvePublicProfile } from "@/constants/public-business-profiles";
 import { generateTransactionalMetadata } from "@/lib/seo/business-metadata";
+
+// cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
+const getPageData = cache(getPublicBusinessPageData);
 
 type ConfirmationPageProps = {
   params: Promise<{ slug: string }>;
@@ -29,7 +34,7 @@ export async function generateMetadata({
   params,
 }: ConfirmationPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const pageData = await getPublicBusinessPageData(slug);
+  const pageData = await getPageData(slug);
 
   return generateTransactionalMetadata({
     businessName: pageData?.business.name,
@@ -95,7 +100,7 @@ export default async function ConfirmationPage({
   const query = await searchParams;
   const [confirmation, pageData] = await Promise.all([
     getBookingConfirmationData({ slug, bookingId: query.booking, token: query.token }),
-    getPublicBusinessPageData(slug),
+    getPageData(slug),
   ]);
 
   if (!confirmation) {
@@ -145,7 +150,7 @@ export default async function ConfirmationPage({
   const showPaymentBanner =
     priceLabel && (isPendingPayment || isPaymentFailed || isPaymentSuccess || isCashPayment);
 
-  const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+  const profile = resolvePublicProfile(pageData, slug);
   const accentColor = profile.accent;
   const manageBookingHref = query.booking
     ? buildManageBookingHref(slug, query.booking)
@@ -167,13 +172,7 @@ export default async function ConfirmationPage({
 
   return (
     <PublicBusinessPageWrapper profile={profile}>
-      <main
-        id="main-content"
-        className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
-        style={{
-          background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
-        }}
-      >
+      <TransactionalPageShell accentColor={accentColor} surfaceTint={pageData?.profile?.surfaceTint}>
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           <BookingStepsHeader
             backHref={`/${slug}`}
@@ -349,7 +348,7 @@ export default async function ConfirmationPage({
             )}
           </div>
         </div>
-      </main>
+      </TransactionalPageShell>
     </PublicBusinessPageWrapper>
   );
 }

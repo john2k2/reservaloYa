@@ -458,6 +458,14 @@ export function getPublicBusinessProfile(
   };
 }
 
+/** Devuelve `override` si es un string no vacío (tras `trim()`); si no, `fallback`. */
+function pickNonEmptyString<T extends string | undefined>(
+  override: string | undefined,
+  fallback: T
+): string | T {
+  return typeof override === "string" && override.trim().length > 0 ? override : fallback;
+}
+
 export function mergePublicBusinessProfile(
   baseProfile: PublicBusinessProfile,
   overrides?: Partial<PublicBusinessProfile> | null
@@ -467,30 +475,12 @@ export function mergePublicBusinessProfile(
   return {
     ...baseProfile,
     ...safeOverrides,
-    badge:
-      typeof safeOverrides.badge === "string" && safeOverrides.badge.trim().length > 0
-        ? safeOverrides.badge
-        : baseProfile.badge,
-    eyebrow:
-      typeof safeOverrides.eyebrow === "string" && safeOverrides.eyebrow.trim().length > 0
-        ? safeOverrides.eyebrow
-        : baseProfile.eyebrow,
-    headline:
-      typeof safeOverrides.headline === "string" && safeOverrides.headline.trim().length > 0
-        ? safeOverrides.headline
-        : baseProfile.headline,
-    description:
-      typeof safeOverrides.description === "string" && safeOverrides.description.trim().length > 0
-        ? safeOverrides.description
-        : baseProfile.description,
-    primaryCta:
-      typeof safeOverrides.primaryCta === "string" && safeOverrides.primaryCta.trim().length > 0
-        ? safeOverrides.primaryCta
-        : baseProfile.primaryCta,
-    secondaryCta:
-      typeof safeOverrides.secondaryCta === "string" && safeOverrides.secondaryCta.trim().length > 0
-        ? safeOverrides.secondaryCta
-        : baseProfile.secondaryCta,
+    badge: pickNonEmptyString(safeOverrides.badge, baseProfile.badge),
+    eyebrow: pickNonEmptyString(safeOverrides.eyebrow, baseProfile.eyebrow),
+    headline: pickNonEmptyString(safeOverrides.headline, baseProfile.headline),
+    description: pickNonEmptyString(safeOverrides.description, baseProfile.description),
+    primaryCta: pickNonEmptyString(safeOverrides.primaryCta, baseProfile.primaryCta),
+    secondaryCta: pickNonEmptyString(safeOverrides.secondaryCta, baseProfile.secondaryCta),
     sectionLayout: {
       ...baseProfile.sectionLayout,
       ...(safeOverrides.sectionLayout ?? {}),
@@ -507,15 +497,22 @@ export function mergePublicBusinessProfile(
       ? safeOverrides.policies
       : baseProfile.policies,
     gallery: Array.isArray(safeOverrides.gallery) ? safeOverrides.gallery : baseProfile.gallery,
-    logoLabel:
-      typeof safeOverrides.logoLabel === "string" && safeOverrides.logoLabel.trim().length > 0
-        ? safeOverrides.logoLabel
-        : baseProfile.logoLabel,
-    heroImageAlt:
-      typeof safeOverrides.heroImageAlt === "string" && safeOverrides.heroImageAlt.trim().length > 0
-        ? safeOverrides.heroImageAlt
-        : baseProfile.heroImageAlt,
+    logoLabel: pickNonEmptyString(safeOverrides.logoLabel, baseProfile.logoLabel),
+    heroImageAlt: pickNonEmptyString(safeOverrides.heroImageAlt, baseProfile.heroImageAlt),
   };
+}
+
+/**
+ * Resuelve el profile público de un negocio a partir del `pageData` ya cargado, con
+ * fallback al template default del slug cuando `pageData` (o su `profile`) todavía no
+ * se resolvió — ej. páginas transaccionales (confirmación, mi-turno, reseña) que arman
+ * el profile antes de validar si el negocio/turno existe.
+ */
+export function resolvePublicProfile(
+  pageData: { profile?: PublicBusinessProfile } | null | undefined,
+  slug: string
+): PublicBusinessProfile {
+  return pageData?.profile ?? getPublicBusinessProfile(slug, slug);
 }
 
 /** Normalize location chips so template defaults compare equal across cities. */

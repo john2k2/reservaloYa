@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { CalendarClock, CalendarX2, RefreshCcw } from "lucide-react";
 
 import { formatDateLabel, formatTimeLabel } from "@/lib/bookings/format";
@@ -9,10 +10,14 @@ import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData, getPublicManageBookingData } from "@/server/queries/public";
 import { resolvePublicBookingFlashMessage } from "@/lib/public-booking-flash-messages";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { TransactionalPageShell } from "@/components/public/transactional-page-shell";
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
-import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
+import { resolvePublicProfile } from "@/constants/public-business-profiles";
 import { CancelBookingConfirmButton } from "./cancel-booking-confirm-button";
 import { generateTransactionalMetadata } from "@/lib/seo/business-metadata";
+
+// cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
+const getPageData = cache(getPublicBusinessPageData);
 
 type ManageBookingPageProps = {
   params: Promise<{ slug: string }>;
@@ -23,7 +28,7 @@ export async function generateMetadata({
   params,
 }: ManageBookingPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const pageData = await getPublicBusinessPageData(slug);
+  const pageData = await getPageData(slug);
 
   return generateTransactionalMetadata({
     businessName: pageData?.business.name,
@@ -41,10 +46,10 @@ export default async function ManageBookingPage({
   const query = await searchParams;
   const [booking, pageData] = await Promise.all([
     getPublicManageBookingData({ slug, bookingId: query.booking, token: query.token }),
-    getPublicBusinessPageData(slug),
+    getPageData(slug),
   ]);
 
-  const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+  const profile = resolvePublicProfile(pageData, slug);
   const accentColor = profile.accent;
   const error = resolvePublicBookingFlashMessage(query.error);
   const status = query.status ?? "";
@@ -52,13 +57,7 @@ export default async function ManageBookingPage({
   if (!booking) {
     return (
       <PublicBusinessPageWrapper profile={profile}>
-        <main
-          id="main-content"
-          className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
-          style={{
-            background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
-          }}
-        >
+        <TransactionalPageShell accentColor={accentColor} surfaceTint={pageData?.profile?.surfaceTint}>
           <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <BookingStepsHeader
               backHref={`/${slug}`}
@@ -99,7 +98,7 @@ export default async function ManageBookingPage({
               </section>
             </div>
           </div>
-        </main>
+        </TransactionalPageShell>
       </PublicBusinessPageWrapper>
     );
   }
@@ -111,13 +110,7 @@ export default async function ManageBookingPage({
 
   return (
     <PublicBusinessPageWrapper profile={profile}>
-      <main
-        id="main-content"
-        className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
-        style={{
-          background: `linear-gradient(180deg, ${pageData?.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
-        }}
-      >
+      <TransactionalPageShell accentColor={accentColor} surfaceTint={pageData?.profile?.surfaceTint}>
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           <BookingStepsHeader
             backHref={`/${slug}`}
@@ -281,7 +274,7 @@ export default async function ManageBookingPage({
             )}
           </div>
         </div>
-      </main>
+      </TransactionalPageShell>
     </PublicBusinessPageWrapper>
   );
 }

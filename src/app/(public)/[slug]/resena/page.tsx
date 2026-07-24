@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 
 import { formatDateLabel } from "@/lib/bookings/format";
 import { isValidBookingReviewToken } from "@/server/public-booking-links";
 import { getBookingConfirmationData, getPublicBusinessPageData } from "@/server/queries/public";
-import { getPublicBusinessProfile } from "@/constants/public-business-profiles";
+import { resolvePublicProfile } from "@/constants/public-business-profiles";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
+import { TransactionalPageShell } from "@/components/public/transactional-page-shell";
 import { ReviewForm } from "@/components/public/review/review-form";
 import { generateTransactionalMetadata } from "@/lib/seo/business-metadata";
+
+// cache() memoiza por request — generateMetadata y el componente comparten el mismo fetch
+const getPageData = cache(getPublicBusinessPageData);
 
 type ReviewPageProps = {
   params: Promise<{ slug: string }>;
@@ -16,7 +21,7 @@ type ReviewPageProps = {
 
 export async function generateMetadata({ params }: ReviewPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const pageData = await getPublicBusinessPageData(slug);
+  const pageData = await getPageData(slug);
 
   return generateTransactionalMetadata({
     businessName: pageData?.business.name,
@@ -36,21 +41,21 @@ export default async function ReviewPage({ params, searchParams }: ReviewPagePro
 
   const [confirmation, pageData] = await Promise.all([
     getBookingConfirmationData({ slug, bookingId, token, skipTokenValidation: true }),
-    getPublicBusinessPageData(slug),
+    getPageData(slug),
   ]);
 
   if (!confirmation) {
     notFound();
   }
 
-  const profile = pageData?.profile ?? getPublicBusinessProfile(slug, slug);
+  const profile = resolvePublicProfile(pageData, slug);
 
   const accentColor = profile.accent ?? "#3b82f6";
 
   return (
     <PublicBusinessPageWrapper profile={profile}>
-      <main className="min-h-screen bg-background px-4 py-12 sm:px-6">
-        <div className="mx-auto max-w-lg">
+      <TransactionalPageShell accentColor={accentColor} surfaceTint={pageData?.profile?.surfaceTint}>
+        <div className="mx-auto max-w-lg px-4 py-12 sm:px-6">
           <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               {confirmation.businessName}
@@ -70,7 +75,7 @@ export default async function ReviewPage({ params, searchParams }: ReviewPagePro
             accentColor={accentColor}
           />
         </div>
-      </main>
+      </TransactionalPageShell>
     </PublicBusinessPageWrapper>
   );
 }
