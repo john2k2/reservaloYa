@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/utils";
-import { getPublicAppUrl } from "@/lib/runtime";
 import { createPublicClient, createServerClient } from "@/lib/supabase/server";
 import { buildBookingDateOptions, findNextBookingDate, getDayOfWeek } from "@/lib/bookings/format";
 import { withBookingDateLock } from "@/server/booking-slot-lock";
@@ -14,9 +13,9 @@ import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/serve
 import { getBookingConfirmationData } from "@/server/queries/public";
 import { trackAnalyticsEvent } from "@/server/analytics";
 import type { AuthUser } from "@/server/supabase-auth";
-import { formatStatus, isActiveRecord, type BookingRecord, BookingStatus, BusinessRecord, CustomerRecord, ServiceRecord, AvailabilityRuleRecord, BlockedSlotRecord, CommunicationRecord, WaitlistEntryRecord, ReviewRecord, AppUserRecord } from "@/server/supabase-domain";
-import { getSupabaseAdminClient, createSupabaseRecord, updateSupabaseRecord } from "./_core";
-import { getBusinessBySlug } from "./helpers";
+import { formatStatus, isActiveRecord, type BookingRecord, BookingStatus, BusinessRecord, CustomerRecord, ServiceRecord, AvailabilityRuleRecord, BlockedSlotRecord, CommunicationRecord, ReviewRecord, AppUserRecord } from "@/server/supabase-domain";
+import { getSupabaseAdminClient, createSupabaseRecord, updateSupabaseRecord, getSupabaseRecord } from "./_core";
+import { getBusinessBySlug, notifyWaitlistForDate } from "./helpers";
 import type { JoinedBookingConfirmation, JoinedBookingManage, JoinedBookingWithBusiness, JoinedBookingWithBusinessStatus, UpdateSupabaseBookingPaymentInput } from "./types";
 
 export async function getSupabaseBookingConfirmationData(input: {
@@ -460,46 +459,32 @@ export async function cancelSupabasePublicBooking(input: {
   }).catch(() => {});
 }
 
-async function notifyWaitlistForDate(input: {
-  businessId: string;
-  businessSlug: string;
-  businessName: string;
-  bookingDate: string;
-}) {
-  const client = await getSupabaseAdminClient();
+/**
+ * Updates a booking after confirming it belongs to `businessId`. Use this instead of the
+ * generic `updateSupabaseRecord` whenever the caller only has a bookingId coming from an
+ * external source (webhook, redirect) so a mismatched tenant can't mutate someone else's
+ * booking.
+ */
+export async function updateBookingScoped(
+  businessId: string,
+  bookingId: string,
+  patch: Partial<BookingRecord>
+) {
+  const booking = await getSupabaseRecord<BookingRecord>("bookings", bookingId);
 
-  const { data: entries } = await client
-    .from("waitlist_entries")
-    .select("*")
-    .eq("business_id", input.businessId)
-    .eq("bookingDate", input.bookingDate)
-    .eq("notified", false)
-    .order("created", { ascending: true })
-    .limit(1);
+  if (booking.business_id !== businessId) {
+    throw new Error("No encontramos el turno a actualizar.");
+  }
 
-  const entry = entries?.[0] as WaitlistEntryRecord | undefined;
-  if (!entry?.email) return;
-
-  const { sendWaitlistAvailabilityEmail } = await import("@/server/booking-notifications");
-  const bookingUrl = `${getPublicAppUrl()}/${input.businessSlug}/reservar`;
-
-  await sendWaitlistAvailabilityEmail({
-    customerEmail: entry.email,
-    customerName: entry.fullName,
-    businessName: input.businessName,
-    bookingDate: input.bookingDate,
-    bookingUrl,
-  });
-
-  await client.from("waitlist_entries").update({ notified: true }).eq("id", entry.id);
+  return updateSupabaseRecord<BookingRecord>("bookings", bookingId, patch);
 }
 
-
 export async function updateSupabaseBookingPayment(
-  input: UpdateSupabaseBookingPaymentInput
+  input: UpdateSupabaseBookingPaymentInput & { businessId: string }
 ) {
-  const data = buildBookingPaymentPatch(input);
-  await updateSupabaseRecord("bookings", input.bookingId, data);
+  const { businessId, ...paymentInput } = input;
+  const data = buildBookingPaymentPatch(paymentInput);
+  await updateBookingScoped(businessId, paymentInput.bookingId, data);
 
   return input.bookingId;
 }

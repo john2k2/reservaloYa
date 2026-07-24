@@ -94,7 +94,7 @@ type SaveOnboardingBrandingResult = {
 async function getBusinessBySlug(slug: string) {
   const normalizedSlug = slugify(slug);
   const businesses = await listSupabaseRecords<BusinessRecord>("businesses", {
-    filter: `slug=eq.${normalizedSlug}`,
+    filter: { column: "slug", value: normalizedSlug },
   });
   if (!businesses[0]) throw new Error("Business not found");
   return businesses[0];

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   redirectMock,
   revalidatePathMock,
+  requireAdminRouteAccessMock,
   getAuthenticatedSupabaseUserMock,
   getSupabaseRecordMock,
   updateSupabaseRecordMock,
@@ -13,6 +14,7 @@ const {
     throw new Error(`REDIRECT:${url}`);
   }),
   revalidatePathMock: vi.fn(),
+  requireAdminRouteAccessMock: vi.fn(),
   getAuthenticatedSupabaseUserMock: vi.fn(),
   getSupabaseRecordMock: vi.fn(),
   updateSupabaseRecordMock: vi.fn(),
@@ -29,6 +31,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+}));
+
+vi.mock("@/server/admin-access", () => ({
+  requireAdminRouteAccess: requireAdminRouteAccessMock,
 }));
 
 vi.mock("@/server/supabase-auth", () => ({
@@ -56,12 +62,20 @@ describe("admin bookings actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     revalidatePathMock.mockReset();
+    requireAdminRouteAccessMock.mockReset();
     getAuthenticatedSupabaseUserMock.mockReset();
     getSupabaseRecordMock.mockReset();
     updateSupabaseRecordMock.mockReset();
     listSupabaseRecordsMock.mockReset();
     createSupabasePublicBookingMock.mockReset();
 
+    requireAdminRouteAccessMock.mockResolvedValue({
+      businessId: "biz_123",
+      businessSlug: "demo-barberia",
+      demoMode: false,
+      userRole: "owner",
+      userEmail: "owner@example.com",
+    });
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "user_1",
       businessId: "biz_123",
@@ -295,5 +309,24 @@ describe("admin bookings actions", () => {
 
     expect(redirects).toHaveLength(1);
     expect(conflicts).toHaveLength(1);
+  });
+
+  it("propagates the redirect from requireAdminRouteAccess instead of swallowing it as a form error", async () => {
+    // Simula una suscripción vencida: requireAdminRouteAccess redirige internamente.
+    requireAdminRouteAccessMock.mockRejectedValue(
+      new Error("REDIRECT:/admin/subscription/pay")
+    );
+
+    const { updateBookingAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("bookingId", "booking_1");
+    formData.set("bookingDate", "2026-03-20");
+    formData.set("startTime", "10:00");
+    formData.set("status", "confirmed");
+    formData.set("notes", "");
+
+    await expect(updateBookingAction(formData)).rejects.toThrow(
+      "REDIRECT:/admin/subscription/pay"
+    );
   });
 });

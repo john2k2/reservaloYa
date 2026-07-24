@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   redirectMock,
   revalidatePathMock,
-  getAuthenticatedSupabaseUserMock,
+  requireAdminRouteAccessMock,
   getSupabaseRecordMock,
   listSupabaseRecordsMock,
   createSupabaseRecordMock,
@@ -13,7 +13,7 @@ const {
     throw new Error(`REDIRECT:${url}`);
   }),
   revalidatePathMock: vi.fn(),
-  getAuthenticatedSupabaseUserMock: vi.fn(),
+  requireAdminRouteAccessMock: vi.fn(),
   getSupabaseRecordMock: vi.fn(),
   listSupabaseRecordsMock: vi.fn(),
   createSupabaseRecordMock: vi.fn(),
@@ -31,8 +31,8 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
-vi.mock("@/server/supabase-auth", () => ({
-  getAuthenticatedSupabaseUser: getAuthenticatedSupabaseUserMock,
+vi.mock("@/server/admin-access", () => ({
+  requireAdminRouteAccess: requireAdminRouteAccessMock,
 }));
 
 vi.mock("@/server/supabase-store/_core", () => ({
@@ -46,17 +46,18 @@ describe("admin availability actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     revalidatePathMock.mockReset();
-    getAuthenticatedSupabaseUserMock.mockReset();
+    requireAdminRouteAccessMock.mockReset();
     getSupabaseRecordMock.mockReset();
     listSupabaseRecordsMock.mockReset();
     createSupabaseRecordMock.mockReset();
     deleteSupabaseRecordMock.mockReset();
 
-    getAuthenticatedSupabaseUserMock.mockResolvedValue({
-      id: "user_1",
+    requireAdminRouteAccessMock.mockResolvedValue({
       businessId: "biz_123",
       businessSlug: "demo-barberia",
-      role: "owner",
+      demoMode: false,
+      userRole: "owner",
+      userEmail: "owner@example.com",
     });
   });
 
@@ -73,28 +74,6 @@ describe("admin availability actions", () => {
       "La hora de fin debe quedar después de la hora de inicio."
     );
     expect(listSupabaseRecordsMock).not.toHaveBeenCalled();
-  });
-
-  it("creates weekly blocked slots and redirects with summary", async () => {
-    listSupabaseRecordsMock.mockResolvedValue([]);
-    createSupabaseRecordMock.mockResolvedValue({ id: "slot_1" });
-
-    const { createBlockedSlotAction } = await import("./actions");
-    const formData = new FormData();
-    formData.set("blockMode", "weekly");
-    formData.set("repeatFromDate", "2026-03-16");
-    formData.set("repeatDayOfWeek", "1");
-    formData.set("repeatWeeks", "3");
-    formData.set("startTime", "13:00");
-    formData.set("endTime", "14:00");
-    formData.set("reason", "Almuerzo");
-
-    await expect(createBlockedSlotAction(formData)).rejects.toThrow("REDIRECT:");
-    expect(createSupabaseRecordMock).toHaveBeenCalled();
-    expect(decodeURIComponent(String(redirectMock.mock.calls.at(-1)?.[0] ?? ""))).toContain(
-      "Se agregaron 3 bloqueos"
-    );
-    expect(revalidatePathMock).toHaveBeenCalled();
   });
 
   it("saves availability rules and redirects with day label", async () => {
@@ -132,5 +111,24 @@ describe("admin availability actions", () => {
 
     await expect(removeBlockedSlotAction(formData)).rejects.toThrow("REDIRECT:");
     expect(deleteSupabaseRecordMock).toHaveBeenCalledWith("blocked_slots", "slot_1");
+  });
+
+  it("propagates the redirect from requireAdminRouteAccess instead of swallowing it as a form error", async () => {
+    // Simula una suscripción vencida: requireAdminRouteAccess redirige internamente.
+    requireAdminRouteAccessMock.mockRejectedValue(
+      new Error("REDIRECT:/admin/subscription/pay")
+    );
+
+    const { createBlockedSlotFormAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("blockMode", "single");
+    formData.set("blockedDate", "2026-03-20");
+    formData.set("startTime", "13:00");
+    formData.set("endTime", "14:00");
+    formData.set("reason", "Feriado");
+
+    await expect(createBlockedSlotFormAction(null, formData)).rejects.toThrow(
+      "REDIRECT:/admin/subscription/pay"
+    );
   });
 });

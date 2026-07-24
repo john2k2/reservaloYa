@@ -58,4 +58,19 @@ describe("requireAdminRouteAccess", () => {
       userRole: "owner",
     });
   });
+
+  it("redirects to the subscription payment page when the subscription is expired", async () => {
+    getAdminShellDataMock.mockResolvedValue({
+      demoMode: false,
+      businessId: "biz_123",
+      userRole: "owner",
+      businessSlug: "demo-barberia",
+      subscriptionExpired: true,
+    });
+    const { requireAdminRouteAccess } = await import("./admin-access");
+
+    await expect(requireAdminRouteAccess("/admin/onboarding")).rejects.toThrow(
+      "REDIRECT:/admin/subscription/pay"
+    );
+  });
 });

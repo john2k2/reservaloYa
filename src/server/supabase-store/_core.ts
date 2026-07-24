@@ -1,8 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/server";
 
+// Este módulo no se reexporta desde `./index.ts` a propósito: el resto del código debería
+// consumir los módulos de más alto nivel de supabase-store. El import directo desde los 8
+// callers actuales fuera de esta carpeta (las server actions de admin de bookings, services,
+// availability y onboarding, más rate-limit.ts, booking-slot-lock.ts, landing-session.ts y
+// booking-confirmation-notifier.ts) es una excepción aceptada: comparten el mismo trust
+// boundary (server-only) y no ameritan forzar un refactor más grande.
 export type SupabaseListOptions = {
   sort?: string;
-  filter?: string;
+  filter?: { column: string; value: string };
   limit?: number;
 };
 
@@ -19,10 +25,7 @@ export async function listSupabaseRecords<T>(
   let query = client.from(table).select("*");
 
   if (options?.filter) {
-    const match = options.filter.match(/^(\w+)=eq\.(.+)$/);
-    if (match) {
-      query = query.eq(match[1]!, match[2]!);
-    }
+    query = query.eq(options.filter.column, options.filter.value);
   }
 
   if (options?.sort) {

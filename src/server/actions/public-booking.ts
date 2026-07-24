@@ -20,7 +20,10 @@ import {
   getSupabaseBusinessPaymentSettingsBySlug,
   updateSupabaseBusinessMPTokens,
 } from "@/server/supabase-store";
-import { getBookingConfirmationData } from "@/server/queries/public";
+import {
+  getBookingConfirmationData,
+  getPublicBusinessPageData,
+} from "@/server/queries/public";
 import {
   RateLimitError,
   assertRateLimit,
@@ -165,6 +168,107 @@ async function sendConfirmationEmailIfPossible(input: {
   });
 }
 
+// Resuelve si el turno requiere pago online: trae el payment settings del
+// negocio (nunca en un reschedule) y refresca el access token de MercadoPago
+// si esta por vencer, antes de decidir si el servicio + negocio habilitan cobro.
+async function resolvePaymentRequirement(input: {
+  businessSlug: string;
+  rescheduleBookingId?: string;
+  servicePrice?: number | null;
+}) {
+  const businessPaymentSettings = !input.rescheduleBookingId
+    ? await getSupabaseBusinessPaymentSettingsBySlug(input.businessSlug).catch(() => null)
+    : null;
+
+  const serviceHasPrice =
+    !input.rescheduleBookingId && input.servicePrice != null && input.servicePrice > 0;
+
+  const businessMPAccessToken = businessPaymentSettings
+    ? await getUsableBusinessMercadoPagoAccessToken(businessPaymentSettings, async (tokens) => {
+        await updateSupabaseBusinessMPTokens({
+          businessId: businessPaymentSettings.businessId,
+          ...tokens,
+        });
+      })
+    : null;
+
+  const businessHasMercadoPago = Boolean(businessMPAccessToken);
+  const requiresPayment = serviceHasPrice && businessHasMercadoPago;
+
+  return { businessPaymentSettings, businessMPAccessToken, requiresPayment };
+}
+
+// Crea la preferencia de pago en MercadoPago para un booking ya creado en
+// "pending_payment". Si sale bien, marca el pago pendiente y redirige al
+// checkout; si falla, revierte (cancela) el booking y redirige con error.
+async function createPaymentPreferenceOrRollback(input: {
+  bookingId: string;
+  businessSlug: string;
+  businessName: string;
+  service: { name: string; price?: number | null };
+  fullName: string;
+  email: string;
+  phone?: string;
+  serviceId: string;
+  bookingDate: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  businessId: string;
+  accessToken: string;
+}) {
+  const preferenceResult = await createPaymentPreferenceForBusiness(
+    {
+      bookingId: input.bookingId,
+      businessSlug: input.businessSlug,
+      businessName: input.businessName,
+      serviceName: input.service.name,
+      customerEmail: input.email || undefined,
+      customerName: input.fullName,
+      customerPhone: input.phone || undefined,
+      priceAmount: input.service.price!,
+    },
+    input.accessToken
+  );
+
+  if (preferenceResult.ok) {
+    await updateSupabaseBookingPayment({
+      bookingId: input.bookingId,
+      businessId: input.businessId,
+      paymentStatus: "pending",
+      paymentProvider: "mercadopago",
+      paymentPreferenceId: preferenceResult.preferenceId,
+      paymentAmount: input.service.price!,
+      paymentCurrency: "ARS",
+    });
+
+    redirect(preferenceResult.checkoutUrl);
+  }
+
+  logger.error("No se pudo crear la preferencia de pago", preferenceResult.error);
+
+  try {
+    await cancelSupabasePublicBooking({
+      businessSlug: input.businessSlug,
+      bookingId: input.bookingId,
+    });
+  } catch (revertErr) {
+    logger.error("No se pudo cancelar el booking tras fallar el pago", revertErr);
+  }
+
+  redirect(
+    buildBookingPageHref({
+      businessSlug: input.businessSlug,
+      serviceId: input.serviceId,
+      bookingDate: input.bookingDate,
+      source: input.source,
+      medium: input.medium,
+      campaign: input.campaign,
+      error: PAYMENT_INIT_ERROR_MESSAGE,
+    })
+  );
+}
+
 export async function createPublicBookingAction(formData: FormData) {
   const raw = {
     businessSlug: String(formData.get("businessSlug") ?? ""),
@@ -221,31 +325,15 @@ export async function createPublicBookingAction(formData: FormData) {
     );
   }
 
-  const { getPublicBusinessPageData: getPageDataEarly } = await import("@/server/queries/public");
-  const pageDataEarly = await getPageDataEarly(parsed.data.businessSlug);
+  const pageDataEarly = await getPublicBusinessPageData(parsed.data.businessSlug);
   const serviceEarly = pageDataEarly?.services.find((s) => s.id === parsed.data.serviceId);
 
-  const businessPaymentSettings = !parsed.data.rescheduleBookingId
-    ? await getSupabaseBusinessPaymentSettingsBySlug(parsed.data.businessSlug).catch(() => null)
-    : null;
-
-  const serviceHasPrice =
-    !parsed.data.rescheduleBookingId && serviceEarly?.price != null && serviceEarly.price > 0;
-
-  const businessMPAccessToken = businessPaymentSettings
-    ? await getUsableBusinessMercadoPagoAccessToken(
-        businessPaymentSettings,
-        async (tokens) => {
-          await updateSupabaseBusinessMPTokens({
-            businessId: businessPaymentSettings.businessId,
-            ...tokens,
-          });
-        }
-      )
-    : null;
-
-  const businessHasMercadoPago = Boolean(businessMPAccessToken);
-  const requiresPayment = serviceHasPrice && businessHasMercadoPago;
+  const { businessPaymentSettings, businessMPAccessToken, requiresPayment } =
+    await resolvePaymentRequirement({
+      businessSlug: parsed.data.businessSlug,
+      rescheduleBookingId: parsed.data.rescheduleBookingId,
+      servicePrice: serviceEarly?.price,
+    });
 
   let bookingId: string;
 
@@ -304,60 +392,27 @@ export async function createPublicBookingAction(formData: FormData) {
 
   const isReschedule = !!parsed.data.rescheduleBookingId;
 
-  if (requiresPayment && serviceEarly && businessMPAccessToken) {
+  if (requiresPayment && serviceEarly && businessMPAccessToken && businessPaymentSettings) {
     const businessName =
       (pageDataEarly as { profile?: { businessName?: string } } | null)?.profile?.businessName ||
       parsed.data.businessSlug;
 
-    const preferenceResult = await createPaymentPreferenceForBusiness(
-      {
-        bookingId,
-        businessSlug: parsed.data.businessSlug,
-        businessName,
-        serviceName: serviceEarly.name,
-        customerEmail: parsed.data.email || undefined,
-        customerName: parsed.data.fullName,
-        customerPhone: parsed.data.phone || undefined,
-        priceAmount: serviceEarly.price!,
-      },
-      businessMPAccessToken
-    );
-
-    if (preferenceResult.ok) {
-      await updateSupabaseBookingPayment({
-        bookingId,
-        paymentStatus: "pending",
-        paymentProvider: "mercadopago",
-        paymentPreferenceId: preferenceResult.preferenceId,
-        paymentAmount: serviceEarly.price!,
-        paymentCurrency: "ARS",
-      });
-
-      redirect(preferenceResult.checkoutUrl);
-    }
-
-    logger.error("No se pudo crear la preferencia de pago", preferenceResult.error);
-
-    try {
-      await cancelSupabasePublicBooking({
-        businessSlug: parsed.data.businessSlug,
-        bookingId,
-      });
-    } catch (revertErr) {
-      logger.error("No se pudo cancelar el booking tras fallar el pago", revertErr);
-    }
-
-    redirect(
-      buildBookingPageHref({
-        businessSlug: parsed.data.businessSlug,
-        serviceId: parsed.data.serviceId,
-        bookingDate: parsed.data.bookingDate,
-        source: raw.source,
-        medium: raw.medium,
-        campaign: raw.campaign,
-        error: PAYMENT_INIT_ERROR_MESSAGE,
-      })
-    );
+    await createPaymentPreferenceOrRollback({
+      bookingId,
+      businessSlug: parsed.data.businessSlug,
+      businessName,
+      service: serviceEarly,
+      fullName: parsed.data.fullName,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      serviceId: parsed.data.serviceId,
+      bookingDate: parsed.data.bookingDate,
+      source: raw.source,
+      medium: raw.medium,
+      campaign: raw.campaign,
+      businessId: businessPaymentSettings.businessId,
+      accessToken: businessMPAccessToken,
+    });
   }
 
   if (!isReschedule) {

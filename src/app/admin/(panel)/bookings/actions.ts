@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { writeAuditLog } from "@/server/audit-log";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { requireAdminRouteAccess } from "@/server/admin-access";
 import { createSupabasePublicBooking } from "@/server/supabase-store";
 import {
   getSupabaseRecord,
@@ -75,17 +76,19 @@ function buildBookingsRedirectPath(params: {
 }
 
 async function getBookingContext() {
-  const user = await getAuthenticatedSupabaseUser();
+  const shellData = await requireAdminRouteAccess("/admin/bookings");
 
-  if (!user?.businessId) {
+  if (!shellData.businessId) {
     throw new Error("No encontramos el negocio activo.");
   }
 
+  const user = await getAuthenticatedSupabaseUser();
+
   return {
-    businessId: user.businessId,
-    businessSlug: user.businessSlug ?? "",
-    userId: user.id,
-    userEmail: user.email,
+    businessId: shellData.businessId,
+    businessSlug: shellData.businessSlug,
+    userId: user?.id ?? "",
+    userEmail: user?.email ?? shellData.userEmail,
   };
 }
 
@@ -128,13 +131,13 @@ async function updateSupabaseAdminBooking(input: {
 
       const [rules, blockedSlots, bookings] = await Promise.all([
         listSupabaseRecords<AvailabilityRuleRecord>("availability_rules", {
-          filter: `business_id=eq.${input.businessId}`,
+          filter: { column: "business_id", value: input.businessId },
         }),
         listSupabaseRecords<BlockedSlotRecord>("blocked_slots", {
-          filter: `business_id=eq.${input.businessId}`,
+          filter: { column: "business_id", value: input.businessId },
         }),
         listSupabaseRecords<BookingRecord>("bookings", {
-          filter: `business_id=eq.${input.businessId}`,
+          filter: { column: "business_id", value: input.businessId },
         }),
       ]);
 

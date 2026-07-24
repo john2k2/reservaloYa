@@ -5,7 +5,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { addDays, getDayOfWeek } from "@/lib/bookings/format";
-import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { requireAdminRouteAccess } from "@/server/admin-access";
 import {
   createSupabaseRecord,
   getSupabaseRecord,
@@ -52,15 +52,15 @@ const dayLabels = [
 ];
 
 async function getAvailabilityContext() {
-  const user = await getAuthenticatedSupabaseUser();
+  const shellData = await requireAdminRouteAccess("/admin/availability");
 
-  if (!user?.businessId) {
+  if (!shellData.businessId) {
     throw new Error("No encontramos el negocio activo.");
   }
 
   return {
-    businessId: user.businessId,
-    businessSlug: user.businessSlug ?? "",
+    businessId: shellData.businessId,
+    businessSlug: shellData.businessSlug,
   };
 }
 
@@ -124,7 +124,7 @@ async function upsertSupabaseAvailabilityRules(input: {
   }>;
 }) {
   const existingRules = await listSupabaseRecords<AvailabilityRuleRecord>("availability_rules", {
-    filter: `business_id=eq.${input.businessId}`,
+    filter: { column: "business_id", value: input.businessId },
   });
 
   const rulesById = new Map(existingRules.map((rule) => [rule.id, rule]));
@@ -173,7 +173,7 @@ async function createSupabaseBlockedSlots(input: {
   }>;
 }) {
   const existingSlots = await listSupabaseRecords<BlockedSlotRecord>("blocked_slots", {
-    filter: `business_id=eq.${input.businessId}`,
+    filter: { column: "business_id", value: input.businessId },
   });
 
   const existingKeys = new Set(existingSlots.map((slot) => buildBlockedSlotKey(slot)));
@@ -275,99 +275,6 @@ export async function saveAvailabilityRulesAction(formData: FormData) {
   }
 }
 
-export async function createBlockedSlotAction(formData: FormData) {
-  try {
-    const blockMode = String(formData.get("blockMode") ?? "single").trim();
-    const context = await getAvailabilityContext();
-    const createdSlots =
-      blockMode === "weekly"
-        ? (() => {
-            const parsed = recurringBlockedSlotSchema.safeParse({
-              repeatFromDate: String(formData.get("repeatFromDate") ?? "").trim(),
-              repeatDayOfWeek: formData.get("repeatDayOfWeek"),
-              repeatWeeks: formData.get("repeatWeeks"),
-              startTime: String(formData.get("startTime") ?? "").trim(),
-              endTime: String(formData.get("endTime") ?? "").trim(),
-              reason: String(formData.get("reason") ?? "").trim(),
-            });
-
-            if (!parsed.success) {
-              throw new Error("Revisa la repeticion semanal antes de guardar.");
-            }
-
-            ensureRange(parsed.data.startTime, parsed.data.endTime);
-
-            return {
-              slots: buildWeeklyBlockedDates({
-                startDate: parsed.data.repeatFromDate,
-                dayOfWeek: parsed.data.repeatDayOfWeek,
-                totalWeeks: parsed.data.repeatWeeks,
-              }).map((blockedDate) => ({
-                blockedDate,
-                startTime: parsed.data.startTime,
-                endTime: parsed.data.endTime,
-                reason: parsed.data.reason,
-              })),
-              label: `${dayLabels[parsed.data.repeatDayOfWeek] ?? "ese día"} durante ${parsed.data.repeatWeeks} semanas`,
-            };
-          })()
-        : (() => {
-            const parsed = blockedSlotSchema.safeParse({
-              blockedDate: String(formData.get("blockedDate") ?? "").trim(),
-              startTime: String(formData.get("startTime") ?? "").trim(),
-              endTime: String(formData.get("endTime") ?? "").trim(),
-              reason: String(formData.get("reason") ?? "").trim(),
-            });
-
-            if (!parsed.success) {
-              throw new Error("Revisa fecha, horario y motivo del bloqueo.");
-            }
-
-            ensureRange(parsed.data.startTime, parsed.data.endTime);
-
-            return {
-              slots: [
-                {
-                  blockedDate: parsed.data.blockedDate,
-                  startTime: parsed.data.startTime,
-                  endTime: parsed.data.endTime,
-                  reason: parsed.data.reason,
-                },
-              ],
-              label: parsed.data.blockedDate,
-            };
-          })();
-
-    const result = await createSupabaseBlockedSlots({
-      businessId: context.businessId,
-      slots: createdSlots.slots,
-    });
-
-    if (result.createdCount === 0) {
-      throw new Error("Esos bloqueos ya existen.");
-    }
-
-    revalidateAvailabilityViews(context.businessSlug);
-
-    const blockedMessage =
-      result.createdCount === 1 && result.skippedCount === 0
-        ? `Bloqueo agregado para ${createdSlots.label}.`
-        : result.skippedCount > 0
-          ? `Se agregaron ${result.createdCount} bloqueos para ${createdSlots.label}. ${result.skippedCount} ya existian.`
-          : `Se agregaron ${result.createdCount} bloqueos para ${createdSlots.label}.`;
-
-    redirect(`/admin/availability?blockedMessage=${encodeURIComponent(blockedMessage)}`);
-  } catch (error) {
-    unstable_rethrow(error);
-
-    redirect(
-      `/admin/availability?error=${encodeURIComponent(
-        error instanceof Error ? error.message : "No se pudo crear el bloqueo."
-      )}`
-    );
-  }
-}
-
 export type BlockedSlotActionState = { ok: true; message: string } | { ok: false; message: string } | null;
 
 export async function createBlockedSlotFormAction(
@@ -456,6 +363,8 @@ export async function createBlockedSlotFormAction(
 
     return { ok: true, message };
   } catch (error) {
+    unstable_rethrow(error);
+
     return {
       ok: false,
       message: error instanceof Error ? error.message : "No se pudo crear el bloqueo.",

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getSupabaseAdminClientMock = vi.fn();
 const createSupabaseRecordMock = vi.fn();
 const updateSupabaseRecordMock = vi.fn();
+const getSupabaseRecordMock = vi.fn();
 const sendBookingConfirmationEmailMock = vi.fn();
 const sendBookingConfirmationWhatsAppMock = vi.fn();
 const sendBusinessNotificationEmailMock = vi.fn();
@@ -11,6 +12,7 @@ vi.mock("./_core", () => ({
   getSupabaseAdminClient: getSupabaseAdminClientMock,
   createSupabaseRecord: createSupabaseRecordMock,
   updateSupabaseRecord: updateSupabaseRecordMock,
+  getSupabaseRecord: getSupabaseRecordMock,
 }));
 
 vi.mock("@/server/booking-notifications", () => ({
@@ -371,5 +373,98 @@ describe("rescheduleSupabasePublicBooking", () => {
       }),
       "rescheduled"
     );
+  });
+});
+
+describe("updateBookingScoped", () => {
+  beforeEach(() => {
+    getSupabaseRecordMock.mockReset();
+    updateSupabaseRecordMock.mockReset();
+  });
+
+  it("applies the patch when the booking belongs to the given business", async () => {
+    getSupabaseRecordMock.mockResolvedValue({
+      id: "booking-1",
+      business_id: "business-1",
+      status: "pending",
+    });
+    updateSupabaseRecordMock.mockResolvedValue({
+      id: "booking-1",
+      business_id: "business-1",
+      status: "confirmed",
+    });
+
+    const { updateBookingScoped } = await import("./booking");
+
+    await updateBookingScoped("business-1", "booking-1", { status: "confirmed" });
+
+    expect(getSupabaseRecordMock).toHaveBeenCalledWith("bookings", "booking-1");
+    expect(updateSupabaseRecordMock).toHaveBeenCalledWith("bookings", "booking-1", {
+      status: "confirmed",
+    });
+  });
+
+  it("rejects when the booking belongs to a different business", async () => {
+    getSupabaseRecordMock.mockResolvedValue({
+      id: "booking-1",
+      business_id: "business-other",
+      status: "pending",
+    });
+
+    const { updateBookingScoped } = await import("./booking");
+
+    await expect(
+      updateBookingScoped("business-1", "booking-1", { status: "confirmed" })
+    ).rejects.toThrow("No encontramos el turno a actualizar.");
+    expect(updateSupabaseRecordMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateSupabaseBookingPayment", () => {
+  beforeEach(() => {
+    getSupabaseRecordMock.mockReset();
+    updateSupabaseRecordMock.mockReset();
+  });
+
+  it("applies the payment patch when the booking belongs to the given business", async () => {
+    getSupabaseRecordMock.mockResolvedValue({
+      id: "booking-1",
+      business_id: "business-1",
+      status: "pending_payment",
+    });
+    updateSupabaseRecordMock.mockResolvedValue({ id: "booking-1" });
+
+    const { updateSupabaseBookingPayment } = await import("./booking");
+
+    await updateSupabaseBookingPayment({
+      bookingId: "booking-1",
+      businessId: "business-1",
+      paymentStatus: "approved",
+    });
+
+    expect(updateSupabaseRecordMock).toHaveBeenCalledWith(
+      "bookings",
+      "booking-1",
+      expect.objectContaining({ paymentStatus: "approved", status: "confirmed" })
+    );
+  });
+
+  it("rejects applying a payment update to a booking from another business", async () => {
+    getSupabaseRecordMock.mockResolvedValue({
+      id: "booking-1",
+      business_id: "business-other",
+      status: "pending_payment",
+    });
+
+    const { updateSupabaseBookingPayment } = await import("./booking");
+
+    await expect(
+      updateSupabaseBookingPayment({
+        bookingId: "booking-1",
+        businessId: "business-1",
+        paymentStatus: "approved",
+      })
+    ).rejects.toThrow("No encontramos el turno a actualizar.");
+    expect(updateSupabaseRecordMock).not.toHaveBeenCalled();
   });
 });

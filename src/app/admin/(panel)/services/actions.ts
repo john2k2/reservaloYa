@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { writeAuditLog } from "@/server/audit-log";
 import { getAuthenticatedSupabaseUser } from "@/server/supabase-auth";
+import { requireAdminRouteAccess } from "@/server/admin-access";
 import {
   createSupabaseRecord,
   getSupabaseRecord,
@@ -26,17 +27,19 @@ const serviceSchema = z.object({
 });
 
 async function getServiceContext() {
-  const user = await getAuthenticatedSupabaseUser();
+  const shellData = await requireAdminRouteAccess("/admin/services");
 
-  if (!user?.businessId) {
+  if (!shellData.businessId) {
     throw new Error("No encontramos el negocio activo.");
   }
 
+  const user = await getAuthenticatedSupabaseUser();
+
   return {
-    businessId: user.businessId,
-    businessSlug: user.businessSlug ?? "",
-    userId: user.id,
-    userEmail: user.email,
+    businessId: shellData.businessId,
+    businessSlug: shellData.businessSlug,
+    userId: user?.id ?? "",
+    userEmail: user?.email ?? shellData.userEmail,
   };
 }
 
@@ -51,7 +54,7 @@ async function upsertSupabaseService(input: {
   featuredLabel: string;
 }) {
   const existingServices = await listSupabaseRecords<ServiceRecord>("services", {
-    filter: `business_id=eq.${input.businessId}`,
+    filter: { column: "business_id", value: input.businessId },
   });
 
   const activeServices = existingServices.filter(isActiveRecord);

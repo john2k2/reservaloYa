@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetRateLimitStoreForTests } from "@/server/rate-limit";
+import type { PaymentPreferenceResult } from "@/server/mercadopago";
 
 const redirectMock = vi.fn((url: string) => {
   throw new Error(`REDIRECT:${url}`);
@@ -23,10 +24,12 @@ const getSupabaseBusinessPaymentSettingsBySlugMock = vi.fn<
   } | null>
 >(async () => null);
 const updateSupabaseBusinessMPTokensMock = vi.fn(async () => undefined);
-const createPaymentPreferenceForBusinessMock = vi.fn(async () => ({
-  ok: false as const,
-  error: "business payment provider unavailable",
-}));
+const createPaymentPreferenceForBusinessMock = vi.fn<() => Promise<PaymentPreferenceResult>>(
+  async () => ({
+    ok: false,
+    error: "business payment provider unavailable",
+  })
+);
 const sendBookingConfirmationEmailMock = vi.fn<
   () => Promise<{ status: "sent"; messageId: string } | { status: "skipped"; reason: string } | { status: "error"; error: string }>
 >(async () => ({ status: "skipped", reason: "no_customer_email" }));
@@ -298,6 +301,44 @@ describe("public booking action rate limit", () => {
     expect(redirectedUrl).toContain(
       "error=No+pudimos+iniciar+el+pago+online.+Intenta+nuevamente+en+unos+minutos+o+contacta+al+negocio."
     );
+  });
+});
+
+describe("online payment preference succeeds", () => {
+  beforeEach(sharedBeforeEach);
+
+  it("scopes the payment update to the business that owns the booking", async () => {
+    getSupabaseBusinessPaymentSettingsBySlugMock.mockResolvedValue({
+      businessId: "business-1",
+      businessSlug: "demo-barberia",
+      businessName: "Demo Barberia",
+      mpConnected: true,
+      mpCollectorId: "123456789",
+      mpAccessToken: "APP_USR_test_token",
+      mpRefreshToken: "refresh-token",
+      mpTokenExpiresAt: null,
+    });
+    createPaymentPreferenceForBusinessMock.mockResolvedValue({
+      ok: true,
+      preferenceId: "pref-1",
+      checkoutUrl: "https://mp.example.com/checkout/pref-1",
+    });
+
+    const { createPublicBookingAction } = await import("./public-booking");
+
+    await expect(createPublicBookingAction(buildBookingFormData())).rejects.toThrow(
+      "REDIRECT:https://mp.example.com/checkout/pref-1"
+    );
+
+    expect(updateSupabaseBookingPaymentMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: "booking-test-id",
+        businessId: "business-1",
+        paymentStatus: "pending",
+        paymentPreferenceId: "pref-1",
+      })
+    );
+    expect(cancelSupabasePublicBookingMock).not.toHaveBeenCalled();
   });
 });
 

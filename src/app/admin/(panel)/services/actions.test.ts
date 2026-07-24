@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   redirectMock,
   revalidatePathMock,
+  requireAdminRouteAccessMock,
   getAuthenticatedSupabaseUserMock,
   listSupabaseRecordsMock,
   getSupabaseRecordMock,
@@ -13,6 +14,7 @@ const {
     throw new Error(`REDIRECT:${url}`);
   }),
   revalidatePathMock: vi.fn(),
+  requireAdminRouteAccessMock: vi.fn(),
   getAuthenticatedSupabaseUserMock: vi.fn(),
   listSupabaseRecordsMock: vi.fn(),
   getSupabaseRecordMock: vi.fn(),
@@ -31,6 +33,10 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
+vi.mock("@/server/admin-access", () => ({
+  requireAdminRouteAccess: requireAdminRouteAccessMock,
+}));
+
 vi.mock("@/server/supabase-auth", () => ({
   getAuthenticatedSupabaseUser: getAuthenticatedSupabaseUserMock,
 }));
@@ -46,12 +52,20 @@ describe("admin services actions", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     revalidatePathMock.mockReset();
+    requireAdminRouteAccessMock.mockReset();
     getAuthenticatedSupabaseUserMock.mockReset();
     listSupabaseRecordsMock.mockReset();
     getSupabaseRecordMock.mockReset();
     createSupabaseRecordMock.mockReset();
     updateSupabaseRecordMock.mockReset();
 
+    requireAdminRouteAccessMock.mockResolvedValue({
+      businessId: "biz_123",
+      businessSlug: "demo-barberia",
+      demoMode: false,
+      userRole: "owner",
+      userEmail: "owner@example.com",
+    });
     getAuthenticatedSupabaseUserMock.mockResolvedValue({
       id: "user_1",
       businessId: "biz_123",
@@ -126,5 +140,23 @@ describe("admin services actions", () => {
 
     await expect(saveServiceAction(formData)).rejects.toThrow("REDIRECT:/admin/services?saved=Corte%20Premium");
     expect(updateSupabaseRecordMock).toHaveBeenCalled();
+  });
+
+  it("propagates the redirect from requireAdminRouteAccess instead of swallowing it as a form error", async () => {
+    // Simula una suscripción vencida: requireAdminRouteAccess redirige internamente.
+    requireAdminRouteAccessMock.mockRejectedValue(
+      new Error("REDIRECT:/admin/subscription/pay")
+    );
+
+    const { saveServiceAction } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", "Corte");
+    formData.set("description", "Servicio base");
+    formData.set("durationMinutes", "30");
+    formData.set("price", "18000");
+
+    await expect(saveServiceAction(formData)).rejects.toThrow(
+      "REDIRECT:/admin/subscription/pay"
+    );
   });
 });
