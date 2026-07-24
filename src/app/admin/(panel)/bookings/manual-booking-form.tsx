@@ -7,14 +7,13 @@ import { createManualBookingAction } from "@/app/admin/(panel)/bookings/actions"
 import { LoadingButton } from "@/components/ui/loading-button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
-
-type Service = { id: string; name: string; durationMinutes: number; priceLabel: string };
+import type { ServiceSummary } from "@/types/domain";
 
 export function ManualBookingForm({
   services,
   onClose,
 }: {
-  services: Service[];
+  services: ServiceSummary[];
   onClose: () => void;
 }) {
   const formRef = useRef<HTMLFormElement>(null);

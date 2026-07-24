@@ -5,18 +5,15 @@ import { ChevronRight, Clock3 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useCallback } from "react";
 
+import type { ServiceSummary } from "@/types/domain";
+
 type BookingServicePickerProps = {
   businessSlug: string;
   accentColor: string;
   heading: string;
   description: string;
   prefetchDate: string;
-  services: Array<{
-    id: string;
-    name: string;
-    durationMinutes: number;
-    priceLabel: string;
-  }>;
+  services: ServiceSummary[];
   // Parámetros adicionales para construir la URL (serializables)
   baseQueryParams?: Record<string, string | undefined>;
 };

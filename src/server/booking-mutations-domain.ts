@@ -1,4 +1,4 @@
-import { addMinutes } from "@/lib/bookings/format";
+import { addMinutes, overlaps, toMinutes } from "@/lib/bookings/format";
 import type { BookingStatus, PaymentStatus } from "@/types/domain";
 
 const PUBLIC_BOOKING_MUTABLE_STATUSES = ["pending", "pending_payment", "confirmed"] as const;
@@ -22,26 +22,24 @@ type CustomerDetailsLike = {
   notes?: string | null;
 };
 
-export function bookingTimeToMinutes(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
 export function bookingTimeRangesOverlap(
   startMinutes: number,
   endMinutes: number,
   comparedStartTime: string,
   comparedEndTime: string
 ) {
-  const comparedStart = bookingTimeToMinutes(comparedStartTime);
-  const comparedEnd = bookingTimeToMinutes(comparedEndTime);
-  return startMinutes < comparedEnd && endMinutes > comparedStart;
+  return overlaps(
+    startMinutes,
+    endMinutes,
+    toMinutes(comparedStartTime),
+    toMinutes(comparedEndTime)
+  );
 }
 
 export function buildBookingTimeWindow(startTime: string, durationMinutes: number) {
-  const startMinutes = bookingTimeToMinutes(startTime);
+  const startMinutes = toMinutes(startTime);
   const endTime = addMinutes(startTime, durationMinutes);
-  const endMinutes = bookingTimeToMinutes(endTime);
+  const endMinutes = toMinutes(endTime);
 
   return {
     startMinutes,
@@ -56,8 +54,8 @@ export function fitsBookingWithinAvailability(
 ) {
   return rules.some(
     (rule) =>
-      input.startMinutes >= bookingTimeToMinutes(rule.startTime) &&
-      input.endMinutes <= bookingTimeToMinutes(rule.endTime)
+      input.startMinutes >= toMinutes(rule.startTime) &&
+      input.endMinutes <= toMinutes(rule.endTime)
   );
 }
 

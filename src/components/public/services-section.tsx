@@ -3,13 +3,10 @@
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
+import type { ServiceSummary } from "@/types/domain";
 
-type ServiceCard = {
-  id: string;
-  name: string;
-  priceLabel: string;
+type ServiceCard = ServiceSummary & {
   description: string;
-  durationMinutes: number;
   popular: boolean;
   featureBadge: string;
 };

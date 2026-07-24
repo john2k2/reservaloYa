@@ -2,10 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { ManualBookingForm } from "./manual-booking-form";
+import type { ServiceSummary } from "@/types/domain";
 
-type Service = { id: string; name: string; durationMinutes: number; priceLabel: string };
-
-export function ManualBookingWrapper({ services }: { services: Service[] }) {
+export function ManualBookingWrapper({ services }: { services: ServiceSummary[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const show = searchParams.get("nuevo") === "1";

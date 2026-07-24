@@ -21,18 +21,12 @@ import { BookingWaitlistForm } from "@/components/public/booking/booking-waitlis
 import { PublicSubmitButton } from "@/components/public/public-submit-button";
 import { createPublicBookingAction } from "@/server/actions/public-booking";
 import { getAccentForeground } from "@/lib/color-contrast";
-
-interface ServiceInfo {
-  id: string;
-  name: string;
-  durationMinutes: number;
-  priceLabel: string;
-}
+import type { ServiceSummary } from "@/types/domain";
 
 interface BookingFormWithWaitlistProps {
   slug: string;
   accentColor: string;
-  service: ServiceInfo;
+  service: ServiceSummary;
   paymentMode: "mercadopago" | "cash" | "none";
   initialSelectedDate: string;
   initialDateOptions: string[];

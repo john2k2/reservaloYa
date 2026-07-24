@@ -2,14 +2,10 @@ import {
   getPublicBusinessProfile,
   type PublicBusinessProfile,
 } from "@/constants/public-business-profiles";
+import { overlaps, toMinutes } from "@/lib/bookings/format";
+import type { BookingStatus } from "@/types/domain";
 
-export type BookingStatus =
-  | "pending"
-  | "pending_payment"
-  | "confirmed"
-  | "completed"
-  | "cancelled"
-  | "no_show";
+export type { BookingStatus };
 
 export type BusinessRecord = {
   id: string;
@@ -224,11 +220,6 @@ export function formatStatus(status: BookingStatus) {
   return labels[status];
 }
 
-export function toMinutes(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
 function fromMinutes(value: number) {
   const hours = Math.floor(value / 60)
     .toString()
@@ -236,10 +227,6 @@ function fromMinutes(value: number) {
   const minutes = (value % 60).toString().padStart(2, "0");
 
   return `${hours}:${minutes}`;
-}
-
-export function overlaps(startA: number, endA: number, startB: number, endB: number) {
-  return startA < endB && startB < endA;
 }
 
 export function isActiveRecord(record: { active?: boolean }) {

@@ -97,3 +97,12 @@ export function addMinutes(time: string, minutesToAdd: number) {
 
   return `${nextHours}:${nextMinutes}`;
 }
+
+export function toMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+export function overlaps(startA: number, endA: number, startB: number, endB: number) {
+  return startA < endB && startB < endA;
+}

@@ -10,47 +10,15 @@ export type PaymentStatus = "pending" | "approved" | "rejected" | "cancelled" | 
 
 export type UserRole = "owner" | "admin" | "staff";
 
-export interface Business {
+/**
+ * Shape base compartido por las distintas vistas de un servicio en la UI
+ * (selector de reserva pública, formulario de turno manual, etc.). Donde se
+ * necesiten campos extra, componer con intersección en vez de extender este
+ * tipo (ej. `ServiceSummary & { description: string }`).
+ */
+export type ServiceSummary = {
   id: string;
   name: string;
-  slug: string;
-  phone: string | null;
-  email: string | null;
-  notificationEmail?: string | null; // Email para recibir notificaciones de reservas
-  address: string | null;
-  timezone: string;
-  active: boolean;
-  createdAt: string;
-}
-
-export interface Service {
-  id: string;
-  businessId: string;
-  name: string;
-  description: string | null;
   durationMinutes: number;
-  price: number | null;
-  active: boolean;
-  createdAt: string;
-}
-
-export interface Booking {
-  id: string;
-  businessId: string;
-  customerId: string;
-  serviceId: string;
-  staffId: string | null;
-  bookingDate: string;
-  startTime: string;
-  endTime: string;
-  status: BookingStatus;
-  notes: string | null;
-  createdAt: string;
-  // Payment fields (optional — only set when price > 0)
-  paymentStatus?: PaymentStatus;
-  paymentAmount?: number;
-  paymentCurrency?: string;
-  paymentProvider?: "mercadopago";
-  paymentPreferenceId?: string; // MP preference ID
-  paymentExternalId?: string;   // MP payment ID from webhook
-}
+  priceLabel: string;
+};

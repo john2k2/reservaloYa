@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { CheckCircle2, CircleDollarSign, Clock3 } from "lucide-react";
 
+import type { ServiceSummary } from "@/types/domain";
+
 type BookingSelectedServiceCardProps = {
   accentColor: string;
-  service: {
-    name: string;
-    durationMinutes: number;
-    priceLabel: string;
-  };
+  service: ServiceSummary;
   paymentMode?: "mercadopago" | "cash" | "none";
   changeHref?: string;
 };
