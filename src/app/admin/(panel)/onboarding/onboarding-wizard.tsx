@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
-  CheckCircle2,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -13,7 +12,6 @@ import {
   activateLocalBusinessAction,
   createOnboardedBusinessAction,
   saveOnboardingBrandingAction,
-  updateOnboardedBusinessAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
@@ -75,36 +73,22 @@ type Step4FormValues = {
   mapQuery: string;
 };
 
-// Arma el FormData del paso 1 (datos del negocio). "update" reusa el shape que
-// necesita handleSaveAll para guardar todo de una vez; "create" es el alta inicial.
-function buildStep1FormData(params: {
-  mode: "update" | "create";
-  activeBusinessSlug: string;
-  step1Data: Step1FormValues;
-}): FormData {
-  const { mode, activeBusinessSlug, step1Data } = params;
+// Arma el FormData del paso 1 (datos del negocio) para el alta inicial.
+function buildStep1FormData(params: { step1Data: Step1FormValues }): FormData {
+  const { step1Data } = params;
   const formData = new FormData();
 
-  if (mode === "update") {
-    formData.append("businessSlug", activeBusinessSlug);
-    formData.append("name", step1Data.name);
-    formData.append("phone", step1Data.phone);
-    formData.append("email", step1Data.email);
-    formData.append("address", step1Data.address);
-  } else {
-    formData.append("templateSlug", step1Data.templateSlug);
-    formData.append("name", step1Data.name);
-    formData.append("slug", step1Data.slug);
-    formData.append("phone", step1Data.phone);
-    formData.append("email", step1Data.email);
-    formData.append("address", step1Data.address);
-  }
+  formData.append("templateSlug", step1Data.templateSlug);
+  formData.append("name", step1Data.name);
+  formData.append("slug", step1Data.slug);
+  formData.append("phone", step1Data.phone);
+  formData.append("email", step1Data.email);
+  formData.append("address", step1Data.address);
 
   return formData;
 }
 
 // Arma el FormData de branding (pasos 2 a 4: colores, textos, imágenes y redes).
-// Usado tanto por handleBrandingSubmit como por handleSaveAll.
 function buildBrandingFormData(params: {
   activeBusinessSlug: string;
   step2Data: Step2FormValues;
@@ -217,31 +201,17 @@ export default function OnboardingWizard({
   const createdBusiness = onboardingData.businesses.find((b) => b.slug === created);
   const activeBusinessSlug = onboardingData.activeBusinessSlug ?? settingsData.businessSlug;
 
-  // Detectar si hay negocios existentes para modo edición
-  const hasExistingBusiness = onboardingData.businesses.length > 0;
-
   // Estado del paso actual
   const [currentStep, setCurrentStep] = useState(0);
-  // Inicializar pasos completados: si hay negocio existente, todos los pasos están completos
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
-    if (hasExistingBusiness) {
-      return new Set([0, 1, 2, 3]);
-    }
-    return new Set();
-  });
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Buscar datos del negocio activo para precargar
-  const activeBusiness = hasExistingBusiness
-    ? onboardingData.businesses.find((b) => b.slug === activeBusinessSlug) || onboardingData.businesses[0]
-    : null;
 
   // Estado del formulario - Paso 1
   const [step1Data, setStep1Data] = useState({
     templateSlug: "demo-estetica",
-    name: activeBusiness?.name ?? "",
-    slug: activeBusiness?.slug ?? "",
-    phone: activeBusiness?.phone ?? "",
+    name: "",
+    slug: "",
+    phone: "",
     email: settingsData.email,
     address: settingsData.address ?? "",
   });
@@ -386,30 +356,18 @@ export default function OnboardingWizard({
     }
   }, [currentStep, step1Data, step2Data]);
 
-  // Submit del paso 1
+  // Submit del paso 1 (alta del negocio)
   const handleStep1Submit = useCallback(async () => {
     if (!isStepValid()) return;
 
     setIsSubmitting(true);
-
-    if (hasExistingBusiness && activeBusinessSlug) {
-      // Actualizar negocio existente
-      const formData = buildStep1FormData({ mode: "update", activeBusinessSlug, step1Data });
-      try {
-        await updateOnboardedBusinessAction(formData);
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      // Crear nuevo negocio
-      const formData = buildStep1FormData({ mode: "create", activeBusinessSlug, step1Data });
-      try {
-        await createOnboardedBusinessAction(formData);
-      } finally {
-        setIsSubmitting(false);
-      }
+    const formData = buildStep1FormData({ step1Data });
+    try {
+      await createOnboardedBusinessAction(formData);
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [step1Data, isStepValid, hasExistingBusiness, activeBusinessSlug]);
+  }, [step1Data, isStepValid]);
 
   // Submit del paso 2-4 (branding)
   const handleBrandingSubmit = useCallback(async () => {
@@ -423,40 +381,6 @@ export default function OnboardingWizard({
     }
   }, [activeBusinessSlug, step2Data, step3Data, step4Data]);
 
-  // Guardar todo - actualiza datos del negocio y branding
-  const handleSaveAll = useCallback(async () => {
-    // Validar explícitamente los datos del paso 1 (datos del negocio)
-    const isStep1Valid =
-      step1Data.name.length >= 3 &&
-      step1Data.phone.length >= 6 &&
-      step1Data.address.length >= 4 &&
-      !validations.name(step1Data.name) &&
-      !validations.phone(step1Data.phone) &&
-      !validations.address(step1Data.address) &&
-      (!step1Data.slug || !validations.slug(step1Data.slug)) &&
-      (!step1Data.email || !validations.email(step1Data.email));
-
-    if (!isStep1Valid) {
-      // Si el paso 1 no es válido, navegar al paso 1 para mostrar errores
-      setCurrentStep(0);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Primero actualizar datos básicos del negocio
-      const step1FormData = buildStep1FormData({ mode: "update", activeBusinessSlug, step1Data });
-      await updateOnboardedBusinessAction(step1FormData);
-
-      // Luego actualizar branding (colores, textos, imágenes, redes)
-      const brandingFormData = buildBrandingFormData({ activeBusinessSlug, step2Data, step3Data, step4Data });
-      await saveOnboardingBrandingAction(brandingFormData);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [activeBusinessSlug, step1Data, step2Data, step3Data, step4Data]);
-
   return (
     <div className="flex min-h-full flex-col items-center space-y-8 pb-10 bg-background">
       {/* Header */}
@@ -469,37 +393,12 @@ export default function OnboardingWizard({
                 Onboarding guiado
               </div>
               <h2 className="mt-4 sm:mt-5 text-2xl sm:text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-                {hasExistingBusiness ? "Editá tu página" : "Configura tu página paso a paso"}
+                Configura tu página paso a paso
               </h2>
               <p className="mt-3 max-w-3xl text-base text-muted-foreground">
-                {hasExistingBusiness 
-                  ? "Modificá los datos, colores, textos o imágenes. Guardá todos los cambios cuando termines."
-                  : "Completa los 4 pasos para dejar tu página pública lista. Puedes volver atrás y editar en cualquier momento."}
+                Completa los 4 pasos para dejar tu página pública lista. Puedes volver atrás y editar en cualquier momento.
               </p>
             </div>
-            {hasExistingBusiness && (
-              <button
-                onClick={handleSaveAll}
-                disabled={isSubmitting}
-                className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "h-11 shrink-0",
-                  isSubmitting && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                {isSubmitting ? (
-                  <>
-                    <CheckCircle2 className="size-4 mr-2 animate-pulse" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="size-4 mr-2" />
-                    Guardar todo
-                  </>
-                )}
-              </button>
-            )}
           </div>
 
           {/* Stepper */}
@@ -559,14 +458,12 @@ export default function OnboardingWizard({
           {/* PASO 1: Negocio */}
           {currentStep === 0 && (
             <BusinessStep
-              hasExistingBusiness={hasExistingBusiness}
               step1Data={step1Data}
               setStep1Data={setStep1Data}
               templates={onboardingData.templates}
               validations={validations}
               isSubmitting={isSubmitting}
               isStepValid={isStepValid()}
-              onNext={goNext}
               onSubmit={handleStep1Submit}
             />
           )}
@@ -577,12 +474,10 @@ export default function OnboardingWizard({
               step2Data={step2Data}
               setStep2Data={setStep2Data}
               validations={validations}
-              hasExistingBusiness={hasExistingBusiness}
               isSubmitting={isSubmitting}
               isStepValid={isStepValid()}
               onBack={goBack}
               onNext={goNext}
-              onSaveAll={handleSaveAll}
             />
           )}
 
@@ -593,11 +488,9 @@ export default function OnboardingWizard({
               setStep3Data={setStep3Data}
               galleryImageHints={galleryImageHints}
               settingsData={settingsData}
-              hasExistingBusiness={hasExistingBusiness}
               isSubmitting={isSubmitting}
               onBack={goBack}
               onNext={goNext}
-              onSaveAll={handleSaveAll}
             />
           )}
 
@@ -606,10 +499,9 @@ export default function OnboardingWizard({
             <PublicStep
               step4Data={step4Data}
               setStep4Data={setStep4Data}
-              hasExistingBusiness={hasExistingBusiness}
               isSubmitting={isSubmitting}
               onBack={goBack}
-              onSubmit={hasExistingBusiness ? handleSaveAll : handleBrandingSubmit}
+              onSubmit={handleBrandingSubmit}
             />
           )}
         </div>

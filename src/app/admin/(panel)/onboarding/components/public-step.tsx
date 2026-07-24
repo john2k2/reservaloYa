@@ -16,7 +16,6 @@ type Step4Data = {
 type PublicStepProps = {
   step4Data: Step4Data;
   setStep4Data: Dispatch<SetStateAction<Step4Data>>;
-  hasExistingBusiness: boolean;
   isSubmitting: boolean;
   onBack: () => void;
   onSubmit: () => void;
@@ -25,7 +24,6 @@ type PublicStepProps = {
 export function PublicStep({
   step4Data,
   setStep4Data,
-  hasExistingBusiness,
   isSubmitting,
   onBack,
   onSubmit,
@@ -108,7 +106,7 @@ export function PublicStep({
         <OnboardingStepActions
           onBack={onBack}
           onPrimary={onSubmit}
-          primaryLabel={isSubmitting ? "Guardando..." : hasExistingBusiness ? "Guardar todo" : "Guardar y publicar"}
+          primaryLabel={isSubmitting ? "Guardando..." : "Guardar y publicar"}
           isSubmitting={isSubmitting}
           showSaveIcon={true}
         />

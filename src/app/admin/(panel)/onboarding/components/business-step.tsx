@@ -17,7 +17,6 @@ type Step1Data = {
 type ValidationFn = (value: string) => string | null;
 
 type BusinessStepProps = {
-  hasExistingBusiness: boolean;
   step1Data: Step1Data;
   setStep1Data: Dispatch<SetStateAction<Step1Data>>;
   templates: { slug: string; label: string; category: string }[];
@@ -30,19 +29,16 @@ type BusinessStepProps = {
   };
   isSubmitting: boolean;
   isStepValid: boolean;
-  onNext: () => void;
   onSubmit: () => void;
 };
 
 export function BusinessStep({
-  hasExistingBusiness,
   step1Data,
   setStep1Data,
   templates,
   validations,
   isSubmitting,
   isStepValid,
-  onNext,
   onSubmit,
 }: BusinessStepProps) {
   return (
@@ -52,13 +48,9 @@ export function BusinessStep({
           <Store aria-hidden="true" className="size-5 text-foreground" />
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-card-foreground">
-            {hasExistingBusiness ? "Paso 1: Editar datos del negocio" : "Paso 1: Datos del negocio"}
-          </h3>
+          <h3 className="text-xl font-semibold text-card-foreground">Paso 1: Datos del negocio</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {hasExistingBusiness
-              ? "Modifica los datos básicos de tu negocio. Los cambios se aplican inmediatamente."
-              : "Completa los datos básicos para crear tu página. El link público es como tus clientes accederán."}
+            Completa los datos básicos para crear tu página. El link público es como tus clientes accederán.
           </p>
         </div>
       </div>
@@ -143,19 +135,9 @@ export function BusinessStep({
       <div className="mt-8 flex items-center justify-between">
         <span className="text-sm text-muted-foreground">Paso 1 de 4</span>
         <OnboardingStepActions
-          onNext={hasExistingBusiness ? onNext : undefined}
           onPrimary={onSubmit}
-          primaryLabel={
-            isSubmitting
-              ? hasExistingBusiness
-                ? "Guardando..."
-                : "Creando..."
-              : hasExistingBusiness
-                ? "Guardar cambios"
-                : "Crear negocio"
-          }
+          primaryLabel={isSubmitting ? "Creando..." : "Crear negocio"}
           primaryDisabled={!isStepValid}
-          nextLabel="Siguiente paso"
         />
       </div>
     </article>

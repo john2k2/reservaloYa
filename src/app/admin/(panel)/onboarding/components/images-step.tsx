@@ -30,11 +30,9 @@ type ImagesStepProps = {
       gallery?: { url: string; alt: string }[] | null;
     };
   };
-  hasExistingBusiness: boolean;
   isSubmitting: boolean;
   onBack: () => void;
   onNext: () => void;
-  onSaveAll: () => void;
 };
 
 export function ImagesStep({
@@ -42,11 +40,9 @@ export function ImagesStep({
   setStep3Data,
   galleryImageHints,
   settingsData,
-  hasExistingBusiness,
   isSubmitting,
   onBack,
   onNext,
-  onSaveAll,
 }: ImagesStepProps) {
   return (
     <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
@@ -142,10 +138,9 @@ export function ImagesStep({
       <div className="mt-8">
         <OnboardingStepActions
           onBack={onBack}
-          onPrimary={hasExistingBusiness ? onSaveAll : onNext}
-          primaryLabel={isSubmitting ? "Guardando..." : hasExistingBusiness ? "Guardar todo" : "Continuar"}
+          onPrimary={onNext}
+          primaryLabel={isSubmitting ? "Guardando..." : "Continuar"}
           isSubmitting={isSubmitting}
-          showSaveIcon={hasExistingBusiness}
         />
       </div>
     </article>

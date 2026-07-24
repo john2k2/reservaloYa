@@ -33,24 +33,20 @@ type BrandingStepProps = {
     description: ValidationFn;
     cta: ValidationFn;
   };
-  hasExistingBusiness: boolean;
   isSubmitting: boolean;
   isStepValid: boolean;
   onBack: () => void;
   onNext: () => void;
-  onSaveAll: () => void;
 };
 
 export function BrandingStep({
   step2Data,
   setStep2Data,
   validations,
-  hasExistingBusiness,
   isSubmitting,
   isStepValid,
   onBack,
   onNext,
-  onSaveAll,
 }: BrandingStepProps) {
   return (
     <article className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
@@ -194,11 +190,10 @@ export function BrandingStep({
       <div className="mt-8">
         <OnboardingStepActions
           onBack={onBack}
-          onPrimary={hasExistingBusiness ? onSaveAll : onNext}
-          primaryLabel={isSubmitting ? "Guardando..." : hasExistingBusiness ? "Guardar todo" : "Continuar"}
-          primaryDisabled={!hasExistingBusiness && !isStepValid}
+          onPrimary={onNext}
+          primaryLabel={isSubmitting ? "Guardando..." : "Continuar"}
+          primaryDisabled={!isStepValid}
           isSubmitting={isSubmitting}
-          showSaveIcon={hasExistingBusiness}
         />
       </div>
     </article>
