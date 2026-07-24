@@ -23,63 +23,7 @@ import { OnboardingStepper, type OnboardingStep } from "./components/onboarding-
 import { ImagesStep } from "./components/images-step";
 import { OnboardingStatusBanner } from "./components/onboarding-status-banner";
 import { PublicStep } from "./components/public-step";
-import EditBusinessPage from "./edit-business-page";
-
-// Validaciones
-const validations = {
-  name: (value: string) => {
-    if (value.length < 3) return "Mínimo 3 caracteres";
-    if (value.length > 120) return "Máximo 120 caracteres";
-    return null;
-  },
-  slug: (value: string) => {
-    if (!value) return null;
-    if (!/^[a-z0-9-]+$/.test(value)) return "Solo letras minúsculas, números y guiones";
-    if (value.length < 2) return "Mínimo 2 caracteres";
-    if (value.length > 120) return "Máximo 120 caracteres";
-    return null;
-  },
-  phone: (value: string) => {
-    if (value.length < 6) return "Mínimo 6 caracteres";
-    if (value.length > 40) return "Máximo 40 caracteres";
-    return null;
-  },
-  email: (value: string) => {
-    if (!value) return null;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Email inválido";
-    return null;
-  },
-  address: (value: string) => {
-    if (value.length < 4) return "Mínimo 4 caracteres";
-    if (value.length > 160) return "Máximo 160 caracteres";
-    return null;
-  },
-  badge: (value: string) => {
-    if (value.length < 3) return "Mínimo 3 caracteres";
-    if (value.length > 80) return "Máximo 80 caracteres";
-    return null;
-  },
-  eyebrow: (value: string) => {
-    if (value.length < 3) return "Mínimo 3 caracteres";
-    if (value.length > 120) return "Máximo 120 caracteres";
-    return null;
-  },
-  headline: (value: string) => {
-    if (value.length < 12) return "Mínimo 12 caracteres";
-    if (value.length > 160) return "Máximo 160 caracteres";
-    return null;
-  },
-  description: (value: string) => {
-    if (value.length < 20) return "Mínimo 20 caracteres";
-    if (value.length > 320) return "Máximo 320 caracteres";
-    return null;
-  },
-  cta: (value: string) => {
-    if (value.length < 2) return "Mínimo 2 caracteres";
-    if (value.length > 40) return "Máximo 40 caracteres";
-    return null;
-  },
-};
+import { onboardingValidations as validations } from "./onboarding-validations";
 
 type GalleryImageInput = {
   file: File | null;
@@ -93,7 +37,114 @@ const galleryImageHints = [
   "Detalle del servicio",
 ];
 
-interface OnboardingPageClientProps {
+type Step1FormValues = {
+  templateSlug: string;
+  name: string;
+  slug: string;
+  phone: string;
+  email: string;
+  address: string;
+};
+
+type Step2FormValues = {
+  palette: string;
+  customAccent: string;
+  customAccentSoft: string;
+  customSurfaceTint: string;
+  badge: string;
+  eyebrow: string;
+  headline: string;
+  description: string;
+  primaryCta: string;
+  secondaryCta: string;
+};
+
+type Step3FormValues = {
+  logo: File | null;
+  hero: File | null;
+  logoCleared: boolean;
+  heroCleared: boolean;
+  gallery: GalleryImageInput[];
+};
+
+type Step4FormValues = {
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+  website: string;
+  mapQuery: string;
+};
+
+// Arma el FormData del paso 1 (datos del negocio). "update" reusa el shape que
+// necesita handleSaveAll para guardar todo de una vez; "create" es el alta inicial.
+function buildStep1FormData(params: {
+  mode: "update" | "create";
+  activeBusinessSlug: string;
+  step1Data: Step1FormValues;
+}): FormData {
+  const { mode, activeBusinessSlug, step1Data } = params;
+  const formData = new FormData();
+
+  if (mode === "update") {
+    formData.append("businessSlug", activeBusinessSlug);
+    formData.append("name", step1Data.name);
+    formData.append("phone", step1Data.phone);
+    formData.append("email", step1Data.email);
+    formData.append("address", step1Data.address);
+  } else {
+    formData.append("templateSlug", step1Data.templateSlug);
+    formData.append("name", step1Data.name);
+    formData.append("slug", step1Data.slug);
+    formData.append("phone", step1Data.phone);
+    formData.append("email", step1Data.email);
+    formData.append("address", step1Data.address);
+  }
+
+  return formData;
+}
+
+// Arma el FormData de branding (pasos 2 a 4: colores, textos, imágenes y redes).
+// Usado tanto por handleBrandingSubmit como por handleSaveAll.
+function buildBrandingFormData(params: {
+  activeBusinessSlug: string;
+  step2Data: Step2FormValues;
+  step3Data: Step3FormValues;
+  step4Data: Step4FormValues;
+}): FormData {
+  const { activeBusinessSlug, step2Data, step3Data, step4Data } = params;
+  const formData = new FormData();
+
+  formData.append("businessSlug", activeBusinessSlug);
+  formData.append("palette", step2Data.palette);
+  formData.append("customAccent", step2Data.customAccent);
+  formData.append("customAccentSoft", step2Data.customAccentSoft);
+  formData.append("customSurfaceTint", step2Data.customSurfaceTint);
+  formData.append("badge", step2Data.badge);
+  formData.append("eyebrow", step2Data.eyebrow);
+  formData.append("headline", step2Data.headline);
+  formData.append("description", step2Data.description);
+  formData.append("primaryCta", step2Data.primaryCta);
+  formData.append("secondaryCta", step2Data.secondaryCta);
+  formData.append("instagram", step4Data.instagram);
+  formData.append("facebook", step4Data.facebook);
+  formData.append("tiktok", step4Data.tiktok);
+  formData.append("website", step4Data.website);
+  formData.append("mapQuery", step4Data.mapQuery);
+
+  if (step3Data.logo) formData.append("logoFile", step3Data.logo);
+  if (step3Data.hero) formData.append("heroFile", step3Data.hero);
+  formData.append("clearLogoFile", String(step3Data.logoCleared));
+  formData.append("clearHeroFile", String(step3Data.heroCleared));
+  step3Data.gallery.forEach((item, i) => {
+    if (item.file) formData.append(`galleryFile${i + 1}`, item.file);
+    formData.append(`galleryAlt${i + 1}`, item.alt.trim());
+    formData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
+  });
+
+  return formData;
+}
+
+interface OnboardingWizardProps {
   onboardingData: {
     demoMode: boolean;
     templates: { slug: string; label: string; category: string }[];
@@ -153,11 +204,11 @@ interface OnboardingPageClientProps {
   };
 }
 
-export default function OnboardingPageClient({
+export default function OnboardingWizard({
   onboardingData,
   settingsData,
   searchParams,
-}: OnboardingPageClientProps) {
+}: OnboardingWizardProps) {
   const error = searchParams.error;
   const created = searchParams.created;
   const brandingSaved = searchParams.brandingSaved;
@@ -340,15 +391,10 @@ export default function OnboardingPageClient({
     if (!isStepValid()) return;
 
     setIsSubmitting(true);
-    const formData = new FormData();
-    
+
     if (hasExistingBusiness && activeBusinessSlug) {
       // Actualizar negocio existente
-      formData.append("businessSlug", activeBusinessSlug);
-      formData.append("name", step1Data.name);
-      formData.append("phone", step1Data.phone);
-      formData.append("email", step1Data.email);
-      formData.append("address", step1Data.address);
+      const formData = buildStep1FormData({ mode: "update", activeBusinessSlug, step1Data });
       try {
         await updateOnboardedBusinessAction(formData);
       } finally {
@@ -356,12 +402,7 @@ export default function OnboardingPageClient({
       }
     } else {
       // Crear nuevo negocio
-      formData.append("templateSlug", step1Data.templateSlug);
-      formData.append("name", step1Data.name);
-      formData.append("slug", step1Data.slug);
-      formData.append("phone", step1Data.phone);
-      formData.append("email", step1Data.email);
-      formData.append("address", step1Data.address);
+      const formData = buildStep1FormData({ mode: "create", activeBusinessSlug, step1Data });
       try {
         await createOnboardedBusinessAction(formData);
       } finally {
@@ -373,33 +414,7 @@ export default function OnboardingPageClient({
   // Submit del paso 2-4 (branding)
   const handleBrandingSubmit = useCallback(async () => {
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append("businessSlug", activeBusinessSlug);
-    formData.append("palette", step2Data.palette);
-    formData.append("customAccent", step2Data.customAccent);
-    formData.append("customAccentSoft", step2Data.customAccentSoft);
-    formData.append("customSurfaceTint", step2Data.customSurfaceTint);
-    formData.append("badge", step2Data.badge);
-    formData.append("eyebrow", step2Data.eyebrow);
-    formData.append("headline", step2Data.headline);
-    formData.append("description", step2Data.description);
-    formData.append("primaryCta", step2Data.primaryCta);
-    formData.append("secondaryCta", step2Data.secondaryCta);
-    formData.append("instagram", step4Data.instagram);
-    formData.append("facebook", step4Data.facebook);
-    formData.append("tiktok", step4Data.tiktok);
-    formData.append("website", step4Data.website);
-    formData.append("mapQuery", step4Data.mapQuery);
-
-    if (step3Data.logo) formData.append("logoFile", step3Data.logo);
-    if (step3Data.hero) formData.append("heroFile", step3Data.hero);
-    formData.append("clearLogoFile", String(step3Data.logoCleared));
-    formData.append("clearHeroFile", String(step3Data.heroCleared));
-    step3Data.gallery.forEach((item, i) => {
-      if (item.file) formData.append(`galleryFile${i + 1}`, item.file);
-      formData.append(`galleryAlt${i + 1}`, item.alt.trim());
-      formData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
-    });
+    const formData = buildBrandingFormData({ activeBusinessSlug, step2Data, step3Data, step4Data });
 
     try {
       await saveOnboardingBrandingAction(formData);
@@ -411,7 +426,7 @@ export default function OnboardingPageClient({
   // Guardar todo - actualiza datos del negocio y branding
   const handleSaveAll = useCallback(async () => {
     // Validar explícitamente los datos del paso 1 (datos del negocio)
-    const isStep1Valid = 
+    const isStep1Valid =
       step1Data.name.length >= 3 &&
       step1Data.phone.length >= 6 &&
       step1Data.address.length >= 4 &&
@@ -428,62 +443,19 @@ export default function OnboardingPageClient({
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Primero actualizar datos básicos del negocio
-      const step1FormData = new FormData();
-      step1FormData.append("businessSlug", activeBusinessSlug);
-      step1FormData.append("name", step1Data.name);
-      step1FormData.append("phone", step1Data.phone);
-      step1FormData.append("email", step1Data.email);
-      step1FormData.append("address", step1Data.address);
-      
+      const step1FormData = buildStep1FormData({ mode: "update", activeBusinessSlug, step1Data });
       await updateOnboardedBusinessAction(step1FormData);
-      
+
       // Luego actualizar branding (colores, textos, imágenes, redes)
-      const brandingFormData = new FormData();
-      brandingFormData.append("businessSlug", activeBusinessSlug);
-      brandingFormData.append("palette", step2Data.palette);
-      brandingFormData.append("customAccent", step2Data.customAccent);
-      brandingFormData.append("customAccentSoft", step2Data.customAccentSoft);
-      brandingFormData.append("customSurfaceTint", step2Data.customSurfaceTint);
-      brandingFormData.append("badge", step2Data.badge);
-      brandingFormData.append("eyebrow", step2Data.eyebrow);
-      brandingFormData.append("headline", step2Data.headline);
-      brandingFormData.append("description", step2Data.description);
-      brandingFormData.append("primaryCta", step2Data.primaryCta);
-      brandingFormData.append("secondaryCta", step2Data.secondaryCta);
-      brandingFormData.append("instagram", step4Data.instagram);
-      brandingFormData.append("facebook", step4Data.facebook);
-      brandingFormData.append("tiktok", step4Data.tiktok);
-      brandingFormData.append("website", step4Data.website);
-      brandingFormData.append("mapQuery", step4Data.mapQuery);
-
-      if (step3Data.logo) brandingFormData.append("logoFile", step3Data.logo);
-      if (step3Data.hero) brandingFormData.append("heroFile", step3Data.hero);
-      brandingFormData.append("clearLogoFile", String(step3Data.logoCleared));
-      brandingFormData.append("clearHeroFile", String(step3Data.heroCleared));
-      step3Data.gallery.forEach((item, i) => {
-        if (item.file) brandingFormData.append(`galleryFile${i + 1}`, item.file);
-        brandingFormData.append(`galleryAlt${i + 1}`, item.alt.trim());
-        brandingFormData.append(`clearGalleryFile${i + 1}`, String(item.cleared));
-      });
-
+      const brandingFormData = buildBrandingFormData({ activeBusinessSlug, step2Data, step3Data, step4Data });
       await saveOnboardingBrandingAction(brandingFormData);
     } finally {
       setIsSubmitting(false);
     }
   }, [activeBusinessSlug, step1Data, step2Data, step3Data, step4Data]);
-
-  // Si hay negocio existente, mostrar el editor simple en lugar del wizard
-  if (hasExistingBusiness && activeBusiness) {
-    return (
-      <EditBusinessPage
-        business={activeBusiness}
-        settingsData={settingsData}
-      />
-    );
-  }
 
   return (
     <div className="flex min-h-full flex-col items-center space-y-8 pb-10 bg-background">

@@ -1,7 +1,8 @@
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { getAdminOnboardingData, getAdminSettingsData } from "@/server/queries/admin";
 import { env } from "@/lib/env";
-import OnboardingPageClient from "./onboarding-client";
+import EditBusinessPage from "./edit-business-page";
+import OnboardingWizard from "./onboarding-wizard";
 
 interface OnboardingWrapperProps {
   searchParams: Promise<{
@@ -40,53 +41,70 @@ export default async function OnboardingWrapper({ searchParams }: OnboardingWrap
     autoConfirmBookings?: boolean;
   } & typeof settingsData;
 
+  const businesses = onboardingData.businesses.map((b) => ({
+    slug: b.slug,
+    name: b.name,
+    phone: b.phone,
+  }));
+
+  const resolvedSettingsData = {
+    businessName: sd.businessName,
+    businessSlug: sd.businessSlug,
+    email: sd.email,
+    address: sd.address,
+    publicUrl: sd.publicUrl,
+    cancellationPolicy: sd.cancellationPolicy,
+    autoConfirmBookings: sd.autoConfirmBookings ?? false,
+    mpConnected: sd.mpConnected ?? false,
+    mpCollectorId: sd.mpCollectorId,
+    mpOAuthUrl,
+    whatsappConfigured,
+    defaultTab,
+    profile: {
+      accent: sd.profile.accent,
+      accentSoft: sd.profile.accentSoft,
+      surfaceTint: sd.profile.surfaceTint,
+      badge: sd.profile.badge,
+      eyebrow: sd.profile.eyebrow,
+      headline: sd.profile.headline,
+      description: sd.profile.description,
+      primaryCta: sd.profile.primaryCta,
+      secondaryCta: sd.profile.secondaryCta,
+      instagram: sd.profile.instagram,
+      facebook: sd.profile.facebook,
+      tiktok: sd.profile.tiktok,
+      website: sd.profile.website,
+      mapQuery: sd.profile.mapQuery,
+      gallery: sd.profile.gallery,
+      logoUrl: sd.profile.logoUrl,
+      heroImageUrl: sd.profile.heroImageUrl,
+      enableDarkMode: sd.profile.enableDarkMode,
+      darkModeColors: sd.profile.darkModeColors,
+    },
+  };
+
+  // Decisión wizard vs. editor (misma regla de negocio que antes, solo se movió
+  // acá desde onboarding-wizard.tsx): si ya existe un negocio, se muestra el editor
+  // completo en vez del wizard guiado de 4 pasos.
+  const hasExistingBusiness = businesses.length > 0;
+  const activeBusinessSlug = onboardingData.activeBusinessSlug ?? resolvedSettingsData.businessSlug;
+  const activeBusiness = hasExistingBusiness
+    ? businesses.find((b) => b.slug === activeBusinessSlug) || businesses[0]
+    : null;
+
+  if (hasExistingBusiness && activeBusiness) {
+    return <EditBusinessPage business={activeBusiness} settingsData={resolvedSettingsData} />;
+  }
+
   return (
-    <OnboardingPageClient
+    <OnboardingWizard
       onboardingData={{
         demoMode: onboardingData.demoMode,
         templates: onboardingData.templates,
-        businesses: onboardingData.businesses.map((b) => ({
-          slug: b.slug,
-          name: b.name,
-          phone: b.phone,
-        })),
+        businesses,
         activeBusinessSlug: onboardingData.activeBusinessSlug,
       }}
-      settingsData={{
-        businessName: sd.businessName,
-        businessSlug: sd.businessSlug,
-        email: sd.email,
-        address: sd.address,
-        publicUrl: sd.publicUrl,
-        cancellationPolicy: sd.cancellationPolicy,
-        autoConfirmBookings: sd.autoConfirmBookings ?? false,
-        mpConnected: sd.mpConnected ?? false,
-        mpCollectorId: sd.mpCollectorId,
-        mpOAuthUrl,
-        whatsappConfigured,
-        defaultTab,
-        profile: {
-          accent: sd.profile.accent,
-          accentSoft: sd.profile.accentSoft,
-          surfaceTint: sd.profile.surfaceTint,
-          badge: sd.profile.badge,
-          eyebrow: sd.profile.eyebrow,
-          headline: sd.profile.headline,
-          description: sd.profile.description,
-          primaryCta: sd.profile.primaryCta,
-          secondaryCta: sd.profile.secondaryCta,
-          instagram: sd.profile.instagram,
-          facebook: sd.profile.facebook,
-          tiktok: sd.profile.tiktok,
-          website: sd.profile.website,
-          mapQuery: sd.profile.mapQuery,
-          gallery: sd.profile.gallery,
-          logoUrl: sd.profile.logoUrl,
-          heroImageUrl: sd.profile.heroImageUrl,
-          enableDarkMode: sd.profile.enableDarkMode,
-          darkModeColors: sd.profile.darkModeColors,
-        },
-      }}
+      settingsData={resolvedSettingsData}
       searchParams={{
         error: params.error,
         created: params.created,
