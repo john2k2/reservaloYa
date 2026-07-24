@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { requireAdminRouteAccess } from "@/server/admin-access";
 import { runSupabaseBookingReminderSweep } from "@/server/supabase-store";
@@ -22,7 +22,9 @@ export async function runLocalReminderSweepAction() {
           : "No hay turnos con recordatorio pendiente para las próximas 24hs.";
 
     redirect(`/admin/dashboard?reminders=${encodeURIComponent(message)}`);
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
     redirect("/admin/dashboard?error=No%20se%20pudo%20enviar%20los%20recordatorios.");
   }
 }
