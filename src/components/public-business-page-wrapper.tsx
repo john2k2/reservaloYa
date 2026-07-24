@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
-import { PublicBusinessThemeProvider } from "./public-business-theme-provider";
+import {
+  PublicBusinessThemeProvider,
+  fallbackDarkColors,
+} from "./public-business-theme-provider";
 import type { PublicBusinessProfile } from "@/constants/public-business-profiles";
 import {
   getPublicBusinessThemeStyle,
@@ -33,15 +36,7 @@ export function PublicBusinessPageWrapper({
 
   const darkColors =
     profile.enableDarkMode
-      ? profile.darkModeColors ?? {
-          accent: profile.accent,
-          accentSoft: "#27272a",
-          surfaceTint: "#18181b",
-          background: "#111111",
-          foreground: "#fafafa",
-          card: "#1a1a1a",
-          cardForeground: "#fafafa",
-        }
+      ? profile.darkModeColors ?? fallbackDarkColors(profile)
       : null;
 
   const darkCss = darkColors

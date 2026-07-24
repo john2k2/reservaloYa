@@ -46,7 +46,7 @@ function restoreAdminThemeClass() {
   root.classList.toggle("dark", resolvedAdminDark);
 }
 
-function fallbackDarkColors(light: PublicBusinessLightColors): DarkModeColors {
+export function fallbackDarkColors(light: PublicBusinessLightColors): DarkModeColors {
   return {
     accent: light.accent,
     accentSoft: "#27272a",

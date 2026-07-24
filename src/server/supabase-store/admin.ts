@@ -286,6 +286,7 @@ export async function getSupabaseAdminCustomersData(
     const { data: bookingsData } = await client
       .from("bookings")
       .select("customer_id, bookingDate, startTime")
+      .eq("business_id", businessId)
       .in("customer_id", customerIds)
       .order("bookingDate")
       .order("startTime");

@@ -56,10 +56,15 @@ Key server modules:
 
 ### Data Model
 
-All entities are scoped by `businessId`. Core types defined in `src/server/local-domain.ts`:
-`LocalBusiness`, `LocalService`, `LocalAvailabilityRule`, `LocalBlockedSlot`, `LocalCustomer`, `LocalBooking`, `LocalWaitlistEntry`, `LocalReview`, `LocalAnalyticsEvent`, `LocalCommunicationEvent`.
+All entities are scoped by `businessId`. Core types defined in `src/server/supabase-domain.ts`:
+`BusinessRecord`, `ServiceRecord`, `CustomerRecord`, `BookingRecord`, `AvailabilityRuleRecord`, `BlockedSlotRecord`, `AnalyticsRecord`, `CommunicationRecord`, `AppUserRecord`, `SubscriptionRecord`, `WaitlistEntryRecord`, `ReviewRecord`.
 
 Booking statuses: `pending` | `pending_payment` | `confirmed` | `completed` | `cancelled` | `no_show`.
+
+### Known duplication (decisiones ya tomadas, no tocar)
+
+- `src/server/queries/platform/` es intencionalmente su propia capa de datos para el rol platform-admin, separada de `supabase-store/`. No es un bug ni duplicación a resolver.
+- Los archivos `src/server/*-domain.ts` (`supabase-domain.ts`, `bookings-domain.ts`, `booking-mutations-domain.ts`, `payments-domain.ts`, `admin-dashboard-domain.ts`, `admin-views-domain.ts`) comparten sufijo pero tienen responsabilidades distintas. No se renombran como iniciativa propia; solo oportunistamente si se tocan por otro motivo.
 
 ### Notifications
 
