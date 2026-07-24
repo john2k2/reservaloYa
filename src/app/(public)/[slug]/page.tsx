@@ -1,25 +1,22 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
-import { Facebook, Instagram } from "lucide-react";
 
-import { TikTokIcon } from "@/components/icons";
-import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
+import { BusinessFooter } from "@/components/public/business-footer";
 import { BusinessHero } from "@/components/public/business-hero";
 import { FaqContactSection } from "@/components/public/faq-contact-section";
-import { PublicTrackedLink } from "@/components/public/public-tracked-link";
+import { HoursLocationSection } from "@/components/public/hours-location-section";
 import {
   PublicGallerySection,
   PublicGallerySectionSkeleton,
 } from "@/components/public/public-gallery-section";
+import { ReviewsSection } from "@/components/public/reviews-section";
 import { ServicesSection } from "@/components/public/services-section";
 import { StickyHeader } from "@/components/public/sticky-header";
 import { TestimonialsSection } from "@/components/public/testimonials-section";
 import { isDemoBusiness } from "@/constants/demo";
 import { resolvePublicTrustPoints } from "@/constants/public-business-profiles";
-import { OptimizedImage } from "@/components/ui/optimized-image";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import {
   BreadcrumbJsonLd,
@@ -29,11 +26,24 @@ import {
   WebPageJsonLd,
   resolveLocalBusinessSchemaType,
 } from "@/lib/seo/business-json-ld";
+import {
+  filterPricedServices,
+  getFirstActiveDayLabel,
+  getNextAvailableSlotLabel,
+  getPriceRangeSymbol,
+  getShortAddressLabel,
+  getStartingPriceLabel,
+} from "@/lib/public-business-display";
+import {
+  buildBookingHref,
+  buildFacebookHref,
+  buildInstagramHref,
+  buildTikTokHref,
+  buildWhatsAppHref,
+} from "@/lib/business-profile-links";
 import { getPublicAppUrl } from "@/lib/runtime";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
-import { cn } from "@/lib/utils";
 import { getPublicBusinessPageData } from "@/server/queries/public";
-import { productName } from "@/constants/site";
 import { createLogger } from "@/server/logger";
 
 const logger = createLogger("Public Page");
@@ -88,141 +98,6 @@ type BusinessPageProps = {
   }>;
 };
 
-function buildInstagramHref(handle?: string) {
-  if (!handle) return null;
-  if (handle.startsWith("http://") || handle.startsWith("https://")) return handle;
-  return `https://instagram.com/${handle.replace(/^@/, "")}`;
-}
-
-function buildFacebookHref(value?: string) {
-  if (!value) return null;
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  return `https://facebook.com/${value.replace(/^@/, "")}`;
-}
-
-function buildTikTokHref(value?: string) {
-  if (!value) return null;
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  return `https://www.tiktok.com/${value.startsWith("@") ? value : `@${value}`}`;
-}
-
-function buildWhatsAppHref(phone?: string, businessName?: string): string | undefined {
-  const normalizedPhone = phone?.replace(/\D/g, "");
-  if (!normalizedPhone) return undefined;
-
-  const message = businessName
-    ? `Hola ${businessName}, quiero reservar un turno.`
-    : "Hola, quiero reservar un turno.";
-
-  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
-}
-
-function buildBookingHref(input: {
-  slug: string;
-  serviceId?: string;
-  source?: string;
-  medium?: string;
-  campaign?: string;
-}) {
-  const params = new URLSearchParams();
-  if (input.serviceId) params.set("service", input.serviceId);
-  if (input.source) params.set("utm_source", input.source);
-  if (input.medium) params.set("utm_medium", input.medium);
-  if (input.campaign) params.set("utm_campaign", input.campaign);
-  const query = params.toString();
-  return query ? `/${input.slug}/reservar?${query}` : `/${input.slug}/reservar`;
-}
-
-function getStartingPriceLabel(
-  services: Array<{
-    priceLabel?: string;
-    price?: number | null;
-  }>
-) {
-  const pricedServices = services.filter(
-    (service): service is { price: number; priceLabel: string } =>
-      typeof service.price === "number" && Boolean(service.priceLabel)
-  );
-
-  if (pricedServices.length === 0) {
-    return "Consulta personalizada";
-  }
-
-  const cheapestService = pricedServices.reduce((currentCheapest, service) =>
-    service.price < currentCheapest.price ? service : currentCheapest
-  );
-
-  return `Desde ${cheapestService.priceLabel}`;
-}
-
-/**
- * schema.org priceRange for LocalBusiness. Uses the real ARS min–max range from
- * priced services rather than symbolic "$$" tiers, whose absolute thresholds age
- * badly under Argentine inflation. Returns undefined when no service is priced.
- */
-function getPriceRangeSymbol(
-  services: Array<{
-    priceLabel?: string;
-    price?: number | null;
-  }>
-): string | undefined {
-  const pricedServices = services.filter(
-    (service): service is { price: number; priceLabel: string } =>
-      typeof service.price === "number" && Boolean(service.priceLabel)
-  );
-
-  if (pricedServices.length === 0) {
-    return undefined;
-  }
-
-  const sorted = [...pricedServices].sort((a, b) => a.price - b.price);
-  const cheapest = sorted[0];
-  const priciest = sorted[sorted.length - 1];
-
-  return cheapest.price === priciest.price
-    ? cheapest.priceLabel
-    : `${cheapest.priceLabel} - ${priciest.priceLabel}`;
-}
-
-function getFirstActiveDayLabel(
-  weeklyHours: Array<{
-    dayLabel: string;
-    hoursLabel: string;
-  }>
-) {
-  return (
-    weeklyHours.find((slot) => !slot.hoursLabel.toLocaleLowerCase("es-AR").includes("cerrado")) ??
-    weeklyHours[0] ??
-    null
-  );
-}
-
-function getShortAddressLabel(address?: string | null) {
-  if (!address) {
-    return "Ubicación a confirmar";
-  }
-
-  const [firstSegment] = address.split(",");
-  return firstSegment?.trim() || address;
-}
-
-function getNextAvailableSlotLabel(input?: {
-  dayLabel: string;
-  hoursLabel: string;
-} | null) {
-  if (!input) {
-    return {
-      title: "Agenda activa",
-      detail: "Ver disponibilidad",
-    };
-  }
-
-  return {
-    title: input.dayLabel,
-    detail: input.hoursLabel,
-  };
-}
-
 export default async function BusinessPage({ params, searchParams }: BusinessPageProps) {
   const { slug } = await params;
   const tracking = await searchParams;
@@ -242,8 +117,9 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         : "",
   }));
 
-  const startingPriceLabel = getStartingPriceLabel(services);
-  const priceRangeSymbol = getPriceRangeSymbol(services);
+  const pricedServices = filterPricedServices(services);
+  const startingPriceLabel = getStartingPriceLabel(pricedServices);
+  const priceRangeSymbol = getPriceRangeSymbol(pricedServices);
   const firstActiveDay = getFirstActiveDayLabel(pageData.weeklyHours);
   // Template testimonials are invented showcase content -- only the demo
   // businesses themselves show them. Real businesses show real reviews
@@ -476,33 +352,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         )}
 
         {pageData.reviews && pageData.reviews.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
-            <div className="mb-6 sm:mb-10">
-              <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                Reseñas
-              </p>
-              <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                Lo que dicen nuestros clientes
-              </h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {pageData.reviews.map((review, index) => (
-                <article key={index} className="rounded-2xl border border-border/60 bg-card p-5 space-y-3">
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <svg key={i} className="size-4" viewBox="0 0 20 20" fill={i < review.rating ? pageData.profile.accent : "#e5e7eb"}>
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  {review.comment && (
-                    <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4">{review.comment}</p>
-                  )}
-                  <p className="text-xs font-medium text-muted-foreground">{review.customerName}</p>
-                </article>
-              ))}
-            </div>
-          </section>
+          <ReviewsSection accentColor={pageData.profile.accent} reviews={pageData.reviews} />
         )}
 
         {isDemo && (
@@ -529,193 +379,29 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           mobilePolicyCount={pageData.profile.sectionLayout.mobilePolicyItems}
         />
 
-        {/* Horarios + Ubicación */}
-        <section className="border-t border-border/40 py-12 sm:py-16 lg:py-20" style={{ backgroundColor: pageData.profile.surfaceTint }}>
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="grid gap-10 lg:grid-cols-2 lg:gap-14 lg:items-start">
+        <HoursLocationSection
+          accentColor={pageData.profile.accent}
+          surfaceTint={pageData.profile.surfaceTint}
+          weeklyHours={pageData.weeklyHours}
+          businessName={pageData.business.name}
+          address={pageData.business.address}
+          mapEmbedSrc={mapEmbedSrc}
+        />
 
-              {/* Horarios */}
-              {pageData.weeklyHours && pageData.weeklyHours.length > 0 && (
-                <div>
-                  <div className="mb-6">
-                    <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                      Horarios
-                    </p>
-                    <h2 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                      Días y horarios de atención
-                    </h2>
-                  </div>
-                  <div className="overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm">
-                    {pageData.weeklyHours.map((slot, idx) => {
-                      const isClosed = slot.hoursLabel.toLowerCase().includes("cerrado");
-                      return (
-                        <div
-                          key={slot.dayLabel}
-                          className={cn(
-                            "flex items-center justify-between px-5 py-3.5 text-sm",
-                            idx !== 0 && "border-t border-border/40",
-                            isClosed && "opacity-50"
-                          )}
-                        >
-                          <span className="font-medium text-foreground">{slot.dayLabel}</span>
-                          <span className={cn("text-right", isClosed ? "text-muted-foreground" : "font-semibold")} style={isClosed ? undefined : { color: pageData.profile.accent }}>
-                            {slot.hoursLabel}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Ubicación */}
-              <div className={pageData.weeklyHours && pageData.weeklyHours.length > 0 ? "" : "lg:col-span-2"}>
-                <div className="mb-6">
-                  <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: pageData.profile.accent }}>
-                    Ubicación
-                  </p>
-                  <h2 className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                    {pageData.business.address ?? "Dirección a definir"}
-                  </h2>
-                </div>
-                <div className="overflow-hidden rounded-2xl border border-border/60 shadow-sm">
-                  <iframe
-                    title={`Mapa de ${pageData.business.name}`}
-                    src={mapEmbedSrc}
-                    width="640"
-                    height="320"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="h-56 sm:h-72 lg:h-80 w-full"
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="border-t border-border/40 bg-background py-10 sm:py-12">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="grid gap-8 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={cn(
-                      "relative flex size-9 sm:size-10 items-center justify-center overflow-hidden rounded-lg sm:rounded-xl border border-border/60 bg-background text-xs sm:text-sm font-bold text-foreground shadow-sm",
-                      pageData.profile.logoUrl ? "text-transparent" : ""
-                    )}
-                  >
-                    {pageData.profile.logoUrl ? (
-                      <OptimizedImage
-                        src={pageData.profile.logoUrl}
-                        alt={`Logo de ${pageData.business.name}`}
-                        width={40}
-                        height={40}
-                      />
-                    ) : (
-                      logoLabel
-                    )}
-                  </div>
-                  <span className="font-bold text-foreground text-sm sm:text-base">{pageData.business.name}</span>
-                </div>
-                <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                  {pageData.profile.description}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs sm:text-sm font-bold text-foreground">Links rápidos</p>
-                <div className="mt-3 sm:mt-4 flex flex-col gap-1.5">
-                  <PublicTrackedLink
-                    businessSlug={slug}
-                    eventName="booking_cta_clicked"
-                    href={bookingHref}
-                    pagePath={`/${slug}`}
-                    className="inline-flex min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Reservar turno
-                  </PublicTrackedLink>
-                  {whatsappHref && (
-                    <a
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      Contactar por WhatsApp
-                    </a>
-                  )}
-                  <a
-                    href={mapsHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center text-xs sm:text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                      Ver ubicación
-                  </a>
-                </div>
-              </div>
-
-              <div className="sm:col-span-2 lg:col-span-1">
-                <p className="text-xs sm:text-sm font-bold text-foreground">Contacto</p>
-                <div className="mt-3 sm:mt-4 space-y-1.5">
-                  <p className="text-xs sm:text-sm text-muted-foreground">{pageData.business.address ?? "Dirección a definir"}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {instagramHref && (
-                      <a
-                        href={instagramHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        aria-label={`Abrir Instagram de ${pageData.business.name}`}
-                      >
-                        <Instagram className="size-3.5 sm:size-4" aria-hidden="true" />
-                      </a>
-                    )}
-                    {facebookHref && (
-                      <a
-                        href={facebookHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        aria-label={`Abrir Facebook de ${pageData.business.name}`}
-                      >
-                        <Facebook className="size-3.5 sm:size-4" aria-hidden="true" />
-                      </a>
-                    )}
-                    {tiktokHref && (
-                      <a
-                        href={tiktokHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        aria-label={`Abrir TikTok de ${pageData.business.name}`}
-                      >
-                        <TikTokIcon className="size-3.5 sm:size-4" aria-hidden="true" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 sm:mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:pt-8 sm:flex-row">
-              <p className="text-xs text-muted-foreground text-center sm:text-left">
-                © {new Date().getFullYear()} {pageData.business.name.trim()}. Todos los derechos reservados.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:justify-end">
-                <Link href="/privacidad" className="transition-colors hover:text-foreground">Privacidad</Link>
-                <Link href="/terminos" className="transition-colors hover:text-foreground">Términos</Link>
-                <span className="inline-flex items-center gap-1.5 font-medium">
-                  Desarrollado con <ReservaYaLogo variant="isotype" size="sm" className="size-4" />
-                  <span className="font-bold text-foreground">{productName}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <BusinessFooter
+          slug={slug}
+          businessName={pageData.business.name}
+          description={pageData.profile.description}
+          logoUrl={pageData.profile.logoUrl}
+          logoLabel={logoLabel}
+          bookingHref={bookingHref}
+          whatsappHref={whatsappHref}
+          mapsHref={mapsHref}
+          address={pageData.business.address}
+          instagramHref={instagramHref}
+          facebookHref={facebookHref}
+          tiktokHref={tiktokHref}
+        />
 
         <PublicAnalyticsTracker businessSlug={slug} eventName="public_page_view" pagePath={`/${slug}`} />
       </main>

@@ -9,11 +9,13 @@ import { BookingServicePicker } from "@/components/public/booking/booking-servic
 import { BookingStepsHeader } from "@/components/public/booking/booking-steps-header";
 import { BookingSupportCard } from "@/components/public/booking/booking-support-card";
 import { PublicAnalyticsTracker } from "@/components/public/public-analytics-tracker";
+import { TransactionalPageShell } from "@/components/public/transactional-page-shell";
 import { PublicBusinessPageWrapper } from "@/components/public-business-page-wrapper";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 import { generateBookingMetadata } from "@/lib/seo/business-metadata";
 import { buildBookingDateOptions, findNextBookingDate, formatDateLabel } from "@/lib/bookings/format";
 import { getActiveDaysFromWeeklyHours } from "@/lib/bookings/schedule";
+import { buildBookingHref } from "@/lib/business-profile-links";
 import { getPublicBusinessPageData, getPublicBookingFlowData, getPublicManageBookingData } from "@/server/queries/public";
 import { resolvePublicBookingFlashMessage } from "@/lib/public-booking-flash-messages";
 import { createLogger } from "@/server/logger";
@@ -70,31 +72,6 @@ type BookingPageProps = {
   }>;
 };
 
-function buildBookingHref(input: {
-  slug: string;
-  serviceId?: string;
-  bookingDate?: string;
-  rescheduleBookingId?: string;
-  token?: string;
-  source?: string;
-  medium?: string;
-  campaign?: string;
-  changeService?: boolean;
-}) {
-  const params = new URLSearchParams();
-  if (input.serviceId) params.set("service", input.serviceId);
-  if (input.bookingDate) params.set("date", input.bookingDate);
-  if (input.rescheduleBookingId) params.set("reschedule", input.rescheduleBookingId);
-  if (input.token) params.set("token", input.token);
-  if (input.source) params.set("utm_source", input.source);
-  if (input.medium) params.set("utm_medium", input.medium);
-  if (input.campaign) params.set("utm_campaign", input.campaign);
-  if (input.changeService) params.set("changeService", "1");
-  const query = params.toString();
-  return query ? `/${input.slug}/reservar?${query}` : `/${input.slug}/reservar`;
-}
-
-
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { slug } = await params;
   const filters = await searchParams;
@@ -142,13 +119,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   return (
     <PublicBusinessPageWrapper profile={pageData.profile}>
-      <main
-        id="main-content"
-        className="min-h-dvh bg-background font-sans text-foreground selection:bg-foreground selection:text-background"
-        style={{
-          background: `linear-gradient(180deg, ${pageData.profile?.surfaceTint ?? `${accentColor}08`} 0%, transparent 100%)`,
-        }}
-      >
+      <TransactionalPageShell accentColor={accentColor} surfaceTint={pageData.profile?.surfaceTint}>
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           <BookingStepsHeader
             backHref={`/${slug}`}
@@ -272,7 +243,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           eventName="booking_page_view"
           pagePath={`/${slug}/reservar`}
         />
-      </main>
+      </TransactionalPageShell>
     </PublicBusinessPageWrapper>
   );
 }

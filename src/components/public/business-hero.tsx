@@ -4,23 +4,20 @@ import {
   CheckCircle2,
   Clock,
   Clock3,
-  Facebook,
-  Instagram,
   MapPin,
   Quote,
   Sparkles,
   Star,
 } from "lucide-react";
 
-import { WhatsAppIcon, TikTokIcon } from "@/components/icons";
+import { WhatsAppIcon } from "@/components/icons";
 import { PublicTrackedLink } from "@/components/public/public-tracked-link";
+import { SocialLinks, type SocialHref } from "@/components/public/social-links";
 import { OptimizedImage, HeroImage } from "@/components/ui/optimized-image";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { getAccentForeground } from "@/lib/color-contrast";
 import { unsplashSrcForWidth } from "@/lib/images/unsplash";
-
-type SocialHref = string | null;
 
 type BusinessHeroProps = {
   slug: string;
@@ -61,131 +58,6 @@ type BusinessHeroProps = {
       }
     | null;
 };
-
-function SocialLinksDesktop({
-  instagramHref,
-  facebookHref,
-  tiktokHref,
-  whatsappHref,
-}: {
-  instagramHref: SocialHref;
-  facebookHref: SocialHref;
-  tiktokHref: SocialHref;
-  whatsappHref: string | undefined;
-}) {
-  return (
-    <div className="hidden flex-wrap items-center gap-2 lg:flex">
-      {instagramHref && (
-        <a
-          href={instagramHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir Instagram"
-          className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-        >
-          <Instagram className="size-4" />
-        </a>
-      )}
-      {facebookHref && (
-        <a
-          href={facebookHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir Facebook"
-          className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-        >
-          <Facebook className="size-4" />
-        </a>
-      )}
-      {tiktokHref && (
-        <a
-          href={tiktokHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir TikTok"
-          className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-        >
-          <TikTokIcon className="size-4" />
-        </a>
-      )}
-      {whatsappHref && (
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Escribir por WhatsApp"
-          className="rounded-full bg-background/80 p-2.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-        >
-          <WhatsAppIcon className="size-4" />
-        </a>
-      )}
-    </div>
-  );
-}
-
-function SocialLinksMobile({
-  instagramHref,
-  facebookHref,
-  tiktokHref,
-  whatsappHref,
-}: {
-  instagramHref: SocialHref;
-  facebookHref: SocialHref;
-  tiktokHref: SocialHref;
-  whatsappHref: string | undefined;
-}) {
-  const hasAny = Boolean(instagramHref || facebookHref || tiktokHref || whatsappHref);
-  if (!hasAny) return null;
-
-  return (
-    <div className="flex flex-wrap items-center gap-2 lg:hidden">
-      {instagramHref && (
-        <a
-          href={instagramHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir Instagram"
-          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <Instagram className="size-4" />
-        </a>
-      )}
-      {facebookHref && (
-        <a
-          href={facebookHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir Facebook"
-          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <Facebook className="size-4" />
-        </a>
-      )}
-      {tiktokHref && (
-        <a
-          href={tiktokHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir TikTok"
-          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <TikTokIcon className="size-4" />
-        </a>
-      )}
-      {whatsappHref && (
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Escribir por WhatsApp"
-          className="rounded-full border border-border/60 bg-background p-2.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <WhatsAppIcon className="size-4" />
-        </a>
-      )}
-    </div>
-  );
-}
 
 export function BusinessHero({
   slug,
@@ -241,13 +113,15 @@ export function BusinessHero({
             </div>
           </div>
 
-          <SocialLinksDesktop
+          <SocialLinks
+            variant="hero-desktop"
             instagramHref={instagramHref}
             facebookHref={facebookHref}
             tiktokHref={tiktokHref}
             whatsappHref={whatsappHref}
           />
-          <SocialLinksMobile
+          <SocialLinks
+            variant="hero-mobile"
             instagramHref={instagramHref}
             facebookHref={facebookHref}
             tiktokHref={tiktokHref}
