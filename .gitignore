@@ -117,3 +117,5 @@ snapshot*.txt
 # local CLI/tooling state (per-machine, not project config)
 .codegraph/
 supabase/.branches/
+supabase/.temp/
+/graphify-out/

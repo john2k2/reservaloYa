@@ -19,6 +19,7 @@ export type BusinessRecord = {
   address?: string;
   timezone?: string;
   active?: boolean;
+  published?: boolean;
   publicProfileOverrides?: string;
   cancellationPolicy?: string;
   mpAccessToken?: string;

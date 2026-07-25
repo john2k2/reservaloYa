@@ -320,6 +320,9 @@ async function saveOnboardingBranding(formData: FormData): Promise<SaveOnboardin
 
   await updateSupabaseRecord("businesses", business.id, {
     publicProfileOverrides: JSON.stringify(updates),
+    // El paso de branding es el último del wizard de onboarding — completarlo
+    // por primera vez marca el negocio como listo para aparecer en el sitemap.
+    published: true,
   });
 
   revalidatePath("/admin/onboarding");

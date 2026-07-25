@@ -79,7 +79,7 @@ export async function generateMetadata({
     phone: pageData.business.phone,
   });
 
-  if (isDemoBusiness(slug)) {
+  if (isDemoBusiness(slug) || !pageData.business.published) {
     return {
       ...metadata,
       robots: { index: false, follow: true },

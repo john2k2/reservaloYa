@@ -29,7 +29,7 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
   const { data: businessData, error: businessError } = await client
     .from("businesses")
     .select(
-      'id, created, updated, name, slug, "templateSlug", phone, email, address, timezone, active, "publicProfileOverrides", "cancellationPolicy", "mpConnected"'
+      'id, created, updated, name, slug, "templateSlug", phone, email, address, timezone, active, published, "publicProfileOverrides", "cancellationPolicy", "mpConnected"'
     )
     .eq("slug", normalizedSlug)
     .eq("active", true)
@@ -64,6 +64,7 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
       email: business.email ?? "",
       address: business.address ?? "",
       timezone: business.timezone ?? "America/Argentina/Buenos_Aires",
+      published: business.published ?? false,
       cancellationPolicy: business.cancellationPolicy,
       mpConnected: business.mpConnected ?? false,
     },
@@ -92,7 +93,11 @@ export async function getSupabasePublicBusinessPageData(slug: string) {
 
 export async function getSupabasePublicBusinessSitemapEntries() {
   const client = createPublicClient();
-  const { data, error } = await client.from("businesses").select("slug, updated").eq("active", true);
+  const { data, error } = await client
+    .from("businesses")
+    .select("slug, updated")
+    .eq("active", true)
+    .eq("published", true);
   if (error || !data) return [];
   return (data as BusinessRecord[]).map((b) => ({
     slug: b.slug,
