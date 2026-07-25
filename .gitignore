@@ -119,3 +119,5 @@ snapshot*.txt
 supabase/.branches/
 supabase/.temp/
 /graphify-out/
+.firecrawl/
+.superpowers/
