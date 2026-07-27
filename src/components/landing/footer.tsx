@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { ReservaYaLogo } from "@/components/brand/reservaya-logo";
 import { productName, productTagline } from "@/constants/site";
+import { seoLandingPages } from "@/constants/seo-landing-pages";
 import { getSiteWhatsAppHref } from "@/lib/contact";
 
 const footerNav = [
@@ -67,6 +68,24 @@ export function Footer() {
             ))}
           </nav>
         </div>
+
+        <nav
+          aria-label="Por rubro"
+          className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule pt-8"
+        >
+          <span className="font-mono text-xs uppercase tracking-[0.3em] text-sello">
+            Por rubro
+          </span>
+          {seoLandingPages.map((page) => (
+            <Link
+              key={page.slug}
+              href={`/${page.slug}`}
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {page.eyebrow}
+            </Link>
+          ))}
+        </nav>
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-rule pt-8 sm:flex-row sm:items-center">
           <p className="text-sm text-muted-foreground">
