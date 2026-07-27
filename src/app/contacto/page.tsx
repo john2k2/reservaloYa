@@ -8,9 +8,12 @@ import { getSiteWhatsAppHref, siteContact } from "@/lib/contact";
 import { ContactInquiryForm } from "./contact-inquiry-form";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Contacto comercial",
+  // "Contacto comercial" no coincidía con la promesa de la propia página (su H1 habla de
+  // la agenda del negocio) y suena a venta corporativa, no a la barbería de barrio que
+  // es el cliente real. La página estaba en posición ~6 con 478 impresiones y 1 clic.
+  title: "Contacto: hablemos de la agenda de tu negocio",
   description:
-    "Contactá a ReservaYa para consultar por turnos online, implementación, soporte comercial o configuración de reservas para tu negocio.",
+    "Escribinos por WhatsApp o desde el formulario y te ayudamos a poner la agenda online de tu negocio a funcionar. Respondemos rápido y sin bots.",
   path: "/contacto",
 });
 
