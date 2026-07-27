@@ -69,7 +69,16 @@ export async function generateMetadata({
     };
   }
 
-  if (!pageData) notFound();
+  // Ojo: acá NO va notFound(). Llamarlo desde generateMetadata hace que la respuesta
+  // salga con HTTP 200 y el cuerpo de "página no encontrada" — un soft 404 que deja
+  // indexados negocios dados de baja. El notFound() del componente de página (abajo)
+  // es el que produce el 404 real; acá alcanza con metadata que no se indexe.
+  if (!pageData) {
+    return {
+      title: { absolute: "Página no encontrada | ReservaYa" },
+      robots: { index: false, follow: false },
+    };
+  }
 
   const metadata = generateBusinessMetadata({
     businessName: pageData.business.name,
