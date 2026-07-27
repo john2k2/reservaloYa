@@ -8,6 +8,7 @@ import {
   getSupabaseAuthTokenFromCookies,
 } from "@/lib/supabase/server";
 import { getPublicAppUrl } from "@/lib/runtime";
+import { slugify } from "@/lib/utils";
 import { createLogger } from "@/server/logger";
 import { demoPresets } from "@/constants/demo";
 
@@ -139,11 +140,21 @@ export async function createSupabaseOwnerAccount(params: {
   if (authError) throw authError;
   if (!authUser.user) throw new Error("No se pudo crear el usuario.");
 
+  // Última línea antes de la DB: la lectura de la página pública normaliza el slug
+  // (getSupabasePublicBusinessPageData), así que guardar uno sin normalizar deja al
+  // negocio en 404 permanente. slugify es idempotente — el caller ya normaliza.
+  const slug = slugify(params.businessSlug);
+
+  if (!slug) {
+    await admin.auth.admin.deleteUser(authUser.user.id);
+    throw new Error("El link público del negocio no es válido.");
+  }
+
   const { data: business, error: businessError } = await admin
     .from("businesses")
     .insert({
       name: params.businessName,
-      slug: params.businessSlug,
+      slug,
       templateSlug: params.templateSlug,
       phone: params.phone,
       address: params.address,

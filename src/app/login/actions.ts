@@ -5,6 +5,8 @@ import { redirect, unstable_rethrow } from "next/navigation";
 
 import { signInSupabaseUser, createSupabaseOwnerAccount, resetSupabaseUserPassword, updateSupabaseUserPassword } from "@/server/supabase-auth";
 import { RateLimitError, assertRateLimit, getRateLimitIdentifier } from "@/server/rate-limit";
+import { isReservedSlug } from "@/constants/reserved-slugs";
+import { slugify } from "@/lib/utils";
 import { env } from "@/lib/env";
 
 function isSuperAdminEmail(email: string) {
@@ -39,6 +41,11 @@ function mapAuthErrorToSpanish(raw: string, fallback: string) {
   }
   if (normalized.includes("rate limit") || normalized.includes("too many")) {
     return "Demasiados intentos. Probá de nuevo en unos minutos.";
+  }
+  // Choque contra el índice único businesses_slug_key: el error crudo de Postgres no le
+  // dice nada al dueño, y el campo que tiene que corregir es el link público.
+  if (normalized.includes("businesses_slug_key")) {
+    return "Ese link público ya está en uso. Elegí otro.";
   }
   // Mensajes propios en español (con o sin tilde) se dejan pasar
   if (raw && !/\b(invalid|credentials|registered|confirm|password|user already)\b/i.test(raw)) {
@@ -147,13 +154,32 @@ export async function signupAction(formData: FormData) {
     redirect("/admin/signup?error=La contraseña debe tener al menos 8 caracteres.");
   }
 
+  // El slug se guarda tal cual y se lee normalizado (ver getSupabasePublicBusinessPageData),
+  // así que hay que normalizarlo acá o la página pública del negocio queda en 404 para siempre.
+  // El campo es opcional en el form: si viene vacío se deriva del nombre del negocio.
+  const normalizedSlug = slugify(businessSlug) || slugify(businessName);
+
+  if (!normalizedSlug) {
+    redirect(
+      "/admin/signup?error=El link público necesita al menos una letra o número. Probá con algo como: mi-barberia."
+    );
+  }
+
+  if (isReservedSlug(normalizedSlug)) {
+    redirect(
+      `/admin/signup?error=${encodeURIComponent(
+        `"${normalizedSlug}" es una dirección reservada del sitio. Elegí otro link público.`
+      )}`
+    );
+  }
+
   try {
     await createSupabaseOwnerAccount({
       ownerName,
       email,
       password,
       businessName,
-      businessSlug,
+      businessSlug: normalizedSlug,
       phone,
       address,
       templateSlug,
@@ -162,7 +188,7 @@ export async function signupAction(formData: FormData) {
     await signInSupabaseUser(email, password);
 
     redirect(
-      `/admin/onboarding?created=${encodeURIComponent(businessSlug)}&verification=${encodeURIComponent(
+      `/admin/onboarding?created=${encodeURIComponent(normalizedSlug)}&verification=${encodeURIComponent(
         "Cuenta creada correctamente."
       )}`
     );

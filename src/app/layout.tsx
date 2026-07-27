@@ -5,6 +5,7 @@ import "./globals.css";
 import { defaultMetadata, defaultViewport } from "@/lib/seo/metadata";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/lib/seo/json-ld";
 import { ThemeProvider } from "@/components/theme-provider";
+import { reservedSlugs } from "@/constants/reserved-slugs";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,14 +47,9 @@ export default function RootLayout({
               (function() {
                 // Reserved top-level routes that are NOT a public business page
                 // (the [slug] catch-all lives at the root, so anything not in this
-                // list is treated as a business slug).
-                const reservedFirstSegments = [
-                  'about', 'admin', 'agenda-online-peluquerias', 'api', 'auth',
-                  'como-funciona', 'contacto', 'favicon.ico', 'funcionalidades',
-                  'login', 'platform', 'precios', 'preguntas-frecuentes', 'privacidad',
-                  'sistema-reservas-centros-estetica', 'sobre-reservaya', 'terminos',
-                  'turnos-online-barberias', 'turnos-online-consultorios', 'turnos-online-nails'
-                ];
+                // list is treated as a business slug). Injected from
+                // src/constants/reserved-slugs.ts — la misma lista que valida el signup.
+                const reservedFirstSegments = ${JSON.stringify(reservedSlugs)};
                 const firstSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
                 const isPublicBusinessPage = firstSegment !== '' && reservedFirstSegments.indexOf(firstSegment) === -1;
 

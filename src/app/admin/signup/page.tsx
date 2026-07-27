@@ -105,7 +105,7 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="businessSlug" className="text-sm font-medium text-foreground">
-              Link público
+              Link público <span className="text-muted-foreground">(opcional)</span>
             </label>
             <input
               id="businessSlug"
@@ -113,7 +113,12 @@ export default async function AdminSignupPage({ searchParams }: AdminSignupPageP
               autoComplete="off"
               className="minimalist-input"
               placeholder="aura-studio"
+              aria-describedby="businessSlug-hint"
             />
+            <p id="businessSlug-hint" className="text-xs text-muted-foreground">
+              Es la dirección de tu página: reservaya.ar/tu-link. Si lo dejás vacío, lo armamos con
+              el nombre del negocio.
+            </p>
           </div>
           <div className="space-y-2">
             <label htmlFor="templateSlug" className="text-sm font-medium text-foreground">

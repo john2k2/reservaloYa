@@ -220,6 +220,93 @@ describe("signupAction", () => {
     expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("error=");
   });
 
+  function buildSignupFormData(overrides: Record<string, string> = {}) {
+    const formData = new FormData();
+    formData.set("ownerName", "Juan");
+    formData.set("businessName", "Mi Barberia");
+    formData.set("businessSlug", "mi-barberia");
+    formData.set("templateSlug", "demo-barberia");
+    formData.set("phone", "1122334455");
+    formData.set("address", "Calle 123");
+    formData.set("email", "owner@example.com");
+    formData.set("password", "password123");
+
+    for (const [key, value] of Object.entries(overrides)) {
+      formData.set(key, value);
+    }
+
+    return formData;
+  }
+
+  it("normalizes a slug typed with spaces, accents and casing", async () => {
+    createSupabaseOwnerAccountMock.mockResolvedValue({ id: "user_1" });
+    signInSupabaseUserMock.mockResolvedValue({ id: "user_1" });
+
+    const { signupAction } = await import("./actions");
+
+    await expect(
+      signupAction(buildSignupFormData({ businessSlug: "Mi Barbería Palermo" }))
+    ).rejects.toThrow("REDIRECT:");
+
+    expect(createSupabaseOwnerAccountMock).toHaveBeenCalledWith(
+      expect.objectContaining({ businessSlug: "mi-barberia-palermo" })
+    );
+    expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("created=mi-barberia-palermo");
+  });
+
+  it("derives the slug from the business name when left empty", async () => {
+    createSupabaseOwnerAccountMock.mockResolvedValue({ id: "user_1" });
+    signInSupabaseUserMock.mockResolvedValue({ id: "user_1" });
+
+    const { signupAction } = await import("./actions");
+
+    await expect(
+      signupAction(buildSignupFormData({ businessSlug: "", businessName: "Aura Studio Palermo" }))
+    ).rejects.toThrow("REDIRECT:");
+
+    expect(createSupabaseOwnerAccountMock).toHaveBeenCalledWith(
+      expect.objectContaining({ businessSlug: "aura-studio-palermo" })
+    );
+  });
+
+  it("rejects a slug that normalizes to an empty string", async () => {
+    const { signupAction } = await import("./actions");
+
+    await expect(
+      signupAction(buildSignupFormData({ businessSlug: "!!!", businessName: "???" }))
+    ).rejects.toThrow("REDIRECT:");
+
+    expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("error=");
+    expect(createSupabaseOwnerAccountMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a slug that collides with a reserved route", async () => {
+    const { signupAction } = await import("./actions");
+
+    await expect(signupAction(buildSignupFormData({ businessSlug: "precios" }))).rejects.toThrow(
+      "REDIRECT:"
+    );
+
+    expect(redirectMock.mock.calls.at(-1)?.[0]).toContain("error=");
+    expect(createSupabaseOwnerAccountMock).not.toHaveBeenCalled();
+  });
+
+  it("explains the conflict when the slug is already taken", async () => {
+    createSupabaseOwnerAccountMock.mockRejectedValue(
+      Object.assign(new Error('duplicate key value violates unique constraint "businesses_slug_key"'), {
+        code: "23505",
+      })
+    );
+
+    const { signupAction } = await import("./actions");
+
+    await expect(signupAction(buildSignupFormData())).rejects.toThrow("REDIRECT:");
+
+    const redirectCall = redirectMock.mock.calls.at(-1)?.[0] ?? "";
+    expect(redirectCall).toContain("error=");
+    expect(decodeURIComponent(redirectCall)).toContain("link público");
+  });
+
   it("blocks repeated signup attempts after max retries", async () => {
     createSupabaseOwnerAccountMock.mockRejectedValue(new Error("Error"));
 
