@@ -23,7 +23,10 @@ export function Footer() {
 
   return (
     <footer id="contacto" className="relative border-t border-rule bg-background">
-      <div className="relative mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+      {/* max-w-6xl, igual que el header y todas las secciones de la landing.
+          Estaba en 5xl y el footer quedaba 128px mas angosto que el resto,
+          desalineado con el header que tiene justo arriba. */}
+      <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className="border-b border-rule pb-14 text-center">
           <h3 className="font-display text-3xl font-semibold text-foreground sm:text-4xl">
             ¿Tenés dudas antes de empezar?
