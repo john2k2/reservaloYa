@@ -55,7 +55,10 @@ export function getPublicBusinessThemeStyle(
     "--secondary": light.accentSoft,
     "--secondary-foreground": "#0f172a",
     "--muted": light.accentSoft,
-    "--muted-foreground": "#64748b",
+    // slate-600, no slate-500 (#64748b): sobre los fondos claros que usan los negocios
+    // (#F6F1EA, #FCF6F7, ...) slate-500 daba 4.24:1 y no llegaba al 4.5:1 que pide
+    // WCAG AA para texto normal. slate-600 da 6.74:1 en el peor de esos fondos.
+    "--muted-foreground": "#475569",
     "--accent": light.accentSoft,
     "--accent-foreground": "#0f172a",
     "--ring": light.accent,

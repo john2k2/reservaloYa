@@ -56,3 +56,68 @@ export function getAccentForeground(accentHex: string): string {
   // they already render with today to black, for no reported problem there.
   return luminance > 0.3 ? DARK_FOREGROUND : LIGHT_FOREGROUND;
 }
+
+/** WCAG contrast ratio between two hex colors. Returns 1 if either is invalid. */
+export function contrastRatio(a: string, b: string): number {
+  const rgbA = hexToRgb(a);
+  const rgbB = hexToRgb(b);
+
+  if (!rgbA || !rgbB) return 1;
+
+  const [lighter, darker] = [relativeLuminance(rgbA), relativeLuminance(rgbB)].sort(
+    (x, y) => y - x
+  );
+
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function toHex([r, g, b]: [number, number, number]): string {
+  return `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * El acento lo elige cada dueño de negocio, así que no se puede asumir que sea
+ * legible como *texto* sobre el fondo claro de su página: el marrón del demo de
+ * barbería (#8f6a3a) daba 4.35:1 sobre el crema, por debajo del 4.5:1 que pide
+ * WCAG AA para texto normal.
+ *
+ * Devuelve el acento oscurecido lo mínimo necesario para llegar al objetivo,
+ * conservando el tono (escala los canales hacia el negro). Si ya cumple, lo
+ * devuelve intacto. Para fondos/acentos inválidos devuelve el acento sin tocar:
+ * degradar el color nunca debe romper el render.
+ *
+ * Ojo: esto es para acento-como-texto. Para elegir el texto que va ENCIMA de un
+ * bloque del color de acento, va getAccentForeground.
+ */
+export function getReadableAccentText(
+  accentHex: string,
+  backgroundHex: string,
+  targetRatio = 4.5
+): string {
+  const accent = hexToRgb(accentHex);
+  const background = hexToRgb(backgroundHex);
+
+  if (!accent || !background) return accentHex;
+  if (contrastRatio(accentHex, backgroundHex) >= targetRatio) return accentHex;
+
+  // Búsqueda binaria del factor de oscurecimiento más chico que alcanza el
+  // objetivo. 24 iteraciones dan precisión de sobra para 8 bits por canal.
+  let low = 0;
+  let high = 1;
+
+  for (let i = 0; i < 24; i += 1) {
+    const mid = (low + high) / 2;
+    const candidate = toHex([accent[0] * mid, accent[1] * mid, accent[2] * mid]);
+
+    if (contrastRatio(candidate, backgroundHex) >= targetRatio) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  const result = toHex([accent[0] * low, accent[1] * low, accent[2] * low]);
+
+  // El redondeo a enteros puede dejarlo un pelo por debajo; en ese caso, negro.
+  return contrastRatio(result, backgroundHex) >= targetRatio ? result : "#000000";
+}

@@ -48,11 +48,20 @@ export function HoursLocationSection({
                       key={slot.dayLabel}
                       className={cn(
                         "flex items-center justify-between px-5 py-3.5 text-sm",
-                        idx !== 0 && "border-t border-border/40",
-                        isClosed && "opacity-50"
+                        idx !== 0 && "border-t border-border/40"
                       )}
                     >
-                      <span className="font-medium text-foreground">{slot.dayLabel}</span>
+                      {/* Los días cerrados se atenúan con color, no con opacity: un
+                          opacity-50 sobre toda la fila bajaba el contraste a 1.87:1
+                          (WCAG AA pide 4.5:1) y dejaba el texto casi ilegible. */}
+                      <span
+                        className={cn(
+                          "font-medium",
+                          isClosed ? "text-muted-foreground" : "text-foreground"
+                        )}
+                      >
+                        {slot.dayLabel}
+                      </span>
                       <span className={cn("text-right", isClosed ? "text-muted-foreground" : "font-semibold")} style={isClosed ? undefined : { color: accentColor }}>
                         {slot.hoursLabel}
                       </span>

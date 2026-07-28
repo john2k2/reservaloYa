@@ -41,6 +41,7 @@ import {
   buildTikTokHref,
   buildWhatsAppHref,
 } from "@/lib/business-profile-links";
+import { getReadableAccentText } from "@/lib/color-contrast";
 import { getPublicAppUrl } from "@/lib/runtime";
 import { generateBusinessMetadata } from "@/lib/seo/business-metadata";
 import { getPublicBusinessPageData } from "@/server/queries/public";
@@ -126,6 +127,15 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         : "",
   }));
 
+  // El acento lo elige cada dueño y se usa como color de texto en varias secciones,
+  // así que hay que garantizar que sea legible. Se calcula contra accentSoft, la
+  // superficie más oscura sobre la que aparece: el valor que sirve ahí sirve también
+  // sobre el fondo más claro de la página.
+  const accentColor = getReadableAccentText(
+    pageData.profile.accent,
+    pageData.profile.accentSoft
+  );
+
   const pricedServices = filterPricedServices(services);
   const startingPriceLabel = getStartingPriceLabel(pricedServices);
   const priceRangeSymbol = getPriceRangeSymbol(pricedServices);
@@ -142,6 +152,9 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
   // defaults and only show trust points when branding customized them.
   const heroProfile = {
     ...pageData.profile,
+    // El hero pinta texto con profile.accent directamente, así que acá también
+    // va la variante legible en vez del acento crudo.
+    accent: accentColor,
     trustPoints: resolvePublicTrustPoints({
       isDemo,
       profileTrustPoints: pageData.profile.trustPoints,
@@ -300,7 +313,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           businessName={pageData.business.name}
           bookingHref={bookingHref}
           whatsappHref={whatsappHref}
-          accent={pageData.profile.accent}
+          accent={accentColor}
           enableDarkMode={pageData.profile.enableDarkMode}
         />
 
@@ -325,7 +338,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
 
         <ServicesSection
           slug={slug}
-          accentColor={pageData.profile.accent}
+          accentColor={accentColor}
           accentSoft={pageData.profile.accentSoft}
           surfaceTint={pageData.profile.surfaceTint}
           services={services}
@@ -352,7 +365,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
           >
             <PublicGallerySection
               businessName={pageData.business.name}
-              accent={pageData.profile.accent}
+              accent={accentColor}
               mobileGalleryItems={pageData.profile.sectionLayout.mobileGalleryItems}
               gallery={pageData.profile.gallery}
               instagramGallery={pageData.profile.instagramGallery}
@@ -361,19 +374,19 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         )}
 
         {pageData.reviews && pageData.reviews.length > 0 && (
-          <ReviewsSection accentColor={pageData.profile.accent} reviews={pageData.reviews} />
+          <ReviewsSection accentColor={accentColor} reviews={pageData.reviews} />
         )}
 
         {isDemo && (
           <TestimonialsSection
-            accentColor={pageData.profile.accent}
+            accentColor={accentColor}
             testimonials={pageData.profile.testimonials}
             mobileVisibleCount={pageData.profile.sectionLayout.mobileTestimonials}
           />
         )}
 
         <FaqContactSection
-          accentColor={pageData.profile.accent}
+          accentColor={accentColor}
           surfaceTint={pageData.profile.surfaceTint}
           faqs={pageData.profile.faqs}
           policies={[
@@ -389,7 +402,7 @@ export default async function BusinessPage({ params, searchParams }: BusinessPag
         />
 
         <HoursLocationSection
-          accentColor={pageData.profile.accent}
+          accentColor={accentColor}
           surfaceTint={pageData.profile.surfaceTint}
           weeklyHours={pageData.weeklyHours}
           businessName={pageData.business.name}
