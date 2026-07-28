@@ -232,7 +232,7 @@ export function BookingDateTimePicker({
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
-              className="py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60"
+              className="py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
             >
               {label}
             </div>
@@ -263,7 +263,7 @@ export function BookingDateTimePicker({
                     ? "font-bold shadow-lg"
                     : isAvailable
                       ? "text-foreground hover:bg-muted/70"
-                      : "cursor-default text-muted-foreground/30",
+                      : "cursor-default text-muted-foreground",
                   isToday && !isSelected && "ring-1 ring-foreground/20",
                 )}
                 style={
@@ -334,7 +334,7 @@ export function BookingDateTimePicker({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {selectedDateLabel}
         </p>
-        <p className="mt-1 text-[11px] text-muted-foreground/60 tabular-nums">
+        <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
           {isLoading
             ? "Cargando horarios disponibles..."
             : hasSlots
@@ -379,7 +379,7 @@ export function BookingDateTimePicker({
               const hiddenCount = group.items.length - visibleSlots.length;
               return (
                 <div key={group.period}>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     {group.label}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -428,7 +428,7 @@ export function BookingDateTimePicker({
         ) : (
           <div className="mt-4 flex flex-1 flex-col">
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 px-4 py-6 text-center">
-              <Clock3 className="mb-3 size-5 text-muted-foreground/40" />
+              <Clock3 className="mb-3 size-5 text-muted-foreground" />
               <p className="text-sm font-medium text-foreground">Sin horarios</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Probá seleccionando otro día en el calendario.

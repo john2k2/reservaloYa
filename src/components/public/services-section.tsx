@@ -45,7 +45,7 @@ export function ServicesSection({
             </h2>
           </div>
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-background/60 px-6 py-14 text-center sm:rounded-3xl sm:py-20">
-            <Clock className="size-10 text-muted-foreground/40 sm:size-12" />
+            <Clock className="size-10 text-muted-foreground sm:size-12" />
             <p className="mt-4 text-base font-semibold text-foreground sm:text-lg">
               Los servicios están por llegar
             </p>

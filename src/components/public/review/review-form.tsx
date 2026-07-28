@@ -84,7 +84,7 @@ export function ReviewForm({
         {/* Comment */}
         <div className="space-y-1.5">
           <label htmlFor="review-comment" className="text-sm font-medium text-foreground">
-            Comentario <span className="text-muted-foreground/60">(opcional)</span>
+            Comentario <span className="text-muted-foreground">(opcional)</span>
           </label>
           <textarea
             id="review-comment"

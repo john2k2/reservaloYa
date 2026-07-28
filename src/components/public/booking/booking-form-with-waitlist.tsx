@@ -415,7 +415,7 @@ export function BookingFormWithWaitlist({
                   {paymentSummary.buttonLabel}
                 </button>
               ) : (
-                <div className="flex h-12 w-full items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground/50 cursor-not-allowed">
+                <div className="flex h-12 w-full items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground cursor-not-allowed">
                   Elegí un horario para continuar
                 </div>
               )}
@@ -475,7 +475,7 @@ export function BookingFormWithWaitlist({
                   {paymentSummary.buttonLabel}
                 </button>
               ) : (
-                <div className="flex h-10 shrink-0 items-center rounded-xl border border-border/60 bg-muted/40 px-4 text-sm font-semibold text-muted-foreground/50">
+                <div className="flex h-10 shrink-0 items-center rounded-xl border border-border/60 bg-muted/40 px-4 text-sm font-semibold text-muted-foreground">
                   Elegí un horario
                 </div>
               )}
