@@ -1,8 +1,10 @@
 # Post LinkedIn — ReservaYa
 
-> Copiar y pegar. Ajustar el primer párrafo si publicás con video o carrusel (marcar `[VIDEO]` o `[CAPTURAS]`).
+> Copiar y pegar. Subí el video nativo (`assets/reservaya-demo-2026-07-17.mp4`) directo al post — no lo linkees. Los links van en el primer comentario, no en el cuerpo (LinkedIn penaliza el alcance de posts con links salientes).
 
 ---
+
+## Post principal (sin links — para publicar con el video nativo)
 
 Si tenés barbería o peluquería, seguro te suena esto:
 
@@ -19,10 +21,9 @@ WhatsApp funciona… hasta que te come el día. Mientras contestás mensajes, pe
 
 **Probá 15 días gratis**, sin tarjeta y sin permanencia. Después: **promo transferencia ≈ USD 22/mes** (ARS al blue) o **tarjeta USD 27/mes**.
 
-👉 **Mirá la demo en vivo:** https://reservaya.ar/demo-barberia  
-👉 **Empezá tu prueba:** https://reservaya.ar/admin/signup
+Te dejo la demo en vivo y el link para probarlo gratis en el primer comentario 👇
 
-Si preferís que te lo mostremos en 10 minutos, escribinos por WhatsApp desde la web o dejá un comentario.
+Si preferís que te lo muestre en 10 minutos, escribime por acá o por WhatsApp.
 
 Hecho por **John Labs** — software simple para negocios que no tienen tiempo de perder.
 
@@ -30,7 +31,16 @@ Hecho por **John Labs** — software simple para negocios que no tienen tiempo d
 
 ---
 
-## Variante corta (si LinkedIn trunca el alcance)
+## Primer comentario (pegar apenas se publique el post)
+
+👉 Demo en vivo: https://reservaya.ar/demo-barberia
+👉 Probá 15 días gratis: https://reservaya.ar/admin/signup
+
+Cualquier duda, la respondo por acá o por WhatsApp.
+
+---
+
+## Variante corta (post de seguimiento, unos días después)
 
 ¿Barbería o peluquería a full por WhatsApp?
 
@@ -38,16 +48,18 @@ ReservaYa = turnos online + recordatorios + panel de agenda.
 
 15 días gratis · promo transferencia ≈ USD 22 · tarjeta USD 27 · sin permanencia.
 
-Demo: https://reservaya.ar/demo-barberia  
-Probar: https://reservaya.ar/admin/signup
+Demo y prueba gratis en el primer comentario 👇
 
 #turnos #barberia #peluqueria #reservaya
+
+*(Primer comentario: mismos dos links de arriba.)*
 
 ---
 
 ## Notas para publicar
 
-- **Imagen/video:** usar capturas del pack o el video demo (ver `VIDEO_SCRIPT.md`).
+- **Video:** ya está grabado — `assets/reservaya-demo-2026-07-17.mp4` (subir nativo, no como link). Guión de referencia en `VIDEO_SCRIPT.md`.
+- **Capturas:** `01-landing.png`, `02-demo-barberia.png`, `03-booking-flow.png`, `04-confirmacion.png` en `assets/` — listas por si preferís carrusel en vez de video.
 - **No inventar testimonios** — si querés prueba social, esperá al primer piloto real.
 - **Horario:** martes–jueves 9–11 h suele rendir mejor para dueños de negocio en Argentina.
-- **Primer comentario (opcional):** pegar el link directo a reservar en la demo: https://reservaya.ar/demo-barberia/reservar
+- **Primer comentario (obligatorio, no opcional):** pegar los links ahí, nunca en el cuerpo del post. Alternativa: link directo a reservar en la demo, `https://reservaya.ar/demo-barberia/reservar`.
