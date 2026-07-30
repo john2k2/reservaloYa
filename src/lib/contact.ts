@@ -1,5 +1,5 @@
 const defaultContactEmail = "hola@reservaya.ar";
-const defaultWhatsAppNumber = "541124057521";
+const defaultWhatsAppNumber = "5491124057521";
 
 export const siteContact = {
   email: defaultContactEmail,
