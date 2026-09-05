@@ -150,3 +150,5 @@ export default withSentryConfig(analyzedConfig, {
   silent: !process.env.CI,
   widenClientFileUpload: true,
 });
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
